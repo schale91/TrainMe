@@ -41,7 +41,11 @@ export default function App() {
   const [belohnung, setBelohnung] = useState<Belohnung | null>(null)
   const [kisteAuf, setKisteAuf] = useState(false)
 
-  useEffect(() => speichern(daten), [daten])
+  // Effekte geben bewusst nichts zurück: Manche Android-WebViews liefern bei scrollTo einen Wert, den React sonst als
+  // Aufräumfunktion aufrufen würde
+  useEffect(() => {
+    speichern(daten)
+  }, [daten])
 
   // Lebenszeichen: Wurde eine Seite geöffnet, aber nie fertig angezeigt, hing die App beim letzten Mal dort
   const [haenger] = useState<{ ziel: string; zeit: string } | null>(() => {
@@ -72,7 +76,9 @@ export default function App() {
     )
     return () => cancelAnimationFrame(t)
   }, [ziel])
-  useEffect(() => window.scrollTo(0, 0), [tab, offen])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [tab, offen])
   // Gesundheitswerte beim Start und beim Zurückkehren in die App auffrischen
   useEffect(() => {
     const auffrischen = () => {
