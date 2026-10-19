@@ -1,0 +1,2174 @@
+/* TrainMe: Bedienung wie iOS (große Titel, gruppierte Listen, Blätter von unten), Farbwelt dunkel mit Lila. */
+
+:root {
+  --bg: #121027;
+  --flaeche: #1e1b3a;
+  --flaeche2: #29254d;
+  --flaeche3: #39346b;
+  --linie: #343060;
+  --trenner: rgba(235, 232, 255, 0.09);
+  --text: #f3f1ff;
+  --leise: #a7a2d6;
+  --sehrleise: #77729f;
+  --akzent: #8b7bff;
+  --akzent-dunkel: #6a58f5;
+  --akzent2: #5ee6c4;
+  --gold: #ffbe55;
+  --rot: #ff6b81;
+  --gruen: #43d39e;
+  --radius: 14px;
+  --gross: 20px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, Roboto, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.38;
+  -webkit-font-smoothing: antialiased;
+  /* clip statt hidden: hidden auf html und body macht body zum Scrollbereich, dann bleibt nichts mehr oben kleben */
+  overflow-x: clip;
+}
+
+/* Lange deutsche Wörter umbrechen statt überlaufen. Bewusst ohne „hyphens: auto“: Das lädt auf manchen Android-Geräten
+   ein Trennwörterbuch und kann die Browserkomponente dabei blockieren. */
+p,
+li,
+small,
+.zeilentitel,
+.zeilenunter,
+h1,
+h2,
+h4 {
+  overflow-wrap: break-word;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--akzent);
+  text-decoration: none;
+}
+
+input,
+select {
+  width: 100%;
+  min-width: 0;
+  background: var(--flaeche2);
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  font-size: 16px;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+select {
+  background-image: linear-gradient(45deg, transparent 50%, var(--leise) 50%), linear-gradient(135deg, var(--leise) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 52%,
+    calc(100% - 9px) 52%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 1.6rem;
+}
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--akzent);
+}
+
+/* ---------- Seite ---------- */
+
+.app main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 96px);
+}
+
+.seite {
+  padding-top: 8px;
+}
+.navleiste {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -16px;
+  padding: calc(env(safe-area-inset-top) + 6px) 8px 6px;
+  background: rgba(18, 16, 39, 0.97);
+  flex-wrap: wrap;
+}
+.navunten {
+  flex-basis: 100%;
+  padding: 4px 8px 4px;
+}
+.navunten .pbalken.dick {
+  margin: 0;
+}
+.navzurueck {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: 0;
+  color: var(--akzent);
+  font-size: 17px;
+  padding: 6px 4px;
+}
+.grosstitel {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 14px;
+}
+.grosstitel > div {
+  min-width: 0;
+}
+.grosstitel h1 {
+  font-size: 32px;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin: 0;
+  font-weight: 800;
+}
+.grosstitel p {
+  margin: 4px 0 0;
+  color: var(--leise);
+  font-size: 15px;
+}
+
+h2 {
+  font-size: 19px;
+  margin: 4px 0;
+  letter-spacing: -0.01em;
+}
+h4 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--leise);
+  margin: 22px 0 8px;
+  font-weight: 700;
+}
+
+/* ---------- Gruppen und Zeilen ---------- */
+
+.gruppe {
+  margin: 22px 0;
+}
+.gruppentitel {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--leise);
+  margin: 0 0 7px 16px;
+}
+.gruppeninhalt {
+  background: var(--flaeche);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.gruppenfuss {
+  font-size: 13px;
+  color: var(--sehrleise);
+  margin: 7px 16px 0;
+  line-height: 1.4;
+}
+.zeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  position: relative;
+}
+.zeile + .zeile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 0;
+  height: 1px;
+  background: var(--trenner);
+}
+.zeile.klickbar {
+  cursor: pointer;
+}
+.zeile.klickbar:active {
+  background: var(--flaeche2);
+}
+.zeilensymbol {
+  flex: 0 0 auto;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+}
+.zeilentext {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.zeilentitel {
+  font-size: 16px;
+}
+.zeilentitel.gefahr {
+  color: var(--rot);
+}
+.zeilenunter {
+  font-size: 13.5px;
+  color: var(--leise);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.zeilenwert {
+  flex: 0 1 auto;
+  max-width: 45%;
+  color: var(--leise);
+  font-size: 15px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chevron {
+  color: var(--sehrleise);
+  display: flex;
+}
+
+/* ---------- Bedienelemente ---------- */
+
+.knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--akzent), var(--akzent-dunkel));
+  color: white;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    transform 0.08s,
+    opacity 0.2s;
+}
+.knopf:active {
+  transform: scale(0.97);
+}
+.knopf:disabled {
+  opacity: 0.4;
+}
+.knopf.leise {
+  background: var(--flaeche2);
+  color: var(--text);
+}
+.knopf.klein {
+  padding: 7px 12px;
+  font-size: 14px;
+  border-radius: 9px;
+}
+.knopf.voll {
+  width: 100%;
+  margin: 8px 0;
+}
+.knopf.gross {
+  padding: 15px;
+  font-size: 17px;
+  margin: 14px 0 8px;
+}
+.knopf.gruen {
+  background: linear-gradient(135deg, #43d39e, #22a77a);
+}
+.knopf.gold {
+  background: linear-gradient(135deg, #ffcf6b, #ff9d42);
+  color: #3b2400;
+}
+.textknopf,
+.linkknopf {
+  background: none;
+  border: 0;
+  color: var(--akzent);
+  font-size: 15px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+.rundknopf {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 0;
+  background: var(--flaeche2);
+  color: var(--leise);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.rundknopf.info {
+  color: var(--akzent);
+}
+
+.schalter {
+  width: 51px;
+  height: 31px;
+  flex: 0 0 auto;
+  border-radius: 16px;
+  border: 0;
+  background: var(--flaeche3);
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.schalter span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+}
+.schalter.an {
+  background: var(--gruen);
+}
+.schalter.an span {
+  transform: translateX(20px);
+}
+
+.segmente {
+  display: flex;
+  background: var(--flaeche);
+  border-radius: 10px;
+  padding: 2px;
+  margin: 6px 0 4px;
+}
+.segmente button {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 550;
+  padding: 7px 4px;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.segmente button.an {
+  background: var(--flaeche3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.pbalken {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.pbalken div {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--akzent2), var(--akzent));
+  transition: width 0.4s;
+}
+.pbalken.dick {
+  height: 6px;
+  margin: 0 0 12px;
+}
+
+.plaketten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.plakette {
+  font-size: 12px;
+  font-weight: 650;
+  background: var(--akzent-dunkel);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+.hinweistext {
+  color: var(--leise);
+  font-size: 14px;
+  background: var(--flaeche);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+.hinweistext.klein {
+  font-size: 13px;
+  background: none;
+  padding: 4px 8px;
+}
+.mitte {
+  text-align: center;
+}
+.leise {
+  color: var(--leise);
+}
+.flex {
+  flex: 1;
+}
+
+/* ---------- Tableiste ---------- */
+
+.tableiste {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  background: rgba(22, 20, 46, 0.98);
+  border-top: 0.5px solid var(--trenner);
+  padding: 6px 4px calc(env(safe-area-inset-bottom) + 4px);
+}
+.tableiste button {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  color: var(--sehrleise);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 0;
+  position: relative;
+  cursor: pointer;
+}
+.tableiste button small {
+  font-size: 10.5px;
+  font-weight: 550;
+}
+.tableiste button.an {
+  color: var(--akzent);
+}
+.badge {
+  position: absolute;
+  top: -2px;
+  left: calc(50% + 6px);
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--rot);
+  color: white;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+/* ---------- Heute ---------- */
+
+.statusreihe {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.statuskachel {
+  background: var(--flaeche);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  min-width: 0;
+}
+.statuskachel small {
+  color: var(--leise);
+  font-size: 12px;
+}
+.statuskachel b {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.heutekarte {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 14px 0 6px;
+  padding: 16px;
+  border: 0;
+  border-radius: var(--gross);
+  background:
+    radial-gradient(120% 100% at 100% 0%, #6a58f555, transparent 60%),
+    linear-gradient(160deg, #2e2768, #1e1b3a);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  text-align: left;
+  cursor: pointer;
+}
+.heutekarte.ruhig {
+  background: var(--flaeche);
+  box-shadow: none;
+  cursor: default;
+}
+.heutekopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dauer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--leise);
+  font-size: 14px;
+}
+.heutetitel {
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+.heutevorschau {
+  color: var(--leise);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.losknopf {
+  align-self: stretch;
+  text-align: center;
+  margin-top: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--akzent), var(--akzent-dunkel));
+  font-weight: 700;
+}
+.marke {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--akzent-dunkel);
+  border-radius: 6px;
+  padding: 3px 7px;
+}
+.marke.neben {
+  background: #4f68f0;
+}
+.marke.isolation {
+  background: #5d5891;
+}
+.marke.praevention {
+  background: #1f9e83;
+}
+.marke.schnellkraft {
+  background: #e7792f;
+}
+.marke.mobil {
+  background: #2b9cc2;
+}
+.marke.ausdauer {
+  background: #d8506a;
+}
+.marke.golf {
+  background: #1f7a5a;
+}
+.wochenkopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 22px 0 -10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+.tagkreis {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--flaeche2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.05;
+}
+.tagkreis b {
+  font-size: 13px;
+}
+.tagkreis small {
+  font-size: 11px;
+  color: var(--leise);
+}
+.tagkreis.heute {
+  background: var(--akzent-dunkel);
+}
+.tagkreis.heute small {
+  color: #e6e2ff;
+}
+.tagkreis.fertig {
+  background: #1d4a43;
+}
+
+/* ---------- Training ---------- */
+
+.satzzaehler {
+  color: var(--leise);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  padding-right: 8px;
+}
+.uebungskarte {
+  background: var(--flaeche);
+  border-radius: var(--gross);
+  padding: 14px;
+  margin: 14px 0;
+  border: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+.uebungskarte.geschafft {
+  border-color: #43d39e66;
+}
+.uebungskopf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.uebungsname {
+  margin: 10px 0 6px;
+  cursor: pointer;
+}
+.vorgabezeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.vorgabe {
+  display: inline-flex;
+  align-items: center;
+  background: var(--flaeche2);
+  border: 0;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--gold);
+}
+.vorgabe.gewicht {
+  color: var(--akzent2);
+}
+.vorgabe.tank {
+  color: #c9c1ff;
+  cursor: pointer;
+  min-height: 32px;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.vorgabe.leise {
+  color: var(--leise);
+  font-weight: 500;
+}
+.begruendung {
+  color: var(--leise);
+  font-size: 14px;
+  margin: 8px 0 4px;
+}
+.tipp {
+  font-size: 14px;
+  margin: 6px 0;
+}
+.saetze {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.satzkopf,
+.satz {
+  display: grid;
+  grid-template-columns: 26px var(--spalten, 1fr) 42px;
+  align-items: center;
+  gap: 6px;
+}
+.satzkopf {
+  display: flex;
+  padding: 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sehrleise);
+}
+.satzkopf span,
+.satz > * {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+.satzkopf .nr {
+  flex: 0 0 26px;
+}
+.satzkopf .breit,
+.satz .breit {
+  flex: 1.7;
+}
+.satzkopf .hakenplatz {
+  flex: 0 0 42px;
+}
+.satz {
+  display: flex;
+  background: var(--flaeche2);
+  border-radius: 12px;
+  padding: 6px;
+  transition: background 0.25s;
+}
+.satz.fertig {
+  background: #1b4740;
+}
+.satz .nr {
+  flex: 0 0 26px;
+  font-weight: 750;
+  color: var(--leise);
+  font-variant-numeric: tabular-nums;
+}
+.satz > select {
+  flex: 1.7;
+  padding: 10px 1.3rem 10px 8px;
+  background-color: var(--flaeche3);
+  text-align: left;
+}
+.mini {
+  display: flex;
+}
+.mini input,
+.mini select {
+  padding: 10px 4px;
+  text-align: center;
+  background-color: var(--flaeche3);
+}
+.mini select {
+  background-image: none;
+  text-align-last: center;
+}
+.haken {
+  flex: 0 0 42px !important;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid var(--flaeche3);
+  background: transparent;
+  color: var(--sehrleise);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.haken.an {
+  background: var(--gruen);
+  border-color: var(--gruen);
+  color: #06291e;
+  animation: plopp 0.25s;
+}
+@keyframes plopp {
+  50% {
+    transform: scale(1.18);
+  }
+}
+.satzknoepfe {
+  display: flex;
+  gap: 8px;
+}
+.pausenleiste {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  z-index: 30;
+  max-width: 656px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgb(46, 39, 104);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+  border: 1px solid #8b7bff55;
+}
+.pausenring {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--akzent-dunkel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pausentext {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.pausentext small {
+  color: var(--leise);
+  font-size: 12px;
+}
+.pausentext b {
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.tauschknoepfe {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ---------- Blatt ---------- */
+
+.blatthintergrund {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(5, 4, 15, 0);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transition: background 0.22s;
+}
+.blatthintergrund.offen {
+  background: rgba(5, 4, 15, 0.55);
+}
+.blatt {
+  width: 100%;
+  max-width: 680px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-radius: 14px 14px 0 0;
+  transform: translateY(100%);
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.blatt.hoch {
+  height: 92vh;
+  max-height: 92vh;
+}
+.blatthintergrund.offen .blatt {
+  transform: translateY(0);
+}
+.griff {
+  width: 38px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--flaeche3);
+  margin: 7px auto 0;
+}
+.blattkopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px 8px;
+}
+.blattkopf b {
+  font-size: 17px;
+  min-width: 0;
+}
+.blattinhalt {
+  overflow-y: auto;
+  padding: 0 16px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- Info ---------- */
+
+.infokurz {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 4px 0 6px;
+}
+.infoauch {
+  color: var(--leise);
+  font-size: 13.5px;
+}
+.schritte {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: schritt;
+}
+.schritte li {
+  counter-increment: schritt;
+  position: relative;
+  padding: 0 0 12px 38px;
+  line-height: 1.5;
+}
+.schritte li::before {
+  content: counter(schritt);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--akzent-dunkel);
+  font-size: 13px;
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.punkte {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.punkte li {
+  position: relative;
+  padding: 0 0 9px 26px;
+  line-height: 1.5;
+}
+.punkte li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.punkte.fehler li::before {
+  content: "✕";
+  color: var(--rot);
+  font-weight: 800;
+}
+.punkte.vorteile li::before {
+  content: "✓";
+  color: var(--gruen);
+  font-weight: 800;
+}
+.punkte.tipps li::before {
+  content: "★";
+  color: var(--gold);
+}
+.golftext {
+  background: #1f7a5a33;
+  border-left: 3px solid #43d39e;
+  padding: 10px 12px;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+.vorsicht {
+  background: #ff6b8122;
+  border-left: 3px solid var(--rot);
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+.steckbrief {
+  margin-top: 22px;
+  background: var(--flaeche);
+  border-radius: var(--radius);
+  padding: 4px 14px;
+}
+.steckbrief div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--trenner);
+  font-size: 14px;
+}
+.steckbrief div:last-child {
+  border-bottom: 0;
+}
+.steckbrief span {
+  color: var(--leise);
+  flex: 0 0 auto;
+}
+.steckbrief b {
+  font-weight: 550;
+  text-align: right;
+}
+
+/* ---------- Bibliothek ---------- */
+
+.suchfeld {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--flaeche);
+  border-radius: 10px;
+  padding: 0 10px;
+  color: var(--leise);
+}
+.suchfeld input {
+  background: none;
+  padding: 10px 0;
+}
+.filterleiste {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 10px -16px 0;
+  padding: 0 16px 2px;
+  scrollbar-width: none;
+}
+.filterleiste::-webkit-scrollbar {
+  display: none;
+}
+.filterchip {
+  flex: 0 0 auto;
+  border: 0;
+  background: var(--flaeche);
+  border-radius: 99px;
+  padding: 7px 13px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filterchip.an {
+  background: var(--akzent-dunkel);
+  font-weight: 650;
+}
+.filterchip.golf.an {
+  background: #1f7a5a;
+}
+.golfpunkt {
+  font-size: 16px;
+}
+.leerhinweis {
+  text-align: center;
+  color: var(--leise);
+  margin: 40px 0;
+}
+
+/* ---------- Fortschritt ---------- */
+
+.leer {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--leise);
+}
+.gross {
+  font-size: 34px;
+}
+.saeulen {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 130px;
+  padding: 14px 12px 8px;
+}
+.saeule {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.saeule div {
+  width: 100%;
+  min-height: 3px;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, var(--akzent2), var(--akzent));
+}
+.saeule small,
+.saeulenwert {
+  font-size: 10px;
+  color: var(--leise);
+}
+.kurve {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.kurve.mini {
+  width: 84px;
+}
+.minikurve {
+  flex: 0 0 auto;
+  width: 84px;
+  display: flex;
+}
+.kurventext {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+}
+.kurventext.leise {
+  fill: var(--leise);
+  font-weight: 500;
+}
+.kurventext.klein {
+  font-size: 9.5px;
+}
+.punkt {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.testblatt input {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+.messfelder {
+  display: flex;
+  gap: 10px;
+}
+.messfelder label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+.messfelder span {
+  color: var(--leise);
+  font-size: 13px;
+}
+.messfelder em {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  font-style: normal;
+  color: var(--leise);
+}
+.stufenwahl {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.stufenknopf {
+  text-align: left;
+  border: 2px solid transparent;
+  background: var(--flaeche);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.stufenknopf.an {
+  border-color: var(--akzent);
+  background: #2e2768;
+}
+.quelle {
+  font-size: 12px;
+  color: var(--sehrleise);
+  margin-top: 14px;
+}
+.prozentkarte {
+  margin: 14px 0;
+  padding: 18px 16px 12px;
+  border-radius: var(--gross);
+  background: linear-gradient(160deg, #3a2c10, #1e1b3a 70%);
+  border: 1px solid #ffbe5533;
+}
+.prozentkarte small {
+  color: var(--leise);
+}
+.prozentkarte b {
+  display: block;
+  font-size: 46px;
+  font-weight: 850;
+  color: var(--gold);
+  letter-spacing: -0.02em;
+}
+.prozentkarte p {
+  margin: 4px 0 10px;
+}
+.abzsymbol {
+  font-size: 22px;
+}
+.abzsymbol.gesperrt {
+  opacity: 0.5;
+}
+
+/* ---------- Belohnung ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(6, 5, 18, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.belohnung {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 420px;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: linear-gradient(170deg, #2e2768, #121027);
+  border: 1px solid #ffbe5555;
+  border-radius: 26px;
+  padding: 24px 18px 14px;
+  text-align: center;
+  animation: rein 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.belohnung h1 {
+  margin: 0;
+  font-size: 30px;
+}
+@keyframes rein {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+}
+.xp {
+  font-size: 44px;
+  font-weight: 850;
+  color: var(--gold);
+  margin: 4px 0;
+}
+.stufeauf {
+  font-size: 18px;
+  font-weight: 750;
+  color: var(--akzent2);
+}
+.prozentzeile {
+  color: var(--leise);
+}
+.rekordliste {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 10px 0;
+}
+.neuabz span {
+  font-size: 22px;
+}
+.konfetti i {
+  position: absolute;
+  top: -10px;
+  width: 7px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--gold);
+  animation: fall 1.8s ease-in forwards;
+}
+.konfetti i:nth-child(3n) {
+  background: var(--akzent2);
+}
+.konfetti i:nth-child(3n + 1) {
+  background: var(--akzent);
+}
+@keyframes fall {
+  to {
+    transform: translateY(520px) rotate(560deg);
+    opacity: 0;
+  }
+}
+
+/* ---------- Einrichtung und Profilteile ---------- */
+
+.einrichtung {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 18px) 16px 120px;
+}
+.einrichtung h1 {
+  font-size: 32px;
+  margin: 6px 0 4px;
+  letter-spacing: -0.02em;
+}
+.unter {
+  color: var(--leise);
+  margin: 0 0 14px;
+}
+.fortschrittspunkte {
+  display: flex;
+  gap: 5px;
+}
+.fortschrittspunkte span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--flaeche2);
+}
+.fortschrittspunkte span.an {
+  background: var(--akzent);
+}
+.fuss {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px calc(env(safe-area-inset-bottom) + 10px);
+  background: rgba(18, 16, 39, 0.98);
+  border-top: 0.5px solid var(--trenner);
+}
+.fuss .knopf {
+  flex: 1;
+}
+.schnellstart {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  border-radius: var(--gross);
+  border: 1px solid #43d39e55;
+  background: linear-gradient(140deg, #1f4d3d, #1e1b3a);
+  cursor: pointer;
+}
+.schnellstart > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.schnellstart small {
+  color: var(--leise);
+}
+
+.feld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 16px 0;
+  flex: 1;
+  min-width: 0;
+}
+.feldtitel {
+  font-weight: 650;
+}
+.feld small {
+  color: var(--leise);
+  font-size: 13px;
+}
+.zahl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.zahl input {
+  max-width: 8rem;
+}
+.einheit {
+  color: var(--leise);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: 99px;
+  padding: 7px 12px;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.chip.an {
+  background: var(--akzent-dunkel);
+  border-color: var(--akzent-dunkel);
+  font-weight: 650;
+}
+.karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.auswahl {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--flaeche);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.auswahl small {
+  color: var(--leise);
+  font-size: 13px;
+}
+.auswahl.an {
+  border-color: var(--akzent);
+  background: #2e2768;
+}
+.karte {
+  background: var(--flaeche);
+  border-radius: var(--gross);
+  padding: 14px;
+  margin: 12px 0;
+}
+.titelfeld {
+  font-weight: 700;
+  font-size: 17px;
+}
+.reihe {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.reihe.zwischen {
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+.hinweis {
+  background: var(--flaeche);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--leise);
+  font-size: 14px;
+}
+.hinweis.warn {
+  border-left: 3px solid var(--gold);
+}
+.woche-edit .tagzeile {
+  background: var(--flaeche);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin: 8px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 6.2rem) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+.tagzeile.training {
+  box-shadow: inset 3px 0 0 var(--akzent);
+}
+.tagzeile.sporttermin {
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+.tagdetails {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.gelenke {
+  background: var(--flaeche);
+  border-radius: var(--radius);
+  padding: 4px 12px;
+}
+.gelenkzeile {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 7px 0;
+}
+.segment {
+  display: flex;
+  background: var(--flaeche2);
+  border-radius: 9px;
+  padding: 2px;
+  flex: 0 0 auto;
+}
+.segment button {
+  background: none;
+  border: 0;
+  color: var(--leise);
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.segment button.an {
+  background: var(--flaeche3);
+  color: var(--text);
+  font-weight: 650;
+}
+.segment button.an.schonen {
+  background: #8a6a1f;
+}
+.segment button.an.meiden {
+  background: #8a2a3c;
+}
+.liste {
+  display: flex;
+  flex-direction: column;
+  background: var(--flaeche);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 10px 0;
+}
+.listzeile {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--trenner);
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+}
+.listzeile.aus {
+  color: var(--sehrleise);
+  text-decoration: line-through;
+}
+
+@media (max-width: 360px) {
+  .grosstitel h1 {
+    font-size: 28px;
+  }
+  .satz {
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Formulare */
+.formular {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+.formular label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.formular span {
+  font-size: 14px;
+  color: var(--leise);
+}
+textarea {
+  width: 100%;
+  background: var(--flaeche2);
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  resize: vertical;
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--akzent);
+}
+a.knopf.aus {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.gesundheitsreihe {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Fehleranzeige */
+.fehlerseite {
+  padding: 40px 0;
+}
+.fehlerseite pre,
+#fehlerhinweis {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  background: #2a1020;
+  color: #ffd0d8;
+  border-radius: 10px;
+  padding: 10px;
+}
+#fehlerhinweis {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  top: calc(env(safe-area-inset-top) + 8px);
+  z-index: 100;
+  max-height: 40vh;
+  overflow: auto;
+}
+.knopf.gefahr {
+  background: var(--rot);
+}
+
+/* Symbole */
+.mitsym {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mitte.mitsym {
+  justify-content: center;
+}
+.symkachel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex: 0 0 auto;
+}
+.gwerte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.buehnenfuss > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.tipp {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.heutetitel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:root {
+  --orange: #ff9d42;
+}
+/* Geräteliste */
+.geraetegruppe {
+  background: var(--flaeche2);
+  border-radius: var(--radius);
+  margin: 12px 0;
+  overflow: hidden;
+}
+.geraetekopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 6px;
+  color: var(--akzent);
+}
+.geraetekopf b {
+  flex: 1;
+  color: var(--text);
+}
+.geraetehinweis {
+  display: block;
+  padding: 0 14px 6px;
+  color: var(--leise);
+  font-size: 13px;
+}
+.geraeteliste {
+  display: flex;
+  flex-direction: column;
+}
+.geraetzeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--trenner);
+  padding: 11px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.geraetzeile .kasten {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border-radius: 7px;
+  border: 2px solid var(--flaeche3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.geraetzeile.an .kasten {
+  background: var(--akzent-dunkel);
+  border-color: var(--akzent-dunkel);
+}
+.geraettext {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.geraettext small {
+  color: var(--leise);
+  font-size: 12.5px;
+}
+
+.haenger {
+  border-left: 3px solid var(--gold);
+}
+
+/* Vorschlag nach einem Satz */
+.anpassung {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 6px 0 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--flaeche2);
+  animation: rein 0.25s;
+}
+.anpassung.hoch {
+  background: #1d4a43;
+  color: #c9f5e6;
+}
+.anpassung.runter {
+  background: #4a2a1d;
+  color: #ffd9c2;
+}
+.anpassung.gleich {
+  color: var(--leise);
+}
+
+/* Einstufung */
+.einstufkarte {
+  background: var(--flaeche);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin: 10px 0;
+}
+.einstufname {
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  min-height: 34px;
+  font-weight: 650;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+.einstufzeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.8fr) minmax(0, 0.9fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+.einstufzeile label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.einstufzeile span {
+  font-size: 12px;
+  color: var(--leise);
+}
+.einstufzeile input {
+  text-align: center;
+}
+.einstufmax {
+  display: block;
+  margin-top: 8px;
+  color: var(--sehrleise);
+  font-size: 13px;
+}
+.einstufmax.an {
+  color: var(--akzent2);
+  font-weight: 600;
+}
+.einstufkarte.heute {
+  border: 1px solid var(--akzent);
+}
+
+/* ---------- Warum diese Übung ---------- */
+
+.warumknopf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 6px 0;
+  min-height: 36px;
+}
+.warumliste {
+  margin: 0 0 12px;
+  padding: 10px 12px 10px 30px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--leise);
+  font-size: 14px;
+}
+.warumliste li + li {
+  margin-top: 4px;
+}
+
+/* ---------- Jahresplan ---------- */
+
+.phasenstreifen {
+  margin: 4px 0 14px;
+}
+.phasenbalken {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+}
+.phasenbalken span {
+  position: relative;
+  flex: 1;
+  border-radius: 4px;
+  opacity: 0.9;
+}
+.phasenbalken span.vorbei {
+  opacity: 0.35;
+}
+.phasenbalken span.jetzt {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+.phasenbalken .hier {
+  position: absolute;
+  top: -7px;
+  width: 0;
+  height: 0;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: var(--text);
+}
+.phasenmonate {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--leise);
+}
+.phasenmonate span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+.phasenkarte {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid;
+  background: var(--flaeche);
+}
+.phasenkarte .marke {
+  color: #fff;
+}
+.phasenkarte p {
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+.phasenkarte .leise {
+  color: var(--leise);
+}
+.phasenpunkt {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.jetztmarke {
+  color: var(--akzent);
+  font-size: 13px;
+}
+.phasenzeile {
+  display: block;
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--flaeche);
+  color: var(--text);
+  text-align: left;
+}
+.phasenzeile .phasenkopf {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+.phasenzeile .phasenkopf small {
+  color: var(--leise);
+  font-size: 13px;
+}
+.phasenzeile .phasenstreifen {
+  margin: 0;
+}
+
+/* ---------- Update ---------- */
+
+.updatebanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.28), rgba(124, 92, 255, 0.12));
+  border: 1px solid rgba(124, 92, 255, 0.5);
+}
+.updatebanner > span {
+  flex: 1;
+  min-width: 0;
+}
+.updatebanner small {
+  display: block;
+  color: var(--leise);
+}
+.updatenotizen {
+  white-space: pre-wrap;
+  font-size: 14px;
+  color: var(--leise);
+  margin: 0;
+  padding: 12px 16px;
+}
+/* Auswahlfeld rechts in einer Listenzeile: nur so breit wie nötig, der Text links behält seinen Platz */
+.zeile > select {
+  width: auto;
+  flex: 0 0 auto;
+  max-width: 55%;
+}
+
+/* ---------- Dein Weg ---------- */
+
+.blockstand {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: var(--gross);
+  background: var(--flaeche);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--phase) 22%, var(--flaeche)), var(--flaeche));
+  border: 1px solid var(--phase);
+  border: 1px solid color-mix(in srgb, var(--phase) 55%, transparent);
+  text-align: left;
+}
+.blockstand.klein {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.blockstandkopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.blockstandkopf .marke {
+  color: #fff;
+}
+.blockstandkopf small,
+.blockstand .leise {
+  color: var(--leise);
+  margin: 0;
+  font-size: 14px;
+}
+.wochenpunkte {
+  display: flex;
+  gap: 6px;
+}
+.wochenpunkte span {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--sehrleise);
+  font-size: 13px;
+  font-weight: 650;
+}
+.wochenpunkte span.fertig {
+  background: var(--phase);
+  color: #fff;
+}
+.wochenpunkte span.jetzt {
+  outline: 2px solid var(--phase);
+  outline-offset: -2px;
+  color: var(--text);
+}
+.blockzahlen {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--leise);
+}
+.blockzahlen b {
+  color: var(--text);
+  font-size: 16px;
+}
+.wegkarte {
+  display: block;
+  width: 100%;
+  margin: 14px 0 16px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: var(--gross);
+  background: var(--flaeche);
+  color: var(--text);
+  text-align: left;
+}
+.wegkopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.wegkopf small {
+  color: var(--leise);
+  font-size: 13px;
+}
+.zeitleiste {
+  list-style: none;
+  margin: 22px 0 18px;
+  padding: 0;
+}
+.zeitleiste li {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding: 0 0 18px;
+}
+.zeitleiste li::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 28px;
+  bottom: 0;
+  width: 2px;
+  background: var(--linie);
+}
+.zeitleiste li:last-child::before {
+  display: none;
+}
+.zeitleiste li.vorbei::before {
+  background: color-mix(in srgb, var(--akzent) 60%, transparent);
+}
+.zeitleiste .knoten {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border: 2px solid var(--linie);
+  color: #fff;
+}
+.zeitleiste .knoten.phase {
+  border-color: var(--phase);
+}
+.zeitleiste li.vorbei .knoten {
+  background: var(--akzent-dunkel);
+  border-color: var(--akzent-dunkel);
+}
+.zeitleiste li.vorbei .knoten.phase {
+  background: var(--phase);
+  border-color: var(--phase);
+}
+.zeitleiste li.vorbei.offen .knoten {
+  background: var(--bg);
+  border-color: var(--sehrleise);
+}
+.zeitleiste li.jetzt .knoten {
+  border-color: var(--phase, var(--akzent));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--phase, var(--akzent)) 30%, transparent);
+}
+.zeitleiste li.meilenstein .knoten {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.zeitleiste .puls {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--phase, var(--akzent));
+}
+.zeitleiste li > div {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding-top: 3px;
+}
+.zeitleiste b {
+  font-size: 16px;
+}
+.zeitleiste em {
+  font-style: normal;
+  color: var(--akzent);
+  font-size: 13px;
+  margin-left: 6px;
+}
+.zeitleiste small {
+  color: var(--leise);
+  font-size: 14px;
+}
+.zeitleiste small.ziel {
+  color: var(--sehrleise);
+}
+.zeitleiste li.kommt b {
+  color: var(--leise);
+}
+.zeitleiste .knopf.klein {
+  margin-top: 6px;
+}
+.belohnung .blockstand {
+  margin: 4px 0 6px;
+}

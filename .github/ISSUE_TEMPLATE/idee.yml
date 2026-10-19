@@ -1,0 +1,22 @@
+name: Idee
+description: Vorschlag für eine neue Funktion oder Verbesserung
+title: "[Idee] "
+labels: ["idee"]
+body:
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: Beschreibung
+      description: Was fehlt dir? Wofür würdest du es nutzen?
+    validations:
+      required: true
+  - type: input
+    id: bereich
+    attributes:
+      label: Bereich der App
+      placeholder: z. B. Training, Pausentimer, Abenteuer
+  - type: input
+    id: version
+    attributes:
+      label: App-Version und Gerät
+      description: Wird aus der App automatisch ausgefüllt.
