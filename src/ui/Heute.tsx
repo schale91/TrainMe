@@ -19,7 +19,7 @@ export function istErledigt(daten: Daten, e: Einheit): boolean {
 
 const ART_SYMBOL: Record<string, string> = { kraft: "hantel", mobilitaet: "dehnen", ausdauer: "puls", regeneration: "blatt" }
 
-export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; zumAbenteuer: () => void }) {
+export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; zumAbenteuer: () => void; einstufen: () => void }) {
   const { daten } = props
   const profil = daten.profil!
   const tag = heute()
@@ -107,7 +107,24 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         </button>
       ) : null}
 
-      {aktuell ? (
+      {!daten.einstufung?.kraft || !daten.einstufung?.mobil ? (
+        <button type="button" className="heutekarte" onClick={props.einstufen}>
+          <span className="heutekopf">
+            <span className="marke">Vor dem ersten Training</span>
+            <span className="dauer">
+              <Icon name="timer" groesse={15} /> etwa 20 min
+            </span>
+          </span>
+          <span className="heutetitel">
+            <Sym name="ziel" groesse={26} /> Einstufung
+          </span>
+          <span className="heutevorschau">
+            {daten.einstufung?.kraft ? "Kraftwerte erledigt. " : "1. Kraftwerte: dein Maximum je Hauptübung, geschätzt aus einem schweren Satz. "}
+            2. Mobilitätsprofil: kurze Tests für Hüfte, Brustwirbelsäule, Schulter und Gleichgewicht. Danach passen Startgewichte und Mobilität zu dir.
+          </span>
+          <span className="losknopf">{daten.einstufung?.kraft ? "Mobilität messen" : "Einstufung starten"}</span>
+        </button>
+      ) : aktuell ? (
         fokus ? (
           <button type="button" className="heutekarte" onClick={() => props.oeffnen(fokus)}>
             <span className="heutekopf">

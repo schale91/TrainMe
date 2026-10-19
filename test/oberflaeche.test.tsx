@@ -24,7 +24,7 @@ it("rendert Startseite und jede Einheit für 300 zufällige Profile ohne Fehler 
     p.woche = p.woche.map(() => (r() < 0.55 ? { art: "training" as const, ort: Math.floor(r() * p.orte.length), minuten: w([20, 30, 45, 60, 90]), schwerpunkt: w(["automatisch", "kraft", "mobilitaet", "ausdauer"] as const) } : r() < 0.2 ? { art: "sporttermin" as const, termin: w(["spiel", "turnier", "mannschaftstraining"] as const) } : { art: "frei" as const }))
     const d = { ...leer(), profil: p }
     try {
-      renderToString(<Heute daten={d} oeffnen={() => {}} zumAbenteuer={() => {}} />)
+      renderToString(<Heute daten={d} oeffnen={() => {}} zumAbenteuer={() => {}} einstufen={() => {}} />)
       for (const e of wochenplan(p, d, "2026-10-19")) {
         if (!e.plaetze.length) fehler.push(n + ": leere Einheit " + e.titel)
         renderToString(<Training daten={d} einheit={e} zurueck={() => {}} abschliessen={() => {}} ausschliessen={() => {}} />)

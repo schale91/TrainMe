@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { alternativen, lastGeraet, lastenAn, platzMit, verlauf } from "../logik/plan"
 import { lastText } from "../logik/gewichte"
+import { satzAnpassung, type Anpassung } from "../logik/progression"
 import type { Daten, Einheit, Platz, Protokoll, Satz, Uebung } from "../logik/typen"
 import { Blatt, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
@@ -65,6 +66,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [tausch, setTausch] = useState<number | null>(null)
   const [info, setInfo] = useState<Uebung | null>(null)
   const [rirHilfe, setRirHilfe] = useState(false)
+  const [anpassungen, setAnpassungen] = useState<Record<number, (Anpassung & { satz: number }) | undefined>>({})
   const gepiept = useRef(false)
 
   useEffect(() => {
@@ -102,7 +104,21 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const setSatz = (i: number, k: number, neu: Partial<Eingabe>) => setSaetze(saetze.map((ss, a) => (a === i ? ss.map((s, b) => (b === k ? { ...s, ...neu } : s)) : ss)))
   const abhaken = (i: number, k: number) => {
     const s = saetze[i][k]
-    setSatz(i, k, { fertig: !s.fertig })
+    const u = plaetze[i].uebung
+    // Nach dem Haken: Vorschlag für die restlichen Sätze dieser Übung
+    const a = !s.fertig ? satzAnpassung(s, plaetze[i].vorgabe, u.belastung, lastenAn(u, ort)) : null
+    setSaetze(
+      saetze.map((ss, x) =>
+        x !== i
+          ? ss
+          : ss.map((t, y) => {
+              if (y === k) return { ...t, fertig: !t.fertig }
+              if (y > k && !t.fertig && a) return { ...t, ...(a.last !== undefined ? { last: a.last } : {}), ...(a.wdh !== undefined ? { wdh: a.wdh } : {}) }
+              return t
+            }),
+      ),
+    )
+    setAnpassungen({ ...anpassungen, [i]: a ? { ...a, satz: k + 1 } : undefined })
     if (!s.fertig && plaetze[i].vorgabe.pause_s > 0) {
       const letzterSatz = saetze[i].every((x, b) => b === k || x.fertig)
       const naechste = letzterSatz ? plaetze[i + 1]?.uebung.name : plaetze[i].uebung.name + ", Satz " + (k + 2)
@@ -258,6 +274,14 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                   </button>
                 </div>
               ))}
+              {anpassungen[i] ? (
+                <p className={"anpassung " + anpassungen[i]!.richtung}>
+                  <Sym name={anpassungen[i]!.richtung === "hoch" ? "kurve" : anpassungen[i]!.richtung === "runter" ? "pflaster" : "haken"} groesse={18} />
+                  <span>
+                    <b>Nach Satz {anpassungen[i]!.satz}:</b> {anpassungen[i]!.text}
+                  </span>
+                </p>
+              ) : null}
               <div className="satzknoepfe">
                 <button type="button" className="textknopf" onClick={() => setSaetze(saetze.map((ss, a) => (a === i ? [...ss, { ...ss[ss.length - 1], fertig: false }] : ss)))}>
                   + Satz

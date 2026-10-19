@@ -1,4 +1,4 @@
-import { blockWoche, e1rm, plateau, vorgabe, zielRir } from "../src/logik/progression"
+import { blockWoche, e1rm, plateau, satzAnpassung, vorgabe, zielRir } from "../src/logik/progression"
 import { beispielGolf, neuesProfil } from "../src/logik/speicher"
 import { uebung } from "../src/daten/uebungen/index"
 import type { Protokoll } from "../src/logik/typen"
@@ -83,5 +83,37 @@ describe("Vorgaben", () => {
     const v = [p("1", [[100, 5, 1]]), p("2", [[100, 5, 1]]), p("3", [[100, 4, 1]]), p("4", [[100, 5, 1]])]
     expect(plateau(v)).toBe(true)
     expect(plateau([...v.slice(0, 3), p("4", [[105, 5, 1]])])).toBe(false)
+  })
+})
+
+describe("Einstufung und Anpassung im Training", () => {
+  const profil = { ...neuesProfil("2026-10-05"), ziel: "muskelaufbau" as const, erfahrung: "fortgeschritten" as const }
+  const u = { ...uebung("bankdruecken_kh")!, id: "x" }
+
+  it("Startgewicht aus dem Maximum der Einstufung", () => {
+    const v = vorgabe(profil, "neben", u, 3, [], kh, 0, 30)
+    // 8 bis 12 Wdh, Mitte 10, RIR 3: 30 / (1 + 13/30) = 20,9 → 20
+    expect(v.last).toBe(20)
+    expect(v.begruendung).toMatch(/Maximum/)
+  })
+
+  it("zu leichter Satz: nächste Sätze schwerer", () => {
+    const v = vorgabe(profil, "neben", u, 3, [], kh, 0, 30)
+    const a = satzAnpassung({ last: 20, wdh: 12, rir: 5 }, v, "gewicht", kh)!
+    expect(a.richtung).toBe("hoch")
+    expect(a.last).toBeGreaterThan(20)
+  })
+
+  it("zu schwerer Satz: nächste Sätze leichter", () => {
+    const v = vorgabe(profil, "neben", u, 3, [], kh, 0, 30)
+    const a = satzAnpassung({ last: 25, wdh: 6, rir: 0 }, v, "gewicht", kh)!
+    expect(a.richtung).toBe("runter")
+    expect(a.last).toBeLessThan(25)
+  })
+
+  it("passender Satz: Gewicht bleibt", () => {
+    const v = vorgabe(profil, "neben", u, 3, [], kh, 0, 30)
+    const a = satzAnpassung({ last: 20, wdh: 10, rir: 3 }, v, "gewicht", kh)!
+    expect(a.richtung).toBe("gleich")
   })
 })

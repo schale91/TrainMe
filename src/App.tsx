@@ -18,6 +18,7 @@ import { Icon } from "./ui/ios"
 import { Sym, SymKachel } from "./ui/symbole"
 import ProfilSeite from "./ui/Profil"
 import Training from "./ui/Training"
+import Einstufung from "./ui/Einstufung"
 import Fehlergrenze from "./ui/Fehlergrenze"
 import { gesundheitLesen } from "./ui/gesundheit"
 
@@ -40,6 +41,7 @@ export default function App() {
   const [offen, setOffen] = useState<Einheit | null>(null)
   const [belohnung, setBelohnung] = useState<Belohnung | null>(null)
   const [kisteAuf, setKisteAuf] = useState(false)
+  const [einstufen, setEinstufen] = useState(false)
 
   // Effekte geben bewusst nichts zurück: Manche Android-WebViews liefern bei scrollTo einen Wert, den React sonst als
   // Aufräumfunktion aufrufen würde
@@ -57,7 +59,7 @@ export default function App() {
     }
   })
   const [haengerZu, setHaengerZu] = useState(false)
-  const ziel = offen ? "Training" : tab
+  const ziel = einstufen ? "Einstufung" : offen ? "Training" : tab
   useEffect(() => {
     try {
       localStorage.setItem("trainme.navigation", JSON.stringify({ ziel, zeit: new Date().toISOString(), fertig: false }))
@@ -78,7 +80,7 @@ export default function App() {
   }, [ziel])
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [tab, offen])
+  }, [tab, offen, einstufen])
   // Gesundheitswerte beim Start und beim Zurückkehren in die App auffrischen
   useEffect(() => {
     const auffrischen = () => {
@@ -132,6 +134,12 @@ export default function App() {
   }
 
   const pm = belohnung ? prozentMethode(belohnung.einheiten) : null
+  // Vor dem ersten Training erst Kraftwerte und Mobilität erfassen
+  const eingestuft = !!daten.einstufung?.kraft && !!daten.einstufung?.mobil
+  const oeffnen = (e: Einheit) => {
+    if (!eingestuft) setEinstufen(true)
+    else setOffen(e)
+  }
 
   return (
     <div className="app">
@@ -148,10 +156,12 @@ export default function App() {
           setOffen(null)
           setTab("heute")
         }}>
-        {offen ? (
+        {einstufen ? (
+          <Einstufung daten={daten} aendern={aendern} fertig={() => setEinstufen(false)} zurueck={() => setEinstufen(false)} />
+        ) : offen ? (
           <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id) => aendern((d) => void (d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen, id]))} />
         ) : tab === "heute" ? (
-          <Heute daten={daten} oeffnen={setOffen} zumAbenteuer={() => setTab("abenteuer")} />
+          <Heute daten={daten} oeffnen={oeffnen} zumAbenteuer={() => setTab("abenteuer")} einstufen={() => setEinstufen(true)} />
         ) : tab === "uebungen" ? (
           <Bibliothek profil={profil} />
         ) : tab === "abenteuer" ? (
@@ -164,6 +174,7 @@ export default function App() {
             profilAendern={(p: Profil) => aendern((d) => void (d.profil = p))}
             ersetzen={setDaten}
             aendern={aendern}
+            einstufen={() => setEinstufen(true)}
             zuruecksetzen={() => {
               setDaten(leer())
               setTab("heute")
@@ -172,7 +183,7 @@ export default function App() {
         )}
         </Fehlergrenze>
       </main>
-      {!offen ? (
+      {!offen && !einstufen ? (
         <nav className="tableiste">
           {TABS.map((t) => (
             <button key={t.id} type="button" className={tab === t.id ? "an" : ""} onClick={() => setTab(t.id)}>

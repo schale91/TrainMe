@@ -89,7 +89,7 @@ const kg = (x: number) => String(Math.round(x * 100) / 100).replace(".", ",")
  * Vorgabe für die nächste Einheit. verlauf: bisherige Protokolle dieser Übung, älteste zuerst. lasten: verfügbare
  * Gewichte (leer: Körpergewicht, Zeit oder Strecke).
  */
-export function vorgabe(profil: Profil, rolle: Rolle, u: Uebung, saetze: number, verlauf: Protokoll[], lasten: number[], woche: number): Vorgabe {
+export function vorgabe(profil: Profil, rolle: Rolle, u: Uebung, saetze: number, verlauf: Protokoll[], lasten: number[], woche: number, max?: number): Vorgabe {
   const modell = modellFuer(profil, rolle, u, verlauf.length)
   const [lo, hi] = bereich(profil, rolle, u)
   const rir = zielRir(profil, rolle, woche)
@@ -132,6 +132,15 @@ export function vorgabe(profil: Profil, rolle: Rolle, u: Uebung, saetze: number,
   }
 
   const saetzeLetzte = gezaehlt(letzte)
+  if (!saetzeLetzte.length && max && lasten.length && u.belastung === "gewicht") {
+    // Erstes Mal, aber das Maximum aus der Einstufung ist bekannt: Startgewicht daraus berechnen
+    const wdh = Math.round((lo + hi) / 2)
+    const ziel = max / (1 + (wdh + rir) / 30)
+    v.last = abrunden(ziel * (entlastung ? 0.9 : 1), lasten)
+    v.begruendung = "Aus deinem Maximum (" + kg(max) + " kg): etwa " + wdh + " Wiederholungen mit noch " + rir + " im Tank. Passt es nicht, korrigiert die App nach dem ersten Satz."
+    if (entlastung) v.saetze = Math.max(1, Math.ceil(saetze / 2))
+    return v
+  }
   if (!saetzeLetzte.length) {
     v.last = null
     v.begruendung = lasten.length
@@ -217,4 +226,44 @@ export function ausdauerVorgabe(u: Uebung, minuten: number, woche: number): Vorg
   }
   const min = entlastung ? Math.round(netto * 0.7) : netto
   return { saetze: 1, wdh_von: 1, wdh_bis: 1, rir: 4, last: min * 60, modell: "zeit", pause_s: 0, begruendung: "Ruhig: du kannst dabei noch ganze Sätze sprechen." }
+}
+
+export interface Anpassung {
+  richtung: "hoch" | "runter" | "gleich"
+  text: string
+  last?: number | null
+  wdh?: number
+}
+
+/**
+ * Nach einem abgehakten Satz: passt das Gewicht, oder sollen die nächsten Sätze schwerer oder leichter werden?
+ * Grundlage ist das geschätzte Maximum aus Gewicht, Wiederholungen und Reserve (Epley mit RIR).
+ */
+export function satzAnpassung(satz: Satz, v: Vorgabe, belastung: Uebung["belastung"], lasten: number[]): Anpassung | null {
+  const lo = v.wdh_von
+  const hi = v.wdh_bis
+  const zuLeicht = satz.rir >= v.rir + 2 || satz.wdh > hi + 1
+  const zuSchwer = satz.rir < v.rir - 1 || satz.wdh < lo
+  if (belastung === "gewicht" && satz.last && lasten.length) {
+    const max = e1rm(satz)
+    const zielWdh = Math.round((lo + hi) / 2)
+    const roh = max / (1 + (zielWdh + v.rir) / 30)
+    let neu = abrunden(roh, lasten) ?? satz.last
+    if (!zuLeicht && !zuSchwer) return { richtung: "gleich", text: "Passt genau: " + kg(satz.last) + " kg für die nächsten Sätze beibehalten.", last: satz.last }
+    if (zuLeicht && neu <= satz.last) neu = hoeher(satz.last, lasten)
+    if (zuSchwer && neu >= satz.last) neu = niedriger(satz.last, lasten)
+    if (neu === satz.last) return { richtung: "gleich", text: "Kein passenderes Gewicht vorhanden: " + kg(satz.last) + " kg beibehalten.", last: satz.last }
+    const grund = zuLeicht ? "leichter als geplant" : "schwerer als geplant"
+    return {
+      richtung: neu > satz.last ? "hoch" : "runter",
+      text: "War " + grund + " (" + satz.wdh + " Wdh, " + (satz.rir >= 5 ? "5+" : satz.rir) + " im Tank, Maximum etwa " + kg(Math.round(max)) + " kg). Nächste Sätze: " + kg(neu) + " kg.",
+      last: neu,
+    }
+  }
+  if (belastung === "wiederholungen") {
+    if (zuLeicht) return { richtung: "hoch", text: "Noch viel im Tank: nächster Satz " + (satz.wdh + 2) + " Wiederholungen oder langsamer absenken.", wdh: satz.wdh + 2 }
+    if (zuSchwer) return { richtung: "runter", text: "Sehr knapp: nächster Satz " + Math.max(1, satz.wdh - 2) + " Wiederholungen, dafür sauber.", wdh: Math.max(1, satz.wdh - 2) }
+    return { richtung: "gleich", text: "Passt: so weitermachen." }
+  }
+  return null
 }

@@ -380,6 +380,10 @@ export interface Daten {
   messungen: Messung[]
   /** Werte aus Health Connect, je Tag */
   gesundheit?: { verbunden: boolean; tage: Record<string, Tageswerte> }
+  /** Geschätztes oder gemessenes Maximum (1 Wiederholung) je Übung aus der Einstufung */
+  maxwerte?: Record<string, { kg: number; datum: string }>
+  /** Wann die Einstufung erledigt wurde */
+  einstufung?: { kraft?: string; mobil?: string }
 }
 
 export interface Tageswerte {

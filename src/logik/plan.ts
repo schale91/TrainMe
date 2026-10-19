@@ -280,7 +280,7 @@ export function wochenplan(profil: Profil, daten: Daten, montag: string): Einhei
           return { ...p, vorgabe: ausdauerVorgabe(p.uebung, rest, woche) }
         }
         const verlauf = verlaufVon(daten.protokoll, p.uebung.id, datum)
-        const v = vorgabe(profil, p.rolle, p.uebung, saetze[i], verlauf, lastenVon(p), woche)
+        const v = vorgabe(profil, p.rolle, p.uebung, saetze[i], verlauf, lastenVon(p), woche, daten.maxwerte?.[p.uebung.id]?.kg)
         if (t.einschraenkung === 2) v.rir = Math.max(v.rir, 3)
         if (plateau(verlauf) && !istEntlastung(woche)) v.begruendung += " Seit drei Einheiten kein neuer Bestwert: Schlaf, Essen und Technik prüfen, sonst nach dem Block die Übung tauschen."
         return { ...p, vorgabe: v }
@@ -344,7 +344,7 @@ export function alternativen(profil: Profil, ort: Ort, muster: Muster, ohne: str
 export function platzMit(profil: Profil, daten: Daten, datum: string, ort: Ort, alt: Platz, u: Uebung): Platz {
   const g = passendeGruppe(u, ort.geraete)
   const lasten = u.belastung === "gewicht" && g && g.last ? verfuegbar(g.last, ort.gewichte) : []
-  const v = vorgabe(profil, alt.rolle, u, alt.vorgabe.saetze, verlaufVon(daten.protokoll, u.id, datum), lasten, blockWoche(profil, datum))
+  const v = vorgabe(profil, alt.rolle, u, alt.vorgabe.saetze, verlaufVon(daten.protokoll, u.id, datum), lasten, blockWoche(profil, datum), daten.maxwerte?.[u.id]?.kg)
   if (istEntlastung(blockWoche(profil, datum))) v.saetze = alt.vorgabe.saetze
   return { ...alt, uebung: u, vorgabe: v }
 }

@@ -197,7 +197,7 @@ function wertText(t: BeweglichkeitsTest, w: number): string {
   return zahl(w) + " " + t.einheit
 }
 
-function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => void) => void }) {
+export function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => void) => void }) {
   const { daten } = props
   const golf = daten.profil?.sport === "golf"
   const [test, setTest] = useState<BeweglichkeitsTest | null>(null)
