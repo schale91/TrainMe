@@ -1803,53 +1803,6 @@ export const MOBIL_UNTEN: Uebung[] = [
     }
   },
   {
-    id: "innenrotation_sitzend_aktiv",
-    name: "Aktive Hüftinnenrotation im Sitzen",
-    auch: ["Seated Hip Internal Rotation", "Seated Hip IR Lift", "Seated Active Hip Rotation"],
-    muster: "mobilitaet_huefte",
-    art: "mobilitaet",
-    muskeln: ["gesaess_mittel"],
-    sekundaer: ["hueftbeuger", "adduktoren"],
-    geraete: [["bank"], ["box"], []],
-    belastung: "wiederholungen",
-    hoehe_cm: 130,
-    gelenke: {},
-    stufe: 1,
-    golf: 2,
-    sport: ["golf"],
-    einseitig: true,
-    hinweis: "Ohne Gerät auf einem Stuhl.",
-    info: {
-      kurz: "Aktive Hüftinnenrotation auf einer Bank oder einem Stuhl: Du drehst den Unterschenkel nach außen, während der Oberschenkel liegen bleibt. Eine Übung, die auch im Golf-Fitness-Test geprüft wird.",
-      ausfuehrung: [
-        "Setz dich aufrecht auf eine Bank oder einen Stuhl, die Knie im rechten Winkel, die Füße hängen frei oder stehen am Boden.",
-        "Leg ein zusammengerolltes Handtuch zwischen die Knie oder halte die Knie zusammen.",
-        "Halte die Hände seitlich auf der Bank, damit das Becken gerade bleibt.",
-        "Dreh den rechten Unterschenkel langsam nach außen, so weit es geht, das Knie bleibt an seiner Stelle.",
-        "Halte am Ende zwei Sekunden und führ den Fuß langsam zurück.",
-        "Wiederhole die vorgegebene Anzahl und wechsle die Seite."
-      ],
-      atmung: "Beim Ausdrehen ausatmen, beim Zurückführen einatmen.",
-      fehler: [
-        "Oberkörper lehnt zur Seite: aufrecht bleiben, Becken gerade.",
-        "Knie wandert mit nach innen: Handtuch zwischen den Knien hilft.",
-        "Mit Schwung: langsam und bewusst."
-      ],
-      vorteile: [
-        "Trainiert die aktive Innenrotation der Hüfte.",
-        "Sehr einfach und auch im Büro machbar.",
-        "Zeigt Unterschiede zwischen beiden Hüften."
-      ],
-      tipps: [
-        "Als Fortschritt ein Miniband um die Knöchel legen.",
-        "Vergleiche regelmäßig die Seiten. Werden sie gleicher, wirkt das Training."
-      ],
-      varianten: "Leichter: kleiner Bewegungsumfang. Schwerer: mit Miniband um die Knöchel oder am Ende fünf Sekunden halten.",
-      sicherheit: "Bei Knieschmerzen den Umfang reduzieren, die Drehung kommt aus der Hüfte.",
-      golf: "Die Innenrotation der Hüfte wird im Golf-Fitness-Screening im Sitzen geprüft, weil sie für Rück- und Durchschwung so wichtig ist. Mit dieser Übung trainierst du sie aktiv."
-    }
-  },
-  {
     id: "aussenrotation_sitzend_aktiv",
     name: "Aktive Hüftaußenrotation im Sitzen",
     auch: ["Seated Hip External Rotation", "Seated Hip ER Lift", "Seated Active Hip ER"],
@@ -1866,7 +1819,7 @@ export const MOBIL_UNTEN: Uebung[] = [
     einseitig: true,
     hinweis: "Ohne Gerät auf einem Stuhl.",
     info: {
-      kurz: "Aktive Hüftaußenrotation auf einer Bank oder einem Stuhl: Der Unterschenkel dreht nach innen, der Oberschenkel bleibt ruhig. Das Gegenstück zur aktiven Innenrotation im Sitzen.",
+      kurz: "Aktive Hüftaußenrotation auf einer Bank oder einem Stuhl: Der Unterschenkel dreht nach innen, der Oberschenkel bleibt ruhig. Das Gegenstück zur aktiven Hüftinnenrotation im Sitzen aus dem Golfbereich.",
       ausfuehrung: [
         "Setz dich aufrecht auf eine Bank oder einen Stuhl, die Knie im rechten Winkel und hüftbreit.",
         "Stütz die Hände seitlich ab, um das Becken stabil zu halten.",

@@ -3349,7 +3349,7 @@ export const RUMPF: Uebung[] = [
   },
   {
     id: "landmine_rotation",
-    name: "Landmine-Rotation",
+    name: "Landmine-Rotation stehend",
     auch: ["Landmine Rotation", "Landmine Twist", "Landmine Russian Twist"],
     muster: "rotation",
     art: "kraft",
@@ -3675,7 +3675,7 @@ export const RUMPF: Uebung[] = [
   },
   {
     id: "kabel_rotation_halbkniend",
-    name: "Kabelrotation halbkniend",
+    name: "Kabelrotation im Halbkniestand",
     auch: ["Half-Kneeling Cable Rotation", "Half-Kneeling Cable Torso Rotation"],
     muster: "rotation",
     art: "kraft",

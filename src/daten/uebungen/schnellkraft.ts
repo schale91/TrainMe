@@ -3006,7 +3006,7 @@ export const SCHNELLKRAFT: Uebung[] = [
   },
   {
     id: "pendellauf",
-    name: "Pendelläufe",
+    name: "Pendelläufe für Schnelligkeit",
     auch: ["Shuttle Runs", "Shuttle Sprints", "Suicides"],
     muster: "sprint",
     art: "kraft",

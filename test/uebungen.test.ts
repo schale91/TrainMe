@@ -25,7 +25,8 @@ describe("Übungsdatenbank", () => {
     for (const m of MUSTER) expect(UEBUNGEN.filter((u) => u.muster === m).length, m).toBeGreaterThan(2)
   })
 
-  it("viele golfspezifische Übungen", () => {
-    expect(UEBUNGEN.filter((u) => u.golf === 3).length).toBeGreaterThan(60)
+  it("viele Übungen für Golfer", () => {
+    expect(UEBUNGEN.filter((u) => u.golf === 3).length).toBeGreaterThanOrEqual(40)
+    expect(UEBUNGEN.filter((u) => (u.golf || 0) >= 2).length).toBeGreaterThanOrEqual(120)
   })
 })

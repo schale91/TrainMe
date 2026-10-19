@@ -2348,9 +2348,9 @@ export const MOBIL_OBEN: Uebung[] = [
     }
   },
   {
-    id: "wall_slide",
-    name: "Wall Slide",
-    auch: ["Wall Slide", "Forearm Wall Slide", "Unterarm-Wandgleiten"],
+    id: "wandgleiten_mobil",
+    name: "Wandgleiten mit Unterarmen",
+    auch: ["Forearm Wall Slide", "Wall Slide Mobility", "Unterarm-Wandgleiten"],
     muster: "mobilitaet_schulter",
     art: "mobilitaet",
     muskeln: ["schulter_vorn", "trapez"],
@@ -3412,47 +3412,6 @@ export const MOBIL_OBEN: Uebung[] = [
     }
   },
   {
-    id: "kinn_einziehen_liegend",
-    name: "Kinn einziehen in Rückenlage mit Kopfheben",
-    auch: ["Supine Chin Tuck Head Lift", "Deep Neck Flexor Activation", "Supine Chin Tuck"],
-    muster: "mobilitaet_nacken",
-    art: "mobilitaet",
-    muskeln: ["nacken"],
-    geraete: [["matte"], []],
-    belastung: "zeit",
-    hoehe_cm: 130,
-    gelenke: { nacken: 1 },
-    stufe: 2,
-    info: {
-      kurz: "In Rückenlage ziehst du das Kinn ein und hebst den Kopf nur wenige Millimeter vom Boden ab. Kräftigt die tiefen Halsbeuger, die eine aufrechte Kopfhaltung unterstützen.",
-      ausfuehrung: [
-        "Leg dich auf den Rücken, die Knie aufgestellt, der Kopf liegt ohne Kissen oder auf einem flachen Handtuch.",
-        "Zieh das Kinn sanft ein, als würdest du leicht nicken, der Nacken wird lang.",
-        "Heb den Kopf nun nur wenige Millimeter vom Boden ab, das Kinn bleibt eingezogen.",
-        "Halte 5 bis 10 Sekunden, ohne dass das Kinn nach vorn schiebt.",
-        "Leg den Kopf ab und entspanne kurz.",
-        "Wiederhole 5 bis 10 Mal, so dass du insgesamt etwa 30 bis 60 Sekunden hältst."
-      ],
-      atmung: "Gleichmäßig weiteratmen, nicht die Luft anhalten.",
-      fehler: [
-        "Kinn schiebt beim Anheben nach vorn: lieber weniger hoch und das Kinn eingezogen halten.",
-        "Zu hoch anheben: wenige Millimeter genügen.",
-        "Halsvorderseite spannt sichtbar stark an: weniger Kraft, die tiefen Muskeln sollen arbeiten."
-      ],
-      vorteile: [
-        "Kräftigt die tiefen Halsbeuger, die oft schwach sind.",
-        "Ergänzt Dehnungen des Nackens um einen Kraftanteil.",
-        "Wird in der Physiotherapie häufig bei Nackenbeschwerden eingesetzt."
-      ],
-      tipps: [
-        "Die Zunge locker an den Gaumen legen, das entspannt die Kiefermuskeln.",
-        "Qualität vor Dauer: lieber kürzer und sauber."
-      ],
-      varianten: "Leichter: nur Kinn einziehen ohne Anheben. Schwerer: länger halten.",
-      sicherheit: "Bei Schwindel, akuten Nackenschmerzen oder Ausstrahlung in die Arme nicht ausführen."
-    }
-  },
-  {
     id: "nacken_cars",
     name: "Nackenkreisen kontrolliert (CARs)",
     auch: ["Neck CARs", "Cervical CARs", "Controlled Neck Rotations"],
@@ -4260,6 +4219,1240 @@ export const MOBIL_OBEN: Uebung[] = [
       ],
       varianten: "Leichter: weniger Druck. Schwerer: Hand dabei öffnen und schließen oder das Handgelenk bewegen.",
       sicherheit: "Nicht über Sehnenscheidenentzündungen oder akute Verletzungen rollen."
+    }
+  },
+  {
+    id: "skin_the_cat",
+    name: "Skin the Cat",
+    auch: ["Skin the Cat", "Hautabzieher", "Bar Skin the Cat"],
+    muster: "mobilitaet_schulter",
+    art: "mobilitaet",
+    muskeln: ["brust", "schulter_vorn", "latissimus"],
+    sekundaer: ["bauch", "bizeps", "unterarm"],
+    geraete: [["schlingentrainer"], ["klimmzugstange"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 250,
+    gelenke: { schulter: 2, ellbogen: 1 },
+    stufe: 3,
+    info: {
+      kurz: "Turnelement, bei dem du dich aus dem Hang an Ringen oder Stange mit angezogenen Beinen rückwärts durch die Arme drehst, bis zum Deutschen Hängen und zurück. Verbindet Schulterbeweglichkeit in der Streckung mit Rumpfkraft.",
+      ausfuehrung: [
+        "Häng dich mit schulterbreitem Griff an Ringe, Schlingen oder eine Stange, die Arme sind gestreckt.",
+        "Zieh die Knie zur Brust und roll das Becken nach hinten oben, so dass die Beine zwischen den Armen hindurch nach hinten gehen.",
+        "Dreh dich langsam weiter, bis die Beine hinter dir nach unten zeigen und die Schultern in die Streckung kommen (Deutsches Hängen).",
+        "Bleib nur so tief, wie die Schulter es ohne Schmerz erlaubt, und halte kurz.",
+        "Zieh die Beine mit Bauchkraft zurück durch die Arme in den normalen Hang.",
+        "Mache 2 bis 5 kontrollierte Wiederholungen."
+      ],
+      atmung: "Ausatmen beim Durchdrehen, in der Endposition ruhig weiteratmen, ausatmen beim Zurückziehen.",
+      fehler: [
+        "Schwung statt Kontrolle: die Bewegung langsam ausführen.",
+        "Fallen in die tiefe Position: Schultern kontrolliert absenken.",
+        "Ellbogen gebeugt in der Endposition: Arme gestreckt halten."
+      ],
+      vorteile: [
+        "Trainiert Beweglichkeit und Kontrolle der Schulter in der Streckung.",
+        "Stärkt Bauch und Rumpf beim Durchziehen der Beine.",
+        "Bereitet auf anspruchsvolle Turn- und Calisthenics-Elemente vor."
+      ],
+      tipps: [
+        "Starte an Schlingen in niedriger Höhe mit den Füßen am Boden als Sicherung.",
+        "Beherrsche zuerst das Deutsche Hängen mit Fußunterstützung."
+      ],
+      varianten: "Leichter: Deutsches Hängen mit Füßen am Boden oder nur bis zur umgedrehten Hängeposition. Schwerer: mit gestreckten Beinen.",
+      sicherheit: "Nur mit gesunden Schultern und Erfahrung im Hängen. Nicht bei Instabilität, früheren Ausrenkungen oder Bizepssehnenbeschwerden."
+    }
+  },
+  // ---------- Ganzkörper ----------
+  {
+    id: "sonnengruss",
+    name: "Sonnengruß A",
+    auch: ["Sun Salutation A", "Surya Namaskar A"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["ganzkoerper"],
+    sekundaer: ["beinbeuger", "latissimus", "bauch", "brust"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 240,
+    gelenke: { handgelenk: 1, schulter: 1 },
+    stufe: 2,
+    info: {
+      kurz: "Klassische Yoga-Abfolge aus Armheben, Vorbeuge, Brett, heraufschauendem und herabschauendem Hund. Bewegt den ganzen Körper durch Beugung und Streckung und eignet sich als Aufwärmen oder ruhiger Start in den Tag.",
+      ausfuehrung: [
+        "Steh aufrecht am vorderen Mattenende, die Füße hüftbreit. Heb die Arme mit dem Einatmen seitlich über den Kopf.",
+        "Beuge dich mit dem Ausatmen aus der Hüfte nach vorn, die Hände Richtung Boden, die Knie dürfen gebeugt sein.",
+        "Richte den Rücken mit dem Einatmen halb auf, die Hände an den Schienbeinen, der Rücken lang.",
+        "Setz die Hände ab, tritt oder springe zurück ins Brett und senk dich kontrolliert ab, bei Bedarf mit Knien am Boden.",
+        "Schieb dich mit dem Einatmen in den heraufschauenden Hund oder die Kobra, mit dem Ausatmen hoch in den herabschauenden Hund und bleib dort drei Atemzüge.",
+        "Geh mit den Füßen zu den Händen, richte dich über die halbe Vorbeuge auf und heb die Arme. Mache 3 bis 5 Runden."
+      ],
+      atmung: "Jede Bewegung folgt einem Atemzug: Aufrichten und Öffnen mit dem Einatmen, Beugen und Absenken mit dem Ausatmen.",
+      fehler: [
+        "Rundrücken in der Vorbeuge: Knie beugen und aus der Hüfte kippen.",
+        "Durchhängen im Brett: Bauch und Gesäß fest.",
+        "Schultern zu den Ohren im heraufschauenden Hund: Schultern nach hinten unten ziehen.",
+        "Zu schnell: der Atem gibt das Tempo vor."
+      ],
+      vorteile: [
+        "Bewegt in wenigen Minuten den ganzen Körper.",
+        "Dehnt Beinrückseite, Waden, Schultern und Bauch.",
+        "Kräftigt Arme und Rumpf in Brett und Absenken.",
+        "Verbindet Bewegung und Atmung und kann beruhigend wirken."
+      ],
+      tipps: [
+        "Für Einsteiger: Knie beim Absenken am Boden und Kobra statt heraufschauendem Hund.",
+        "Drei langsame Runden sind ein sehr gutes Aufwärmen vor dem Training."
+      ],
+      varianten: "Leichter: ohne Absenken aus dem Brett, Kobra statt heraufschauender Hund. Schwerer: Sonnengruß B mit Stuhl- und Kriegerhaltung.",
+      sicherheit: "Bei Handgelenk-, Schulter- oder Bandscheibenbeschwerden einzelne Elemente anpassen. Bei Bluthochdruck langsam aufrichten."
+    }
+  },
+  {
+    id: "sonnengruss_b",
+    name: "Sonnengruß B",
+    auch: ["Sun Salutation B", "Surya Namaskar B"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["ganzkoerper"],
+    sekundaer: ["quadrizeps", "hueftbeuger", "beinbeuger", "schulter_vorn"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 240,
+    gelenke: { handgelenk: 1, schulter: 1, knie: 1 },
+    stufe: 3,
+    info: {
+      kurz: "Erweiterte Form des Sonnengrußes mit Stuhlhaltung und Krieger 1 auf beiden Seiten. Fordert mehr Kraft in Beinen und Schultern und bewegt zusätzlich die Hüftbeuger.",
+      ausfuehrung: [
+        "Steh am vorderen Mattenende, die Füße zusammen. Beuge mit dem Einatmen die Knie in die Stuhlhaltung und heb die Arme über den Kopf.",
+        "Beuge dich mit dem Ausatmen nach vorn, richte dich halb auf, tritt zurück ins Brett und senk dich ab.",
+        "Geh über den heraufschauenden Hund oder die Kobra in den herabschauenden Hund.",
+        "Setz den rechten Fuß zwischen die Hände, dreh die hintere Ferse ab und richte dich mit dem Einatmen in Krieger 1 auf, die Arme über dem Kopf.",
+        "Setz die Hände ab, geh zurück ins Brett, senk dich ab, über Kobra in den Hund und wiederhole Krieger 1 mit links.",
+        "Nach dem letzten Hund nach vorn gehen, über die Vorbeuge in die Stuhlhaltung aufrichten. Mache 2 bis 3 Runden."
+      ],
+      atmung: "Ein Atemzug pro Bewegung, im herabschauenden Hund am Ende drei bis fünf Atemzüge.",
+      fehler: [
+        "Knie fällt in der Stuhlhaltung nach innen: Knie über den Zehen.",
+        "Vorderes Knie schiebt im Krieger über den Fuß: Knie über dem Sprunggelenk.",
+        "Hohlkreuz mit Armen über Kopf: Rippen unten lassen.",
+        "Absenken ohne Spannung: Knie absetzen, wenn die Kraft nachlässt."
+      ],
+      vorteile: [
+        "Bewegt zusätzlich Beine und Hüftbeuger.",
+        "Kräftigt Beine und Schultern mehr als Sonnengruß A.",
+        "Gutes, kompaktes Ganzkörper-Aufwärmen."
+      ],
+      tipps: [
+        "Erst Sonnengruß A sicher beherrschen.",
+        "Lieber weniger Runden in ruhigem Atemrhythmus als viele hektische."
+      ],
+      varianten: "Leichter: Sonnengruß A. Schwerer: im Krieger und in der Stuhlhaltung länger halten.",
+      sicherheit: "Bei Knie-, Handgelenk- oder Schulterbeschwerden einzelne Elemente anpassen."
+    }
+  },
+  {
+    id: "herabschauender_hund",
+    name: "Herabschauender Hund",
+    auch: ["Downward Dog", "Downward-Facing Dog", "Adho Mukha Svanasana"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["beinbeuger", "waden", "latissimus"],
+    sekundaer: ["schulter_vorn", "oberer_ruecken", "unterarm"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: { handgelenk: 1, schulter: 1 },
+    stufe: 1,
+    info: {
+      kurz: "Yoga-Grundhaltung in Form eines umgedrehten V: Hände und Füße am Boden, das Becken hoch. Dehnt Beinrückseite, Waden, Schultern und Latissimus zugleich.",
+      ausfuehrung: [
+        "Starte im Vierfüßlerstand, die Hände etwas vor den Schultern, die Finger gespreizt.",
+        "Stell die Zehen auf und schieb das Becken nach hinten oben, bis Arme und Rücken eine Linie bilden.",
+        "Drück die Hände fest in den Boden und schieb die Brust Richtung Oberschenkel.",
+        "Die Knie dürfen gebeugt sein, wichtig ist ein langer Rücken. Die Fersen sinken Richtung Boden.",
+        "Der Kopf hängt locker zwischen den Armen.",
+        "Halte 30 bis 60 Sekunden, dann Knie ablegen."
+      ],
+      atmung: "Ruhig und tief atmen, mit dem Ausatmen das Becken weiter nach hinten oben schieben.",
+      fehler: [
+        "Rundrücken mit gestreckten Knien: Knie beugen, das Becken nach hinten oben kippen.",
+        "Schultern zu den Ohren: Arme nach außen drehen, Schultern weg von den Ohren.",
+        "Gewicht nur auf den Handballen: ganze Hand und Fingerkuppen drücken."
+      ],
+      vorteile: [
+        "Dehnt die gesamte Körperrückseite in einer Haltung.",
+        "Öffnet die Schultern über Kopf.",
+        "Kräftigt Schultern und Arme leicht."
+      ],
+      tipps: [
+        "Abwechselnd die Fersen in den Boden treten lockert die Waden.",
+        "Bei sehr festen Beinrückseiten bleiben die Knie deutlich gebeugt."
+      ],
+      varianten: "Leichter: halber Hund an der Wand. Schwerer: ein Bein nach hinten oben heben.",
+      sicherheit: "Bei Handgelenk- oder Schulterschmerzen sowie bei Bluthochdruck oder Augenerkrankungen mit erhöhtem Augeninnendruck vorsichtig."
+    }
+  },
+  {
+    id: "hund_kobra_flow",
+    name: "Hund-Kobra-Flow",
+    auch: ["Downward Dog to Cobra", "Down Dog to Up Dog", "Dog to Cobra Flow"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["ganzkoerper"],
+    sekundaer: ["bauch", "beinbeuger", "latissimus", "brust"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { handgelenk: 1, schulter: 1, ruecken: 1 },
+    stufe: 2,
+    info: {
+      kurz: "Fließender Wechsel zwischen herabschauendem Hund und Kobra oder heraufschauendem Hund. Bewegt die Wirbelsäule abwechselnd in Beugung und Streckung und wärmt den ganzen Körper auf.",
+      ausfuehrung: [
+        "Starte im herabschauenden Hund, die Hände schulterbreit, die Füße hüftbreit.",
+        "Schieb den Körper mit dem Einatmen nach vorn, bis die Schultern über den Händen sind.",
+        "Lass das Becken Richtung Boden sinken und öffne die Brust nach vorn oben in die Kobra oder den heraufschauenden Hund.",
+        "Halte die Schultern tief, die Arme sind gestreckt oder leicht gebeugt.",
+        "Schieb das Becken mit dem Ausatmen zurück nach hinten oben in den Hund.",
+        "Mache 8 bis 10 fließende Wiederholungen."
+      ],
+      atmung: "Einatmen in die Kobra, ausatmen in den Hund.",
+      fehler: [
+        "Durchhängen im unteren Rücken: Gesäß leicht anspannen, Brust statt Bauch nach vorn.",
+        "Schultern zu den Ohren in der Kobra: Schulterblätter nach hinten unten.",
+        "Zu schnell: Atemrhythmus halten."
+      ],
+      vorteile: [
+        "Mobilisiert Wirbelsäule, Schultern und Hüften in einer Bewegung.",
+        "Dehnt Bauch und Beinrückseite im Wechsel.",
+        "Wärmt schnell auf."
+      ],
+      tipps: [
+        "Bei empfindlichem Rücken die Knie im Übergang ablegen.",
+        "Gut als Teil eines kurzen Aufwärmens vor Krafttraining."
+      ],
+      varianten: "Leichter: aus dem Vierfüßlerstand mit Knien am Boden. Schwerer: im heraufschauenden Hund mit gehobenen Oberschenkeln.",
+      sicherheit: "Bei Beschwerden im unteren Rücken die Streckung klein halten oder auslassen."
+    }
+  },
+  {
+    id: "inchworm",
+    name: "Raupe",
+    auch: ["Inchworm", "Inchworm Walkout", "Walkout"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["beinbeuger", "bauch"],
+    sekundaer: ["schulter_vorn", "waden", "trizeps"],
+    geraete: [[]],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { handgelenk: 1, schulter: 1 },
+    stufe: 1,
+    info: {
+      kurz: "Aus dem Stand beugst du dich vor, gehst mit den Händen nach vorn bis in den Liegestütz und wieder zurück. Dynamische Dehnung der Beinrückseite mit Aktivierung von Rumpf und Schultern.",
+      ausfuehrung: [
+        "Stell dich hüftbreit hin und beuge dich aus der Hüfte nach vorn, bis die Hände den Boden berühren. Die Knie dürfen leicht gebeugt sein.",
+        "Lauf mit den Händen langsam nach vorn, bis du im hohen Brett bist, Schultern über den Händen.",
+        "Halte kurz die Brettposition mit festem Bauch.",
+        "Lauf mit den Händen zurück zu den Füßen, die Beine bleiben möglichst gestreckt.",
+        "Richte dich auf oder wiederhole direkt aus der Vorbeuge.",
+        "Mache 6 bis 10 Wiederholungen."
+      ],
+      atmung: "Ausatmen beim Vorbeugen, ruhig weiteratmen beim Laufen, im Brett einen Atemzug halten.",
+      fehler: [
+        "Durchhängen im Brett: Bauch und Gesäß fest.",
+        "Zu große Handschritte: kleine Schritte, Kontrolle behalten.",
+        "Knie durchgedrückt bei sehr steifer Beinrückseite: Knie leicht beugen."
+      ],
+      vorteile: [
+        "Dehnt die Beinrückseite dynamisch.",
+        "Aktiviert Bauch und Schultern.",
+        "Gut als Aufwärmübung vor Sprints, Fußball und Krafttraining."
+      ],
+      tipps: [
+        "Im Brett einen Liegestütz einbauen für mehr Kraftanteil.",
+        "Mit den Füßen in kleinen Schritten zu den Händen gehen statt mit den Händen zurück, verstärkt die Dehnung."
+      ],
+      varianten: "Leichter: Knie stärker gebeugt, kleinerer Weg. Schwerer: Liegestütz im Brett oder Hände weit über das Brett hinaus führen.",
+      sicherheit: "Bei Handgelenk- oder Schulterbeschwerden kleinerer Weg. Bei Rückenbeschwerden die Knie beugen."
+    }
+  },
+  {
+    id: "baer_hocke_flow",
+    name: "Bär-zu-Hocke-Flow",
+    auch: ["Bear to Squat", "Bear to Deep Squat Flow", "Squat to Bear"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["ganzkoerper"],
+    sekundaer: ["quadrizeps", "gesaess", "schulter_vorn", "bauch"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { handgelenk: 1, knie: 1, huefte: 1 },
+    stufe: 2,
+    info: {
+      kurz: "Aus der Bärenposition auf Händen und Füßen schiebst du dich zurück in eine tiefe Hocke und wieder vor. Verbindet Hüft-, Sprunggelenk- und Schulterbeweglichkeit mit Rumpfkontrolle.",
+      ausfuehrung: [
+        "Geh in den Vierfüßlerstand, stell die Zehen auf und heb die Knie ein paar Zentimeter vom Boden: die Bärenposition.",
+        "Schieb das Gewicht langsam nach hinten, bis du in einer tiefen Hocke sitzt, die Hände bleiben vorn am Boden.",
+        "Lass das Gesäß zu den Fersen sinken, die Fersen gehen Richtung Boden.",
+        "Richte in der Hocke den Oberkörper kurz auf und heb die Hände, wenn möglich.",
+        "Setz die Hände wieder ab und schieb dich zurück in die Bärenposition.",
+        "Mache 6 bis 10 langsame Wiederholungen."
+      ],
+      atmung: "Ausatmen beim Absitzen in die Hocke, einatmen beim Vorschieben in den Bären.",
+      fehler: [
+        "Knie fallen nach innen: Knie in Richtung der Zehen.",
+        "Rundrücken in der Hocke: Brust aufrichten, so weit es geht.",
+        "Zu schnell: langsam und kontrolliert."
+      ],
+      vorteile: [
+        "Mobilisiert Hüfte, Sprunggelenke und Schultern gleichzeitig.",
+        "Schult die tiefe Hocke.",
+        "Gut als Aufwärmen vor Kniebeugen."
+      ],
+      tipps: [
+        "Füße etwas weiter als hüftbreit erleichtern die tiefe Hocke.",
+        "In der Hocke die Ellbogen innen gegen die Knie drücken, um die Hüfte weiter zu öffnen."
+      ],
+      varianten: "Leichter: Knie am Boden und nur zurück in die Kindhaltung. Schwerer: in der Hocke Rotation mit einem Arm zur Decke.",
+      sicherheit: "Bei Kniebeschwerden die Hocke nur so tief wie schmerzfrei."
+    }
+  },
+  {
+    id: "skorpion",
+    name: "Skorpion in Bauchlage",
+    auch: ["Prone Scorpion", "Scorpion Stretch"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["hueftbeuger", "schraege_bauch", "brust"],
+    sekundaer: ["quadrizeps", "ruecken_unten"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: { ruecken: 1 },
+    stufe: 2,
+    sport: ["golf", "fussball"],
+    golf: 1,
+    einseitig: true,
+    info: {
+      kurz: "In Bauchlage führst du ein angewinkeltes Bein über den Körper zur Gegenseite, die Schultern bleiben am Boden. Dynamische Dehnung für Hüftbeuger, Bauch und Brust mit Rotation der Wirbelsäule.",
+      ausfuehrung: [
+        "Leg dich auf den Bauch, die Arme seitlich in T-Form ausgestreckt, die Stirn oder das Kinn am Boden.",
+        "Beuge das rechte Knie und heb das rechte Bein vom Boden.",
+        "Führe den rechten Fuß langsam über den Körper Richtung linke Hand.",
+        "Die Schultern und Arme bleiben so gut es geht am Boden.",
+        "Führe das Bein kontrolliert zurück und wechsle die Seite.",
+        "Mache 6 bis 8 Wiederholungen je Seite."
+      ],
+      atmung: "Ausatmen beim Überkreuzen, einatmen beim Zurückführen.",
+      fehler: [
+        "Schwung: langsam und kontrolliert bewegen.",
+        "Schultern heben ab: kleinerer Umfang.",
+        "Schmerz im unteren Rücken: weniger weit drehen."
+      ],
+      vorteile: [
+        "Dehnt Hüftbeuger, Bauch und Brust in einer Bewegung.",
+        "Mobilisiert die Wirbelsäule in Rotation und Streckung.",
+        "Gutes Aufwärmen vor Lauf- und Rotationssport."
+      ],
+      tipps: [
+        "Kombiniere sie mit dem Skorpion in Rückenlage (Bein über den Körper in Rückenlage).",
+        "Langsam steigern, zu Beginn nur halber Weg."
+      ],
+      varianten: "Leichter: kleiner Umfang, Fuß nur zur Mitte. Schwerer: in der Endposition zwei Sekunden halten.",
+      sicherheit: "Bei Beschwerden im unteren Rücken nur sehr klein oder auslassen."
+    }
+  },
+  {
+    id: "kobra",
+    name: "Kobra",
+    auch: ["Cobra Pose", "Bhujangasana", "Prone Press-Up Light"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["bauch", "ruecken_unten"],
+    sekundaer: ["brust", "hueftbeuger"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { ruecken: 1 },
+    stufe: 1,
+    info: {
+      kurz: "In Bauchlage hebst du mit Unterstützung der Hände die Brust vom Boden, das Becken bleibt liegen. Streckt die Wirbelsäule und dehnt Bauch und Brust.",
+      ausfuehrung: [
+        "Leg dich auf den Bauch, die Beine hüftbreit, die Fußrücken am Boden.",
+        "Setz die Hände neben die unteren Rippen, die Ellbogen zeigen nach hinten und liegen nah am Körper.",
+        "Heb mit dem Einatmen Kopf und Brust an, schieb das Brustbein nach vorn oben.",
+        "Strecke die Arme nur so weit, wie das Becken am Boden bleibt und der untere Rücken angenehm ist.",
+        "Halte die Schultern weg von den Ohren. Halte 15 bis 30 Sekunden.",
+        "Leg dich mit dem Ausatmen wieder ab."
+      ],
+      atmung: "Einatmen beim Aufrichten, in der Haltung ruhig weiteratmen.",
+      fehler: [
+        "Schultern zu den Ohren: Schulterblätter nach hinten unten.",
+        "Kopf weit in den Nacken: Blick schräg nach vorn.",
+        "Zu hoch drücken bis es im Rücken staucht: Arme gebeugt lassen."
+      ],
+      vorteile: [
+        "Streckt die Wirbelsäule als Ausgleich zum Sitzen.",
+        "Dehnt Bauch, Brust und vordere Hüfte.",
+        "Einsteigerfreundlich und gut dosierbar."
+      ],
+      tipps: [
+        "Nimm die Hände kurz vom Boden, um zu spüren, wie viel die Rückenmuskeln selbst schaffen.",
+        "Abwechselnd mit der Kindhaltung ausführen."
+      ],
+      varianten: "Leichter: Sphinx auf den Unterarmen. Schwerer: heraufschauender Hund mit gehobenen Oberschenkeln.",
+      sicherheit: "Bei Wirbelgleiten, Spinalkanalstenose oder Schmerzen bei Rückstreckung nicht ohne Rücksprache."
+    }
+  },
+  {
+    id: "sphinx",
+    name: "Sphinx",
+    auch: ["Sphinx Pose", "Salamba Bhujangasana", "Prone on Elbows"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["bauch", "ruecken_unten"],
+    sekundaer: ["brust", "hueftbeuger"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    info: {
+      kurz: "In Bauchlage stützt du dich auf die Unterarme und lässt den Rücken sanft in die Streckung sinken. Sanftere Version der Kobra, gut für längeres Halten.",
+      ausfuehrung: [
+        "Leg dich auf den Bauch, die Beine hüftbreit.",
+        "Setz die Unterarme parallel auf, die Ellbogen liegen unter oder leicht vor den Schultern.",
+        "Heb Brust und Kopf an, das Becken bleibt am Boden.",
+        "Zieh das Brustbein sanft nach vorn und die Schultern weg von den Ohren.",
+        "Lass Bauch und unteren Rücken entspannt. Halte 30 bis 90 Sekunden.",
+        "Leg dich langsam ab und ruh kurz in Bauchlage."
+      ],
+      atmung: "Ruhig und tief in den Bauch atmen.",
+      fehler: [
+        "Schultern sacken ein: Unterarme leicht in den Boden drücken.",
+        "Kopf in den Nacken: Blick nach vorn.",
+        "Gesäß fest angespannt: entspannt lassen, wenn es angenehm ist."
+      ],
+      vorteile: [
+        "Sanfte Streckung der Wirbelsäule.",
+        "Gut für längeres, entspanntes Halten.",
+        "Ausgleich nach langem Sitzen."
+      ],
+      tipps: [
+        "Ellbogen weiter vorn macht die Haltung sanfter.",
+        "Gut am Ende einer Einheit."
+      ],
+      varianten: "Leichter: Ellbogen weiter vorn. Schwerer: Kobra oder McKenzie-Liegestütz.",
+      sicherheit: "Bei Schmerzen bei Rückstreckung auslassen und abklären lassen."
+    }
+  },
+  {
+    id: "kindhaltung",
+    name: "Kindhaltung",
+    auch: ["Child's Pose", "Balasana"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["ruecken_unten", "latissimus"],
+    sekundaer: ["gesaess", "oberer_ruecken"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    info: {
+      kurz: "Ruhehaltung aus dem Yoga: Gesäß auf den Fersen, Oberkörper nach vorn auf den Oberschenkeln, Arme lang. Dehnt sanft den Rücken und entspannt.",
+      ausfuehrung: [
+        "Knie dich hin, die großen Zehen berühren sich, die Knie sind hüft- bis mattenbreit geöffnet.",
+        "Setz das Gesäß auf die Fersen.",
+        "Leg den Oberkörper nach vorn zwischen oder auf die Oberschenkel.",
+        "Strecke die Arme nach vorn oder leg sie neben die Füße.",
+        "Leg die Stirn auf den Boden oder auf ein Kissen.",
+        "Bleib 30 Sekunden bis 2 Minuten."
+      ],
+      atmung: "Tief in den Rücken atmen, spüre, wie sich der Rücken mit dem Einatmen weitet.",
+      fehler: [
+        "Gesäß hebt ab: Kissen zwischen Gesäß und Fersen.",
+        "Stirn erreicht den Boden nicht und der Nacken spannt: Kissen unter die Stirn.",
+        "Schultern verspannt: Arme neben dem Körper ablegen."
+      ],
+      vorteile: [
+        "Sanfte Dehnung des Rückens.",
+        "Entspannend, gut zwischen anstrengenden Übungen oder am Ende.",
+        "Lädt zu ruhiger Atmung ein."
+      ],
+      tipps: [
+        "Mit gestreckten Armen wird der Latissimus mitgedehnt.",
+        "Weiter geöffnete Knie entlasten den Bauch und öffnen die Hüfte."
+      ],
+      varianten: "Leichter: Kissen unter Gesäß oder Stirn. Schwerer: Kindhaltung mit seitlichem Greifen oder Welpe.",
+      sicherheit: "Bei Knie- oder Sprunggelenkbeschwerden gut polstern."
+    }
+  },
+  {
+    id: "welpe",
+    name: "Welpe",
+    auch: ["Puppy Pose", "Extended Puppy Pose", "Uttana Shishosana"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["latissimus", "brust"],
+    sekundaer: ["oberer_ruecken", "schulter_vorn", "trizeps"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { schulter: 1 },
+    stufe: 1,
+    info: {
+      kurz: "Mischung aus Kindhaltung und herabschauendem Hund: Die Hüften bleiben über den Knien, Arme und Brust sinken nach vorn zum Boden. Streckt die Brustwirbelsäule und dehnt Schultern und Latissimus.",
+      ausfuehrung: [
+        "Geh in den Vierfüßlerstand, die Hüften über den Knien.",
+        "Lauf mit den Händen nach vorn, bis die Arme lang ausgestreckt sind.",
+        "Lass die Brust Richtung Boden sinken, die Hüften bleiben über den Knien.",
+        "Leg die Stirn oder das Kinn ab.",
+        "Drück die Hände leicht in den Boden und zieh die Hüften sanft nach hinten oben.",
+        "Halte 30 bis 60 Sekunden."
+      ],
+      atmung: "Ruhig weiteratmen, mit dem Ausatmen die Brust tiefer sinken lassen.",
+      fehler: [
+        "Hohlkreuz im unteren Rücken: Bauch leicht anspannen.",
+        "Hüften rutschen nach hinten: über den Knien halten.",
+        "Kopf hängt verkrampft: Stirn auf ein Kissen legen."
+      ],
+      vorteile: [
+        "Streckt die Brustwirbelsäule.",
+        "Dehnt Schultern und Latissimus.",
+        "Sanfter Einstieg in Überkopfdehnungen."
+      ],
+      tipps: [
+        "Hände auf Yogablöcke oder Bücher legen verstärkt die Dehnung.",
+        "Ellbogen auf Blöcke und Hände hinter den Kopf ergibt die Gebetsdehnung."
+      ],
+      varianten: "Leichter: Hände weniger weit vorn. Schwerer: Hände erhöht ablegen.",
+      sicherheit: "Bei Schulterschmerzen über Kopf vorsichtig."
+    }
+  },
+  {
+    id: "seitbeuge_stehend",
+    name: "Seitbeuge im Stand",
+    auch: ["Standing Side Bend", "Standing Lateral Stretch", "Crescent Moon Standing"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["schraege_bauch", "latissimus"],
+    sekundaer: ["ruecken_unten"],
+    geraete: [[]],
+    belastung: "zeit",
+    hoehe_cm: 240,
+    gelenke: {},
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Im Stand neigst du den Oberkörper mit über den Kopf gestrecktem Arm zur Seite. Dehnt Rumpfseite, Latissimus und den quadratischen Lendenmuskel.",
+      ausfuehrung: [
+        "Stell dich hüftbreit hin, die Knie locker.",
+        "Heb den rechten Arm über den Kopf, die linke Hand liegt an der Hüfte oder am Oberschenkel.",
+        "Mach dich lang und neige den Oberkörper nach links.",
+        "Schieb die rechte Hüfte leicht nach rechts, so entsteht ein langer Bogen.",
+        "Halte 20 bis 30 Sekunden, der Oberkörper bleibt in einer Ebene.",
+        "Richte dich auf und wechsle danach auf die andere Seite."
+      ],
+      atmung: "In die gedehnte Flanke atmen, mit dem Ausatmen etwas weiter neigen.",
+      fehler: [
+        "Oberkörper kippt nach vorn: seitlich wie zwischen zwei Scheiben bleiben.",
+        "Zusammensacken: zuerst lang machen, dann neigen.",
+        "Schulter zum Ohr: Arm lang, Schulter tief."
+      ],
+      vorteile: [
+        "Dehnt die Rumpfseite einfach und überall.",
+        "Gut nach langem Sitzen.",
+        "Kann Spannungsgefühl im unteren Rücken seitlich lindern."
+      ],
+      tipps: [
+        "Das Bein der gedehnten Seite hinter das andere kreuzen verstärkt die Dehnung.",
+        "Mit beiden Armen über Kopf und gegriffenem Handgelenk ziehen."
+      ],
+      varianten: "Leichter: Arm nicht über Kopf. Schwerer: Beine kreuzen oder Seitdehnung an der Stange.",
+      sicherheit: "Bei Rückenbeschwerden sanft und ohne Federn."
+    }
+  },
+  {
+    id: "seitdehnung_stange",
+    name: "Seitliche Rumpfdehnung an der Stange",
+    auch: ["Quadratus Lumborum Stretch", "QL Stretch at Pole", "Standing Pole Side Stretch"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["ruecken_unten", "schraege_bauch", "latissimus"],
+    sekundaer: ["gesaess_mittel"],
+    geraete: [["wand"], ["klimmzugstange"]],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Du hältst dich mit beiden Händen an einem Pfosten, Türrahmen oder Rack fest und schiebst die Hüfte seitlich weg, bis der Körper ein C bildet. Dehnt gezielt den quadratischen Lendenmuskel und die Rumpfseite.",
+      ausfuehrung: [
+        "Stell dich seitlich neben einen Pfosten oder Türrahmen, etwa eine Armlänge entfernt, der Pfosten ist links.",
+        "Greif den Pfosten mit beiden Händen etwa auf Kopfhöhe.",
+        "Kreuze das rechte Bein hinter das linke.",
+        "Schieb die rechte Hüfte nach rechts weg vom Pfosten, bis der Körper einen Bogen bildet.",
+        "Halte 30 Sekunden mit der Dehnung an der rechten Seite zwischen Becken und Rippen.",
+        "Wechsle danach auf die andere Seite."
+      ],
+      atmung: "Tief in die gedehnte Seite atmen, mit dem Ausatmen die Hüfte weiter wegschieben.",
+      fehler: [
+        "Oberkörper dreht ein: Brust bleibt nach vorn.",
+        "Zu nah am Pfosten: weiter weg stellen für mehr Bogen.",
+        "Schultern zu den Ohren: Arme lang."
+      ],
+      vorteile: [
+        "Gezielte Dehnung des quadratischen Lendenmuskels.",
+        "Der Pfosten nimmt Gewicht ab und erlaubt Entspannung.",
+        "Dehnt nebenbei den Latissimus."
+      ],
+      tipps: [
+        "Kleine Änderungen der Griffhöhe verändern die Stelle der Dehnung.",
+        "Gut nach Kreuzheben oder einseitigem Tragen."
+      ],
+      varianten: "Leichter: Seitbeuge im Stand. Schwerer: Hüfte weiter wegschieben oder Griff tiefer.",
+      sicherheit: "Bei akuten Rückenschmerzen nur sanft."
+    }
+  },
+  {
+    id: "rueckenlage_drehdehnung",
+    name: "Drehdehnung in Rückenlage",
+    auch: ["Supine Twist", "Supine Spinal Twist", "Supta Matsyendrasana"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["schraege_bauch", "gesaess", "ruecken_unten"],
+    sekundaer: ["brust", "oberer_ruecken"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    sport: ["golf"],
+    golf: 1,
+    einseitig: true,
+    info: {
+      kurz: "In Rückenlage lässt du die angewinkelten Knie zu einer Seite sinken, während die Schultern am Boden bleiben. Sanfte, entspannende Rotation für Rücken, Gesäß und Rumpf.",
+      ausfuehrung: [
+        "Leg dich auf den Rücken, die Arme seitlich in T-Form ausgestreckt.",
+        "Zieh beide Knie an, bis Hüfte und Knie etwa 90 Grad gebeugt sind.",
+        "Lass die Knie langsam nach rechts sinken, so weit es angenehm ist.",
+        "Die linke Schulter bleibt möglichst am Boden, der Kopf kann nach links drehen.",
+        "Halte 30 bis 60 Sekunden.",
+        "Hol die Knie zur Mitte und wechsle danach auf die andere Seite."
+      ],
+      atmung: "Tief und ruhig atmen, mit dem Ausatmen die Knie schwerer werden lassen.",
+      fehler: [
+        "Schulter hebt stark ab: Knie auf ein Kissen legen.",
+        "Knie rutschen auseinander: Knie aufeinander lassen.",
+        "Mit Kraft drücken: die Schwerkraft arbeiten lassen."
+      ],
+      vorteile: [
+        "Entspannende Rotation der Wirbelsäule.",
+        "Dehnt Gesäß, Rumpfseite und Brust.",
+        "Ideal am Ende einer Einheit oder vor dem Schlafen."
+      ],
+      tipps: [
+        "Ein gestrecktes unteres Bein und nur ein gekreuztes Knie verändern die Dehnung Richtung Gesäß.",
+        "Die Hand auf dem oberen Knie gibt etwas Gewicht."
+      ],
+      varianten: "Leichter: Kissen unter die Knie. Schwerer: Knie höher zur Brust ziehen oder oberes Bein strecken.",
+      sicherheit: "Bei Bandscheibenproblemen sanft und ohne Druck."
+    }
+  },
+  {
+    id: "scheibenwischer",
+    name: "Scheibenwischer in Rückenlage für die Wirbelsäule",
+    auch: ["Windshield Wipers", "Supine Knee Rocks", "Lying Knee Drops"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["schraege_bauch", "ruecken_unten"],
+    sekundaer: ["gesaess", "gesaess_mittel"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    sport: ["golf"],
+    golf: 1,
+    info: {
+      kurz: "In Rückenlage mit aufgestellten Füßen lässt du die Knie rhythmisch von einer Seite zur anderen pendeln. Lockert die Lendenwirbelsäule und die Hüften sanft durch kleine Rotationen.",
+      ausfuehrung: [
+        "Leg dich auf den Rücken, stell die Füße etwas weiter als hüftbreit auf, die Arme liegen seitlich.",
+        "Lass beide Knie langsam nach rechts sinken, so weit es angenehm ist.",
+        "Führe sie durch die Mitte nach links.",
+        "Die Schultern bleiben am Boden, die Bewegung ist locker und rhythmisch.",
+        "Steigere den Umfang langsam.",
+        "Mache 10 bis 15 Wiederholungen je Seite."
+      ],
+      atmung: "Ausatmen beim Absinken, einatmen zurück zur Mitte.",
+      fehler: [
+        "Zu schnelles Pendeln: ruhig und gleichmäßig.",
+        "Schultern heben ab: Umfang verkleinern.",
+        "Füße zu eng: weiter auseinander stellen."
+      ],
+      vorteile: [
+        "Sanfte Mobilisation der Lendenwirbelsäule.",
+        "Lockert Hüften und Rumpf.",
+        "Gut am Morgen oder nach langem Sitzen."
+      ],
+      tipps: [
+        "Weiter gestellte Füße bewegen auch die Hüftrotation.",
+        "Gut vor der Drehdehnung in Rückenlage."
+      ],
+      varianten: "Leichter: kleiner Umfang. Schwerer: Beine angewinkelt angehoben, Füße in der Luft.",
+      sicherheit: "Bei Rückenschmerzen nur im schmerzfreien Bereich."
+    }
+  },
+  {
+    id: "knie_zur_brust",
+    name: "Knie zur Brust",
+    auch: ["Knees to Chest", "Double Knee to Chest", "Apanasana"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["ruecken_unten", "gesaess"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    info: {
+      kurz: "In Rückenlage ziehst du beide Knie zur Brust. Dehnt den unteren Rücken und das Gesäß sanft und wird oft als wohltuend empfunden.",
+      ausfuehrung: [
+        "Leg dich entspannt auf den Rücken, die Beine zunächst gestreckt.",
+        "Zieh beide Knie zur Brust und umfasse sie mit den Armen oder den Händen unterhalb der Knie.",
+        "Zieh die Knie sanft Richtung Brust, das Becken rollt leicht vom Boden.",
+        "Kopf und Schultern bleiben entspannt am Boden.",
+        "Halte 30 bis 60 Sekunden oder wiege dich sanft hin und her.",
+        "Stell die Füße einzeln wieder ab."
+      ],
+      atmung: "Ruhig in den Bauch atmen, mit dem Ausatmen die Knie etwas näher ziehen.",
+      fehler: [
+        "Kopf hebt ab: Kopf bleibt am Boden.",
+        "Zu stark ziehen: sanfter Zug genügt.",
+        "Zug direkt auf die Kniescheiben bei Kniebeschwerden: unter den Knien an den Oberschenkeln greifen."
+      ],
+      vorteile: [
+        "Sanfte Dehnung von unterem Rücken und Gesäß.",
+        "Kann entspannend wirken.",
+        "Gut am Ende einer Einheit oder nach Kreuzheben."
+      ],
+      tipps: [
+        "Kleine Kreise mit den Knien massieren den unteren Rücken auf der Matte.",
+        "Nur ein Knie ziehen und das andere Bein strecken dehnt zusätzlich den Hüftbeuger der gestreckten Seite."
+      ],
+      varianten: "Leichter: nur ein Knie. Schwerer: Stirn zu den Knien heben (nur ohne Nackenbeschwerden).",
+      sicherheit: "Bei akuten Bandscheibenbeschwerden mit Beugeempfindlichkeit vorsichtig."
+    }
+  },
+  {
+    id: "krokodilatmung",
+    name: "Krokodil-Atmung",
+    auch: ["Crocodile Breathing", "Prone Diaphragmatic Breathing"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["bauch", "ruecken_unten"],
+    sekundaer: ["oberer_ruecken"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    info: {
+      kurz: "In Bauchlage atmest du so, dass sich Bauch und unterer Rücken gegen den Boden und zur Decke weiten. Schult die Zwerchfellatmung und kann helfen, Nacken und Schultern beim Atmen zu entlasten.",
+      ausfuehrung: [
+        "Leg dich auf den Bauch, leg die Hände übereinander und die Stirn auf die Hände.",
+        "Lass den ganzen Körper schwer werden.",
+        "Atme langsam durch die Nase ein und lenke die Luft in den Bauch, so dass er gegen den Boden drückt.",
+        "Spüre, wie sich auch der untere Rücken und die Flanken weiten.",
+        "Atme langsam und vollständig durch den Mund oder die Nase aus.",
+        "Mache 2 bis 5 Minuten ruhige Atemzüge."
+      ],
+      atmung: "Etwa vier Sekunden ein, kurze Pause, sechs Sekunden aus. Schultern und Nacken bleiben ruhig.",
+      fehler: [
+        "Schultern heben sich beim Einatmen: Atem tiefer in den Bauch lenken.",
+        "Gepresstes Atmen: locker und langsam.",
+        "Hektik: lieber weniger, dafür lange Atemzüge."
+      ],
+      vorteile: [
+        "Schult die Zwerchfellatmung, der Boden gibt Rückmeldung.",
+        "Kann Spannung in Nacken und Schultern verringern.",
+        "Gut zur Beruhigung nach dem Training."
+      ],
+      tipps: [
+        "Ein Partner kann die Hand auf den unteren Rücken legen, um die Bewegung zu spüren.",
+        "Ideal als Abschluss einer Mobilitätseinheit."
+      ],
+      varianten: "Leichter: Atmung in Rückenlage. Schwerer: 90-90-Atmung mit Füßen an der Wand.",
+      sicherheit: "Bei Schwindel kürzer und ruhiger atmen."
+    }
+  },
+  {
+    id: "atmung_9090",
+    name: "90-90-Atmung mit Füßen an der Wand",
+    auch: ["90/90 Breathing", "90/90 Hip Lift Breathing", "PRI 90-90 Breathing"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["bauch", "beinbeuger"],
+    sekundaer: ["ruecken_unten", "schraege_bauch"],
+    geraete: [["wand"], ["bank"], ["box"]],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    info: {
+      kurz: "In Rückenlage stehen die Füße so an der Wand, dass Hüfte und Knie 90 Grad gebeugt sind, und du atmest tief mit den Rippen nach unten. Aus dem Postural-Restoration-Ansatz bekannt, fördert sie eine neutrale Becken- und Rippenposition.",
+      ausfuehrung: [
+        "Leg dich auf den Rücken und stell die Füße so an eine Wand oder auf eine Bank, dass Hüfte und Knie 90 Grad gebeugt sind.",
+        "Drück die Fersen leicht in die Wand, bis du die Beinrückseite spürst, und roll das Becken minimal ein, so dass das Steißbein leicht abhebt.",
+        "Leg die Hände auf den unteren Brustkorb.",
+        "Atme durch die Nase in den Bauch und die Flanken ein, die Rippen weiten sich zur Seite.",
+        "Atme lang durch den Mund aus und lass die Rippen bewusst nach unten sinken. Halte am Ende drei Sekunden, bevor du wieder einatmest.",
+        "Mache 5 bis 8 Atemzüge, 2 bis 3 Durchgänge."
+      ],
+      atmung: "Durch die Nase ein, lang durch den Mund aus, die Ausatmung ist etwa doppelt so lang wie die Einatmung.",
+      fehler: [
+        "Hohlkreuz: Becken leicht einrollen, der untere Rücken liegt am Boden.",
+        "Atmung in die Brust und Schultern: in Bauch und Flanken lenken.",
+        "Zu kräftiges Drücken in die Wand: leichte Spannung genügt."
+      ],
+      vorteile: [
+        "Fördert eine neutrale Position von Becken und Brustkorb.",
+        "Schult tiefe Zwerchfellatmung.",
+        "Kann beruhigend wirken und eignet sich zum Abschluss."
+      ],
+      tipps: [
+        "Einen Ballon aufzublasen verstärkt die Rippenbewegung nach unten.",
+        "Gut vor Übungen, bei denen du dazu neigst, ins Hohlkreuz zu fallen."
+      ],
+      varianten: "Leichter: ohne Becken anheben. Schwerer: mit Ball zwischen den Knien und einer Hand über Kopf.",
+      sicherheit: "Bei Schwindel kurz pausieren und normal atmen."
+    }
+  },
+  {
+    id: "mckenzie_liegestuetz",
+    name: "Rückstreckung in Bauchlage (McKenzie)",
+    auch: ["McKenzie Press-Up", "Prone Press-Up", "Extension in Lying"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["bauch", "ruecken_unten"],
+    sekundaer: ["hueftbeuger"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: { ruecken: 1 },
+    stufe: 1,
+    info: {
+      kurz: "In Bauchlage drückst du den Oberkörper mit den Armen hoch, während Becken und Beine entspannt am Boden bleiben. Bekannt aus der McKenzie-Methode, streckt sie die Lendenwirbelsäule passiv.",
+      ausfuehrung: [
+        "Leg dich auf den Bauch, die Hände unter den Schultern, die Ellbogen nah am Körper.",
+        "Lass Gesäß und Beine ganz entspannt.",
+        "Drück den Oberkörper mit den Armen langsam nach oben, das Becken bleibt am Boden.",
+        "Geh so weit, wie es angenehm ist, und halte ein bis zwei Sekunden.",
+        "Senk dich langsam wieder ab.",
+        "Mache 8 bis 10 Wiederholungen und steigere den Bewegungsumfang langsam."
+      ],
+      atmung: "Ausatmen in der oberen Position und den unteren Rücken bewusst durchhängen lassen.",
+      fehler: [
+        "Gesäß angespannt: locker lassen, die Arme machen die Arbeit.",
+        "Becken hebt ab: nur so hoch drücken, wie das Becken liegen bleibt.",
+        "Schultern zu den Ohren: Schultern tief."
+      ],
+      vorteile: [
+        "Passive Streckung der Lendenwirbelsäule als Ausgleich zu langem Sitzen.",
+        "Wird in der Physiotherapie häufig eingesetzt.",
+        "Einfach und ohne Gerät."
+      ],
+      tipps: [
+        "Beginne mit der Sphinx und steigere dich dann zu gestreckten Armen.",
+        "Mehrmals täglich ein paar Wiederholungen bei viel Sitzen."
+      ],
+      varianten: "Leichter: Sphinx auf den Unterarmen. Schwerer: Rückstreckung im Stand zusätzlich am Tag.",
+      sicherheit: "Bei Rückenschmerzen, die sich bei der Übung verstärken oder ins Bein ausstrahlen, sofort aufhören und abklären lassen. Nicht bei Wirbelgleiten oder Stenose ohne Rücksprache."
+    }
+  },
+  {
+    id: "rueckstreckung_stehend",
+    name: "Rückstreckung im Stand",
+    auch: ["Standing Back Extension", "Standing Lumbar Extension", "McKenzie Standing Extension"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["bauch", "hueftbeuger"],
+    sekundaer: ["ruecken_unten", "brust"],
+    geraete: [[]],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { ruecken: 1 },
+    stufe: 1,
+    info: {
+      kurz: "Mit den Händen im unteren Rücken neigst du den Oberkörper langsam nach hinten. Schneller Ausgleich nach langem Sitzen oder Vorbeugen, überall machbar.",
+      ausfuehrung: [
+        "Stell dich hüftbreit hin, die Knie leicht gebeugt.",
+        "Leg die Hände mit den Fingern nach unten in den unteren Rücken über dem Gesäß.",
+        "Schieb das Becken leicht nach vorn und neige den Oberkörper langsam nach hinten.",
+        "Der Blick geht schräg nach oben, der Kopf fällt nicht in den Nacken.",
+        "Halte ein bis zwei Sekunden und komm zurück.",
+        "Mache 5 bis 10 Wiederholungen."
+      ],
+      atmung: "Einatmen beim Zurückneigen, ausatmen beim Aufrichten.",
+      fehler: [
+        "Kopf weit nach hinten: Kopf in Verlängerung.",
+        "Knie durchgedrückt: leicht beugen.",
+        "Zu weit nach hinten: nur so weit wie angenehm."
+      ],
+      vorteile: [
+        "Schnelle Pause bei Sitzarbeit.",
+        "Dehnt Bauch und vordere Hüfte.",
+        "Keine Matte nötig."
+      ],
+      tipps: [
+        "Nach langem Autofahren oder Vorbeugen etwa bei Gartenarbeit.",
+        "Ein paar Wiederholungen jede Stunde wirken mehr als eine lange Einheit."
+      ],
+      varianten: "Leichter: kleiner Umfang. Schwerer: McKenzie-Rückstreckung in Bauchlage.",
+      sicherheit: "Bei Schwindel oder Schmerzen bei Rückstreckung auslassen und abklären lassen."
+    }
+  },
+  {
+    id: "banane",
+    name: "Banane in Rückenlage",
+    auch: ["Bananasana", "Supine Side Bend", "Banana Stretch"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["schraege_bauch", "latissimus"],
+    sekundaer: ["gesaess_mittel", "ruecken_unten"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Yin-Yoga-Haltung in Rückenlage: Oberkörper und Beine wandern zur gleichen Seite, so dass der Körper wie eine Banane gebogen ist. Dehnt die ganze Körperseite passiv und entspannt.",
+      ausfuehrung: [
+        "Leg dich auf den Rücken, die Beine gestreckt, die Arme über den Kopf ausgestreckt.",
+        "Greif mit der rechten Hand das linke Handgelenk.",
+        "Wandere mit Oberkörper und Armen nach rechts.",
+        "Wandere mit beiden Beinen ebenfalls nach rechts, das Becken bleibt flach am Boden.",
+        "Der Körper bildet einen Bogen, die linke Seite wird lang. Halte 1 bis 3 Minuten.",
+        "Komm zur Mitte zurück und wechsle danach auf die andere Seite."
+      ],
+      atmung: "Tief in die gedehnte Seite atmen, mit jedem Ausatmen loslassen.",
+      fehler: [
+        "Becken hebt auf einer Seite ab: beide Gesäßhälften am Boden.",
+        "Zu stark ziehen: passiv entspannen.",
+        "Schultern verspannt: Arme bei Bedarf beugen."
+      ],
+      vorteile: [
+        "Passive, angenehme Dehnung der ganzen Körperseite.",
+        "Gut für längeres Halten am Abend.",
+        "Kein Kraftaufwand nötig."
+      ],
+      tipps: [
+        "Den linken Knöchel über den rechten legen verstärkt die Dehnung an der Hüfte.",
+        "Gut am Ende eines ruhigen Mobilitätstags."
+      ],
+      varianten: "Leichter: Arme neben dem Körper. Schwerer: Knöchel kreuzen und den Bogen vergrößern.",
+      sicherheit: "Bei Schulterbeschwerden die Arme nicht über Kopf legen."
+    }
+  },
+  {
+    id: "tor_haltung",
+    name: "Tor-Haltung",
+    auch: ["Gate Pose", "Parighasana", "Kneeling Side Stretch"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["schraege_bauch", "latissimus", "adduktoren"],
+    sekundaer: ["beinbeuger", "ruecken_unten"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: { knie: 1 },
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Seitliche Dehnung aus dem Kniestand mit einem Bein seitlich ausgestreckt. Dehnt Rumpfseite und Latissimus sowie die Innenseite des gestreckten Beins.",
+      ausfuehrung: [
+        "Knie dich aufrecht hin und strecke das rechte Bein zur Seite aus, der Fuß steht flach am Boden.",
+        "Das linke Knie steht unter der Hüfte.",
+        "Leg die rechte Hand auf das rechte Bein und heb den linken Arm über den Kopf.",
+        "Neige den Oberkörper nach rechts, die rechte Hand gleitet am Bein entlang nach unten.",
+        "Halte 20 bis 40 Sekunden, die Brust bleibt offen nach vorn.",
+        "Richte dich auf und wechsle danach auf die andere Seite."
+      ],
+      atmung: "In die gedehnte Flanke atmen, mit dem Ausatmen tiefer neigen.",
+      fehler: [
+        "Oberkörper kippt nach vorn: seitlich bleiben.",
+        "Becken weicht nach hinten aus: Hüfte über dem Knie halten.",
+        "Schulter zum Ohr: Arm lang, Schulter tief."
+      ],
+      vorteile: [
+        "Dehnt die Rumpfseite und die Innenseite des Beins.",
+        "Verbessert die seitliche Beweglichkeit der Wirbelsäule.",
+        "Gute Ergänzung zu Rotationsübungen."
+      ],
+      tipps: [
+        "Ein Kissen unter dem Knie macht die Haltung angenehmer.",
+        "Den Fuß des gestreckten Beins leicht nach vorn drehen, wenn das Knie zieht."
+      ],
+      varianten: "Leichter: Hand auf dem Oberschenkel. Schwerer: Hand bis zum Knöchel oder Boden.",
+      sicherheit: "Bei Kniebeschwerden gut polstern."
+    }
+  },
+  {
+    id: "stoffpuppe",
+    name: "Stoffpuppe",
+    auch: ["Ragdoll", "Ragdoll Pose", "Standing Forward Fold with Elbows"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["beinbeuger", "ruecken_unten"],
+    sekundaer: ["waden", "oberer_ruecken", "nacken"],
+    geraete: [[]],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: { ruecken: 1 },
+    stufe: 1,
+    info: {
+      kurz: "Im Stand beugst du dich mit gebeugten Knien nach vorn und lässt den Oberkörper hängen, die Hände halten die gegenüberliegenden Ellbogen. Lockert Rücken, Nacken und Beinrückseite passiv.",
+      ausfuehrung: [
+        "Stell dich hüftbreit hin und beuge die Knie leicht.",
+        "Beuge dich aus der Hüfte nach vorn und lass den Oberkörper hängen.",
+        "Greif mit jeder Hand den gegenüberliegenden Ellbogen.",
+        "Lass Kopf und Nacken völlig locker hängen.",
+        "Wiege dich sanft von Seite zu Seite. Halte 30 bis 60 Sekunden.",
+        "Komm langsam Wirbel für Wirbel nach oben, der Kopf kommt zuletzt."
+      ],
+      atmung: "Ruhig weiteratmen, mit dem Ausatmen tiefer sinken.",
+      fehler: [
+        "Knie durchgedrückt: Knie beugen, so entspannt der Rücken.",
+        "Nacken angespannt: Kopf hängen lassen.",
+        "Schnelles Aufrichten: langsam aufrollen, um Schwindel zu vermeiden."
+      ],
+      vorteile: [
+        "Entlastet Rücken und Nacken.",
+        "Dehnt die Beinrückseite sanft.",
+        "Gute Pause zwischen intensiven Übungen."
+      ],
+      tipps: [
+        "Je mehr du die Knie beugst, desto mehr kommt die Dehnung in den Rücken.",
+        "Kopfnicken und -schütteln lockert den Nacken."
+      ],
+      varianten: "Leichter: Hände auf den Oberschenkeln. Schwerer: Knie strecken für mehr Dehnung der Beinrückseite.",
+      sicherheit: "Bei Bluthochdruck, Schwindel oder Bandscheibenbeschwerden vorsichtig und langsam aufrichten."
+    }
+  },
+  {
+    id: "roll_down",
+    name: "Abrollen im Stand",
+    auch: ["Pilates Roll Down", "Standing Roll Down", "Spinal Roll Down"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["ruecken_unten", "beinbeuger"],
+    sekundaer: ["oberer_ruecken", "bauch"],
+    geraete: [["wand"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { ruecken: 1 },
+    stufe: 1,
+    info: {
+      kurz: "Du rollst die Wirbelsäule im Stand Wirbel für Wirbel nach unten und wieder hoch. Klassische Pilates-Übung, die die Beweglichkeit und Kontrolle der Wirbelsäule in der Beugung fördert.",
+      ausfuehrung: [
+        "Stell dich hüftbreit hin, die Knie leicht gebeugt. Optional lehnst du dich mit dem Rücken an eine Wand, die Fersen etwas entfernt.",
+        "Senk das Kinn langsam Richtung Brust.",
+        "Roll langsam Wirbel für Wirbel nach unten, zuerst die Halswirbelsäule, dann die Brustwirbelsäule, zuletzt die Lendenwirbelsäule.",
+        "Lass die Arme locker hängen, bis die Hände Richtung Boden zeigen.",
+        "Roll in umgekehrter Reihenfolge nach oben, das Becken richtet sich zuerst auf, der Kopf kommt zuletzt.",
+        "Mache 5 bis 8 langsame Wiederholungen."
+      ],
+      atmung: "Ausatmen beim Abrollen, unten einatmen, ausatmen beim Aufrollen.",
+      fehler: [
+        "Aus der Hüfte klappen statt rollen: Bewegung Wirbel für Wirbel.",
+        "Zu schnell: etwa fünf Sekunden für jede Richtung.",
+        "Knie gestreckt und verriegelt: leicht gebeugt."
+      ],
+      vorteile: [
+        "Schult die segmentale Beweglichkeit der Wirbelsäule.",
+        "Lockert Rücken und Nacken.",
+        "An der Wand mit Rückmeldung über die Abschnitte."
+      ],
+      tipps: [
+        "Die Wandvariante zeigt dir genau, welcher Wirbel sich gerade löst.",
+        "Gut als ruhiger Start in eine Einheit."
+      ],
+      varianten: "Leichter: an der Wand, kleiner Umfang. Schwerer: frei mit gestreckten Knien oder mit Jefferson Curl.",
+      sicherheit: "Bei Bandscheibenbeschwerden mit Beugeempfindlichkeit oder Osteoporose nicht ohne Rücksprache."
+    }
+  },
+  {
+    id: "bruecke_rad",
+    name: "Brücke (Rad)",
+    auch: ["Gymnastic Bridge", "Wheel Pose", "Urdhva Dhanurasana", "Full Bridge"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["brust", "hueftbeuger", "bauch"],
+    sekundaer: ["latissimus", "quadrizeps", "gesaess", "trizeps"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { schulter: 2, ruecken: 2, handgelenk: 1 },
+    stufe: 3,
+    info: {
+      kurz: "Aus der Rückenlage drückst du dich mit Händen und Füßen in einen hohen Bogen. Fortgeschrittene Haltung für Schulter-, Brustwirbelsäulen- und Hüftstreckung zugleich.",
+      ausfuehrung: [
+        "Leg dich auf den Rücken, stell die Füße hüftbreit nah am Gesäß auf.",
+        "Setz die Hände neben die Ohren, die Finger zeigen zu den Schultern, die Ellbogen nach oben.",
+        "Heb zuerst das Becken an und setz den Scheitel kurz am Boden ab, ohne Gewicht auf den Kopf.",
+        "Drück dich mit Armen und Beinen weiter hoch, bis die Arme gestreckt sind.",
+        "Schieb die Schultern über die Hände, so wird die Streckung gleichmäßiger. Halte 5 bis 20 Sekunden.",
+        "Beuge Arme und Beine, setz zuerst den Hinterkopf ab und roll den Rücken ab."
+      ],
+      atmung: "Gleichmäßig weiteratmen, nicht pressen.",
+      fehler: [
+        "Knie fallen nach außen: parallel halten.",
+        "Gewicht auf dem Kopf: Kopf nur kurz ablegen und durchdrücken.",
+        "Alle Streckung im unteren Rücken: Schultern über die Hände schieben."
+      ],
+      vorteile: [
+        "Streckt Schultern, Brustwirbelsäule und Hüften in einer Haltung.",
+        "Kräftigt Arme und Beine.",
+        "Grundlage für viele turnerische Elemente."
+      ],
+      tipps: [
+        "Vorher Schultern, Brust und Hüftbeuger gut vorbereiten.",
+        "Einen Partner zur Unterstützung an den Schultern nutzen."
+      ],
+      varianten: "Leichter: Schulterbrücke oder Hände auf einer Bank erhöht. Schwerer: Beine strecken oder ein Bein heben.",
+      sicherheit: "Nicht bei Rücken-, Schulter- oder Handgelenkbeschwerden, Bluthochdruck oder Schwangerschaft. Nur für Geübte."
+    }
+  },
+  {
+    id: "kamel",
+    name: "Kamel",
+    auch: ["Camel Pose", "Ustrasana"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["hueftbeuger", "bauch", "brust"],
+    sekundaer: ["quadrizeps", "schulter_vorn"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 170,
+    gelenke: { ruecken: 1, knie: 1 },
+    stufe: 2,
+    info: {
+      kurz: "Aus dem aufrechten Kniestand neigst du dich mit offener Brust nach hinten und greifst die Fersen. Dehnt die gesamte Körpervorderseite von Oberschenkeln über Hüftbeuger und Bauch bis zur Brust.",
+      ausfuehrung: [
+        "Knie dich aufrecht hin, die Knie hüftbreit, die Zehen aufgestellt oder die Fußrücken am Boden.",
+        "Leg die Hände in den unteren Rücken, die Finger zeigen nach unten.",
+        "Schieb das Becken leicht nach vorn und hebe das Brustbein nach oben.",
+        "Neige dich nach hinten und greif nacheinander die Fersen, wenn es möglich ist.",
+        "Der Kopf folgt locker, ohne in den Nacken zu fallen. Halte 15 bis 30 Sekunden.",
+        "Hände zurück in den Rücken, mit festem Bauch aufrichten und kurz in der Kindhaltung entspannen."
+      ],
+      atmung: "Ruhig weiteratmen, mit dem Einatmen die Brust heben.",
+      fehler: [
+        "Becken schiebt nach hinten: Hüften über den Knien halten.",
+        "Alles im unteren Rücken: Brustbein nach oben heben, Gesäß leicht anspannen.",
+        "Kopf fällt in den Nacken: Kinn leicht eingezogen."
+      ],
+      vorteile: [
+        "Dehnt die ganze Körpervorderseite.",
+        "Fördert die Streckung der Brustwirbelsäule.",
+        "Ausgleich nach viel Sitzen."
+      ],
+      tipps: [
+        "Zehen aufgestellt bringen die Fersen höher und machen die Haltung leichter.",
+        "Hände im Rücken lassen, bis die Haltung stabil ist."
+      ],
+      varianten: "Leichter: Hände im unteren Rücken. Schwerer: Fußrücken flach und Hände an den Fersen.",
+      sicherheit: "Nicht bei Rückenbeschwerden mit Streckempfindlichkeit, Nackenproblemen oder Kniebeschwerden. Langsam aufrichten."
+    }
+  },
+  {
+    id: "fisch",
+    name: "Fisch",
+    auch: ["Fish Pose", "Matsyasana", "Supported Fish"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["brust", "bauch"],
+    sekundaer: ["nacken", "schulter_vorn", "oberer_ruecken"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { nacken: 1 },
+    stufe: 2,
+    info: {
+      kurz: "Rückenlage, in der du dich auf die Unterarme stützt und die Brust zur Decke hebst. Öffnet Brust und Brustwirbelsäule und dehnt die Halsvorderseite.",
+      ausfuehrung: [
+        "Leg dich auf den Rücken, die Beine gestreckt.",
+        "Schieb die Hände mit den Handflächen nach unten unter das Gesäß, die Ellbogen nah am Körper.",
+        "Drück die Unterarme in den Boden und heb die Brust zur Decke.",
+        "Lass den Kopf nur leicht nach hinten sinken, der Scheitel berührt den Boden höchstens sanft ohne Gewicht.",
+        "Halte 15 bis 30 Sekunden.",
+        "Heb zum Lösen erst den Kopf an, dann senk die Brust ab."
+      ],
+      atmung: "Tief in die Brust atmen, sie weitet sich spürbar.",
+      fehler: [
+        "Gewicht auf dem Kopf: die Unterarme tragen das Gewicht.",
+        "Schultern zu den Ohren: Schulterblätter zusammen.",
+        "Kopf weit nach hinten bei empfindlichem Nacken: Kinn leicht eingezogen lassen."
+      ],
+      vorteile: [
+        "Öffnet die Brust und streckt den oberen Rücken.",
+        "Dehnt die Halsvorderseite.",
+        "Ausgleich zur gebeugten Haltung am Schreibtisch."
+      ],
+      tipps: [
+        "Unterstützte Variante: ein Kissen oder Block längs unter die Brustwirbelsäule, der Kopf liegt auf.",
+        "Gut nach der Kindhaltung als Gegenbewegung."
+      ],
+      varianten: "Leichter: unterstützter Fisch mit Kissen. Schwerer: Beine angehoben oder Arme über Kopf.",
+      sicherheit: "Nicht bei Nackenbeschwerden. Bei Schwindel lösen."
+    }
+  },
+  {
+    id: "ball_seitdehnung",
+    name: "Seitdehnung über dem Gymnastikball",
+    auch: ["Swiss Ball Side Stretch", "Lateral Ball Stretch", "Side-Lying Ball Stretch"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["schraege_bauch", "latissimus"],
+    sekundaer: ["ruecken_unten", "gesaess_mittel"],
+    geraete: [["gymnastikball"]],
+    belastung: "zeit",
+    hoehe_cm: 150,
+    gelenke: {},
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Du liegst seitlich über einem Gymnastikball und lässt Oberkörper und Arm über den Ball sinken. Dehnt die ganze Körperseite großflächig und angenehm.",
+      ausfuehrung: [
+        "Knie dich seitlich neben einen Gymnastikball und leg die rechte Hüfte und Flanke darauf.",
+        "Strecke die Beine aus, das obere Bein vor dem unteren, die Füße stützen am Boden.",
+        "Lass den Oberkörper über den Ball nach unten sinken.",
+        "Strecke den oberen Arm über den Kopf und lass ihn hängen.",
+        "Halte 30 bis 60 Sekunden, rolle eventuell leicht vor und zurück.",
+        "Komm vorsichtig zurück in den Kniestand und wechsle danach auf die andere Seite."
+      ],
+      atmung: "In die obere Flanke atmen, mit dem Ausatmen tiefer sinken.",
+      fehler: [
+        "Unsicherer Stand: Füße weiter auseinander.",
+        "Oberkörper dreht nach vorn: seitlich bleiben.",
+        "Zu schnelles Aufrichten: langsam zurück."
+      ],
+      vorteile: [
+        "Großflächige, passive Seitdehnung.",
+        "Der Ball passt sich dem Körper an und wirkt angenehm.",
+        "Gut am Ende einer Einheit."
+      ],
+      tipps: [
+        "Je weiter der Ball unter den Rippen liegt, desto mehr Dehnung im Latissimus.",
+        "Ein kleinerer Ball ist für Einsteiger stabiler."
+      ],
+      varianten: "Leichter: Arm nicht über Kopf. Schwerer: Arm über Kopf und Beine weiter auseinander.",
+      sicherheit: "Bei Schwindel oder Gleichgewichtsproblemen nur mit Abstützung."
     }
   },
 ]
