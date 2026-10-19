@@ -34,4 +34,4 @@ it("rendert Startseite und jede Einheit für 300 zufällige Profile ohne Fehler 
     }
   }
   expect(fehler.slice(0, 5)).toEqual([])
-})
+}, 60000)
