@@ -10,11 +10,13 @@ import { Gruppe, Schalter, Seite, Zeile } from "./ios"
 import { benachrichtigungErlauben, overlayErlauben, timerStatus } from "./pausenTimer"
 import { AusnahmenEditor, Grunddaten, KoerperEditor, OrteEditor, SportWahl, WocheEditor } from "./Profilteile"
 import { dateiTeilen } from "./teilen"
+import Feedback from "./Feedback"
+import { gesundheitEinstellungen, gesundheitLesen, gesundheitVerbinden, gesundheitVerfuegbar } from "./gesundheit"
 import { ERFAHRUNG, GELENKE, ZIELE } from "./texte"
 
-type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber"
+type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback"
 
-export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT) => void; ersetzen: (d: Daten) => void; zuruecksetzen: () => void }) {
+export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT) => void; ersetzen: (d: Daten) => void; zuruecksetzen: () => void; aendern: (f: (d: Daten) => void) => void }) {
   const profil = props.daten.profil!
   const [seite, setSeite] = useState<Unterseite>(null)
   const teil = { profil, aendern: props.profilAendern }
@@ -59,6 +61,8 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
   if (seite === "timer") return <TimerSeite zurueck={zurueck} />
   if (seite === "sicherung") return <Sicherung daten={props.daten} ersetzen={props.ersetzen} zuruecksetzen={props.zuruecksetzen} zurueck={zurueck} />
   if (seite === "ueber") return <Ueber zurueck={zurueck} />
+  if (seite === "feedback") return <Feedback zurueck={zurueck} />
+  if (seite === "gesundheit") return <GesundheitSeite daten={props.daten} aendern={props.aendern} zurueck={zurueck} />
 
   const ziel = ZIELE.find((z) => z.id === profil.ziel)
   const sport = SPORTARTEN.find((s) => s.id === profil.sport)
@@ -82,6 +86,8 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
       </Gruppe>
       <Gruppe titel="App">
         <Zeile symbol="⏱️" titel="Pausentimer" wert="Hintergrund, über Apps" onClick={() => setSeite("timer")} />
+        <Zeile symbol="❤️" titel="Gesundheitsdaten" wert={props.daten.gesundheit?.verbunden ? "verbunden" : "aus"} onClick={() => setSeite("gesundheit")} />
+        <Zeile symbol="💬" titel="Feedback, Fehler, Ideen" onClick={() => setSeite("feedback")} />
         <Zeile symbol="💾" titel="Sicherung" onClick={() => setSeite("sicherung")} />
         <Zeile symbol="ℹ️" titel="Über TrainMe und Quellen" onClick={() => setSeite("ueber")} />
       </Gruppe>
@@ -185,6 +191,67 @@ function Ueber(props: { zurueck: { text: string; onClick: () => void } }) {
         <Zeile titel="Titleist Performance Institute" untertitel="Golf-Screening, mytpi.com" />
       </Gruppe>
       <p className="hinweistext">TrainMe nimmt bei Beschwerden Rücksicht, ersetzt aber keine ärztliche oder physiotherapeutische Behandlung.</p>
+    </Seite>
+  )
+}
+
+function GesundheitSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void) => void; zurueck: { text: string; onClick: () => void } }) {
+  const g = props.daten.gesundheit
+  const [meldung, setMeldung] = useState("")
+  const [laeuft, setLaeuft] = useState(false)
+  const aktualisieren = async () => {
+    setLaeuft(true)
+    try {
+      const tage = await gesundheitLesen(14)
+      props.aendern((d) => {
+        d.gesundheit = { verbunden: true, tage: { ...(d.gesundheit?.tage || {}), ...tage } }
+      })
+      setMeldung(Object.keys(tage).length ? "Aktualisiert." : "Verbunden, aber noch keine Werte gefunden. Zeichnet eine Uhr oder App (z. B. Garmin Connect, Samsung Health, Google Fit) in Health Connect auf?")
+    } catch (e) {
+      setMeldung("Lesen hat nicht geklappt: " + String((e as Error).message || e))
+    }
+    setLaeuft(false)
+  }
+  const verbinden = async () => {
+    const v = await gesundheitVerfuegbar()
+    if (!v.ok) {
+      setMeldung((v.grund || "Health Connect ist nicht verfügbar") + ". Ab Android 14 ist Health Connect eingebaut, sonst im Play Store „Health Connect“ installieren.")
+      return
+    }
+    try {
+      const ok = await gesundheitVerbinden()
+      if (!ok) {
+        setMeldung("Keine Berechtigung erteilt.")
+        return
+      }
+      await aktualisieren()
+    } catch (e) {
+      setMeldung("Verbinden hat nicht geklappt: " + String((e as Error).message || e))
+    }
+  }
+  const tage = Object.entries(g?.tage || {})
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .slice(0, 7)
+  return (
+    <Seite titel="Gesundheitsdaten" zurueck={props.zurueck}>
+      <p className="hinweistext">TrainMe liest über Health Connect Schritte, Schlaf, Ruhepuls und HRV, zum Beispiel von deiner Garmin-Uhr, Samsung Health oder Google Fit. Die Werte bleiben auf dem Handy und dienen nur für Hinweise zur Tagesform.</p>
+      <Gruppe>
+        <Zeile titel="Mit Health Connect verbinden" untertitel={g?.verbunden ? "Verbunden" : "Nur lesen, nichts wird geschrieben"} rechts={<Schalter an={!!g?.verbunden} onChange={(an) => (an ? void verbinden() : props.aendern((d) => void (d.gesundheit = { verbunden: false, tage: {} })))} label="Health Connect" />} />
+        {g?.verbunden ? <Zeile titel={laeuft ? "Lese …" : "Jetzt aktualisieren"} onClick={() => void aktualisieren()} pfeil={false} /> : null}
+        <Zeile titel="Berechtigungen in Health Connect" onClick={() => void gesundheitEinstellungen().catch(() => setMeldung("Health Connect lässt sich hier nicht öffnen."))} />
+      </Gruppe>
+      {meldung ? <p className="hinweistext">{meldung}</p> : null}
+      {tage.length ? (
+        <Gruppe titel="Letzte Tage">
+          {tage.map(([d, w]) => (
+            <Zeile
+              key={d}
+              titel={d.split("-").reverse().join(".")}
+              untertitel={[w.schritte !== undefined ? "👟 " + w.schritte.toLocaleString("de-DE") : "", w.schlaf_min !== undefined ? "😴 " + Math.floor(w.schlaf_min / 60) + " h " + (w.schlaf_min % 60) + " min" : "", w.ruhepuls ? "❤️ " + w.ruhepuls : "", w.hrv ? "HRV " + w.hrv : ""].filter(Boolean).join(" · ") || "keine Werte"}
+            />
+          ))}
+        </Gruppe>
+      ) : null}
     </Seite>
   )
 }

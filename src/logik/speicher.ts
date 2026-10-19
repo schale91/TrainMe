@@ -36,6 +36,7 @@ export function pruefen(x: unknown): Daten {
   d.protokoll = Array.isArray(o.protokoll) ? o.protokoll.filter((p) => p && typeof p.uebung === "string" && typeof p.datum === "string" && Array.isArray(p.saetze)) : []
   d.erledigt = Array.isArray(o.erledigt) ? o.erledigt.filter((e) => e && typeof e.datum === "string") : []
   d.spiel = { ...neuesSpiel(), ...(o.spiel || {}), xp: Number(o.spiel?.xp) || 0, abzeichen: o.spiel && typeof o.spiel.abzeichen === "object" ? { ...o.spiel.abzeichen } : {} }
+  if (o.gesundheit && typeof o.gesundheit === "object") d.gesundheit = { verbunden: !!o.gesundheit.verbunden, tage: { ...(o.gesundheit.tage || {}) } }
   d.messungen = Array.isArray(o.messungen) ? o.messungen.filter((m) => m && typeof m.test === "string" && typeof m.wert === "number") : []
   return d
 }

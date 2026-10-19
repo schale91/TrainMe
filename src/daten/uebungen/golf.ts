@@ -6,212 +6,6 @@ import type { Uebung } from "../../logik/typen"
 export const GOLF: Uebung[] = [
   // ---------- Medizinball-Würfe in Golfhaltung ----------
   {
-    id: "golf_mb_scoop_toss",
-    name: "Medizinball-Scoop-Toss in Golfhaltung",
-    auch: ["Rotational Scoop Toss", "Med Ball Scoop Toss", "Golf Scoop Throw"],
-    muster: "schnellkraft_wurf",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "gesaess", "bauch"],
-    sekundaer: ["adduktoren", "schulter_vorn", "ruecken_unten"],
-    geraete: [["medizinball", "wand"], ["medizinball", "draussen"]],
-    belastung: "gewicht",
-    hoehe_cm: 200,
-    gelenke: { ruecken: 1, huefte: 1, schulter: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Der Wurf beginnt im Boden und in der Hüfte, die Arme folgen zuletzt.",
-    info: {
-      kurz: "Explosiver seitlicher Rotationswurf aus einer golfähnlichen Ansprechhaltung, bei dem der Ball von unten nach vorne oben gegen eine Wand geschaufelt wird. Gilt im Golftraining als Standardübung für rotatorische Schnellkraft und die Kraftübertragung vom Boden über Hüfte und Rumpf in die Arme.",
-      ausfuehrung: [
-        "Stell dich seitlich etwa 1 bis 2 Meter neben eine stabile Wand, die vordere Schulter (bei Rechtshändern die linke) zeigt zur Wand, Füße etwas breiter als hüftbreit.",
-        "Geh in eine leichte Golfhaltung: Hüfte leicht gebeugt, Knie locker, Rücken lang. Halte den Ball mit beiden Händen vor dem Körper, die Arme hängen locker.",
-        "Hol aus, indem du Hüfte und Oberkörper zur hinteren Seite drehst. Das Gewicht wandert ins hintere Bein, der Ball geht neben die hintere Hüfte.",
-        "Starte die Gegenbewegung kraftvoll aus den Beinen: Drück dich vom hinteren Fuß ab und dreh die Hüfte zur Wand, während der Oberkörper kurz zurückbleibt.",
-        "Lass Rumpf und Arme folgen und schaufle den Ball mit gestreckten Armen auf Hüft- bis Brusthöhe kraftvoll gegen die Wand.",
-        "Beende die Bewegung wie im Finish: Gewicht auf dem vorderen Bein, Bauchnabel zur Wand, hintere Ferse vom Boden gelöst.",
-        "Fang den Ball ab, stell dich neu hin und starte jede Wiederholung aus einer ruhigen Ausgangsposition. Mach alle Würfe einer Seite, dann wechsle."
-      ],
-      atmung: "Atme beim Ausholen ein und beim Wurf kräftig und kurz aus, gern hörbar.",
-      fehler: [
-        "Wurf nur aus den Armen: Denk an „Hüfte zuerst“, die Arme sind nur das Seil, das den Ball mitnimmt.",
-        "Zu schwerer Ball: Wenn der Wurf langsam wird, bringt er keine Schnellkraft mehr. Lieber leichter und maximal schnell.",
-        "Hohlkreuz oder runder Rücken beim Ausholen: Bauch leicht anspannen und die Golfhaltung beibehalten.",
-        "Vorderes Knie knickt beim Wurf nach innen: Stemm dich gegen ein stabiles vorderes Bein.",
-        "Viele schnelle Würfe hintereinander: Jeder Wurf soll maximal explosiv sein, daher lieber neu aufstellen."
-      ],
-      vorteile: [
-        "Trainiert die rotatorische Schnellkraft von Hüfte und Rumpf.",
-        "Verbessert die Reihenfolge der Bewegung vom Boden über das Becken in den Oberkörper.",
-        "Belastet die Gelenke weniger als schweres Krafttraining und lässt sich gut dosieren.",
-        "Stärkt die schrägen Bauchmuskeln und das Gesäß im Zusammenspiel."
-      ],
-      tipps: [
-        "Für Schnellkraft eignen sich Bälle von etwa 2 bis 4 kg. Wähle eher leichter als schwerer.",
-        "Wenige Wiederholungen (3 bis 6 je Seite) mit vollen Pausen bringen mehr als lange Sätze.",
-        "Mach immer auch die Gegenseite, um einseitige Belastung auszugleichen.",
-        "Gut vor dem Krafttraining oder als Aktivierung vor der Runde mit leichtem Ball."
-      ],
-      varianten: "Leichter: kleinerer Ausholweg und leichter Ball. Schwerer: mit Schritt hinter (Step-Behind) oder aus der Bewegung, etwas schwererer Ball nur bei gleicher Geschwindigkeit.",
-      sicherheit: "Bei akuten Rückenbeschwerden oder Bandscheibenproblemen nur nach Abklärung. Nur gegen massive Wände werfen, keine Gipswände oder Fenster in der Nähe.",
-      golf: "Der Scoop-Toss ahmt den Abschwung nach: Druck ins hintere Bein, Hüfte führt, Oberkörper folgt, Arme lösen zuletzt. So trainierst du genau die Kraftübertragung, die die Schlägerkopfgeschwindigkeit bestimmt, und lernst, den Rumpf als Feder zu nutzen statt aus den Armen zu schlagen."
-    }
-  },
-  {
-    id: "golf_mb_scoop_toss_gegenseite",
-    name: "Medizinball-Scoop-Toss zur Gegenseite",
-    auch: ["Non-Dominant Scoop Toss", "Opposite Side Rotational Throw"],
-    muster: "schnellkraft_wurf",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "gesaess", "bauch"],
-    sekundaer: ["adduktoren", "schulter_vorn"],
-    geraete: [["medizinball", "wand"], ["medizinball", "draussen"]],
-    belastung: "gewicht",
-    hoehe_cm: 200,
-    gelenke: { ruecken: 1, huefte: 1, schulter: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 3,
-    hinweis: "Spiegelbildlich zum Golfschwung, ungewohnt, daher anfangs langsamer.",
-    info: {
-      kurz: "Scoop-Toss bewusst in die ungewohnte Richtung, also spiegelbildlich zum eigenen Golfschwung. Dient dem Ausgleich der einseitigen Belastung und verbessert die Koordination der Rotation in beide Richtungen.",
-      ausfuehrung: [
-        "Stell dich seitlich zur Wand, aber so, dass du wie ein Golfer der anderen Hand stehst. Bei Rechtshändern zeigt jetzt die rechte Schulter zur Wand.",
-        "Nimm die gleiche leichte Golfhaltung ein wie beim normalen Scoop-Toss, Ball locker vor dem Körper.",
-        "Hol ruhig zur ungewohnten Seite aus, das Gewicht verlagert sich ins (jetzt) hintere Bein.",
-        "Starte aus dem Abdruck des hinteren Beins, dreh die Hüfte zur Wand und lass Rumpf und Arme folgen.",
-        "Wirf den Ball auf Hüft- bis Brusthöhe gegen die Wand und beende die Bewegung im Finish auf dem vorderen Bein.",
-        "Fang den Ball, stell dich neu hin und beginne die nächste Wiederholung erst, wenn du stabil stehst."
-      ],
-      atmung: "Beim Ausholen einatmen, beim Wurf kurz und kräftig ausatmen.",
-      fehler: [
-        "Zu viel Tempo, bevor die Bewegung sitzt: Erst einige ruhige Würfe, dann steigern.",
-        "Bewegung wird zum Armwurf: Wie auf der Schwungseite bewusst die Hüfte führen lassen.",
-        "Schwererer Ball als auf der starken Seite: Nimm denselben oder einen leichteren Ball.",
-        "Oberkörper kippt nach hinten: Haltung über dem Ball halten, Brust zeigt leicht nach unten."
-      ],
-      vorteile: [
-        "Gleicht die einseitige Belastung des Golfschwungs aus.",
-        "Verbessert Koordination und Körpergefühl in der ungewohnten Richtung.",
-        "Kräftigt die Rumpfmuskulatur beider Seiten gleichmäßiger.",
-        "Kann die Schnellkraft insgesamt verbessern, weil das Nervensystem neue Muster lernt."
-      ],
-      tipps: [
-        "Kombiniere sie im selben Satz mit der Schwungseite, z. B. 4 Würfe Schwungseite, 4 Würfe Gegenseite.",
-        "Achte auf die gleiche Qualität wie auf der starken Seite, nicht auf die Wurfhärte.",
-        "Ein leichter Ball (2 bis 3 kg) reicht vollkommen."
-      ],
-      varianten: "Leichter: aus dem Stand ohne großes Ausholen. Schwerer: mit Schritt hinter oder aus dem Ausfallschritt-Stand.",
-      sicherheit: "Bei Rückenbeschwerden nur nach Abklärung. Auf ausreichenden Abstand zu anderen und eine stabile Wand achten.",
-      golf: "Golfer drehen tausende Male nur in eine Richtung. Würfe zur Gegenseite gleichen die Muskulatur aus, was helfen kann, einseitigen Überlastungen im unteren Rücken vorzubeugen. Viele Speed-Programme schwingen und werfen daher bewusst auch zur schwachen Seite."
-    }
-  },
-  {
-    id: "golf_mb_step_behind",
-    name: "Medizinball-Rotationswurf mit Schritt hinter",
-    auch: ["Step-Behind Rotational Throw", "Step Behind Med Ball Throw", "Crossover Rotational Throw"],
-    muster: "schnellkraft_wurf",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "gesaess", "adduktoren"],
-    sekundaer: ["bauch", "quadrizeps", "schulter_vorn"],
-    geraete: [["medizinball", "wand"], ["medizinball", "draussen"]],
-    belastung: "gewicht",
-    hoehe_cm: 200,
-    gelenke: { ruecken: 1, huefte: 1, knie: 1, schulter: 1 },
-    stufe: 3,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Der Schritt hinter lädt das hintere Bein wie im Rückschwung.",
-    info: {
-      kurz: "Rotationswurf mit einem dynamischen Kreuzschritt, bei dem das hintere Bein hinter dem vorderen vorbeigesetzt wird, um Schwung aufzubauen. Eine der wirksamsten Medizinballübungen für maximale Rotationsgeschwindigkeit bei Golfern.",
-      ausfuehrung: [
-        "Stell dich etwa 3 bis 4 Meter seitlich zur Wand, die vordere Schulter zeigt zur Wand. Halte den Ball vor dem Bauch.",
-        "Mach mit dem vorderen Fuß einen kleinen Schritt Richtung Wand und setze den hinteren Fuß dann schnell hinter dem vorderen Fuß vorbei (Kreuzschritt).",
-        "Beim Aufsetzen des hinteren Fußes landest du in einer belasteten Position: Gewicht auf dem hinteren Bein, Hüfte und Oberkörper zur hinteren Seite gedreht, Ball neben der hinteren Hüfte.",
-        "Setz den vorderen Fuß sofort wieder Richtung Wand auf und stemm dich dagegen.",
-        "Dreh die Hüfte explosiv zur Wand, lass Rumpf und Arme folgen und wirf den Ball auf Hüft- bis Brusthöhe mit maximaler Geschwindigkeit.",
-        "Beende im Finish auf dem vorderen Bein und halte die Balance kurz.",
-        "Geh zurück an den Start und wiederhole erst, wenn du wieder voll konzentriert bist."
-      ],
-      atmung: "Beim Kreuzschritt einatmen, beim Wurf explosiv ausatmen.",
-      fehler: [
-        "Schritt ohne Rhythmus: Übe zuerst den Schritt ohne Ball, bis er flüssig sitzt.",
-        "Beim Landen auf dem hinteren Bein einknicken: Spür den Druck auf der Innenseite des hinteren Fußes, Knie stabil über dem Fuß.",
-        "Vorderes Bein bleibt weich: Das vordere Bein stoppt die Bewegung, damit die Energie in den Oberkörper geht.",
-        "Wurf zu hoch oder zu tief: Ziel ist eine Stelle auf Hüft- bis Brusthöhe.",
-        "Zu viele Wiederholungen: Bei Ermüdung leidet die Technik, 3 bis 5 Würfe je Satz reichen."
-      ],
-      vorteile: [
-        "Nutzt den Dehnungs-Verkürzungs-Zyklus der Beine und der Rumpfmuskulatur.",
-        "Trainiert eine sehr hohe Rotationsgeschwindigkeit.",
-        "Verbessert die Gewichtsverlagerung von hinten nach vorne.",
-        "Fördert Koordination und Rhythmus des ganzen Körpers."
-      ],
-      tipps: [
-        "Beginne mit einem leichten Ball (2 bis 3 kg), die Geschwindigkeit ist entscheidend.",
-        "Volle Pausen von 60 bis 90 Sekunden zwischen den Sätzen halten die Qualität hoch.",
-        "Ideal zu Beginn einer Einheit, wenn du noch frisch bist.",
-        "Draußen gegen eine Mauer oder auf Weite werfen geht ebenfalls."
-      ],
-      varianten: "Leichter: Scoop-Toss aus dem Stand. Schwerer: schnellerer Anlauf oder etwas schwererer Ball bei gleicher Geschwindigkeit.",
-      sicherheit: "Erfordert gute Koordination. Bei Knie- oder Rückenbeschwerden zuerst die stehende Variante üben. Genug Platz und eine stabile Wand sind Pflicht.",
-      golf: "Der Kreuzschritt erzeugt wie der Rückschwung eine Vorspannung im hinteren Bein und in der Hüfte. Danach musst du wie im Abschwung das vordere Bein stabil stemmen und die Rotation schnell entladen. Das überträgt sich gut auf die Schlägerkopfgeschwindigkeit."
-    }
-  },
-  {
-    id: "golf_mb_shotput",
-    name: "Medizinball-Rotationsstoß",
-    auch: ["Rotational Shot Put Throw", "Med Ball Shot Put", "Rotational Shotput"],
-    muster: "schnellkraft_wurf",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "brust", "trizeps"],
-    sekundaer: ["gesaess", "schulter_vorn", "bauch"],
-    geraete: [["medizinball", "wand"], ["medizinball", "draussen"]],
-    belastung: "gewicht",
-    hoehe_cm: 200,
-    gelenke: { schulter: 1, ellbogen: 1, ruecken: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Der hintere Arm stößt den Ball, die Kraft kommt aus der Drehung.",
-    info: {
-      kurz: "Rotationswurf wie beim Kugelstoßen: Der Ball liegt in der Hand des hinteren Arms an der Schulter und wird durch eine explosive Drehung von Hüfte und Rumpf horizontal gegen die Wand gestoßen. Verbindet Rotation mit einer kräftigen Streckung des hinteren Arms.",
-      ausfuehrung: [
-        "Stell dich seitlich zur Wand, die vordere Schulter zeigt zur Wand, Füße etwas breiter als hüftbreit, Knie leicht gebeugt.",
-        "Halte den Ball mit der hinteren Hand an der Schulter, der Ellbogen zeigt nach hinten und etwas nach unten. Die vordere Hand stützt den Ball von vorn.",
-        "Dreh Hüfte und Oberkörper leicht zur hinteren Seite und verlagere das Gewicht ins hintere Bein.",
-        "Drück dich explosiv vom hinteren Fuß ab und dreh die Hüfte zur Wand.",
-        "Lass den Oberkörper folgen und stoß den Ball zum Schluss mit dem hinteren Arm horizontal gegen die Wand, der Ellbogen bleibt hinter dem Ball.",
-        "Beende im Finish auf dem vorderen Bein, die Brust zeigt zur Wand.",
-        "Fang den Ball ab und stell dich für die nächste Wiederholung neu hin."
-      ],
-      atmung: "Beim Ausholen einatmen, beim Stoß kräftig ausatmen.",
-      fehler: [
-        "Ellbogen unter oder neben dem Ball: Der Ellbogen muss hinter dem Ball sein, sonst wird die Schulter belastet.",
-        "Nur Armstoß ohne Drehung: Die Hüfte startet die Bewegung, der Arm vollendet sie.",
-        "Ball wird geworfen statt gestoßen: Die Hand bleibt am Ball, bis der Arm fast gestreckt ist.",
-        "Oberkörper fällt zur Wand: Bleib über der Mitte und dreh um eine stabile Achse."
-      ],
-      vorteile: [
-        "Trainiert Rotationsschnellkraft in Verbindung mit der Druckkraft des Arms.",
-        "Kräftigt Brust, Trizeps und schräge Bauchmuskeln zusammen.",
-        "Vermittelt das Gefühl für einen aktiven hinteren Arm und ein Mitdrehen des Körpers.",
-        "Gut dosierbar und schonender für den Rücken als das Schaufeln von unten."
-      ],
-      tipps: [
-        "2 bis 4 kg reichen, schwerere Bälle machen die Bewegung langsam.",
-        "Denk an einen Boxer, der eine Gerade aus der Hüfte schlägt.",
-        "Weiche Bälle, die nicht zurückspringen, sind für Anfänger angenehmer."
-      ],
-      varianten: "Leichter: aus dem parallelen Stand ohne Ausholen. Schwerer: mit Schritt hinter oder aus dem Ausfallschritt-Stand.",
-      sicherheit: "Bei Schulter- oder Ellbogenbeschwerden vorsichtig dosieren oder auslassen. Ball nicht zu schwer wählen.",
-      golf: "Der hintere Arm streckt sich im Abschwung kräftig durch den Treffmoment. Der Rotationsstoß trainiert genau diese Verbindung von Hüftdrehung und aktivem hinteren Arm und hilft, Kraft aus dem Körper in den Schläger zu bringen."
-    }
-  },
-  {
     id: "golf_mb_ausfallschritt_wurf",
     name: "Medizinball-Rotationswurf im Ausfallschritt-Stand",
     auch: ["Split-Stance Rotational Throw", "Split Stance Med Ball Throw"],
@@ -259,56 +53,6 @@ export const GOLF: Uebung[] = [
       varianten: "Leichter: aus dem parallelen Stand oder mit kleinerem Bewegungsweg. Schwerer: halbkniend oder schneller im Rhythmus mit Rückpraller.",
       sicherheit: "Bei Rückenbeschwerden mit kleiner Amplitude beginnen. Ball muss vom Wandmaterial vertragen werden.",
       golf: "Ein guter Golfschwung braucht die Fähigkeit, den Oberkörper unabhängig vom Becken zu drehen. Diese Trennung wird oft als X-Faktor bezeichnet. Der Wurf im Ausfallschritt trainiert die Oberkörperrotation schnell und kräftig gegen eine stabile Hüfte."
-    }
-  },
-  {
-    id: "golf_mb_halbkniend_wurf",
-    name: "Medizinball-Rotationswurf halbkniend",
-    auch: ["Half-Kneeling Rotational Throw", "Half Kneeling Med Ball Scoop"],
-    muster: "schnellkraft_wurf",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "bauch"],
-    sekundaer: ["gesaess", "hueftbeuger", "schulter_vorn"],
-    geraete: [["medizinball", "wand", "matte"], ["medizinball", "wand"]],
-    belastung: "gewicht",
-    hoehe_cm: 160,
-    gelenke: { knie: 1, ruecken: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Unteres Knie auf eine weiche Unterlage, Gesäß des knienden Beins anspannen.",
-    info: {
-      kurz: "Rotationswurf aus dem Halbkniestand seitlich zur Wand. Da die Beine kaum mithelfen können, muss der Rumpf die Rotation erzeugen und das Becken gleichzeitig stabil halten.",
-      ausfuehrung: [
-        "Knie dich seitlich zur Wand hin: Das wandnahe Bein steht vorn mit dem Fuß auf dem Boden, das andere Knie liegt auf einer Matte. Beide Knie sind etwa 90 Grad gebeugt.",
-        "Spann das Gesäß des knienden Beins an, sodass die Hüfte vorn gestreckt ist, und richte den Oberkörper auf.",
-        "Halte den Ball mit beiden Händen vor dem Bauch und dreh den Oberkörper zur von der Wand abgewandten Seite.",
-        "Dreh den Oberkörper explosiv zur Wand und wirf den Ball auf Brusthöhe gegen die Wand.",
-        "Fang den Ball, kehre ruhig in die Ausgangsposition zurück und halte das Becken dabei stabil.",
-        "Nach allen Würfen einer Seite drehst du dich um und wechselst das vordere Bein."
-      ],
-      atmung: "Vor dem Wurf einatmen und den Bauch spannen, beim Wurf ausatmen.",
-      fehler: [
-        "Hohlkreuz durch gebeugte Hüfte: Gesäß des hinteren Beins anspannen.",
-        "Seitliches Wegkippen beim Wurf: Halte die Hüfte über dem Knie und dreh um die eigene Achse.",
-        "Zu schwerer Ball: Die Bewegung muss schnell sein, 2 bis 3 kg reichen.",
-        "Arme beugen und strecken sich stark: Die Arme bleiben eher fest, der Oberkörper dreht."
-      ],
-      vorteile: [
-        "Isoliert die Rotationskraft des Rumpfes.",
-        "Trainiert Beckenstabilität und Hüftstreckung des knienden Beins.",
-        "Schont den unteren Rücken durch begrenzten Bewegungsumfang.",
-        "Lehrt eine saubere, aufrechte Achse bei schneller Drehung."
-      ],
-      tipps: [
-        "Eine weiche Matte unter dem Knie macht die Übung deutlich angenehmer.",
-        "Schau während der Drehung mit den Augen auf die Wand, um die Balance zu halten.",
-        "Gut als Einstieg vor den stehenden Würfen."
-      ],
-      varianten: "Leichter: kleinerer Ausholweg. Schwerer: im aufrechten Kniestand mit beiden Knien am Boden oder mit schnellerem Rhythmus.",
-      sicherheit: "Bei Kniebeschwerden ausreichend polstern oder die stehende Variante wählen.",
-      golf: "Hier muss die Drehung aus dem Rumpf kommen, während das Becken stabil bleibt. Das stärkt genau die Rumpfmuskeln, die im Golfschwung den Oberkörper beschleunigen und abbremsen, und verbessert die Kontrolle über die Wirbelsäulenachse."
     }
   },
   {
@@ -509,56 +253,6 @@ export const GOLF: Uebung[] = [
       varianten: "Leichter: kürzerer Schritt und weniger Tempo. Schwerer: Schritt hinter (Kreuzschritt) für noch mehr Vorspannung.",
       sicherheit: "Bei Knie- oder Sprunggelenksbeschwerden vorsichtig, da das vordere Bein abbremst. Genug Platz um dich herum.",
       golf: "Ein kraftvoller Abschwung beginnt mit der Druckverlagerung in den vorderen Fuß. Diese Übung trainiert genau das Zusammenspiel aus Schritt, Stemmen des vorderen Beins und folgender Rotation, ähnlich wie Schrittübungen, die Golftrainer für die Gewichtsverlagerung nutzen."
-    }
-  },
-  {
-    id: "golf_mb_diagonal_slam",
-    name: "Diagonaler Medizinball-Slam aus der Golfhaltung",
-    auch: ["Rotational Med Ball Slam", "Diagonal Slam", "Cross-Body Slam"],
-    muster: "schnellkraft_wurf",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "latissimus", "bauch"],
-    sekundaer: ["gesaess", "schulter_vorn", "trizeps"],
-    geraete: [["medizinball"]],
-    belastung: "gewicht",
-    hoehe_cm: 250,
-    gelenke: { schulter: 1, ruecken: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Nur einen Slamball oder nicht springenden Ball nehmen.",
-    info: {
-      kurz: "Explosiver Wurf von schräg oben über die hintere Schulter diagonal nach unten neben den vorderen Fuß. Verbindet Rotation mit kräftiger Rumpfbeugung und trainiert die Kraft im Abschwung von oben nach unten.",
-      ausfuehrung: [
-        "Stell dich etwas breiter als hüftbreit hin, Knie locker, Ball mit beiden Händen vor dem Körper.",
-        "Hebe den Ball diagonal über die hintere Schulter, dreh dabei Oberkörper und Hüfte leicht mit und verlagere das Gewicht ins hintere Bein.",
-        "Starte die Bewegung durch eine Gewichtsverlagerung auf das vordere Bein und eine Drehung der Hüfte.",
-        "Zieh den Ball mit gestreckten Armen kraftvoll diagonal nach unten und wirf ihn neben den vorderen Fuß auf den Boden.",
-        "Geh dabei in die Knie und bleib mit dem Rücken lang.",
-        "Heb den Ball wieder auf, indem du in die Hocke gehst, und wiederhole."
-      ],
-      atmung: "Beim Hochnehmen einatmen, beim Slam kräftig ausatmen.",
-      fehler: [
-        "Ball springt hoch zurück: Nur einen nicht springenden Slamball verwenden.",
-        "Runder Rücken beim Aufheben: In die Knie gehen, nicht aus dem Rücken heben.",
-        "Wurf nur aus den Armen: Gewichtsverlagerung und Hüftdrehung starten die Bewegung.",
-        "Ball landet zu nah an den Füßen: Etwas neben und vor den vorderen Fuß zielen."
-      ],
-      vorteile: [
-        "Trainiert diagonale Kraft vom Oberkörper zum Boden.",
-        "Kräftigt Latissimus, schräge Bauchmuskeln und Rumpf zusammen.",
-        "Sehr dynamisch und auch für Kraftausdauer geeignet.",
-        "Braucht keine Wand."
-      ],
-      tipps: [
-        "Slambälle von 4 bis 8 kg sind üblich.",
-        "Zieh mit dem Latissimus, als würdest du etwas schwungvoll nach unten reißen.",
-        "Kurze Sätze von 5 bis 8 Wiederholungen je Seite halten die Qualität hoch."
-      ],
-      varianten: "Leichter: gerader Slam vor dem Körper. Schwerer: mit kleinem Schritt nach vorn oder schwererem Ball.",
-      sicherheit: "Raumhöhe beachten, die Arme gehen weit über Kopf. Bei Schulterbeschwerden vorsichtig, bei Rückenbeschwerden kleiner Bewegungsumfang.",
-      golf: "Im Abschwung arbeitet der Latissimus zusammen mit den schrägen Bauchmuskeln, um die Arme kraftvoll nach unten zu bringen. Der diagonale Slam trainiert diese Kette von oben nach unten und die Druckverlagerung auf das vordere Bein."
     }
   },
   {
@@ -865,156 +559,6 @@ export const GOLF: Uebung[] = [
     }
   },
   {
-    id: "golf_holzhacker_halbkniend",
-    name: "Holzhacker am Kabel halbkniend",
-    auch: ["Half-Kneeling Cable Chop", "Half Kneeling Chop"],
-    muster: "rotation",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "bauch"],
-    sekundaer: ["gesaess", "latissimus", "hueftbeuger"],
-    geraete: [["kabelzug", "matte"], ["band", "matte"], ["kabelzug"], ["band"]],
-    belastung: "gewicht",
-    hoehe_cm: 200,
-    gelenke: { knie: 1, ruecken: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Knie, Hüfte und Schulter in einer Linie, das Gesäß des knienden Beins ist fest.",
-    info: {
-      kurz: "Holzhacker im Halbkniestand. Da die Beine nicht mithelfen, muss der Rumpf die Diagonale führen und das Becken gleichzeitig stabil halten. Eine Kernübung der klassischen Chop-and-Lift-Progression.",
-      ausfuehrung: [
-        "Stell den Kabelzug hoch ein, befestige ein Seil oder einen Stab und knie dich seitlich zum Zug auf eine Matte.",
-        "Das zugnahe Knie liegt am Boden, das andere Bein steht vorn mit dem Fuß auf dem Boden.",
-        "Spann das Gesäß des knienden Beins an und richte den Oberkörper auf.",
-        "Greif das Seil über der zugnahen Schulter und zieh es zuerst zur Brust.",
-        "Drück das Seil dann weiter diagonal nach unten an der Außenseite der vorderen Hüfte vorbei.",
-        "Führe es kontrolliert zurück, ohne dass sich der Oberkörper zum Zug neigt."
-      ],
-      atmung: "Beim Ziehen und Drücken ausatmen, beim Zurückführen einatmen.",
-      fehler: [
-        "Oberkörper kippt zur Seite: Achse aufrecht halten, lieber weniger Gewicht.",
-        "Hüfte knickt ein: Gesäß des knienden Beins bleibt aktiv.",
-        "Bewegung nur aus den Armen: Der Rumpf dreht leicht mit, die Arme führen.",
-        "Zu schnell: Ruhige zwei Sekunden für jede Richtung."
-      ],
-      vorteile: [
-        "Isoliert die Rumpfarbeit von der Beinarbeit.",
-        "Verbessert die Beckenkontrolle und die Hüftstreckung.",
-        "Kräftigt die Diagonale von Schulter zu gegenüberliegender Hüfte.",
-        "Sehr gut als Kontrollübung bei Golfern mit Rückenbeschwerden in der Vorgeschichte."
-      ],
-      tipps: [
-        "Eine schmale Spur, also Knie und vorderer Fuß fast auf einer Linie, macht die Übung schwerer.",
-        "10 bis 12 Wiederholungen je Seite mit moderatem Gewicht.",
-        "Wenn der Stab statt Seil benutzt wird, bleiben die Handgelenke ruhiger."
-      ],
-      varianten: "Leichter: breitere Spur oder im parallelen Kniestand. Schwerer: schmale Spur oder langsames exzentrisches Zurückführen.",
-      sicherheit: "Bei Kniebeschwerden ausreichend polstern. Bei akuten Rückenschmerzen nur nach Abklärung.",
-      golf: "Die Übung stärkt die Fähigkeit, Kraft durch einen stabilen Rumpf zu leiten, ohne dass Becken oder Wirbelsäule ausweichen. Diese Kontrolle hilft, im Schwung die Haltung zu behalten und Kraft sauber auf den Schläger zu übertragen."
-    }
-  },
-  {
-    id: "golf_lift_halbkniend",
-    name: "Diagonales Heben am Kabel halbkniend",
-    auch: ["Half-Kneeling Cable Lift", "Half Kneeling Lift"],
-    muster: "rotation",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "bauch"],
-    sekundaer: ["gesaess", "schulter_vorn", "oberer_ruecken"],
-    geraete: [["kabelzug", "matte"], ["band", "matte"], ["kabelzug"], ["band"]],
-    belastung: "gewicht",
-    hoehe_cm: 200,
-    gelenke: { knie: 1, ruecken: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Nicht nach hinten lehnen, die Rippen bleiben unten.",
-    info: {
-      kurz: "Diagonales Heben von unten nach oben im Halbkniestand. Fordert die Rumpfstabilität in der Gegendiagonale zum Holzhacker und schult eine aufrechte Haltung ohne Ausweichen ins Hohlkreuz.",
-      ausfuehrung: [
-        "Stell den Kabelzug tief ein und knie dich seitlich zum Zug auf eine Matte.",
-        "Das zugnahe Bein steht vorn mit dem Fuß auf dem Boden, das andere Knie liegt auf der Matte.",
-        "Greif das Seil neben der vorderen Hüfte und richte den Oberkörper auf, Gesäß des knienden Beins fest.",
-        "Zieh das Seil zur Brust und drück es dann diagonal nach oben über die abgewandte Schulter.",
-        "Halte am Ende kurz und achte darauf, dass du nicht nach hinten lehnst.",
-        "Führe das Seil auf derselben Linie langsam zurück."
-      ],
-      atmung: "Beim Heben ausatmen, beim Zurückführen einatmen.",
-      fehler: [
-        "Hohlkreuz am Ende der Bewegung: Rippen nach unten, Bauch anspannen.",
-        "Becken dreht zur Seite: Gesäß aktiv, Knie und Fuß fest.",
-        "Seitliches Kippen: Weniger Gewicht, aufrechte Achse.",
-        "Arme reißen hoch: Gleichmäßiges Tempo."
-      ],
-      vorteile: [
-        "Kräftigt die schrägen Bauchmuskeln in der Gegendiagonale.",
-        "Verbessert die Kontrolle von Becken und Lendenwirbelsäule.",
-        "Ergänzt den Holzhacker zu einem vollständigen Programm.",
-        "Geringe Belastung für Gelenke bei guter Ausführung."
-      ],
-      tipps: [
-        "Wähle etwa 70 Prozent des Gewichts, das du beim Holzhacker nimmst.",
-        "Denk daran, dich lang und groß zu machen.",
-        "Gut in Supersätzen mit dem Holzhacker kombinierbar."
-      ],
-      varianten: "Leichter: breitere Spur. Schwerer: schmale Spur oder 2 Sekunden Halt oben.",
-      sicherheit: "Bei Schulterbeschwerden nicht ganz über Kopf. Bei Kniebeschwerden gut polstern.",
-      golf: "Im Durchschwung und Finish streckt sich der Körper diagonal nach oben. Eine stabile Mitte verhindert dabei, dass du ins Hohlkreuz ausweichst. Die Übung stärkt diese Kontrolle und gleicht die Belastung zur Abschwungrichtung aus."
-    }
-  },
-  {
-    id: "golf_kabel_rotation_halbkniend",
-    name: "Kabelrotation halbkniend",
-    auch: ["Half-Kneeling Cable Rotation", "Half Kneeling Band Rotation", "Half-Kneeling Trunk Rotation"],
-    muster: "rotation",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "bauch"],
-    sekundaer: ["oberer_ruecken", "gesaess"],
-    geraete: [["kabelzug", "matte"], ["band", "matte"], ["kabelzug"], ["band"]],
-    belastung: "gewicht",
-    hoehe_cm: 160,
-    gelenke: { knie: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Becken zeigt nach vorn, nur Brust und Arme drehen.",
-    info: {
-      kurz: "Horizontale Oberkörperrotation gegen Kabel oder Band im Halbkniestand. Das Becken ist fixiert, sodass die Brustwirbelsäule und die schrägen Bauchmuskeln gezielt arbeiten.",
-      ausfuehrung: [
-        "Stell den Kabelzug auf Brusthöhe im Knien ein und knie dich seitlich dazu, das zugferne Bein steht vorn.",
-        "Greif den Griff mit beiden Händen, strecke die Arme vor der Brust und spann das Gesäß des knienden Beins an.",
-        "Lass den Griff kontrolliert zum Zug hin drehen, bis du eine angenehme Dehnung in der Brustwirbelsäule spürst.",
-        "Dreh den Oberkörper vom Zug weg, bis die Arme etwa vor dem vorderen Knie stehen. Das Becken bleibt nach vorn ausgerichtet.",
-        "Halte kurz und kehre langsam zurück.",
-        "Wechsle nach dem Satz Seite und Knie."
-      ],
-      atmung: "Bei der Drehung weg vom Zug ausatmen, beim Zurückgehen einatmen.",
-      fehler: [
-        "Becken dreht mit: Knie und Fuß fest, Gesäß aktiv.",
-        "Arme beugen sich: Arme bleiben gestreckt, der Oberkörper dreht.",
-        "Zu viel Gewicht: Lieber großer Bewegungsweg mit wenig Gewicht.",
-        "Oberkörper fällt zur Seite: Aufrechte Achse behalten."
-      ],
-      vorteile: [
-        "Trennt Oberkörper- und Hüftrotation.",
-        "Kräftigt die Rotation der Brustwirbelsäule.",
-        "Verbessert Beweglichkeit und Kraft zugleich.",
-        "Einfach zu lernen, auch für Einsteiger."
-      ],
-      tipps: [
-        "Leichtes bis mittleres Gewicht, 10 bis 15 Wiederholungen je Seite.",
-        "Dein Blick folgt den Händen, das vergrößert die Drehung.",
-        "Gut als Aktivierung vor dem Golftraining mit Band."
-      ],
-      varianten: "Leichter: Band mit wenig Spannung. Schwerer: mehr Gewicht oder Halt in der Enddrehung.",
-      sicherheit: "Bei Kniebeschwerden polstern. Bei Schmerzen im Rücken Bewegungsweg verkleinern.",
-      golf: "Golfer brauchen eine gute Drehung der Brustwirbelsäule, während das Becken ruhig bleibt. Die Übung stärkt diese Trennung und kann helfen, einen größeren Schulterdreh im Rückschwung kontrolliert zu erreichen."
-    }
-  },
-  {
     id: "golf_kabel_rotation_explosiv",
     name: "Schnelle Kabelrotation in Golfhaltung",
     auch: ["Speed Cable Rotation", "Explosive Cable Rotation", "Banded Speed Rotation"],
@@ -1062,55 +606,6 @@ export const GOLF: Uebung[] = [
       varianten: "Leichter: kleinerer Bewegungsweg. Schwerer: etwas mehr Widerstand bei gleicher Geschwindigkeit.",
       sicherheit: "Bei Rückenbeschwerden nur nach Abklärung. Band vor jedem Training auf Risse prüfen.",
       golf: "Schlägerkopfgeschwindigkeit entsteht aus schneller Rotation. Die Übung trainiert Geschwindigkeit in der Golfhaltung und lehrt zugleich das kontrollierte Abbremsen, das die Wirbelsäule im Durchschwung schützt."
-    }
-  },
-  {
-    id: "golf_landmine_rotation",
-    name: "Landmine-Rotation",
-    auch: ["Landmine Rotation", "Landmine 180", "Landmine Rainbow", "Landmine Twist"],
-    muster: "rotation",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "bauch", "schulter_vorn"],
-    sekundaer: ["gesaess", "oberer_ruecken"],
-    geraete: [["landmine", "langhantel"]],
-    belastung: "gewicht",
-    hoehe_cm: 220,
-    gelenke: { ruecken: 1, schulter: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 2,
-    hinweis: "Hüfte und Füße drehen mit, die Arme bleiben lang.",
-    info: {
-      kurz: "Das Ende einer in der Landmine verankerten Langhantel wird mit gestreckten Armen in einem Bogen von einer Hüfte zur anderen geführt. Trainiert die Rotation mit langem Hebel und das Abbremsen der Bewegung.",
-      ausfuehrung: [
-        "Stell die Stange in die Landmine und lade sie leicht. Stell dich frontal zum Stangenende, Füße schulterbreit.",
-        "Greif das Stangenende mit beiden Händen übereinander und halte es mit gestreckten Armen vor der Stirn.",
-        "Führe die Stange in einem Bogen nach unten zu einer Hüfte. Dreh dabei Hüfte und hinteren Fuß mit, wie beim Golfschwung.",
-        "Bremse die Stange auf Hüfthöhe ab, ohne den Rücken zu runden.",
-        "Führe die Stange über die Mitte zurück nach oben und auf der anderen Seite nach unten.",
-        "Bleib mit dem Oberkörper aufrecht und den Armen gestreckt."
-      ],
-      atmung: "Beim Absenken einatmen, beim Hochführen ausatmen.",
-      fehler: [
-        "Arme beugen sich: Arme lang halten, die Rotation macht die Arbeit.",
-        "Füße bleiben steif: Hinterer Fuß dreht auf dem Ballen mit.",
-        "Zu viel Gewicht: Erst mit der leeren Stange üben.",
-        "Rundrücken unten: Brust aufrecht halten."
-      ],
-      vorteile: [
-        "Kräftigt Rotation und Anti-Rotation zugleich.",
-        "Fordert die Schultern als Stabilisatoren.",
-        "Trainiert das Abbremsen eines langen Hebels.",
-        "Verbindet Beine, Hüfte und Rumpf in einer Bewegung."
-      ],
-      tipps: [
-        "Die leere Stange reicht anfangs völlig.",
-        "8 bis 10 Wiederholungen je Seite.",
-        "Ohne Landmine kannst du die Stange in eine Ecke stellen, mit einem Handtuch als Schutz."
-      ],
-      varianten: "Leichter: kleinerer Bogen. Schwerer: mehr Gewicht oder Halt auf Hüfthöhe.",
-      sicherheit: "Bei Schulterbeschwerden kleiner Bogen. Bei Rückenbeschwerden zuerst leichte Pallof-Übungen beherrschen.",
-      golf: "Ähnlich wie im Schwung bewegt sich ein langer Hebel um deinen Körper. Die Landmine-Rotation stärkt die Muskeln, die diesen Hebel beschleunigen und abbremsen, und trainiert das Zusammenspiel von Fußarbeit und Rumpfdrehung."
     }
   },
   {
@@ -1617,155 +1112,6 @@ export const GOLF: Uebung[] = [
       golf: "Eine starke Außenrotation hält das hintere Knie im Rückschwung stabil und hilft, das vordere Knie im Abschwung nicht nach innen fallen zu lassen. So bleibt die Hüftdrehung kontrolliert."
     }
   },
-  {
-    id: "golf_huefte_innenrotation_sitzend",
-    name: "Aktive Hüftinnenrotation im Sitzen",
-    auch: ["Seated Hip Internal Rotation Lift-Off", "Seated Active Hip IR", "Seated Hip IR Lift"],
-    muster: "mobilitaet_huefte",
-    art: "mobilitaet",
-    muskeln: ["gesaess_mittel", "adduktoren"],
-    sekundaer: ["hueftbeuger"],
-    geraete: [["bank"], ["box"], []],
-    belastung: "wiederholungen",
-    hoehe_cm: 130,
-    gelenke: { huefte: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Knie bleiben zusammen, nur der Unterschenkel schwingt nach außen.",
-    info: {
-      kurz: "Im aufrechten Sitz wird der Unterschenkel aktiv nach außen gedreht, was eine Innenrotation der Hüfte bedeutet. Entspricht dem Test, den Golftrainer zur Prüfung der Hüftrotation nutzen, und verbessert die aktive Beweglichkeit.",
-      ausfuehrung: [
-        "Setz dich aufrecht auf eine Bank, Box oder einen Stuhl, die Knie im rechten Winkel, die Füße am Boden.",
-        "Leg eine kleine Rolle oder ein gefaltetes Handtuch zwischen die Knie, damit sie zusammenbleiben.",
-        "Halte das Becken ruhig und dreh den Unterschenkel eines Beins nach außen, sodass der Fuß vom Boden abhebt und nach außen schwingt.",
-        "Halte die Endposition zwei Sekunden, ohne dass du zur Seite kippst.",
-        "Führe den Fuß langsam zurück auf den Boden.",
-        "Mach alle Wiederholungen und wechsle dann das Bein."
-      ],
-      atmung: "Beim Drehen ausatmen, beim Zurückgehen einatmen.",
-      fehler: [
-        "Oberkörper kippt zur Seite: Aufrecht sitzen, beide Sitzbeinhöcker belastet.",
-        "Knie rutscht nach außen: Knie bleiben zusammen, nur der Unterschenkel bewegt sich.",
-        "Schwung holen: Langsam und aktiv drehen.",
-        "Schmerzen in der Leiste: Bewegung verkleinern."
-      ],
-      vorteile: [
-        "Verbessert die aktiv nutzbare Innenrotation der Hüfte.",
-        "Zeigt Seitenunterschiede deutlich.",
-        "Sehr einfach und überall durchführbar.",
-        "Gute Vorbereitung für Hüftübungen im Stand."
-      ],
-      tipps: [
-        "10 bis 15 Wiederholungen je Seite mit Halt.",
-        "Vergleiche beide Seiten. Golfer haben oft vorn weniger Innenrotation.",
-        "Mehrmals pro Woche kurz üben bringt mehr als selten lange."
-      ],
-      varianten: "Leichter: ohne Halt. Schwerer: mit leichtem Band um den Fußknöchel oder längerer Halt.",
-      sicherheit: "Bei Hüft- oder Knieschmerzen nur im schmerzfreien Bereich.",
-      golf: "Ausreichende Innenrotation der Hüfte ist eine Grundlage für eine gute Hüftdrehung im Schwung. Ist sie eingeschränkt, weichen Golfer oft mit Hüfte oder Wirbelsäule aus. Die Übung verbessert die aktive Kontrolle über diesen Bewegungsbereich."
-    }
-  },
-  {
-    id: "golf_seitsprung_halten",
-    name: "Seitsprung mit Landung auf einem Bein",
-    auch: ["Lateral Bound and Stick", "Lateral Bound to Hold", "Skater Bound Stick"],
-    muster: "schnellkraft_sprung",
-    art: "kraft",
-    muskeln: ["gesaess", "gesaess_mittel", "quadrizeps"],
-    sekundaer: ["adduktoren", "waden"],
-    geraete: [[]],
-    belastung: "wiederholungen",
-    hoehe_cm: 250,
-    gelenke: { knie: 1, sprunggelenk: 1, huefte: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Weich landen und zwei Sekunden stabil stehen bleiben.",
-    info: {
-      kurz: "Seitlicher Sprung von einem Bein auf das andere mit stabiler Landung und kurzem Halt. Trainiert seitliche Schnellkraft und das Abfangen von Kräften auf einem Bein, ähnlich der Druckverlagerung im Golfschwung.",
-      ausfuehrung: [
-        "Stell dich auf ein Bein, das andere ist leicht angehoben, Knie und Hüfte gebeugt wie in einer kleinen Kniebeuge.",
-        "Hol mit den Armen Schwung und drück dich kräftig seitlich ab.",
-        "Spring zur Seite und lande auf dem anderen Bein, weich über den Fußballen auf den ganzen Fuß.",
-        "Fang die Landung in einer leichten Kniebeuge ab, Knie über dem Fuß, Hüfte nach hinten.",
-        "Halte die Landung zwei Sekunden ruhig, ohne zu wackeln.",
-        "Spring dann zurück zur Ausgangsseite und halte erneut."
-      ],
-      atmung: "Beim Absprung ausatmen, in der Haltephase ruhig atmen.",
-      fehler: [
-        "Knie fällt bei der Landung nach innen: Knie über dem zweiten Zeh halten.",
-        "Harte Landung: Leise landen, Gelenke beugen.",
-        "Sprung zu weit: Nur so weit, wie du sicher halten kannst.",
-        "Oberkörper kippt weit zur Seite: Aufrecht landen."
-      ],
-      vorteile: [
-        "Trainiert seitliche Schnellkraft.",
-        "Verbessert Landestabilität und Knieausrichtung.",
-        "Kräftigt die seitlichen Hüftmuskeln.",
-        "Ohne Gerät durchführbar."
-      ],
-      tipps: [
-        "4 bis 6 Sprünge je Seite mit sauberer Landung.",
-        "Steigere zuerst die Haltezeit, dann die Weite.",
-        "Auf rutschfestem Untergrund üben."
-      ],
-      varianten: "Leichter: kleiner Seitschritt statt Sprung. Schwerer: weitere Sprünge oder fortlaufend ohne Halt.",
-      sicherheit: "Bei Knie- oder Sprunggelenksbeschwerden vorsichtig. Raumhöhe und Platz beachten.",
-      golf: "Im Golfschwung verlagert sich der Druck schnell vom hinteren auf das vordere Bein. Seitliche Sprünge trainieren den kraftvollen Abdruck und das stabile Abfangen, was die Bodenreaktionskräfte im Schwung unterstützen kann."
-    }
-  },
-  {
-    id: "golf_rotationssprung",
-    name: "Rotationssprung 90 Grad",
-    auch: ["90 Degree Jump Turn", "Rotational Jump", "Jump Squat with Quarter Turn"],
-    muster: "schnellkraft_sprung",
-    art: "kraft",
-    muskeln: ["gesaess", "quadrizeps", "schraege_bauch"],
-    sekundaer: ["waden", "adduktoren"],
-    geraete: [[]],
-    belastung: "wiederholungen",
-    hoehe_cm: 250,
-    gelenke: { knie: 1, sprunggelenk: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 2,
-    hinweis: "Weich landen, Knie über den Füßen, dann sofort stabil.",
-    info: {
-      kurz: "Beidbeiniger Sprung mit einer Vierteldrehung in der Luft und stabiler Landung. Verbindet vertikale Sprungkraft mit Rotation und schult die Kontrolle bei Landung nach einer Drehung.",
-      ausfuehrung: [
-        "Stell dich hüftbreit hin, Arme locker neben dem Körper.",
-        "Geh zügig in eine viertel bis halbe Kniebeuge und hol mit den Armen Schwung.",
-        "Spring explosiv nach oben und dreh dich in der Luft um 90 Grad.",
-        "Lande weich auf beiden Füßen, Knie und Hüfte gebeugt, Knie über den Füßen.",
-        "Halte die Landung eine Sekunde stabil.",
-        "Spring dann in die Gegenrichtung zurück."
-      ],
-      atmung: "Beim Absprung ausatmen, bei der Landung einatmen.",
-      fehler: [
-        "Knie fallen bei der Landung nach innen: Knie nach außen über die Füße.",
-        "Zu starke Drehung aus den Schultern: Drehung aus Hüfte und Beinen.",
-        "Harte Landung: Leise landen.",
-        "Wackelige Landung: Erst stabil, dann weiter."
-      ],
-      vorteile: [
-        "Trainiert Sprungkraft und Rotationskontrolle.",
-        "Verbessert Landestabilität nach einer Drehung.",
-        "Fördert Koordination und Körperspannung.",
-        "Ohne Gerät durchführbar."
-      ],
-      tipps: [
-        "4 bis 6 Sprünge je Richtung.",
-        "Zuerst Vierteldrehungen, später halbe Drehungen.",
-        "Sinnvoll am Anfang der Einheit."
-      ],
-      varianten: "Leichter: kleine Sprünge oder Drehung ohne Sprung. Schwerer: 180 Grad oder einbeinige Landung.",
-      sicherheit: "Bei Knie- oder Sprunggelenksbeschwerden auslassen. Auf genug Raumhöhe achten.",
-      golf: "Schnelles Drücken in den Boden und Drehen erzeugt im Schwung Geschwindigkeit. Der Rotationssprung trainiert Sprungkraft und Drehung zusammen, was den Boden als Kraftquelle besser nutzbar machen kann."
-    }
-  },
 
   // ---------- Haltung und Körperkontrolle (TPI-Grundübungen) ----------
   {
@@ -1867,104 +1213,6 @@ export const GOLF: Uebung[] = [
     }
   },
   {
-    id: "golf_rumpfrotation_stehend",
-    name: "Oberkörperrotation bei ruhiger Hüfte",
-    auch: ["Torso Rotation Drill", "Torso Rotation Test", "Upper Body Rotation Hips Still"],
-    muster: "mobilitaet_bws",
-    art: "mobilitaet",
-    muskeln: ["schraege_bauch", "oberer_ruecken"],
-    sekundaer: ["latissimus"],
-    geraete: [["golfschlaeger"], ["stab"], []],
-    belastung: "wiederholungen",
-    hoehe_cm: 200,
-    gelenke: {},
-    stufe: 2,
-    sport: ["golf"],
-    golf: 3,
-    hinweis: "Das Becken bleibt fest, nur Brust und Schultern drehen.",
-    info: {
-      kurz: "Gegenstück zur Beckenrotation: In der Golfhaltung drehst du den Oberkörper hin und her, während das Becken ruhig bleibt. Fördert die Beweglichkeit der Brustwirbelsäule und die Trennung von Ober- und Unterkörper.",
-      ausfuehrung: [
-        "Geh in deine Golfhaltung und halte einen Schläger quer vor den Schultern, die Arme verschränkt.",
-        "Leg die Knie leicht zusammen oder stell dich mit dem Becken an eine Kante, damit es ruhig bleibt.",
-        "Dreh den Oberkörper langsam zu einer Seite, das Becken bleibt nach vorn ausgerichtet.",
-        "Dreh dann zur anderen Seite.",
-        "Halte den Neigungswinkel des Oberkörpers, der Schläger dreht etwa parallel zum Boden.",
-        "Wiederhole mit ruhigem Rhythmus."
-      ],
-      atmung: "Bei der Drehung ausatmen, in der Mitte einatmen.",
-      fehler: [
-        "Becken dreht mit: Bewegung verkleinern oder Becken an einer Bank anlehnen.",
-        "Aufrichten während der Drehung: Neigungswinkel halten.",
-        "Seitneigung statt Drehung: Schultern drehen um die Wirbelsäule.",
-        "Zu schnell: Langsam und kontrolliert."
-      ],
-      vorteile: [
-        "Verbessert die Rotation der Brustwirbelsäule in der Golfhaltung.",
-        "Schult die Trennung von Ober- und Unterkörper.",
-        "Kann die Lendenwirbelsäule entlasten, weil die Drehung im richtigen Abschnitt passiert.",
-        "Gute Aufwärmübung."
-      ],
-      tipps: [
-        "10 bis 15 Wiederholungen je Seite.",
-        "Mit einem Spiegel kontrollieren, ob das Becken ruhig bleibt.",
-        "Vor der Runde als Teil des Aufwärmens nutzen."
-      ],
-      varianten: "Leichter: im Sitzen. Schwerer: mit Halt in der Enddrehung oder in tieferer Haltung.",
-      sicherheit: "Bei Rückenschmerzen nur im schmerzfreien Bereich bewegen.",
-      golf: "Ein großer Schulterdreh im Rückschwung kommt vor allem aus der Brustwirbelsäule. Kann sie gut rotieren, muss die Lendenwirbelsäule weniger ausgleichen. Die Übung verbessert diese Drehfähigkeit genau in der Golfhaltung."
-    }
-  },
-  {
-    id: "golf_hueftbeuge_schlaeger",
-    name: "Hüftbeuge mit Schläger am Rücken",
-    auch: ["Hip Hinge with Club", "Dowel Hip Hinge", "Golf Posture Drill", "Hip Hinge Drill"],
-    muster: "hueftstreckung",
-    art: "kraft",
-    muskeln: ["beinbeuger", "gesaess", "ruecken_unten"],
-    sekundaer: ["bauch"],
-    geraete: [["golfschlaeger"], ["stab"]],
-    belastung: "wiederholungen",
-    hoehe_cm: 200,
-    gelenke: {},
-    stufe: 1,
-    sport: ["golf"],
-    golf: 3,
-    hinweis: "Schläger berührt Hinterkopf, Brustwirbelsäule und Kreuzbein die ganze Zeit.",
-    info: {
-      kurz: "Du hältst einen Schläger längs am Rücken, sodass er Hinterkopf, oberen Rücken und Kreuzbein berührt, und beugst dich aus der Hüfte nach vorn. Die wichtigste Grundübung, um die Ansprechhaltung mit geradem Rücken zu lernen.",
-      ausfuehrung: [
-        "Stell dich hüftbreit hin und halte einen Schläger längs am Rücken: eine Hand im Nacken, die andere am unteren Rücken.",
-        "Der Schläger berührt drei Punkte: Hinterkopf, Brustwirbelsäule und Kreuzbein.",
-        "Beuge die Knie leicht und schieb das Gesäß nach hinten, sodass sich der Oberkörper aus der Hüfte nach vorn neigt.",
-        "Neige dich so weit, bis der Oberkörper etwa in deinem Ansprechwinkel ist, alle drei Kontaktpunkte bleiben bestehen.",
-        "Spür die Dehnung an der Rückseite der Oberschenkel und das Gewicht über der Fußmitte.",
-        "Richte dich durch Vorschieben der Hüfte wieder auf und wiederhole."
-      ],
-      atmung: "Beim Vorbeugen einatmen, beim Aufrichten ausatmen.",
-      fehler: [
-        "Schläger verliert Kontakt am Kreuzbein: Rücken rundet sich, Gesäß weiter nach hinten.",
-        "Schläger verliert Kontakt am oberen Rücken: Hohlkreuz, Rippen nach unten ziehen.",
-        "Knie beugen zu stark: Es ist eine Hüftbeuge, keine Kniebeuge.",
-        "Gewicht auf den Zehen: Gewicht über der Fußmitte halten."
-      ],
-      vorteile: [
-        "Lehrt eine neutrale Golfhaltung.",
-        "Verbessert die Hüftbeugung als Grundlage für viele Kraftübungen.",
-        "Schont den Rücken, weil die Bewegung aus der Hüfte kommt.",
-        "Überall mit einem Schläger umsetzbar."
-      ],
-      tipps: [
-        "10 bis 15 langsame Wiederholungen.",
-        "Vor einem Spiegel seitlich üben.",
-        "Danach direkt ohne Schläger die gleiche Haltung einnehmen, um das Gefühl zu übertragen."
-      ],
-      varianten: "Leichter: kleinerer Neigungswinkel. Schwerer: einbeinig oder mit Halt von 5 Sekunden unten.",
-      sicherheit: "Bei Rückenschmerzen nur im schmerzfreien Bereich.",
-      golf: "Eine gute Ansprechhaltung beginnt mit einer sauberen Hüftbeuge. Die Übung zeigt dir, ob du aus der Hüfte beugst oder im Rücken rundest, und schult eine Haltung, aus der du frei drehen kannst. Golftrainer nutzen sie als Basisübung für die Haltung."
-    }
-  },
-  {
     id: "golf_haltung_wand",
     name: "Golfhaltung an der Wand halten",
     auch: ["Wall Posture Drill", "Golf Posture Wall Hold", "Butt to Wall Drill"],
@@ -2011,154 +1259,6 @@ export const GOLF: Uebung[] = [
       varianten: "Leichter: kürzere Haltezeit. Schwerer: Arme gestreckt vor dem Körper halten oder leichte Hanteln in den Händen.",
       sicherheit: "Bei Rückenschmerzen Haltezeit verkürzen.",
       golf: "Eine stabile Haltung über die ganze Runde hilft, gleichmäßig zu treffen. Die Wandposition gibt dir eine feste Referenz für die Hüftbeuge und schult die Muskeln, die die Golfhaltung halten. Viele Trainer nutzen die Wand auch, um ein Aufrichten im Abschwung zu kontrollieren."
-    }
-  },
-  {
-    id: "golf_bws_rotation_sitzend",
-    name: "Sitzende Rumpfrotation mit Schläger",
-    auch: ["Seated Trunk Rotation with Club", "Seated Thoracic Rotation", "Seated Rotation Drill"],
-    muster: "mobilitaet_bws",
-    art: "mobilitaet",
-    muskeln: ["schraege_bauch", "oberer_ruecken"],
-    sekundaer: ["latissimus"],
-    geraete: [["golfschlaeger", "bank"], ["stab", "bank"], ["golfschlaeger"], ["stab"]],
-    belastung: "wiederholungen",
-    hoehe_cm: 160,
-    gelenke: {},
-    stufe: 1,
-    sport: ["golf"],
-    golf: 3,
-    hinweis: "Knie zusammen, Rücken lang, Drehung aus der Brustwirbelsäule.",
-    info: {
-      kurz: "Im Sitzen mit fixierter Hüfte drehst du den Oberkörper mit einem Schläger vor der Brust oder hinter den Schultern. Eine Standardübung und ein Test aus dem TPI-Programm für die Rotation der Brustwirbelsäule.",
-      ausfuehrung: [
-        "Setz dich aufrecht auf eine Bank oder einen Stuhl, die Füße flach am Boden, die Knie zusammen.",
-        "Leg einen Schläger quer vor die Brust und verschränke die Arme darüber, oder leg ihn hinter die Schultern.",
-        "Klemme bei Bedarf einen Ball oder ein Kissen zwischen die Knie, damit das Becken ruhig bleibt.",
-        "Dreh den Oberkörper langsam zu einer Seite, so weit es geht, ohne dass sich das Becken bewegt.",
-        "Halte die Enddrehung kurz und dreh dann zur anderen Seite.",
-        "Bleib dabei aufrecht und lang, der Kopf dreht mit dem Oberkörper."
-      ],
-      atmung: "Bei der Drehung ausatmen und am Ende mit dem Ausatmen etwas weiter drehen.",
-      fehler: [
-        "Runder Rücken: Aufrecht sitzen, Brustbein nach oben.",
-        "Becken und Knie drehen mit: Knie zusammenhalten.",
-        "Seitneigung statt Drehung: Schläger bleibt waagerecht.",
-        "Schwung holen: Langsam und kontrolliert drehen."
-      ],
-      vorteile: [
-        "Verbessert die Rotation der Brustwirbelsäule.",
-        "Zeigt Seitenunterschiede deutlich.",
-        "Sehr einfach und überall möglich.",
-        "Schonend für den unteren Rücken, weil das Becken fixiert ist."
-      ],
-      tipps: [
-        "10 bis 12 Drehungen je Seite.",
-        "Die Golfer-Zielmarke im TPI-Test liegt bei etwa 45 Grad Drehung je Seite.",
-        "Gut für Pausen im Büroalltag."
-      ],
-      varianten: "Leichter: ohne Schläger, Hände an den Schultern. Schwerer: in leichter Vorneigung wie in der Golfhaltung oder mit Halt in der Enddrehung.",
-      sicherheit: "Bei Rückenschmerzen nur im schmerzfreien Bereich drehen.",
-      golf: "Die Drehung der Brustwirbelsäule bestimmt maßgeblich, wie weit du im Rückschwung aufdrehen kannst. Mit festgestelltem Becken trainierst du genau diesen Abschnitt und entlastest die Lendenwirbelsäule, die für Rotation wenig gemacht ist."
-    }
-  },
-  {
-    id: "golf_bws_rotation_halbkniend",
-    name: "Halbkniende Rumpfrotation mit Schläger",
-    auch: ["Half-Kneeling Thoracic Rotation with Club", "Half Kneeling T-Spine Rotation"],
-    muster: "mobilitaet_bws",
-    art: "mobilitaet",
-    muskeln: ["schraege_bauch", "oberer_ruecken"],
-    sekundaer: ["hueftbeuger"],
-    geraete: [["golfschlaeger", "matte"], ["stab", "matte"], ["golfschlaeger"], ["stab"]],
-    belastung: "wiederholungen",
-    hoehe_cm: 160,
-    gelenke: { knie: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    hinweis: "Zur Seite des vorderen Beins drehen, das Becken bleibt gerade.",
-    info: {
-      kurz: "Rumpfrotation im Halbkniestand mit einem Schläger hinter den Schultern. Durch die Kniestellung ist das Becken gesichert, gleichzeitig wird die Hüfte des knienden Beins sanft gedehnt.",
-      ausfuehrung: [
-        "Knie dich auf eine Matte, ein Fuß steht vorn, das andere Knie liegt am Boden.",
-        "Leg einen Schläger quer hinter die Schultern und halte ihn mit beiden Händen fest.",
-        "Spann das Gesäß des knienden Beins an und richte den Oberkörper auf.",
-        "Dreh den Oberkörper langsam zur Seite des vorderen Beins, so weit es ohne Bewegung des Beckens geht.",
-        "Dreh dann zurück zur Mitte und etwas zur anderen Seite.",
-        "Wechsle nach dem Satz das vordere Bein."
-      ],
-      atmung: "Beim Drehen ausatmen, in der Mitte einatmen.",
-      fehler: [
-        "Becken dreht mit: Gesäß aktiv, Becken zeigt nach vorn.",
-        "Hohlkreuz: Rippen unten lassen.",
-        "Schläger kippt: Schläger bleibt waagerecht.",
-        "Zu schnell: Langsam drehen."
-      ],
-      vorteile: [
-        "Verbessert die Rotation der Brustwirbelsäule.",
-        "Dehnt gleichzeitig den Hüftbeuger des knienden Beins.",
-        "Stabile Ausgangsposition für Einsteiger.",
-        "Gut im Aufwärmprogramm."
-      ],
-      tipps: [
-        "8 bis 10 Drehungen je Seite.",
-        "Der Blick folgt der Drehung.",
-        "Gut kombinierbar mit Holzhacker und Heben halbkniend."
-      ],
-      varianten: "Leichter: Hände vor der Brust. Schwerer: Halt in der Enddrehung oder Schläger über Kopf.",
-      sicherheit: "Bei Kniebeschwerden gut polstern.",
-      golf: "Die Übung verbindet eine freie Brustwirbelsäule mit gesicherter Hüfte, also genau die Trennung, die im Rückschwung gebraucht wird. Sie ist eine einfache Möglichkeit, die Drehfähigkeit vor dem Golfen zu verbessern."
-    }
-  },
-  {
-    id: "golf_open_book_schlaeger",
-    name: "Open Book mit Schläger",
-    auch: ["Open Book with Club", "Side-Lying Thoracic Rotation with Club", "Book Opening"],
-    muster: "mobilitaet_bws",
-    art: "mobilitaet",
-    muskeln: ["brust", "oberer_ruecken"],
-    sekundaer: ["schraege_bauch", "schulter_vorn"],
-    geraete: [["golfschlaeger", "matte"], ["stab", "matte"], ["golfschlaeger"], ["stab"]],
-    belastung: "zeit",
-    hoehe_cm: 130,
-    gelenke: {},
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Knie bleiben aufeinander, der obere Arm öffnet sich mit dem Schläger.",
-    info: {
-      kurz: "In Seitenlage öffnest du den Oberkörper wie ein Buch, mit einem Schläger in den Händen als Hebel und Führung. Mobilisiert die Brustwirbelsäule in Rotation und dehnt die Brustmuskulatur.",
-      ausfuehrung: [
-        "Leg dich auf die Seite, die Hüfte und Knie im rechten Winkel gebeugt, den Kopf auf einem Kissen.",
-        "Halte einen Schläger mit beiden Händen vor der Brust, die Arme gestreckt.",
-        "Leg ein Kissen oder eine Rolle zwischen die Knie oder drück das obere Knie leicht zum Boden, damit das Becken ruhig bleibt.",
-        "Führe den oberen Arm mit dem Schläger in einem Bogen nach hinten und dreh den Oberkörper mit auf, der untere Arm bleibt liegen.",
-        "Lass den oberen Arm so weit nach hinten sinken, wie es angenehm ist, und halte die Position.",
-        "Atme in die Dehnung und kehre nach der Haltezeit langsam zurück."
-      ],
-      atmung: "Ruhig weiteratmen, mit jedem Ausatmen etwas weiter aufdrehen.",
-      fehler: [
-        "Knie rutschen auseinander: Knie aufeinander lassen.",
-        "Arm zieht nur im Schultergelenk: Der ganze Brustkorb dreht mit.",
-        "Schmerzen in der Schulter: Arm etwas tiefer führen.",
-        "Kopf bleibt liegen: Kopf dreht mit dem Oberkörper."
-      ],
-      vorteile: [
-        "Verbessert die Rotation der Brustwirbelsäule.",
-        "Dehnt die Brustmuskulatur.",
-        "Entlastet den unteren Rücken durch fixiertes Becken.",
-        "Sehr sanft und für Einsteiger geeignet."
-      ],
-      tipps: [
-        "2 bis 3 Durchgänge von 30 Sekunden je Seite.",
-        "Der Schläger als Hebel lässt dich die Drehung gut dosieren.",
-        "Ideal am Abend oder nach einer Runde."
-      ],
-      varianten: "Leichter: ohne Schläger, Hand am Hinterkopf. Schwerer: dynamisch mit 10 Wiederholungen oder mit Bein auf einer Rolle.",
-      sicherheit: "Bei Schulterbeschwerden den Arm tiefer halten oder ohne Schläger üben.",
-      golf: "Ein freier Brustkorb ist Voraussetzung für einen vollen Schulterdreh. Das Open Book verbessert diese Drehfähigkeit mit fixiertem Becken und kann helfen, dass der untere Rücken im Schwung weniger kompensieren muss."
     }
   },
   {
@@ -2209,104 +1309,6 @@ export const GOLF: Uebung[] = [
       varianten: "Leichter: nur Reach und Roll. Schwerer: 3 Sekunden oben halten oder leichtes Gewicht in der Hand.",
       sicherheit: "Bei Schulterbeschwerden ohne Lift beginnen.",
       golf: "Im Rückschwung und Finish brauchen die Schultern Beweglichkeit nach oben und eine aufrichtungsfähige Brustwirbelsäule. Die Übung verbessert beides und stärkt die Muskeln, die das Schulterblatt stabil halten."
-    }
-  },
-  {
-    id: "golf_9090_hueftwechsel",
-    name: "90/90-Hüftwechsel für Golfer",
-    auch: ["90/90 Hip Switch", "90/90 Hip Transition", "Windshield Wiper 90/90"],
-    muster: "mobilitaet_huefte",
-    art: "mobilitaet",
-    muskeln: ["gesaess", "gesaess_mittel", "adduktoren"],
-    sekundaer: ["hueftbeuger"],
-    geraete: [["matte"], []],
-    belastung: "wiederholungen",
-    hoehe_cm: 130,
-    gelenke: { huefte: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 3,
-    hinweis: "Langsam von Seite zu Seite, Oberkörper aufrecht.",
-    info: {
-      kurz: "Im Sitzen mit beiden Beinen im 90/90-Winkel wechselst du die Knie von einer Seite zur anderen. Mobilisiert die Hüfte abwechselnd in Innen- und Außenrotation, genau die Bewegungen, die die Hüften im Golfschwung brauchen.",
-      ausfuehrung: [
-        "Setz dich auf den Boden, ein Bein liegt vorn mit Hüfte und Knie im rechten Winkel, das andere seitlich hinten ebenfalls im rechten Winkel.",
-        "Stütz dich mit den Händen hinter dir ab und richte den Oberkörper auf.",
-        "Heb beide Knie und dreh sie langsam zur anderen Seite, die Füße bleiben dabei möglichst am Boden.",
-        "Lande in der gespiegelten 90/90-Position.",
-        "Richte dich auf und lehne dich leicht über das vordere Schienbein, um die Dehnung zu vertiefen.",
-        "Wechsle mit ruhigem Rhythmus hin und her."
-      ],
-      atmung: "Während des Wechsels ruhig weiteratmen, in der Endposition mit dem Ausatmen tiefer gehen.",
-      fehler: [
-        "Runder Rücken: Brust aufrichten, bei Bedarf mit den Händen abstützen.",
-        "Schwungvolles Fallenlassen: Kontrolliert wechseln.",
-        "Schmerz im Knie: Füße weiter auseinander stellen.",
-        "Becken kippt stark: Gesäß bleibt möglichst am Boden."
-      ],
-      vorteile: [
-        "Mobilisiert Innen- und Außenrotation beider Hüften.",
-        "Verbessert die Hüftbeweglichkeit für Rück- und Durchschwung.",
-        "Ohne Geräte überall möglich.",
-        "Gute Aufwärm- und Abwärmübung."
-      ],
-      tipps: [
-        "8 bis 10 Wechsel je Seite.",
-        "Zum Schluss einige Sekunden in jeder Position halten.",
-        "Ohne Handstütze wird die Übung aktiver."
-      ],
-      varianten: "Leichter: mit Handstütze und kleinerem Bewegungsweg. Schwerer: ohne Hände oder mit Aufstehen in den Kniestand.",
-      sicherheit: "Bei Knie- oder Hüftschmerzen Füße weiter auseinander und nur schmerzfrei.",
-      golf: "Im Rückschwung braucht die hintere Hüfte Innenrotation, im Durchschwung die vordere. Der 90/90-Wechsel trainiert beide Richtungen und hilft, Bewegungsfreiheit für eine kraftvolle Hüftdrehung zu gewinnen."
-    }
-  },
-  {
-    id: "golf_lat_dehnung_schlaeger",
-    name: "Latissimus-Dehnung mit Schläger",
-    auch: ["Lat Stretch with Club", "Standing Club Lat Stretch", "Club Hinge Lat Stretch"],
-    muster: "mobilitaet_schulter",
-    art: "mobilitaet",
-    muskeln: ["latissimus", "oberer_ruecken"],
-    sekundaer: ["trizeps", "beinbeuger"],
-    geraete: [["golfschlaeger"], ["stab"]],
-    belastung: "zeit",
-    hoehe_cm: 200,
-    gelenke: {},
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    hinweis: "Hüfte nach hinten schieben, Brust Richtung Boden sinken lassen.",
-    info: {
-      kurz: "Du stützt dich mit beiden Händen auf einen senkrecht gestellten Schläger und schiebst die Hüfte nach hinten, bis der Oberkörper waagerecht ist. Dehnt Latissimus und Schultern, eine klassische Übung beim Aufwärmen auf dem Golfplatz.",
-      ausfuehrung: [
-        "Stell einen Schläger mit dem Kopf auf den Boden vor dir, etwa eine Armlänge entfernt, und leg beide Hände auf den Griff.",
-        "Geh einen Schritt zurück und schieb die Hüfte nach hinten, die Arme bleiben gestreckt.",
-        "Lass den Oberkörper sinken, bis er etwa waagerecht ist, die Brust sinkt Richtung Boden.",
-        "Halte den Rücken lang und die Knie leicht gebeugt.",
-        "Spür die Dehnung seitlich am Rücken und unter den Achseln.",
-        "Halte die Position und richte dich nach der Haltezeit langsam auf."
-      ],
-      atmung: "Ruhig weiteratmen, mit dem Ausatmen die Brust etwas tiefer sinken lassen.",
-      fehler: [
-        "Runder Rücken: Gesäß nach hinten, Rücken lang.",
-        "Ellbogen beugen: Arme gestreckt halten.",
-        "Kopf hängt: Kopf zwischen den Armen in Verlängerung.",
-        "Zu tief hängen in der Schulter: Nur so weit, wie es angenehm ist."
-      ],
-      vorteile: [
-        "Dehnt Latissimus und Schultergürtel.",
-        "Verbessert die Überkopfbeweglichkeit.",
-        "Dehnt nebenbei die Rückseite der Oberschenkel.",
-        "Überall auf dem Golfplatz mit einem Schläger machbar."
-      ],
-      tipps: [
-        "2 bis 3 Durchgänge von 20 bis 30 Sekunden.",
-        "Dreh den Oberkörper leicht zu einer Seite, um eine Seite gezielter zu dehnen.",
-        "Gut als Teil des Aufwärmens vor dem ersten Abschlag."
-      ],
-      varianten: "Leichter: Hände höher, z. B. an einer Wand. Schwerer: Hände auf einer Bank oder Seitneigung einbauen.",
-      sicherheit: "Bei Schulterinstabilität nur vorsichtig dehnen.",
-      golf: "Ein verkürzter Latissimus kann die Drehung im Rückschwung und die Haltung am Ball beeinträchtigen. Die Dehnung verbessert die Beweglichkeit der Schultern und des oberen Rückens und lässt sich direkt auf dem Platz einbauen."
     }
   },
   {
@@ -2560,157 +1562,6 @@ export const GOLF: Uebung[] = [
     }
   },
   {
-    id: "golf_einbein_kreuzheben_schlaeger",
-    name: "Einbeiniges Kreuzheben mit Schläger",
-    auch: ["Single-Leg RDL with Club", "Single Leg Romanian Deadlift Dowel", "Single-Leg Hinge with Club"],
-    muster: "einbeinig",
-    art: "kraft",
-    muskeln: ["beinbeuger", "gesaess"],
-    sekundaer: ["gesaess_mittel", "ruecken_unten", "waden"],
-    geraete: [["golfschlaeger"], ["stab"]],
-    belastung: "wiederholungen",
-    hoehe_cm: 200,
-    gelenke: { huefte: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    schwerer: "golf_einbein_kreuzheben_rotation",
-    hinweis: "Schläger bleibt am Rücken, das Becken bleibt waagerecht.",
-    info: {
-      kurz: "Einbeiniges Kreuzheben mit einem Schläger längs am Rücken als Haltungskontrolle. Trainiert Gleichgewicht, Hüftbeugung und Gesäßkraft auf einem Bein und schult einen geraden Rücken.",
-      ausfuehrung: [
-        "Halte einen Schläger längs am Rücken, sodass er Hinterkopf, oberen Rücken und Kreuzbein berührt.",
-        "Stell dich auf ein Bein, das Standknie leicht gebeugt.",
-        "Kippe den Oberkörper aus der Hüfte nach vorn, während das freie Bein gestreckt nach hinten geht.",
-        "Senke den Oberkörper, bis du eine Dehnung hinten am Oberschenkel spürst oder der Oberkörper fast waagerecht ist.",
-        "Halte das Becken waagerecht, die Zehen des freien Beins zeigen nach unten.",
-        "Komm über das Gesäß des Standbeins wieder hoch und wiederhole."
-      ],
-      atmung: "Beim Absenken einatmen, beim Aufrichten ausatmen.",
-      fehler: [
-        "Becken dreht auf: Hüfte des freien Beins zeigt nach unten.",
-        "Rücken rundet sich: Schläger verliert den Kontakt, weniger tief gehen.",
-        "Knie streckt sich ganz: Standknie leicht gebeugt.",
-        "Schnelles Fallen nach vorn: Langsam und kontrolliert."
-      ],
-      vorteile: [
-        "Kräftigt Gesäß und Beinbeuger einseitig.",
-        "Verbessert Gleichgewicht und Hüftkontrolle.",
-        "Schult eine gerade Wirbelsäule beim Vorbeugen.",
-        "Mit Schläger überall machbar."
-      ],
-      tipps: [
-        "8 bis 10 Wiederholungen je Seite.",
-        "Erst wenn die Übung sicher ist, Gewicht in die Hand nehmen.",
-        "Langsames Tempo von 3 Sekunden nach unten verbessert die Kontrolle."
-      ],
-      varianten: "Leichter: Zehen des freien Beins hinten abstellen. Schwerer: mit Rotation am unteren Punkt oder Kurzhantel in der Hand.",
-      sicherheit: "Bei Rückenbeschwerden zuerst die beidbeinige Hüftbeuge üben.",
-      golf: "Eine stabile Hüfte auf einem Bein und eine kontrollierte Hüftbeuge sind Grundlagen der Golfhaltung und der Gewichtsverlagerung. Die Übung trainiert beides und stärkt das Gesäß, das im Schwung das Becken stabilisiert."
-    }
-  },
-  {
-    id: "golf_einbein_kreuzheben_rotation",
-    name: "Einbeiniges Kreuzheben mit Rotation",
-    auch: ["Single-Leg RDL with Rotation", "Single Leg Deadlift with Reach and Rotate", "Rotational Single-Leg RDL"],
-    muster: "einbeinig",
-    art: "kraft",
-    muskeln: ["gesaess", "gesaess_mittel", "beinbeuger"],
-    sekundaer: ["schraege_bauch", "waden"],
-    geraete: [["golfschlaeger"], ["stab"], []],
-    belastung: "wiederholungen",
-    hoehe_cm: 200,
-    gelenke: { huefte: 1 },
-    stufe: 3,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Am tiefsten Punkt dreht das Becken über dem Standbein.",
-    info: {
-      kurz: "Einbeiniges Kreuzheben, bei dem du am tiefsten Punkt das Becken über dem Standbein ein- und ausdrehst. Trainiert Hüftrotation unter Last auf einem Bein, ähnlich dem Hip Airplane.",
-      ausfuehrung: [
-        "Stell dich auf ein Bein, halte einen Schläger quer vor der Brust oder die Hände an den Hüften.",
-        "Kippe aus der Hüfte nach vorn, das freie Bein geht nach hinten, bis der Oberkörper fast waagerecht ist.",
-        "Dreh das Becken und den Oberkörper langsam zur Seite des Standbeins nach unten (Hüfte dreht nach innen).",
-        "Dreh dann zur anderen Seite auf, sodass sich die Hüfte des freien Beins Richtung Decke öffnet.",
-        "Kehre in die waagerechte Mitte zurück und richte dich über das Gesäß auf.",
-        "Wiederhole und wechsle nach dem Satz das Bein."
-      ],
-      atmung: "Beim Absenken einatmen, bei den Drehungen ruhig weiteratmen, beim Aufrichten ausatmen.",
-      fehler: [
-        "Knie dreht statt der Hüfte: Knie bleibt über dem Fuß, die Hüfte dreht im Gelenk.",
-        "Rücken rundet sich: Rücken lang.",
-        "Gleichgewicht geht verloren: Kleinere Drehung oder Wandkontakt mit einer Hand.",
-        "Zu schnell: Langsam und kontrolliert."
-      ],
-      vorteile: [
-        "Kräftigt die Hüftrotatoren auf einem Bein.",
-        "Verbessert Balance und Rotationskontrolle.",
-        "Trainiert die Hüfte in Innen- und Außenrotation unter Last.",
-        "Sehr golfspezifische Hüftübung."
-      ],
-      tipps: [
-        "5 bis 8 langsame Wiederholungen je Seite.",
-        "Anfangs mit einer Hand an einer Wand.",
-        "Vorher die Hüftbeweglichkeit mit dem 90/90-Wechsel vorbereiten."
-      ],
-      varianten: "Leichter: mit Handstütze. Schwerer: mit leichter Kurzhantel oder längerem Halt in jeder Drehung.",
-      sicherheit: "Bei Hüft- oder Rückenbeschwerden nur kleiner Bewegungsumfang.",
-      golf: "Im Abschwung dreht das Becken über dem vorderen Bein, während der Oberkörper vorgebeugt ist. Diese Übung trainiert genau die Drehung im Hüftgelenk des Standbeins und stärkt die Muskeln, die diese Bewegung stabilisieren."
-    }
-  },
-  {
-    id: "golf_hip_airplane",
-    name: "Hip Airplane",
-    auch: ["Hip Airplane", "Standing Hip Airplane", "Hüftflugzeug"],
-    muster: "balance",
-    art: "kraft",
-    muskeln: ["gesaess", "gesaess_mittel"],
-    sekundaer: ["beinbeuger", "adduktoren", "schraege_bauch"],
-    geraete: [["wand"], []],
-    belastung: "wiederholungen",
-    hoehe_cm: 200,
-    gelenke: { huefte: 1 },
-    stufe: 3,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Arme seitlich wie Flügel, das Becken dreht über dem Standbein.",
-    info: {
-      kurz: "Im Einbeinstand mit vorgeneigtem Oberkörper drehst du Becken und Oberkörper über dem Standbein auf und zu. Eine bekannte Übung für Hüftkontrolle und Hüftrotation auf einem Bein.",
-      ausfuehrung: [
-        "Stell dich auf ein Bein, das Knie leicht gebeugt. Halte dich anfangs mit einer Hand an einer Wand oder Stange.",
-        "Kippe den Oberkörper nach vorn, bis er fast waagerecht ist, das freie Bein geht gestreckt nach hinten.",
-        "Breite die Arme seitlich aus wie Flügel.",
-        "Dreh Becken und Oberkörper langsam zur Seite des Standbeins nach unten, bis die Hüfte am Ende ist.",
-        "Dreh dann auf, sodass sich das Becken zur anderen Seite öffnet.",
-        "Kehre zur waagerechten Mitte zurück und wiederhole langsam."
-      ],
-      atmung: "Ruhig weiteratmen, bei jeder Drehung ausatmen.",
-      fehler: [
-        "Knie dreht mit: Knie bleibt über dem Fuß.",
-        "Oberkörper dreht ohne Becken: Becken und Oberkörper als Einheit drehen.",
-        "Zu tiefe Vorneigung: Nur so tief wie kontrolliert.",
-        "Ohne Halt bei Unsicherheit: Anfangs immer mit Handstütze."
-      ],
-      vorteile: [
-        "Verbessert Kraft und Kontrolle der Hüftrotation.",
-        "Fordert Gleichgewicht und Gesäßmuskulatur stark.",
-        "Hilft, Seitenunterschiede zu erkennen.",
-        "Kann helfen, die Hüfte gezielt zu stabilisieren."
-      ],
-      tipps: [
-        "5 bis 8 langsame Wiederholungen je Seite.",
-        "Erst mit Halt, dann frei.",
-        "Gut als Vorbereitung vor Würfen und Sprüngen."
-      ],
-      varianten: "Leichter: mit Handstütze und kleiner Drehung. Schwerer: frei, mit langem Halt oder leichter Hantel.",
-      sicherheit: "Bei Hüftbeschwerden nur im schmerzfreien Bereich. Gleichgewicht sichern.",
-      golf: "Die Hüfte des Standbeins muss im Schwung kontrolliert rotieren. Das Hip Airplane trainiert diese Rotation unter Gleichgewichtsanforderung und kann helfen, die Drehung über dem vorderen Bein im Abschwung stabiler zu machen."
-    }
-  },
-  {
     id: "golf_ausfallschritt_rotation_schlaeger",
     name: "Gehender Ausfallschritt mit Rotation und Schläger",
     auch: ["Walking Lunge with Rotation", "Lunge and Twist with Club", "Walking Lunge Trunk Rotation"],
@@ -2758,56 +1609,6 @@ export const GOLF: Uebung[] = [
       varianten: "Leichter: auf der Stelle ohne Gehen. Schwerer: Schläger über Kopf oder Medizinball statt Schläger.",
       sicherheit: "Bei Kniebeschwerden kleinere Schritte und weniger Tiefe.",
       golf: "Die Übung bereitet Beine, Hüften und Brustwirbelsäule gleichzeitig auf die Rotation im Schwung vor. Sie ist ein typischer Teil dynamischer Aufwärmprogramme, die Golftrainer statt reinen Dehnens vor der Runde empfehlen."
-    }
-  },
-  {
-    id: "golf_seitlicher_ausfallschritt_schlaeger",
-    name: "Seitlicher Ausfallschritt mit Schläger",
-    auch: ["Lateral Lunge with Club", "Side Lunge with Club Overhead", "Lateral Lunge Golf Warm-Up"],
-    muster: "einbeinig",
-    art: "kraft",
-    muskeln: ["adduktoren", "gesaess", "quadrizeps"],
-    sekundaer: ["gesaess_mittel", "oberer_ruecken"],
-    geraete: [["golfschlaeger"], ["stab"]],
-    belastung: "wiederholungen",
-    hoehe_cm: 240,
-    gelenke: { knie: 1, huefte: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Das gestreckte Bein bleibt mit der ganzen Fußsohle am Boden.",
-    info: {
-      kurz: "Seitlicher Ausfallschritt mit einem Schläger über Kopf oder vor der Brust. Kräftigt die Beine in der seitlichen Ebene und dehnt die Adduktoren, die im Golfschwung die Gewichtsverlagerung steuern.",
-      ausfuehrung: [
-        "Stell dich hüftbreit hin und halte einen Schläger mit gestreckten Armen über dem Kopf oder quer vor der Brust.",
-        "Mach einen großen Schritt zur Seite und setz den Fuß parallel auf.",
-        "Beuge das Knie des Schrittbeins und schieb die Hüfte nach hinten, das andere Bein bleibt gestreckt.",
-        "Senk dich ab, bis du eine Dehnung in der Innenseite des gestreckten Beins spürst.",
-        "Drück dich kräftig vom Schrittbein zurück in die Mitte.",
-        "Wechsle die Seiten oder mach alle Wiederholungen einer Seite."
-      ],
-      atmung: "Beim Absenken einatmen, beim Zurückdrücken ausatmen.",
-      fehler: [
-        "Knie fällt nach innen: Knie über dem Fuß.",
-        "Ferse hebt ab: Ganze Fußsohle am Boden.",
-        "Runder Rücken: Brust aufrecht, Hüfte nach hinten.",
-        "Schläger fällt nach vorn: Arme lang über Kopf."
-      ],
-      vorteile: [
-        "Kräftigt Beine in der seitlichen Ebene.",
-        "Dehnt die Adduktoren aktiv.",
-        "Verbessert die Kontrolle der Gewichtsverlagerung.",
-        "Gute Aufwärmübung mit Schläger."
-      ],
-      tipps: [
-        "8 bis 10 Wiederholungen je Seite.",
-        "Mit Schläger über Kopf wird zusätzlich die Haltung trainiert.",
-        "Langsam absenken, kräftig zurück."
-      ],
-      varianten: "Leichter: kleinerer Schritt, Schläger vor der Brust. Schwerer: tiefer oder mit Kurzhantel.",
-      sicherheit: "Bei Leisten- oder Kniebeschwerden kleinere Schritte.",
-      golf: "Die Adduktoren und das Gesäß steuern die Gewichtsverlagerung zwischen hinterem und vorderem Bein. Der seitliche Ausfallschritt kräftigt diese Muskeln und verbessert die Beweglichkeit für einen breiteren, stabilen Stand."
     }
   },
   {
@@ -2960,55 +1761,6 @@ export const GOLF: Uebung[] = [
       golf: "Wer das Becken gezielt kippen kann, findet leichter eine neutrale Ansprechhaltung und kann sie im Schwung halten. Die Übung auf dem Ball ist ein einfacher Einstieg, wenn das Beckenkippen in Golfhaltung noch schwerfällt."
     }
   },
-  {
-    id: "golf_ball_scheibenwischer",
-    name: "Scheibenwischer mit Gymnastikball zwischen den Beinen",
-    auch: ["Stability Ball Windshield Wipers", "Ball Leg Rotation", "Lying Ball Windshield Wiper"],
-    muster: "rotation",
-    art: "kraft",
-    muskeln: ["schraege_bauch", "bauch"],
-    sekundaer: ["adduktoren", "hueftbeuger"],
-    geraete: [["gymnastikball", "matte"], ["gymnastikball"]],
-    belastung: "wiederholungen",
-    hoehe_cm: 130,
-    gelenke: { ruecken: 1 },
-    stufe: 2,
-    sport: ["golf"],
-    golf: 2,
-    hinweis: "Schultern bleiben am Boden, die Beine kippen kontrolliert zur Seite.",
-    info: {
-      kurz: "In Rückenlage hältst du einen Gymnastikball zwischen den Unterschenkeln und kippst die Beine langsam von Seite zu Seite. Kräftigt die schrägen Bauchmuskeln und trainiert die Rotation des Beckens gegen einen stabilen Oberkörper.",
-      ausfuehrung: [
-        "Leg dich auf den Rücken, die Arme seitlich ausgestreckt, die Handflächen am Boden.",
-        "Klemm einen Gymnastikball zwischen die Unterschenkel und heb die Beine an, bis Hüfte und Knie etwa im rechten Winkel sind.",
-        "Kippe die Beine mit dem Ball langsam zu einer Seite, die Schultern bleiben am Boden.",
-        "Geh nur so weit, wie du die gegenüberliegende Schulter am Boden halten kannst.",
-        "Zieh die Beine mit den Bauchmuskeln zurück zur Mitte.",
-        "Kippe zur anderen Seite und wiederhole."
-      ],
-      atmung: "Beim Absenken zur Seite einatmen, beim Zurückholen ausatmen.",
-      fehler: [
-        "Schulter hebt ab: Kleinere Bewegung.",
-        "Beine fallen unkontrolliert: Langsam absenken.",
-        "Hohlkreuz: Bauch anspannen, unterer Rücken bleibt nah am Boden.",
-        "Ball rutscht: Adduktoren fest zusammendrücken."
-      ],
-      vorteile: [
-        "Kräftigt die schrägen Bauchmuskeln.",
-        "Trainiert die Beckenrotation gegen einen stabilen Oberkörper.",
-        "Aktiviert die Adduktoren.",
-        "Mobilisiert die Wirbelsäule sanft in Rotation."
-      ],
-      tipps: [
-        "8 bis 12 Wiederholungen je Seite.",
-        "Langsam absenken bringt den meisten Effekt.",
-        "Mit gestreckteren Beinen wird es schwerer."
-      ],
-      varianten: "Leichter: Füße am Boden, nur die Knie kippen. Schwerer: Beine gestreckt.",
-      sicherheit: "Bei Rückenbeschwerden kleiner Bewegungsweg.",
-      golf: "Im Abschwung dreht das Becken vor dem Oberkörper. Die Übung trainiert die Kontrolle dieser Beckenrotation gegen einen ruhigen Oberkörper und kräftigt die schrägen Bauchmuskeln, die beide Bereiche verbinden."
-    }
-  },
 
   // ---------- Handgelenk, Unterarm und Griff ----------
   {
@@ -3107,105 +1859,6 @@ export const GOLF: Uebung[] = [
       varianten: "Leichter: kürzer greifen. Schwerer: am Griffende greifen oder Kurzhantel mit Gewicht an einem Ende.",
       sicherheit: "Bei Beschwerden an der Kleinfingerseite des Handgelenks vorsichtig dosieren.",
       golf: "Im Abschwung und Treffmoment lösen sich die Handgelenke kraftvoll aus dem Winkel. Die Übung stärkt diese Bewegungsrichtung und sorgt für ausgeglichene Kraft rund ums Handgelenk."
-    }
-  },
-  {
-    id: "golf_unterarm_drehen_schlaeger",
-    name: "Unterarm drehen mit Schläger",
-    auch: ["Forearm Pronation Supination with Club", "Club Pronation and Supination", "Golf Club Forearm Rotation"],
-    muster: "griff",
-    art: "kraft",
-    muskeln: ["unterarm"],
-    sekundaer: ["bizeps"],
-    geraete: [["golfschlaeger"], ["stab"], ["kurzhantel"]],
-    belastung: "wiederholungen",
-    hoehe_cm: 200,
-    gelenke: { ellbogen: 1, handgelenk: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Ellbogen bleibt am Körper, nur der Unterarm dreht.",
-    info: {
-      kurz: "Mit angewinkeltem Ellbogen hältst du einen Schläger senkrecht und drehst den Unterarm, sodass der Schläger langsam zu beiden Seiten kippt. Kräftigt Pronation und Supination, die beim Rotieren des Schlägerblatts im Schwung arbeiten.",
-      ausfuehrung: [
-        "Setz dich oder stell dich hin, den Ellbogen 90 Grad gebeugt und seitlich am Körper.",
-        "Halte den Schläger am Griff, sodass der Schaft senkrecht nach oben zeigt.",
-        "Dreh den Unterarm langsam nach innen, bis der Schläger waagerecht zur Körpermitte zeigt.",
-        "Dreh ihn kontrolliert zurück durch die Senkrechte und weiter nach außen.",
-        "Bleib bei jeder Richtung kurz in der Endposition.",
-        "Wechsle nach dem Satz die Hand."
-      ],
-      atmung: "Gleichmäßig weiteratmen, nicht pressen.",
-      fehler: [
-        "Ellbogen wandert vom Körper weg: Oberarm fixieren.",
-        "Schläger fällt unkontrolliert: Kürzer greifen.",
-        "Schulter dreht mit: Nur der Unterarm bewegt sich.",
-        "Zu schnell: Langsam, besonders am Ende."
-      ],
-      vorteile: [
-        "Kräftigt die Unterarmdreher.",
-        "Verbessert Kontrolle und Stabilität des Unterarms.",
-        "Kann Belastungen am Ellbogen besser verteilen helfen.",
-        "Überall mit einem Schläger möglich."
-      ],
-      tipps: [
-        "10 bis 15 Wiederholungen je Richtung und Hand.",
-        "Den Hebel über die Griffposition steigern.",
-        "Gut als Teil eines Unterarmprogramms mit Anwinkeln und Strecken."
-      ],
-      varianten: "Leichter: kurz greifen. Schwerer: lang greifen oder Kurzhantel mit Gewicht an einem Ende.",
-      sicherheit: "Bei Ellbogenschmerzen nur im schmerzfreien Bereich und mit kurzem Hebel.",
-      golf: "Im Schwung drehen die Unterarme, damit das Schlägerblatt öffnet und schließt. Kräftige Unterarmdreher sorgen für Kontrolle des Schlägerblatts und können helfen, Ellbogen und Handgelenk auf die vielen Wiederholungen vorzubereiten."
-    }
-  },
-  {
-    id: "golf_hebel_handgelenk_kurzhantel",
-    name: "Hebel-Handgelenkheben mit Kurzhantel",
-    auch: ["Leverage Wrist Raise", "Dumbbell Radial Deviation", "Hammer Lever Raise", "Loaded Wrist Hinge"],
-    muster: "griff",
-    art: "kraft",
-    muskeln: ["unterarm"],
-    geraete: [["kurzhantel"]],
-    belastung: "gewicht",
-    hoehe_cm: 200,
-    gelenke: { handgelenk: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Hantelstange nur an einer Seite beladen, das andere Ende greifen.",
-    info: {
-      kurz: "Eine einseitig beladene Kurzhantelstange wird wie ein Hammer gehalten und durch Anwinkeln des Handgelenks gehoben. Ermöglicht eine feinere Steigerung als der Schläger allein.",
-      ausfuehrung: [
-        "Belade eine Kurzhantelstange nur an einem Ende und greif das leere Ende.",
-        "Stell dich aufrecht hin, der Arm hängt neben dem Körper, die Last zeigt nach vorn.",
-        "Heb die Last durch Anwinkeln des Handgelenks Richtung Daumen nach oben, der Arm bleibt gestreckt.",
-        "Halte die Last oben eine Sekunde, ohne dass der Arm mitgeht.",
-        "Senke die Last langsam ab.",
-        "Für die Gegenrichtung drehst du die Hantel, sodass die Last nach hinten zeigt, und hebst Richtung kleinem Finger."
-      ],
-      atmung: "Beim Heben ausatmen, beim Senken einatmen.",
-      fehler: [
-        "Zu viel Gewicht: Bewegung wird klein und ruckartig.",
-        "Ellbogen beugt sich: Arm gestreckt halten.",
-        "Schulter hebt mit: Schulter ruhig.",
-        "Schnelles Absenken: Langsam senken."
-      ],
-      vorteile: [
-        "Ermöglicht feine Steigerung der Last.",
-        "Kräftigt die Unterarmmuskulatur für das Anwinkeln.",
-        "Unterstützt die Stabilität des Handgelenks.",
-        "Ergänzt Übungen mit dem Schläger."
-      ],
-      tipps: [
-        "12 bis 15 Wiederholungen je Hand mit leichtem Gewicht.",
-        "Steigere zuerst über den Hebel (Griffposition), dann über das Gewicht.",
-        "Gut im Supersatz mit Unterarmdrehen."
-      ],
-      varianten: "Leichter: näher an der Last greifen. Schwerer: mehr Gewicht oder weiter weg greifen.",
-      sicherheit: "Bei Handgelenksbeschwerden mit sehr leichtem Gewicht beginnen.",
-      golf: "Ein starkes, kontrolliertes Anwinkeln hilft, den Schläger im Rückschwung zu setzen und im Abschwung stabil zu führen. Mehr Kraft im Unterarm kann die Belastbarkeit für viele Bälle auf der Range verbessern."
     }
   },
   {
@@ -3357,254 +2010,8 @@ export const GOLF: Uebung[] = [
       golf: "Der Griff ist die einzige Verbindung zwischen dir und dem Schläger. Ein kräftiger, ausdauernder Griff hilft, den Schläger über eine Runde hinweg zu kontrollieren, ohne verkrampft zu greifen."
     }
   },
-  {
-    id: "golf_handgelenk_beugen_exzentrisch",
-    name: "Exzentrisches Handgelenkbeugen mit Kurzhantel",
-    auch: ["Eccentric Wrist Flexion", "Eccentric Wrist Curl", "Golfer's Elbow Eccentrics"],
-    muster: "griff",
-    art: "kraft",
-    muskeln: ["unterarm"],
-    geraete: [["kurzhantel", "bank"], ["kurzhantel"]],
-    belastung: "gewicht",
-    hoehe_cm: 160,
-    gelenke: { handgelenk: 1, ellbogen: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Hochheben mit Hilfe der anderen Hand, langsam allein absenken.",
-    info: {
-      kurz: "Die Kurzhantel wird mit Hilfe der anderen Hand angehoben und dann allein langsam abgesenkt. Diese betont nachgebende Arbeit der Handgelenksbeuger wird häufig zur Kräftigung der Innenseite des Ellbogens genutzt.",
-      ausfuehrung: [
-        "Setz dich und leg den Unterarm auf den Oberschenkel oder eine Bank, die Handfläche zeigt nach oben, das Handgelenk hängt über die Kante.",
-        "Halte eine leichte Kurzhantel in der Hand.",
-        "Heb die Hantel mit Hilfe der anderen Hand ganz nach oben, sodass das Handgelenk gebeugt ist.",
-        "Lass die Hilfshand los und senk die Hantel allein über 3 bis 5 Sekunden langsam ab.",
-        "Unten angekommen hebst du wieder mit Hilfe der anderen Hand an.",
-        "Mach alle Wiederholungen und wechsle die Seite."
-      ],
-      atmung: "Beim langsamen Absenken gleichmäßig ausatmen, beim Anheben einatmen.",
-      fehler: [
-        "Zu schnell absenken: Bewusst 3 bis 5 Sekunden.",
-        "Zu viel Gewicht: Leicht beginnen, die Übung darf nur leicht unangenehm sein.",
-        "Unterarm hebt ab: Unterarm bleibt aufgelegt.",
-        "Mit der Arbeitshand heben: Die Hilfshand übernimmt das Anheben."
-      ],
-      vorteile: [
-        "Kräftigt die Handgelenksbeuger mit Fokus auf die nachgebende Arbeit.",
-        "Wird häufig zur Kräftigung bei Belastungen an der Ellbogeninnenseite eingesetzt.",
-        "Fein dosierbar.",
-        "Einfach zu Hause durchführbar."
-      ],
-      tipps: [
-        "3 Sätze von 12 bis 15 langsamen Wiederholungen.",
-        "Beginne mit 1 bis 3 kg.",
-        "Regelmäßig mehrmals pro Woche ist wirksamer als selten schwer."
-      ],
-      varianten: "Leichter: weniger Gewicht oder kürzere Absenkzeit. Schwerer: mehr Gewicht oder längeres Absenken.",
-      sicherheit: "Bei bestehenden Ellbogenbeschwerden die Übung mit Arzt oder Physiotherapie abstimmen.",
-      golf: "Die Innenseite des Ellbogens ist bei Golfern häufig gereizt, oft als Golferellenbogen bezeichnet. Kräftige Handgelenksbeuger können die Belastbarkeit des Unterarms verbessern und sind ein fester Bestandteil vieler Vorbeugeprogramme."
-    }
-  },
-  {
-    id: "golf_handgelenk_strecken_exzentrisch",
-    name: "Exzentrisches Handgelenkstrecken mit Kurzhantel",
-    auch: ["Eccentric Wrist Extension", "Eccentric Reverse Wrist Curl", "Tennis Elbow Eccentrics"],
-    muster: "griff",
-    art: "kraft",
-    muskeln: ["unterarm"],
-    geraete: [["kurzhantel", "bank"], ["kurzhantel"]],
-    belastung: "gewicht",
-    hoehe_cm: 160,
-    gelenke: { handgelenk: 1, ellbogen: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Handfläche nach unten, langsam über 3 bis 5 Sekunden absenken.",
-    info: {
-      kurz: "Wie das exzentrische Beugen, aber mit der Handfläche nach unten: Die Handgelenksstrecker senken die Hantel langsam ab. Häufig genutzt zur Kräftigung der Außenseite des Ellbogens, die bei Golfern am vorderen Arm belastet wird.",
-      ausfuehrung: [
-        "Setz dich und leg den Unterarm auf den Oberschenkel oder eine Bank, die Handfläche zeigt nach unten, das Handgelenk ragt über die Kante.",
-        "Halte eine leichte Kurzhantel.",
-        "Heb die Hantel mit Hilfe der anderen Hand, bis das Handgelenk gestreckt ist.",
-        "Lass los und senk die Hantel allein über 3 bis 5 Sekunden ab.",
-        "Unten hebst du wieder mit der Hilfshand an.",
-        "Mach alle Wiederholungen und wechsle die Seite."
-      ],
-      atmung: "Beim Absenken langsam ausatmen, beim Anheben einatmen.",
-      fehler: [
-        "Zu schnelles Absenken: Bewusst langsam.",
-        "Zu schweres Gewicht: Die Strecker sind schwächer als die Beuger, leichter wählen.",
-        "Ellbogen ganz gestreckt und verriegelt: Leicht gebeugt lassen.",
-        "Unterarm dreht: Unterarm bleibt stabil."
-      ],
-      vorteile: [
-        "Kräftigt die Handgelenksstrecker nachgebend.",
-        "Wird häufig bei Belastungen an der Ellbogenaußenseite eingesetzt.",
-        "Gleicht die oft stärkeren Beuger aus.",
-        "Gut dosierbar."
-      ],
-      tipps: [
-        "3 Sätze von 12 bis 15 Wiederholungen.",
-        "Mit 1 bis 2 kg beginnen.",
-        "Kombiniert mit dem exzentrischen Beugen für ausgewogene Unterarme."
-      ],
-      varianten: "Leichter: sehr leichtes Gewicht oder Band. Schwerer: mehr Gewicht oder längere Absenkzeit.",
-      sicherheit: "Bei bestehenden Ellbogenbeschwerden mit Arzt oder Physiotherapie abstimmen.",
-      golf: "Bei Golfern wird der vordere Arm im Treffmoment stark belastet, häufig an der Außenseite des Ellbogens. Kräftige Handgelenksstrecker können helfen, diese Belastung besser zu tolerieren."
-    }
-  },
-  {
-    id: "golf_unterarmbeuger_dehnung",
-    name: "Unterarmbeuger-Dehnung",
-    auch: ["Wrist Flexor Stretch", "Forearm Flexor Stretch", "Golfer's Elbow Stretch"],
-    muster: "mobilitaet_handgelenk",
-    art: "mobilitaet",
-    muskeln: ["unterarm"],
-    geraete: [["wand"], []],
-    belastung: "zeit",
-    hoehe_cm: 200,
-    gelenke: {},
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Arm gestreckt, Finger sanft nach hinten ziehen.",
-    info: {
-      kurz: "Dehnung der Handgelenksbeuger an der Innenseite des Unterarms mit gestrecktem Arm. Eine einfache Dehnung nach dem Golfen oder Training, die die viel genutzte Unterarmmuskulatur entspannt.",
-      ausfuehrung: [
-        "Streck einen Arm vor dir aus, die Handfläche zeigt nach vorn, die Finger nach unten oder oben.",
-        "Greif mit der anderen Hand die Finger und zieh sie sanft zu dir.",
-        "Halte den Ellbogen gestreckt, ohne ihn zu verriegeln.",
-        "Spür die Dehnung an der Innenseite des Unterarms.",
-        "Halte die Position die vorgegebene Zeit.",
-        "Alternativ die Handfläche flach an eine Wand legen, Finger nach unten, und den Körper leicht wegdrehen."
-      ],
-      atmung: "Ruhig weiteratmen, mit dem Ausatmen sanft etwas weiter dehnen.",
-      fehler: [
-        "Zu starker Zug: Nur eine angenehme Dehnung.",
-        "Ellbogen gebeugt: Arm strecken.",
-        "Schulter zieht hoch: Schulter tief.",
-        "Zu kurz gehalten: Mindestens 20 Sekunden."
-      ],
-      vorteile: [
-        "Entspannt die Handgelenksbeuger.",
-        "Verbessert die Beweglichkeit des Handgelenks in Streckung.",
-        "Kann nach vielen Schlägen angenehm entlastend wirken.",
-        "Überall machbar."
-      ],
-      tipps: [
-        "2 bis 3 Durchgänge von 20 bis 30 Sekunden.",
-        "Nach dem Golfen oder dem Unterarmtraining.",
-        "Mit der Wand fällt es leichter, ruhig zu halten."
-      ],
-      varianten: "Leichter: Ellbogen leicht gebeugt. Schwerer: Handfläche an der Wand mit stärkerer Drehung.",
-      sicherheit: "Bei akuten Ellbogenschmerzen nur sanft und nach Abklärung.",
-      golf: "Die Unterarmmuskeln arbeiten bei jedem Schlag intensiv. Regelmäßiges Dehnen kann helfen, die Beweglichkeit zu erhalten, und ist eine gute Ergänzung zu Kräftigungsübungen gegen Ellbogenbeschwerden."
-    }
-  },
-  {
-    id: "golf_unterarmstrecker_dehnung",
-    name: "Unterarmstrecker-Dehnung",
-    auch: ["Wrist Extensor Stretch", "Forearm Extensor Stretch", "Tennis Elbow Stretch"],
-    muster: "mobilitaet_handgelenk",
-    art: "mobilitaet",
-    muskeln: ["unterarm"],
-    geraete: [[]],
-    belastung: "zeit",
-    hoehe_cm: 200,
-    gelenke: {},
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Arm gestreckt, Handrücken sanft zu dir ziehen.",
-    info: {
-      kurz: "Dehnung der Handgelenksstrecker an der Außenseite des Unterarms. Ergänzt die Beugerdehnung und entspannt die Muskulatur, die beim Golfen im vorderen Arm viel arbeitet.",
-      ausfuehrung: [
-        "Streck einen Arm vor dir aus, die Handfläche zeigt nach unten.",
-        "Beuge das Handgelenk, sodass die Finger nach unten zeigen.",
-        "Greif mit der anderen Hand den Handrücken und zieh ihn sanft zu dir.",
-        "Dreh den Unterarm leicht nach innen, um die Dehnung zu verstärken.",
-        "Halte die Position und spür die Dehnung an der Außenseite des Unterarms.",
-        "Wechsle nach der Haltezeit die Seite."
-      ],
-      atmung: "Ruhig weiteratmen, mit dem Ausatmen sanft nachgeben.",
-      fehler: [
-        "Ellbogen gebeugt: Arm strecken.",
-        "Zu starker Zug: Nur bis zu einer angenehmen Dehnung.",
-        "Schulter zieht hoch: Schulter tief.",
-        "Ruckartiges Ziehen: Gleichmäßig halten."
-      ],
-      vorteile: [
-        "Entspannt die Handgelenksstrecker.",
-        "Verbessert die Beweglichkeit in Beugung.",
-        "Sinnvoller Ausgleich zum Griffkrafttraining.",
-        "Ohne Geräte überall möglich."
-      ],
-      tipps: [
-        "2 bis 3 Durchgänge von 20 bis 30 Sekunden.",
-        "Faust machen verstärkt die Dehnung.",
-        "Nach dem Golfen und nach dem Unterarmtraining."
-      ],
-      varianten: "Leichter: Ellbogen leicht gebeugt. Schwerer: mit Faust und mehr Innendrehung.",
-      sicherheit: "Bei akuten Beschwerden an der Ellbogenaußenseite nur sanft und nach Abklärung.",
-      golf: "Der vordere Arm wird im Treffmoment stark belastet, besonders die Strecker an der Außenseite des Unterarms. Dehnen gehört neben Kräftigung zu den einfachen Maßnahmen, um diese Muskeln beweglich zu halten."
-    }
-  },
 
   // ---------- Schulter gesund halten ----------
-  {
-    id: "golf_aussenrotation_9090_band",
-    name: "Außenrotation 90/90 mit Band",
-    auch: ["90/90 External Rotation with Band", "Banded 90-90 ER", "Trail Arm External Rotation"],
-    muster: "schulter_gesund",
-    art: "kraft",
-    muskeln: ["rotatorenmanschette"],
-    sekundaer: ["schulter_hinten", "trapez"],
-    geraete: [["band"], ["kabelzug"]],
-    belastung: "gewicht",
-    hoehe_cm: 220,
-    gelenke: { schulter: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 3,
-    einseitig: true,
-    hinweis: "Oberarm bleibt auf Schulterhöhe, nur der Unterarm dreht nach oben.",
-    info: {
-      kurz: "Außenrotation der Schulter mit dem Oberarm auf Schulterhöhe und gebeugtem Ellbogen gegen ein Band. Der hintere Arm ist oben im Rückschwung genau in dieser Position, daher ist die Übung für Golfer besonders passend.",
-      ausfuehrung: [
-        "Befestige ein Band auf Brusthöhe vor dir oder stell den Kabelzug dort ein.",
-        "Heb den Oberarm seitlich auf Schulterhöhe, der Ellbogen ist 90 Grad gebeugt, der Unterarm zeigt nach vorn und hält das Band.",
-        "Dreh den Unterarm nach oben, bis er senkrecht steht, der Oberarm bleibt auf Schulterhöhe.",
-        "Halte oben kurz, das Schulterblatt bleibt hinten unten.",
-        "Senke den Unterarm langsam zurück nach vorn.",
-        "Wechsle nach dem Satz die Seite."
-      ],
-      atmung: "Beim Hochdrehen ausatmen, beim Zurückgehen einatmen.",
-      fehler: [
-        "Ellbogen sinkt ab: Oberarm bleibt auf Schulterhöhe.",
-        "Hohlkreuz statt Schulterdrehung: Rippen unten, Bauch fest.",
-        "Schulter zieht hoch: Schulterblatt tief halten.",
-        "Zu starkes Band: Volle Bewegung muss möglich sein."
-      ],
-      vorteile: [
-        "Kräftigt die Rotatorenmanschette in einer golftypischen Armposition.",
-        "Verbessert die Stabilität der Schulter oben im Rückschwung.",
-        "Kann zur Vorbeugung von Schulterbeschwerden beitragen.",
-        "Mit Band überall machbar."
-      ],
-      tipps: [
-        "12 bis 15 kontrollierte Wiederholungen je Seite.",
-        "Leichtes Band wählen, die Rotatorenmanschette braucht keine schweren Lasten.",
-        "Langsames Zurückgehen über 2 bis 3 Sekunden."
-      ],
-      varianten: "Leichter: Oberarm am Körper (seitliche Außenrotation). Schwerer: stärkeres Band oder Halt oben.",
-      sicherheit: "Bei Schulterbeschwerden oder Instabilität nur nach Abklärung und schmerzfrei.",
-      golf: "Oben im Rückschwung ist der hintere Arm in Außenrotation mit gebeugtem Ellbogen. Eine kräftige Rotatorenmanschette stabilisiert die Schulter in dieser Position und hilft, die Schulter für die vielen Schwünge belastbar zu halten."
-    }
-  },
   {
     id: "golf_schulterblatt_rudern_golfhaltung",
     name: "Rudern in Golfhaltung mit Band",
@@ -3701,156 +2108,6 @@ export const GOLF: Uebung[] = [
       varianten: "Leichter: aufrecht oder auf einer Schrägbank liegend. Schwerer: leichte Kurzhanteln oder längere Halte.",
       sicherheit: "Bei Schulterbeschwerden Y nur bis zur schmerzfreien Höhe.",
       golf: "Stabile Schulterblätter sind die Basis für einen kontrollierten Armschwung. Die Übung stärkt die Muskeln, die die Schulterblätter in der vorgebeugten Haltung führen, und unterstützt eine aufrechte Haltung am Ball."
-    }
-  },
-  {
-    id: "golf_querdehnung_vorderer_arm",
-    name: "Querdehnung der Schulter für den vorderen Arm",
-    auch: ["Cross-Body Shoulder Stretch", "Lead Arm Cross Body Stretch", "Posterior Shoulder Stretch"],
-    muster: "mobilitaet_schulter",
-    art: "mobilitaet",
-    muskeln: ["schulter_hinten", "oberer_ruecken"],
-    sekundaer: ["rotatorenmanschette"],
-    geraete: [[], ["wand"]],
-    belastung: "zeit",
-    hoehe_cm: 200,
-    gelenke: {},
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Arm quer vor die Brust ziehen, Schulter bleibt tief.",
-    info: {
-      kurz: "Der gestreckte Arm wird quer vor der Brust zur anderen Seite gezogen. Dehnt die hintere Schulter, die am vorderen Arm oben im Rückschwung gefordert wird.",
-      ausfuehrung: [
-        "Stell dich aufrecht hin und streck den vorderen Arm (bei Rechtshändern links) nach vorn.",
-        "Führe den Arm auf Schulterhöhe quer vor die Brust.",
-        "Greif mit der anderen Hand oberhalb des Ellbogens und zieh den Arm sanft näher an die Brust.",
-        "Halte die Schulter des gedehnten Arms tief und den Oberkörper gerade.",
-        "Spür die Dehnung an der Rückseite der Schulter.",
-        "Halte die Zeit und wechsle dann die Seite."
-      ],
-      atmung: "Ruhig weiteratmen, mit dem Ausatmen sanft nachziehen.",
-      fehler: [
-        "Schulter zieht hoch: Schulter bewusst tief.",
-        "Oberkörper dreht mit: Brust bleibt nach vorn.",
-        "Zug am Unterarm statt Oberarm: Oberhalb des Ellbogens greifen.",
-        "Zu starker Zug: Angenehme Dehnung."
-      ],
-      vorteile: [
-        "Dehnt die hintere Schulter und den Bereich zwischen den Schulterblättern.",
-        "Verbessert die Beweglichkeit für die Querbewegung des Arms.",
-        "Überall machbar.",
-        "Gut nach dem Golfen."
-      ],
-      tipps: [
-        "2 bis 3 Durchgänge von 20 bis 30 Sekunden je Seite.",
-        "An der Wand mit dem Schulterblatt angelehnt wird die Dehnung gezielter.",
-        "Auch für den hinteren Arm als Ausgleich nutzen."
-      ],
-      varianten: "Leichter: Arm etwas tiefer. Schwerer: Schulterblatt an der Wand fixieren oder in Seitlage dehnen.",
-      sicherheit: "Bei Schulterbeschwerden vorne in der Schulter nur sanft.",
-      golf: "Oben im Rückschwung liegt der vordere Arm quer vor der Brust. Eine bewegliche hintere Schulter erleichtert diese Position, ohne dass der Arm einknickt oder der Oberkörper ausweichen muss."
-    }
-  },
-  {
-    id: "golf_aussenrotation_dehnung_schlaeger",
-    name: "Assistierte Außenrotation mit Schläger",
-    auch: ["Club-Assisted External Rotation Stretch", "Dowel ER Stretch", "90/90 External Rotation Stretch"],
-    muster: "mobilitaet_schulter",
-    art: "mobilitaet",
-    muskeln: ["brust", "rotatorenmanschette"],
-    sekundaer: ["schulter_vorn"],
-    geraete: [["golfschlaeger"], ["stab"]],
-    belastung: "zeit",
-    hoehe_cm: 200,
-    gelenke: { schulter: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Ellbogen bleibt auf Schulterhöhe, die andere Hand drückt sanft mit dem Schläger.",
-    info: {
-      kurz: "Mit dem Oberarm auf Schulterhöhe drückt die andere Hand über einen Schläger den Unterarm sanft nach hinten. Verbessert die Außenrotation der Schulter, die der hintere Arm oben im Schwung braucht.",
-      ausfuehrung: [
-        "Stell dich hin oder leg dich auf den Rücken. Heb den Oberarm des hinteren Arms seitlich auf Schulterhöhe, Ellbogen 90 Grad gebeugt.",
-        "Halte einen Schläger senkrecht in dieser Hand, der Griff zeigt nach unten.",
-        "Greif mit der anderen Hand den Schaft vor dem Körper.",
-        "Drück den Schaft mit der anderen Hand sanft nach vorn, sodass sich der Unterarm des gedehnten Arms nach hinten dreht.",
-        "Halte an einer angenehmen Dehnung vorn in der Schulter und der Brust.",
-        "Löse nach der Haltezeit und wechsle die Seite."
-      ],
-      atmung: "Ruhig weiteratmen, mit dem Ausatmen sanft etwas weiter.",
-      fehler: [
-        "Ellbogen sinkt ab: Oberarm auf Schulterhöhe halten.",
-        "Hohlkreuz: Rippen unten, im Liegen den Rücken am Boden halten.",
-        "Zu starker Druck: Nur eine sanfte Dehnung.",
-        "Schmerz vorn in der Schulter: Weniger weit drehen."
-      ],
-      vorteile: [
-        "Verbessert die Außenrotation der Schulter.",
-        "Dehnt die Brustmuskulatur mit.",
-        "Fein dosierbar über den Schläger.",
-        "Einfach zu Hause umsetzbar."
-      ],
-      tipps: [
-        "2 bis 3 Durchgänge von 20 bis 30 Sekunden.",
-        "Im Liegen ist die Position stabiler.",
-        "Danach die Außenrotation 90/90 mit Band zur Kräftigung anschließen."
-      ],
-      varianten: "Leichter: Oberarm tiefer als Schulterhöhe. Schwerer: längere Haltezeit.",
-      sicherheit: "Bei Schulterinstabilität oder früheren Ausrenkungen nur nach Abklärung.",
-      golf: "Fehlt dem hinteren Arm die Außenrotation, kann er oben im Rückschwung nicht in eine gute Position kommen, und der Körper gleicht aus. Mehr Beweglichkeit erleichtert eine stabile Position am Ende des Rückschwungs."
-    }
-  },
-  {
-    id: "golf_innenrotation_dehnung_schlaeger",
-    name: "Schulter-Innenrotation mit Schläger hinter dem Rücken",
-    auch: ["Club Behind Back Internal Rotation Stretch", "Towel Stretch Internal Rotation", "Behind the Back Shoulder Stretch"],
-    muster: "mobilitaet_schulter",
-    art: "mobilitaet",
-    muskeln: ["rotatorenmanschette", "schulter_hinten"],
-    sekundaer: ["trizeps"],
-    geraete: [["golfschlaeger"], ["stab"]],
-    belastung: "zeit",
-    hoehe_cm: 200,
-    gelenke: { schulter: 1 },
-    stufe: 1,
-    sport: ["golf"],
-    golf: 2,
-    einseitig: true,
-    hinweis: "Obere Hand zieht den Schläger sanft hoch, die untere Hand gleitet am Rücken nach oben.",
-    info: {
-      kurz: "Ein Schläger wird senkrecht hinter dem Rücken gehalten, eine Hand oben, eine unten. Die obere Hand zieht die untere sanft nach oben und dehnt so die Innenrotation der unteren Schulter.",
-      ausfuehrung: [
-        "Halte einen Schläger senkrecht hinter dem Rücken: eine Hand hinter dem Kopf oben am Schaft, die andere unten am Rücken.",
-        "Die untere Hand liegt mit dem Handrücken am Rücken.",
-        "Zieh mit der oberen Hand den Schläger sanft nach oben, sodass die untere Hand am Rücken nach oben gleitet.",
-        "Halte an einer angenehmen Dehnung an der Vorder- und Außenseite der unteren Schulter.",
-        "Halte die Zeit und lass dann langsam nach.",
-        "Wechsle die Hände und dehne die andere Seite."
-      ],
-      atmung: "Ruhig weiteratmen und mit dem Ausatmen nachgeben.",
-      fehler: [
-        "Oberkörper neigt sich nach vorn: Aufrecht bleiben.",
-        "Schulter zieht nach vorn: Schulter offen halten.",
-        "Zu starker Zug: Sanft dehnen.",
-        "Hohlkreuz: Bauch leicht anspannen."
-      ],
-      vorteile: [
-        "Verbessert die Innenrotation der Schulter.",
-        "Dehnt gleichzeitig den Trizeps der oberen Seite.",
-        "Mit einem Schläger überall machbar.",
-        "Gleicht Seitenunterschiede aus."
-      ],
-      tipps: [
-        "2 bis 3 Durchgänge von 20 bis 30 Sekunden je Seite.",
-        "Ein Handtuch geht ebenso.",
-        "Gut nach dem Schulterkrafttraining."
-      ],
-      varianten: "Leichter: weniger Zug. Schwerer: längere Haltezeit oder dynamisch auf und ab.",
-      sicherheit: "Bei Schulterbeschwerden vorsichtig und nur schmerzfrei.",
-      golf: "Im Durchschwung und Finish braucht vor allem die Schulter des vorderen Arms Innenrotation. Ist diese eingeschränkt, kann der Arm im Durchschwung nicht frei weiterlaufen. Die Dehnung hilft, die Beweglichkeit zu erhalten."
     }
   },
 
@@ -4152,54 +2409,601 @@ export const GOLF: Uebung[] = [
       golf: "Die Übung bereitet die gesamte Drehbewegung des Schwungs vor, inklusive Gewichtsverlagerung und Fußarbeit. Ein dynamisches Aufwärmen dieser Art wird vor der Runde statt langem statischem Dehnen empfohlen."
     }
   },
+
+  // ---------- Ergänzungen: Gewichtsverlagerung, Trennung, Speed-Varianten ----------
   {
-    id: "golf_hueftbeuger_dehnung_rotation",
-    name: "Kniende Hüftbeugerdehnung mit Rotation und Schläger",
-    auch: ["Half-Kneeling Hip Flexor Stretch with Rotation", "Kneeling Hip Flexor Stretch Golf", "Hip Flexor Stretch with Club"],
+    id: "golf_mb_seitsprung_wurf",
+    name: "Seitsprung mit Medizinball-Rotationswurf",
+    auch: ["Lateral Bound to Rotational Throw", "Skater to Scoop Toss", "Lateral Bound Med Ball Throw"],
+    muster: "schnellkraft_wurf",
+    art: "kraft",
+    muskeln: ["gesaess", "schraege_bauch", "adduktoren"],
+    sekundaer: ["gesaess_mittel", "quadrizeps", "bauch"],
+    geraete: [["medizinball", "wand"], ["medizinball", "draussen"]],
+    belastung: "gewicht",
+    hoehe_cm: 250,
+    gelenke: { knie: 1, sprunggelenk: 1, huefte: 1, ruecken: 1 },
+    stufe: 3,
+    sport: ["golf"],
+    golf: 3,
+    einseitig: true,
+    hinweis: "Erst stabil auf dem hinteren Bein landen, dann sofort Richtung Wand werfen.",
+    info: {
+      kurz: "Du springst seitlich vom vorderen auf das hintere Bein, fängst die Landung ab und wirfst den Ball aus dieser geladenen Position mit einer Rotation gegen die Wand. Verbindet seitliche Sprungkraft, Gewichtsverlagerung und Rotationsschnellkraft.",
+      ausfuehrung: [
+        "Stell dich seitlich zur Wand, etwa 3 Meter entfernt, auf das wandnahe Bein. Halte den Ball vor dem Bauch.",
+        "Spring seitlich weg von der Wand und lande auf dem hinteren Bein, weich in einer leichten Kniebeuge.",
+        "Fang die Landung auf der Innenseite des hinteren Fußes ab, Oberkörper und Ball drehen dabei zur hinteren Seite.",
+        "Setz den vorderen Fuß sofort Richtung Wand auf und drück dich vom hinteren Bein ab.",
+        "Dreh die Hüfte explosiv zur Wand, lass Rumpf und Arme folgen und wirf den Ball auf Hüft- bis Brusthöhe.",
+        "Beende im Finish auf dem vorderen Bein, fang den Ball und geh zurück zum Start."
+      ],
+      atmung: "Bei der Landung einatmen, beim Wurf explosiv ausatmen.",
+      fehler: [
+        "Landung kippt nach außen: Druck auf der Innenseite des hinteren Fußes, Knie über dem Fuß.",
+        "Pause zwischen Landung und Wurf zu lang: Der Wurf folgt direkt auf die Landung, um die Vorspannung zu nutzen.",
+        "Wurf aus den Armen: Abdruck und Hüfte starten den Wurf.",
+        "Zu weite Sprünge: Nur so weit, wie du sicher landen kannst."
+      ],
+      vorteile: [
+        "Verbindet seitliche Sprungkraft mit Rotationsschnellkraft.",
+        "Trainiert das Laden des hinteren Beins unter Tempo.",
+        "Verbessert das Timing der Gewichtsverlagerung.",
+        "Sehr dynamisch und sportartnah."
+      ],
+      tipps: [
+        "3 bis 5 Würfe je Seite mit voller Pause.",
+        "Beginne mit kleinen Sprüngen und einem leichten Ball von 2 bis 3 kg.",
+        "Nur einbauen, wenn Seitsprünge mit Halten und Scoop-Toss sicher sitzen."
+      ],
+      varianten: "Leichter: Seitschritt statt Sprung. Schwerer: weiterer Sprung oder fortlaufend mit Rückweg.",
+      sicherheit: "Bei Knie-, Sprunggelenks- oder Rückenbeschwerden auslassen. Genug Platz, rutschfester Boden und stabile Wand sind Pflicht.",
+      golf: "Im Schwung lädt der Körper ins hintere Bein und gibt die Energie dann über eine schnelle Druckverlagerung und Rotation ab. Die Übung kombiniert genau diese Abfolge unter hohem Tempo und kann helfen, den Boden besser als Kraftquelle zu nutzen."
+    }
+  },
+  {
+    id: "golf_beckenrotation_band",
+    name: "Beckenrotation gegen Band in Golfhaltung",
+    auch: ["Banded Pelvic Rotation", "Resisted Pelvic Rotation Drill", "Banded Hip Turn Shoulders Still"],
+    muster: "rotation",
+    art: "kraft",
+    muskeln: ["gesaess", "schraege_bauch"],
+    sekundaer: ["adduktoren", "gesaess_mittel"],
+    geraete: [["band"]],
+    belastung: "gewicht",
+    hoehe_cm: 200,
+    gelenke: { huefte: 1 },
+    stufe: 2,
+    sport: ["golf"],
+    golf: 3,
+    einseitig: true,
+    hinweis: "Schultern bleiben ruhig, nur das Becken dreht gegen das Band.",
+    info: {
+      kurz: "Ein Band um die Hüfte zieht das Becken in den Rückschwung, und du drehst das Becken gegen den Zug Richtung Ziel, während der Oberkörper ruhig bleibt. Die Kraftvariante der Beckenrotation aus dem TPI-Programm.",
+      ausfuehrung: [
+        "Befestige ein Band auf Hüfthöhe hinter dir auf der Seite des hinteren Beins und leg die Schlaufe um die Hüfte.",
+        "Geh in deine Golfhaltung, die Arme sind vor der Brust verschränkt oder halten einen Schläger quer vor den Schultern.",
+        "Lass das Band das Becken leicht in die Rückschwungrichtung drehen, die Schultern bleiben ruhig.",
+        "Dreh das Becken kräftig gegen den Zug Richtung Ziel, bis die Gürtelschnalle leicht zum Ziel zeigt.",
+        "Halte die Schultern und den Kopf dabei so still wie möglich.",
+        "Lass das Becken langsam zurückdrehen und wiederhole."
+      ],
+      atmung: "Bei der Drehung Richtung Ziel ausatmen, beim Zurückdrehen einatmen.",
+      fehler: [
+        "Schultern drehen mit: Weniger Bandspannung und kleinerer Weg.",
+        "Hüfte schiebt seitlich: Die Hüfte dreht um die eigene Achse.",
+        "Aufrichten aus der Golfhaltung: Neigungswinkel halten.",
+        "Knie streckt sich ruckartig: Knie bleiben weich."
+      ],
+      vorteile: [
+        "Kräftigt die Beckenrotation gegen Widerstand.",
+        "Schult die Trennung von Becken und Oberkörper.",
+        "Verbessert die Kontrolle der Hüftmuskulatur im Abschwung.",
+        "Mit einem Band zu Hause durchführbar."
+      ],
+      tipps: [
+        "10 bis 12 Wiederholungen je Seite.",
+        "Zuerst die Beckenrotation ohne Band sauber beherrschen.",
+        "Ein Spiegel hilft, die Schultern zu kontrollieren."
+      ],
+      varianten: "Leichter: ohne Band oder mit leichtem Band. Schwerer: stärkeres Band oder schnellere Ausführung Richtung Ziel.",
+      sicherheit: "Bei Hüft- oder Rückenschmerzen nur im schmerzfreien Bereich und mit leichtem Band.",
+      golf: "Der Abschwung beginnt mit der Drehung des Beckens, während die Schultern noch zurückbleiben. Wer diese Trennung auch gegen Widerstand kann, schafft eine bessere Bewegungsreihenfolge, die zur Schlägerkopfgeschwindigkeit beiträgt."
+    }
+  },
+  {
+    id: "golf_huefte_rotation_einbeinig",
+    name: "Hüftrotation im Einbeinstand mit Schläger als Stütze",
+    auch: ["Single-Leg Hip Rotation", "Lower Quarter Rotation Drill", "Standing Hip IR ER on One Leg"],
     muster: "mobilitaet_huefte",
     art: "mobilitaet",
-    muskeln: ["hueftbeuger", "quadrizeps"],
-    sekundaer: ["schraege_bauch", "oberer_ruecken"],
-    geraete: [["golfschlaeger", "matte"], ["stab", "matte"], ["golfschlaeger"], ["stab"]],
-    belastung: "zeit",
-    hoehe_cm: 240,
-    gelenke: { knie: 1 },
+    muskeln: ["gesaess", "gesaess_mittel", "adduktoren"],
+    sekundaer: ["waden"],
+    geraete: [["golfschlaeger"], ["stab"], ["wand"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { huefte: 1 },
+    stufe: 1,
+    sport: ["golf"],
+    golf: 3,
+    einseitig: true,
+    hinweis: "Der Fuß bleibt fest, das Becken dreht über dem Standbein.",
+    info: {
+      kurz: "Du stehst auf einem Bein, stützt dich auf einen Schläger und drehst das Becken über dem Standbein nach innen und außen. Trainiert die Rotation im Hüftgelenk des Standbeins, wie sie im Golfschwung über beiden Beinen abläuft.",
+      ausfuehrung: [
+        "Stell einen Schläger senkrecht neben dich und stütz dich leicht mit einer Hand am Griff ab.",
+        "Stell dich auf ein Bein, das Knie leicht gebeugt, und geh in eine leichte Golfhaltung.",
+        "Dreh das Becken über dem Standbein nach innen, sodass die Gürtelschnalle zur Seite des Standbeins zeigt. Der Fuß bleibt fest am Boden.",
+        "Dreh dann das Becken nach außen, sodass sich die freie Hüftseite öffnet.",
+        "Bewege dich langsam zwischen beiden Endpositionen, das Knie bleibt über dem Fuß.",
+        "Mach alle Wiederholungen und wechsle das Standbein."
+      ],
+      atmung: "Ruhig weiteratmen, bei jeder Drehung ausatmen.",
+      fehler: [
+        "Knie dreht statt der Hüfte: Knie bleibt über dem zweiten Zeh.",
+        "Fuß dreht oder rollt: Fuß fest am Boden.",
+        "Oberkörper ersetzt die Beckendrehung: Becken und Oberkörper drehen gemeinsam als Einheit.",
+        "Zu viel Stütze: Nur leichter Kontakt zum Schläger."
+      ],
+      vorteile: [
+        "Verbessert Innen- und Außenrotation der Hüfte im Stand.",
+        "Schult die Kontrolle über das Standbein.",
+        "Zeigt Seitenunterschiede schnell.",
+        "Auf dem Golfplatz mit einem Schläger als Stütze machbar."
+      ],
+      tipps: [
+        "8 bis 12 langsame Wiederholungen je Seite.",
+        "Gut im Aufwärmen vor der Runde.",
+        "Mit der Zeit die Stütze immer weniger nutzen."
+      ],
+      varianten: "Leichter: aufrecht und mit mehr Stütze. Schwerer: ohne Stütze oder tiefer in der Golfhaltung.",
+      sicherheit: "Bei Hüft- oder Kniebeschwerden kleiner Bewegungsumfang.",
+      golf: "Im Rückschwung dreht das Becken über dem hinteren Bein nach innen, im Durchschwung über dem vorderen. Diese Übung, angelehnt an den Lower-Quarter-Rotationstest aus dem TPI-Screening, verbessert genau diese Drehung im Stand."
+    }
+  },
+  {
+    id: "golf_wand_drehung_gesaess",
+    name: "Drehung mit Gesäß an der Wand",
+    auch: ["Wall Turn Drill", "Early Extension Wall Drill", "Butt on Wall Turn"],
+    muster: "mobilitaet_huefte",
+    art: "mobilitaet",
+    muskeln: ["gesaess", "beinbeuger"],
+    sekundaer: ["schraege_bauch", "adduktoren"],
+    geraete: [["wand"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 2,
+    sport: ["golf"],
+    golf: 3,
+    hinweis: "Rückschwung: hintere Gesäßhälfte bleibt an der Wand. Durchschwung: vordere Gesäßhälfte kommt an die Wand.",
+    info: {
+      kurz: "In Golfhaltung mit dem Gesäß an der Wand drehst du in den Rück- und Durchschwung und hältst dabei den Kontakt zur Wand. Eine bekannte Übung, um die Hüftdrehung zu schulen, ohne sich aufzurichten.",
+      ausfuehrung: [
+        "Stell dich mit dem Rücken vor eine Wand und geh in deine Golfhaltung, bis das Gesäß die Wand berührt.",
+        "Verschränke die Arme vor der Brust oder halte einen Schläger quer vor den Schultern.",
+        "Dreh in den Rückschwung, sodass die hintere Gesäßhälfte an der Wand bleibt und die vordere sich leicht löst.",
+        "Dreh dann durch zum Ziel, sodass die vordere Gesäßhälfte an die Wand kommt, während die hintere sich löst.",
+        "Halte während der ganzen Bewegung den Neigungswinkel des Oberkörpers.",
+        "Wiederhole langsam und steigere das Tempo erst, wenn der Wandkontakt sicher bleibt."
+      ],
+      atmung: "Beim Rückschwung einatmen, beim Durchdrehen ausatmen.",
+      fehler: [
+        "Gesäß verliert den Kontakt zur Wand: Beim Durchdrehen die vordere Hüfte nach hinten drehen statt nach vorn zu schieben.",
+        "Aufrichten im Durchschwung: Brust bleibt über dem Ball.",
+        "Knie strecken sich zu früh: Knie bleiben weich.",
+        "Seitliches Rutschen an der Wand: Drehen statt schieben."
+      ],
+      vorteile: [
+        "Schult eine Hüftdrehung, die in der Golfhaltung bleibt.",
+        "Verbessert die Kontrolle von Hüfte und Becken.",
+        "Klare Rückmeldung durch die Wand.",
+        "Ohne Geräte überall machbar."
+      ],
+      tipps: [
+        "10 bis 15 Drehungen in jede Richtung.",
+        "Zuerst nur den Rückschwung, dann nur den Durchschwung üben, dann beides.",
+        "Gut kombiniert mit Hüftinnenrotations-Übungen."
+      ],
+      varianten: "Leichter: kleiner Bewegungsweg. Schwerer: zügiger oder mit Schläger in Ansprechposition.",
+      sicherheit: "Bei Rücken- oder Hüftschmerzen nur langsam und im schmerzfreien Bereich.",
+      golf: "Viele Golfer schieben die Hüfte im Abschwung Richtung Ball und richten sich auf, was als Early Extension bezeichnet wird. Die Wandübung schult das Gegenteil: Das Becken dreht nach hinten weg. Golftrainer nutzen sie, um das Gefühl für eine Drehung in der Haltung zu vermitteln."
+    }
+  },
+  {
+    id: "golf_kopf_schulter_trennung",
+    name: "Schulterdrehung bei ruhigem Kopf in Golfhaltung",
+    auch: ["Cervical Rotation Drill", "Head Still Shoulder Turn", "Neck Dissociation Drill"],
+    muster: "mobilitaet_nacken",
+    art: "mobilitaet",
+    muskeln: ["nacken", "oberer_ruecken"],
+    sekundaer: ["schraege_bauch"],
+    geraete: [["golfschlaeger"], ["stab"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { nacken: 1 },
+    stufe: 1,
+    sport: ["golf"],
+    golf: 3,
+    hinweis: "Augen bleiben auf einem Punkt am Boden, die Schultern drehen unter dem Kopf.",
+    info: {
+      kurz: "In der Golfhaltung drehst du die Schultern hin und her, während der Kopf ruhig bleibt und die Augen auf einen Punkt am Boden gerichtet sind. Trainiert die Beweglichkeit der Halswirbelsäule, die beim Golfen die Schultern unter dem Kopf drehen lassen muss.",
+      ausfuehrung: [
+        "Leg einen Ball oder eine Münze vor dich auf den Boden und geh in deine Golfhaltung.",
+        "Verschränke die Arme vor der Brust oder halte einen Schläger quer vor den Schultern.",
+        "Richte die Augen auf den Ball und halte den Kopf ruhig.",
+        "Dreh die Schultern langsam in den Rückschwung, bis die vordere Schulter unter das Kinn kommt.",
+        "Dreh dann durch zur anderen Seite, bis die hintere Schulter unter das Kinn kommt, der Kopf bleibt still.",
+        "Wiederhole langsam, ohne dass der Blick den Ball verlässt."
+      ],
+      atmung: "Ruhig und gleichmäßig weiteratmen.",
+      fehler: [
+        "Kopf dreht mit: Bewegung verkleinern und den Blick bewusst halten.",
+        "Kinn drückt auf die Brust: Kinn leicht anheben, damit die Schulter Platz hat.",
+        "Aufrichten: Neigungswinkel halten.",
+        "Schultern ziehen hoch: Schultern locker."
+      ],
+      vorteile: [
+        "Verbessert die Drehfähigkeit der Halswirbelsäule.",
+        "Schult die Trennung von Kopf und Oberkörper.",
+        "Hilft, einen ruhigen Kopf im Schwung zu fühlen.",
+        "Einfach und ohne Geräte."
+      ],
+      tipps: [
+        "10 Drehungen in jede Richtung.",
+        "Vorher den Nacken mit aktivem Kopfdrehen aufwärmen.",
+        "Wenn eine Seite deutlich eingeschränkt ist, vorsichtig arbeiten und das Thema abklären lassen."
+      ],
+      varianten: "Leichter: aufrecht stehen und kleinere Drehung. Schwerer: tiefere Golfhaltung oder zügiger.",
+      sicherheit: "Bei Nackenbeschwerden, Schwindel oder Kribbeln in den Armen abbrechen und abklären lassen.",
+      golf: "Wenn die Halswirbelsäule nicht genug dreht, nimmt die Schulter den Kopf im Rückschwung mit, oder die Drehung wird kürzer. Diese Übung, angelehnt an den Halswirbelsäulen-Test im TPI-Screening, verbessert die Beweglichkeit für einen vollen Schulterdreh bei ruhigem Kopf."
+    }
+  },
+  {
+    id: "golf_zehenberuehrung_progression",
+    name: "Zehenberührung-Progression",
+    auch: ["Toe Touch Progression", "TPI Toe Touch", "Toe Touch Correction"],
+    muster: "mobilitaet_ganzkoerper",
+    art: "mobilitaet",
+    muskeln: ["beinbeuger", "ruecken_unten"],
+    sekundaer: ["gesaess", "waden", "adduktoren"],
+    geraete: [["hantelscheibe"], ["box"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: {},
     stufe: 1,
     sport: ["golf"],
     golf: 2,
-    einseitig: true,
-    hinweis: "Gesäß des knienden Beins anspannen, dann zur Seite des vorderen Beins drehen.",
+    hinweis: "Ein Mal mit erhöhten Zehen, ein Mal mit erhöhten Fersen, dazu Ball oder Kissen zwischen den Knien drücken.",
     info: {
-      kurz: "Im Halbkniestand dehnst du den Hüftbeuger des knienden Beins und drehst den Oberkörper mit einem Schläger über Kopf zur Seite des vorderen Beins. Verbindet Hüftstreckung und Rumpfrotation, die im Finish gebraucht werden.",
+      kurz: "Vorbeugen zu den Zehen in zwei Varianten: einmal mit erhöhten Zehen, einmal mit erhöhten Fersen, jeweils mit einem Kissen zwischen den Knien. Eine bekannte Korrekturübung, um das Vorbeugen aus der Hüfte und eine gute Gewichtsverlagerung nach hinten neu zu lernen.",
       ausfuehrung: [
-        "Knie dich auf eine Matte, ein Fuß steht vorn, das andere Knie liegt hinten am Boden.",
-        "Spann das Gesäß des knienden Beins an und schieb die Hüfte leicht nach vorn, bis du eine Dehnung vorn an der Hüfte spürst.",
-        "Halte einen Schläger mit gestreckten Armen über dem Kopf.",
-        "Neige dich leicht zur Seite des vorderen Beins und dreh den Oberkörper zu dieser Seite.",
-        "Halte die Position und atme ruhig in die Dehnung.",
-        "Löse nach der Haltezeit und wechsle die Seite."
+        "Stell die Zehen auf eine Hantelscheibe oder ein Buch, die Fersen bleiben am Boden.",
+        "Klemm ein Kissen oder einen kleinen Ball zwischen die Knie und drück es leicht zusammen.",
+        "Beuge dich langsam nach vorn, schieb die Hüfte nach hinten und versuche, die Zehen zu berühren.",
+        "Komm wieder hoch, indem du die Hüfte nach vorn schiebst.",
+        "Stell danach die Fersen auf die Erhöhung, die Zehen am Boden, und wiederhole die Vorbeuge mit dem Kissen zwischen den Knien.",
+        "Mach zum Schluss einige Vorbeugen ohne Erhöhung und vergleiche das Gefühl."
       ],
-      atmung: "Ruhig weiteratmen, mit dem Ausatmen die Hüfte etwas weiter nach vorn.",
+      atmung: "Beim Vorbeugen ausatmen, beim Aufrichten einatmen.",
       fehler: [
-        "Hohlkreuz statt Hüftdehnung: Gesäß anspannen, Rippen unten.",
-        "Vorderes Knie weit über die Zehen: Fuß etwas weiter nach vorn setzen.",
-        "Schläger fällt nach vorn: Arme lang über Kopf.",
-        "Drehung zur falschen Seite: Zur Seite des vorderen Beins drehen."
+        "Hüfte bleibt vorn: Gesäß bewusst nach hinten schieben.",
+        "Knie stark gebeugt: Knie nur leicht gebeugt lassen.",
+        "Ruckartiges Wippen: Langsam und ruhig.",
+        "Kissen fällt: Leicht und gleichmäßig zusammendrücken."
       ],
       vorteile: [
-        "Dehnt Hüftbeuger und vorderen Oberschenkel.",
-        "Mobilisiert gleichzeitig die Brustwirbelsäule.",
-        "Entlastet nach langem Sitzen.",
-        "Bereitet auf die Streckung im Finish vor."
+        "Verbessert das Vorbeugen aus der Hüfte.",
+        "Dehnt sanft Beinrückseite und unteren Rücken.",
+        "Schult die Gewichtsverlagerung nach hinten.",
+        "Benötigt kaum Geräte."
       ],
       tipps: [
-        "2 Durchgänge von 30 Sekunden je Seite.",
-        "Ein Kissen unter dem Knie macht die Übung angenehmer.",
-        "Nach dem Sitzen im Auto oder Büro vor der Runde sinnvoll."
+        "Je 5 bis 10 Wiederholungen in jeder Variante.",
+        "Nicht erzwingen, die Beweglichkeit kommt über mehrere Einheiten.",
+        "Gut vor Übungen mit Hüftbeuge wie Kreuzheben."
       ],
-      varianten: "Leichter: ohne Schläger, Hände an der Hüfte. Schwerer: hinteren Fuß an einer Wand oder Bank hochstellen.",
-      sicherheit: "Bei Kniebeschwerden gut polstern. Raumhöhe für den Schläger über Kopf beachten.",
-      golf: "Verkürzte Hüftbeuger der hinteren Seite können im Durchschwung die Hüftstreckung und Drehung bremsen, oft mit Ausweichen ins Hohlkreuz. Die Dehnung mit Rotation öffnet genau diese Bewegung für ein aufrechtes Finish."
+      varianten: "Leichter: höhere Hände, z. B. bis zu den Schienbeinen. Schwerer: mehr Erhöhung oder längerer Halt unten.",
+      sicherheit: "Bei Bandscheibenproblemen oder akuten Rückenschmerzen nur nach Abklärung.",
+      golf: "Die Zehenberührung gehört zum TPI-Screening, weil sie zeigt, ob jemand gut aus der Hüfte beugen kann. Eine freie Hüftbeuge erleichtert eine stabile Golfhaltung und entlastet den unteren Rücken in der Ansprechposition."
+    }
+  },
+  {
+    id: "golf_rueckschwung_einbein_halten",
+    name: "Rückschwungposition auf dem hinteren Bein halten",
+    auch: ["Trail Leg Backswing Balance Hold", "Single-Leg Backswing Hold", "Trail Leg Stability Hold"],
+    muster: "balance",
+    art: "kraft",
+    muskeln: ["gesaess", "gesaess_mittel", "adduktoren"],
+    sekundaer: ["waden", "schraege_bauch"],
+    geraete: [["golfschlaeger"], ["stab"]],
+    belastung: "zeit",
+    hoehe_cm: 240,
+    gelenke: { huefte: 1, sprunggelenk: 1 },
+    stufe: 2,
+    sport: ["golf"],
+    golf: 3,
+    einseitig: true,
+    hinweis: "Nur das hintere Bein trägt, das Knie bleibt gebeugt und stabil.",
+    info: {
+      kurz: "Du drehst in die Position am Ende des Rückschwungs und hebst den vorderen Fuß ab, sodass das hintere Bein dich allein trägt. Kräftigt die Stabilität der hinteren Hüfte in der aufgedrehten Position.",
+      ausfuehrung: [
+        "Halte einen Schläger wie beim Golfen oder quer vor den Schultern und geh in deine Golfhaltung.",
+        "Dreh in den Rückschwung, das Gewicht wandert auf die Innenseite des hinteren Fußes.",
+        "Heb den vorderen Fuß leicht vom Boden ab, ohne die Drehung aufzugeben.",
+        "Halte das hintere Knie leicht gebeugt und über dem Fuß, die Hüfte bleibt in der Drehung.",
+        "Halte die Position die vorgegebene Zeit mit ruhigem Blick nach unten.",
+        "Setz den Fuß ab, dreh zurück und wiederhole."
+      ],
+      atmung: "Ruhig und gleichmäßig weiteratmen.",
+      fehler: [
+        "Hinteres Knie streckt sich: Knie gebeugt halten.",
+        "Hüfte schiebt nach außen: Gewicht bleibt auf der Innenseite des Fußes.",
+        "Aufrichten: Neigungswinkel halten.",
+        "Drehung geht verloren: Brust bleibt zur hinteren Seite gedreht."
+      ],
+      vorteile: [
+        "Kräftigt die hintere Hüfte in der Rückschwungposition.",
+        "Verbessert das Gleichgewicht auf einem Bein in Rotation.",
+        "Gibt direkte Rückmeldung über ein Ausweichen der Hüfte.",
+        "Mit einem Schläger überall machbar."
+      ],
+      tipps: [
+        "3 Durchgänge von 10 bis 20 Sekunden.",
+        "Zuerst mit kurzer Fußspitze am Boden, dann ganz frei.",
+        "Kombiniere sie mit dem Finish auf dem vorderen Bein."
+      ],
+      varianten: "Leichter: vordere Fußspitze bleibt am Boden. Schwerer: Augen schließen oder weiche Unterlage.",
+      sicherheit: "Bei Knie- oder Hüftschmerzen nur im schmerzfreien Bereich. Raumhöhe für den Schläger beachten.",
+      golf: "Ein stabiles hinteres Bein ist die Grundlage für einen kraftvollen Rückschwung ohne seitliches Ausweichen. Wer die Rückschwungposition auf einem Bein halten kann, hat genug Kontrolle, um die Kraft aus dieser Position sauber abzugeben."
+    }
+  },
+  {
+    id: "golf_einbein_halbschwung",
+    name: "Halbschwünge auf einem Bein",
+    auch: ["Single-Leg Half Swings", "One-Leg Swings", "Single Leg Balance Swings"],
+    muster: "balance",
+    art: "kraft",
+    muskeln: ["gesaess_mittel", "gesaess", "waden"],
+    sekundaer: ["schraege_bauch", "schienbein"],
+    geraete: [["golfschlaeger", "draussen"], ["golfschlaeger"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 300,
+    gelenke: { sprunggelenk: 1 },
+    stufe: 2,
+    sport: ["golf"],
+    golf: 3,
+    einseitig: true,
+    hinweis: "Kurze, ruhige Schwünge ohne Ball, das Standbein bleibt stabil.",
+    info: {
+      kurz: "Halbe Schwünge ohne Ball, während du nur auf einem Bein stehst. Ein Balance- und Stabilitätstraining mit dem Schläger, das Fuß, Knie und Hüfte unter der Schwungbewegung fordert.",
+      ausfuehrung: [
+        "Nimm einen kurzen Schläger, zum Beispiel ein Wedge, und geh in deine Ansprechhaltung.",
+        "Verlagere das Gewicht auf ein Bein und stell den anderen Fuß nur mit der Spitze hinter dir ab oder heb ihn leicht an.",
+        "Schwing langsam bis etwa Hüfthöhe zurück und wieder bis Hüfthöhe durch.",
+        "Halte das Standknie leicht gebeugt und das Becken stabil.",
+        "Halte nach jedem Schwung kurz die Endposition.",
+        "Mach alle Schwünge auf einem Bein und wechsle dann."
+      ],
+      atmung: "Ruhig und gleichmäßig atmen, im Durchschwung ausatmen.",
+      fehler: [
+        "Zu große oder schnelle Schwünge: Halbschwünge mit ruhigem Tempo.",
+        "Standknie fällt nach innen: Knie über dem Fuß halten.",
+        "Oberkörper kippt: Golfhaltung beibehalten.",
+        "Freies Bein schwingt zur Balance mit: Bein ruhig halten oder abstellen."
+      ],
+      vorteile: [
+        "Fordert Gleichgewicht unter der Schwungbewegung.",
+        "Kräftigt Fuß- und Hüftstabilisatoren.",
+        "Verbessert die Körperwahrnehmung im Schwung.",
+        "Als Ergänzung im Aufwärmen gut nutzbar."
+      ],
+      tipps: [
+        "8 bis 10 Schwünge je Bein.",
+        "Erst auf dem vorderen, dann auf dem hinteren Bein.",
+        "Ohne Ball, es geht um Stabilität und nicht um die Treffqualität."
+      ],
+      varianten: "Leichter: Fußspitze des freien Beins abstellen und kleinere Schwünge. Schwerer: freies Bein anheben oder Dreiviertelschwünge.",
+      sicherheit: "Auf genug Platz und Raumhöhe achten. Bei Gleichgewichtsproblemen nahe einer Wand mit kleinsten Schwüngen beginnen.",
+      golf: "Im Schwung muss das Gleichgewicht trotz schneller Bewegung erhalten bleiben. Schwünge auf einem Bein machen jede Instabilität sofort spürbar und kräftigen die Muskulatur, die dich im vollen Schwung stabil hält."
+    }
+  },
+  {
+    id: "golf_overspeed_schritt",
+    name: "Overspeed-Schwünge mit Schritt",
+    auch: ["Step Swings", "Step-Change Speed Swings", "Walk-Through Speed Swings"],
+    muster: "schnellkraft_wurf",
+    art: "kraft",
+    muskeln: ["gesaess", "schraege_bauch", "adduktoren"],
+    sekundaer: ["quadrizeps", "latissimus", "unterarm"],
+    geraete: [["golfschlaeger", "draussen"], ["stab", "draussen"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 0,
+    gelenke: { ruecken: 1, knie: 1, schulter: 1, handgelenk: 1 },
+    stufe: 3,
+    sport: ["golf"],
+    golf: 3,
+    hinweis: "Schritt zum Ziel startet den Abschwung, dann maximal schnell durchschwingen.",
+    info: {
+      kurz: "Schnelle Schwünge mit leichtem Schläger oder Stab, bei denen du aus engem Stand mit dem vorderen Fuß Richtung Ziel trittst, während du den Rückschwung beendest. Der Schritt nutzt den Boden stärker und wird in vielen Speed-Programmen eingesetzt.",
+      ausfuehrung: [
+        "Stell dich draußen mit viel Platz hin, die Füße eng zusammen, den leichten Schläger in Ansprechhaltung.",
+        "Beginne den Rückschwung und mach, während die Arme nach oben gehen, einen Schritt mit dem vorderen Fuß Richtung Ziel.",
+        "Setz den vorderen Fuß kräftig auf und starte damit den Abschwung.",
+        "Schwing mit maximalem Tempo durch und halte das Finish auf dem vorderen Bein.",
+        "Geh zurück in die Ausgangsposition und atme durch.",
+        "Mach 3 bis 5 Schwünge je Serie, auch zur Gegenseite."
+      ],
+      atmung: "Im Rückschwung einatmen, im Durchschwung kräftig ausatmen.",
+      fehler: [
+        "Schritt zu spät: Der Fuß landet, bevor die Arme nach unten kommen.",
+        "Schritt zu lang: Etwa hüftbreit reicht, sonst geht die Balance verloren.",
+        "Kein Aufwärmen: Immer vorher lockere Schwünge und Würfe.",
+        "Unkontrolliertes Finish: Tempo leicht reduzieren, bis du sicher stehst."
+      ],
+      vorteile: [
+        "Trainiert die Nutzung des Bodens für Geschwindigkeit.",
+        "Verbessert das Timing der Gewichtsverlagerung.",
+        "Kann die Schlägerkopfgeschwindigkeit fördern.",
+        "Sehr golfspezifisch."
+      ],
+      tipps: [
+        "In Speed-Einheiten nach den normalen Overspeed-Schwüngen einbauen.",
+        "Zuerst langsam die Abfolge Schritt, Landung, Schwung lernen.",
+        "Schwing nur ohne Ball."
+      ],
+      varianten: "Leichter: Halbschwünge mit Schritt. Schwerer: volle Schwünge mit maximaler Absicht oder mit normalem Schläger.",
+      sicherheit: "Nur draußen mit viel Platz und rutschfestem Untergrund. Bei Knie-, Rücken- oder Ellbogenbeschwerden auslassen.",
+      golf: "Der Schritt verstärkt den Druck in den vorderen Fuß, der im Abschwung für Geschwindigkeit sorgt. Viele Speed-Programme nutzen solche Schrittschwünge, um das Zusammenspiel von Bodenkraft und Rotation zu verbessern."
+    }
+  },
+  {
+    id: "golf_speed_kniend",
+    name: "Speed-Schwünge im Kniestand",
+    auch: ["Kneeling Speed Swings", "Tall-Kneeling Swings", "Kneeling Overspeed Swings"],
+    muster: "schnellkraft_wurf",
+    art: "kraft",
+    muskeln: ["schraege_bauch", "latissimus"],
+    sekundaer: ["unterarm", "gesaess", "brust"],
+    geraete: [["stab", "draussen"], ["golfschlaeger", "draussen"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 0,
+    gelenke: { knie: 1, schulter: 1, handgelenk: 1 },
+    stufe: 2,
+    sport: ["golf"],
+    golf: 3,
+    hinweis: "Beide Knie am Boden, Gesäß fest, Oberkörper und Arme machen das Tempo.",
+    info: {
+      kurz: "Schnelle Schwünge mit einem leichten Stab oder kurzen Schläger im aufrechten Kniestand. Die Beine sind ausgeschaltet, sodass Rumpf und Arme die Geschwindigkeit erzeugen müssen.",
+      ausfuehrung: [
+        "Knie dich draußen auf eine weiche Unterlage, die Knie hüftbreit, die Hüfte gestreckt.",
+        "Halte einen leichten Stab oder einen kurzen Schläger mit normalem Griff vor dem Körper.",
+        "Spann das Gesäß an und halte den Oberkörper aufrecht.",
+        "Schwing flach um den Körper zurück und dann mit maximalem Tempo durch, etwa auf Hüfthöhe.",
+        "Bremse die Bewegung kontrolliert im Finish ab.",
+        "Mach 3 bis 5 Schwünge je Seite, auch zur Gegenseite."
+      ],
+      atmung: "Im Durchschwung kräftig ausatmen.",
+      fehler: [
+        "Hüfte knickt ein: Gesäß fest, Hüfte gestreckt.",
+        "Stab berührt den Boden: Schwungebene flacher wählen oder kürzeres Gerät.",
+        "Zu viele Schwünge: Jeder Schwung mit voller Absicht.",
+        "Oberkörper kippt: Aufrecht bleiben."
+      ],
+      vorteile: [
+        "Isoliert die Geschwindigkeit aus Rumpf und Armen.",
+        "Verbessert die Rotationsgeschwindigkeit des Oberkörpers.",
+        "Wenig Platz in der Breite nötig.",
+        "Gute Ergänzung zu Schwüngen im Stand."
+      ],
+      tipps: [
+        "Ein leichter Stab ist sicherer als ein Schläger, weil kein Schlägerkopf den Boden trifft.",
+        "Als Teil eines Speed-Programms vor den stehenden Schwüngen.",
+        "Weiche Matte oder Rasen unter den Knien."
+      ],
+      varianten: "Leichter: halbkniend. Schwerer: mehr Tempo oder schwererer Stab.",
+      sicherheit: "Bei Kniebeschwerden gut polstern oder auslassen. Nur mit genug Abstand zu Personen.",
+      golf: "Der Oberkörper und die Arme tragen einen großen Teil zur Schlägerkopfgeschwindigkeit bei. Schwünge im Kniestand trainieren diesen Anteil gezielt, ohne dass die Beine helfen, und werden in manchen Speed-Programmen genau dafür genutzt."
+    }
+  },
+  {
+    id: "golf_speed_einarmig",
+    name: "Einarmige Speed-Schwünge",
+    auch: ["One-Arm Speed Swings", "Lead Arm Only Swings", "Trail Arm Only Swings"],
+    muster: "schnellkraft_wurf",
+    art: "kraft",
+    muskeln: ["latissimus", "schraege_bauch", "unterarm"],
+    sekundaer: ["brust", "schulter_hinten", "rotatorenmanschette"],
+    geraete: [["stab", "draussen"], ["golfschlaeger", "draussen"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 0,
+    gelenke: { schulter: 1, ellbogen: 1, handgelenk: 1 },
+    stufe: 2,
+    sport: ["golf"],
+    golf: 3,
+    einseitig: true,
+    hinweis: "Mit einem leichten Stab, erst der vordere, dann der hintere Arm.",
+    info: {
+      kurz: "Schnelle Schwünge mit einem leichten Stab oder kurzen Schläger, jeweils nur mit dem vorderen oder nur mit dem hinteren Arm. Trainiert den Beitrag jedes Arms zur Geschwindigkeit und deckt Unterschiede auf.",
+      ausfuehrung: [
+        "Stell dich draußen mit viel Platz in deine Ansprechhaltung und halte den leichten Stab nur mit der vorderen Hand.",
+        "Leg die andere Hand auf die Brust oder hinter den Rücken.",
+        "Schwing zurück und mit maximaler Geschwindigkeit durch, der Körper dreht wie beim normalen Schwung mit.",
+        "Halte das Finish kurz und prüfe, ob du stabil stehst.",
+        "Mach 3 bis 5 Schwünge und wechsle dann zum hinteren Arm.",
+        "Mit dem hinteren Arm achtest du darauf, den Ellbogen im Abschwung nah am Körper zu führen."
+      ],
+      atmung: "Im Durchschwung ausatmen.",
+      fehler: [
+        "Zu schweres Gerät: Einarmig nur mit leichtem Stab oder Wedge.",
+        "Körper bleibt stehen: Hüfte und Rumpf drehen mit.",
+        "Arm reißt aus der Schulter: Kontrolliert beschleunigen und im Finish abbremsen.",
+        "Griff zu locker: Fest genug, damit der Stab nicht wegfliegt."
+      ],
+      vorteile: [
+        "Kräftigt die Schwunggeschwindigkeit jedes Arms einzeln.",
+        "Zeigt Unterschiede zwischen vorderem und hinterem Arm.",
+        "Verbessert Koordination und Gefühl für den Schläger.",
+        "Ergänzt beidarmige Overspeed-Schwünge."
+      ],
+      tipps: [
+        "Ein Ausrichtungsstab ist ideal, weil er leicht ist.",
+        "Wenige Schwünge mit hoher Qualität.",
+        "Achte auf festen Stand und Platz rundum."
+      ],
+      varianten: "Leichter: Halbschwünge. Schwerer: volle Schwünge mit maximalem Tempo.",
+      sicherheit: "Bei Schulter-, Ellbogen- oder Handgelenksbeschwerden auslassen. Gerät fest halten, nur mit viel Abstand zu anderen.",
+      golf: "Beide Arme tragen auf unterschiedliche Weise zur Geschwindigkeit bei: Der vordere Arm zieht, der hintere schiebt. Einarmige Schwünge trainieren diese Rollen getrennt und gehören in einigen Speed-Programmen zum festen Ablauf."
+    }
+  },
+  {
+    id: "golf_vorderer_arm_kabelzug_gestreckt",
+    name: "Einarmiger Kabelzug mit gestrecktem Arm in Golfhaltung",
+    auch: ["Lead Arm Straight-Arm Pulldown", "Single-Arm Straight-Arm Pulldown Golf Posture", "Lead Lat Pull"],
+    muster: "ziehen_vertikal",
+    art: "kraft",
+    muskeln: ["latissimus"],
+    sekundaer: ["schulter_hinten", "trizeps", "schraege_bauch"],
+    geraete: [["kabelzug"], ["band"]],
+    belastung: "gewicht",
+    hoehe_cm: 220,
+    gelenke: { schulter: 1 },
+    stufe: 2,
+    sport: ["golf"],
+    golf: 2,
+    einseitig: true,
+    hinweis: "Arm bleibt gestreckt, der Latissimus zieht den Arm vor den Körper.",
+    info: {
+      kurz: "Einarmiges Ziehen am hoch eingestellten Kabel mit gestrecktem Arm, ausgeführt in der Golfhaltung. Kräftigt den Latissimus des vorderen Arms, der im Abschwung den Arm nach unten und vor den Körper bringt.",
+      ausfuehrung: [
+        "Stell den Kabelzug auf Kopfhöhe oder etwas höher und stell dich seitlich, die hintere Schulter zeigt zum Zug.",
+        "Greif den Griff mit der Hand des vorderen Arms über die Brust hinweg, der Arm ist gestreckt und zeigt schräg nach oben zur hinteren Schulter.",
+        "Geh in deine Golfhaltung, Rücken lang, Knie locker.",
+        "Zieh den gestreckten Arm diagonal nach unten vor den vorderen Oberschenkel, der Oberkörper dreht leicht mit.",
+        "Halte kurz und spür die Arbeit seitlich am Rücken.",
+        "Führe den Arm langsam zurück und wechsle nach dem Satz, um auch den hinteren Arm auszugleichen."
+      ],
+      atmung: "Beim Ziehen ausatmen, beim Zurückführen einatmen.",
+      fehler: [
+        "Ellbogen beugt sich: Arm bleibt fast gestreckt.",
+        "Schulter zieht nach vorn oder oben: Schulterblatt nach hinten unten.",
+        "Aufrichten aus der Golfhaltung: Neigungswinkel halten.",
+        "Zu schwer: Die Bewegung muss gleichmäßig und ohne Schwung gehen."
+      ],
+      vorteile: [
+        "Kräftigt den Latissimus einseitig.",
+        "Trainiert die Zugkraft in einer schwungähnlichen Diagonale.",
+        "Verbessert die Verbindung von Arm und Rumpf.",
+        "Mit Band auch zu Hause umsetzbar."
+      ],
+      tipps: [
+        "10 bis 12 Wiederholungen je Seite mit moderatem Gewicht.",
+        "Denk daran, den Arm mit dem Rücken nach unten zu ziehen, nicht mit der Hand.",
+        "Gut kombiniert mit dem Abschwung-Zug am Kabel."
+      ],
+      varianten: "Leichter: aufrecht stehen und Band nutzen. Schwerer: mehr Gewicht oder langsames Zurückführen über 3 Sekunden.",
+      sicherheit: "Bei Schulterbeschwerden den Startpunkt tiefer wählen.",
+      golf: "Der Latissimus des vorderen Arms gehört zu den Muskeln, die im Abschwung den Arm kräftig nach unten ziehen. Eine kräftige, kontrollierte Zugbewegung in der Golfhaltung unterstützt die Verbindung von Arm und Körper im Schwung."
     }
   },
 ]

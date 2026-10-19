@@ -1846,3 +1846,44 @@ h4 {
     transition: none !important;
   }
 }
+
+/* Formulare */
+.formular {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+.formular label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.formular span {
+  font-size: 14px;
+  color: var(--leise);
+}
+textarea {
+  width: 100%;
+  background: var(--flaeche2);
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  resize: vertical;
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--akzent);
+}
+a.knopf.aus {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.gesundheitsreihe {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}

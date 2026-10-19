@@ -17,6 +17,7 @@ import Heute from "./ui/Heute"
 import { Icon } from "./ui/ios"
 import ProfilSeite from "./ui/Profil"
 import Training from "./ui/Training"
+import { gesundheitLesen } from "./ui/gesundheit"
 
 type Tab = "heute" | "uebungen" | "abenteuer" | "fortschritt" | "profil"
 
@@ -40,6 +41,19 @@ export default function App() {
 
   useEffect(() => speichern(daten), [daten])
   useEffect(() => window.scrollTo(0, 0), [tab, offen])
+  // Gesundheitswerte beim Start und beim Zurückkehren in die App auffrischen
+  useEffect(() => {
+    const auffrischen = () => {
+      if (document.visibilityState !== "visible" || !aktuell.current.gesundheit?.verbunden) return
+      void gesundheitLesen(3)
+        .then((tage) => aendern((d) => void (d.gesundheit = { verbunden: true, tage: { ...(d.gesundheit?.tage || {}), ...tage } })))
+        .catch(() => undefined)
+    }
+    auffrischen()
+    document.addEventListener("visibilitychange", auffrischen)
+    return () => document.removeEventListener("visibilitychange", auffrischen)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const setDaten = (d: Daten) => {
     aktuell.current = d
@@ -99,6 +113,7 @@ export default function App() {
             daten={daten}
             profilAendern={(p: Profil) => aendern((d) => void (d.profil = p))}
             ersetzen={setDaten}
+            aendern={aendern}
             zuruecksetzen={() => {
               setDaten(leer())
               setTab("heute")

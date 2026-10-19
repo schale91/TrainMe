@@ -5250,4 +5250,350 @@ export const MOBIL_UNTEN: Uebung[] = [
       varianten: "Leichter: nur einige Buchstaben. Schwerer: im Stehen auf einem Bein."
     }
   },
+  // ---------- Ergänzungen ----------
+  {
+    id: "quadrizeps_dehnen_kniestand",
+    name: "Vorderen Oberschenkel dehnen im Kniestand mit Fußgriff",
+    auch: ["Half-Kneeling Quad Stretch", "Kneeling Quad Stretch", "Low Lunge Quad Stretch"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["quadrizeps", "hueftbeuger"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { knie: 2 },
+    stufe: 2,
+    golf: 1,
+    einseitig: true,
+    info: {
+      kurz: "Im halben Kniestand greifst du den hinteren Fuß und ziehst die Ferse zum Gesäß. Ähnlich intensiv wie der Couch Stretch, aber ohne Wand oder Bank, und du kannst die Kniebeugung mit der Hand fein steuern.",
+      ausfuehrung: [
+        "Knie dich auf eine weiche Matte, das rechte Knie unten, der linke Fuß vorn aufgestellt.",
+        "Stütz die linke Hand auf dem vorderen Knie oder am Boden ab.",
+        "Beuge das rechte Knie und greif mit der rechten Hand den rechten Fußrist oder Knöchel.",
+        "Zieh die Ferse langsam Richtung Gesäß und spann das rechte Gesäß an.",
+        "Kippe das Becken leicht nach hinten und schiebe die Hüfte minimal nach vorn, bis du die Dehnung vom Knie bis in die Leiste spürst.",
+        "Halte die Position, lass den Fuß langsam los und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und beim Ausatmen die Ferse etwas näher heranziehen.",
+      fehler: [
+        "Hohlkreuz: Becken einrollen, Bauch leicht anspannen.",
+        "Hartes Knie am Boden: gut polstern.",
+        "Gleichgewicht geht verloren: mit der freien Hand abstützen."
+      ],
+      vorteile: [
+        "Dehnt den vorderen Oberschenkel und den Hüftbeuger intensiv.",
+        "Ohne Wand oder Bank überall auf der Matte möglich.",
+        "Intensität mit der Hand gut dosierbar."
+      ],
+      tipps: [
+        "Mit einem Band um den Fuß klappt es auch, wenn du den Fuß nicht greifen kannst.",
+        "Das vordere Knie darf etwas über die Zehen wandern, solange es angenehm ist."
+      ],
+      varianten: "Leichter: Band um den Fuß, weniger Kniebeugung. Schwerer: Oberkörper aufrecht und Arm hoch.",
+      sicherheit: "Bei Knieschmerzen, besonders an der Kniescheibe, vorsichtig oder die Variante in Seitlage wählen."
+    }
+  },
+  {
+    id: "hueftbeuger_gymnastikball",
+    name: "Hüftbeuger dehnen über dem Gymnastikball",
+    auch: ["Swiss Ball Hip Flexor Stretch", "Stability Ball Lunge Stretch", "Ball Psoas Stretch"],
+    muster: "mobilitaet_huefte",
+    art: "mobilitaet",
+    muskeln: ["hueftbeuger"],
+    sekundaer: ["quadrizeps", "bauch"],
+    geraete: [["gymnastikball"]],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 2,
+    einseitig: true,
+    info: {
+      kurz: "Hüftbeugerdehnung im Ausfallschritt, bei der du mit der Hüfte seitlich auf einem Gymnastikball sitzt und das hintere Bein lang nach hinten streckst. Der Ball trägt dein Gewicht, das Knie bleibt frei vom Boden.",
+      ausfuehrung: [
+        "Setz dich auf einen Gymnastikball und dreh dich etwas nach links, sodass der Ball unter der rechten Gesäßhälfte und dem rechten Oberschenkel liegt.",
+        "Stell den linken Fuß vorn fest auf, das linke Knie im rechten Winkel.",
+        "Streck das rechte Bein lang nach hinten, die Zehen stehen am Boden.",
+        "Lass die Hüfte langsam nach vorn unten sinken, bis du die Dehnung vorn an der rechten Hüfte spürst.",
+        "Spann leicht das rechte Gesäß an und halte den Oberkörper aufrecht, die Hände auf dem vorderen Knie.",
+        "Halte die Position, steig vom Ball und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und mit dem Ausatmen tiefer über den Ball sinken.",
+      fehler: [
+        "Ball rollt weg: Ball an einer Wand oder auf rutschfestem Boden nutzen.",
+        "Hohlkreuz: Becken leicht einrollen.",
+        "Zu großer Ball: Der Ball sollte etwa Kniehöhe haben."
+      ],
+      vorteile: [
+        "Dehnt den Hüftbeuger ohne Druck auf das Knie.",
+        "Der Ball trägt das Gewicht, das erleichtert das Entspannen.",
+        "Fordert leicht das Gleichgewicht."
+      ],
+      tipps: [
+        "Den Ball zum Einstieg an eine Wand legen, damit er nicht wegrollt.",
+        "Für mehr Dehnung den Arm der hinteren Seite nach oben strecken."
+      ],
+      varianten: "Leichter: kleinerer Schritt. Schwerer: hinteres Bein weiter nach hinten, Arm hoch.",
+      sicherheit: "Bei unsicherem Gleichgewicht neben einer Wand üben."
+    }
+  },
+  {
+    id: "aussenrotation_bauchlage",
+    name: "Hüftaußenrotation in Bauchlage",
+    auch: ["Prone Hip External Rotation Stretch", "Prone Hip ER", "Prone Crossed Shins"],
+    muster: "mobilitaet_huefte",
+    art: "mobilitaet",
+    muskeln: ["adduktoren", "hueftbeuger"],
+    sekundaer: ["gesaess_mittel"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { knie: 1 },
+    stufe: 1,
+    golf: 1,
+    info: {
+      kurz: "Gegenstück zur Innenrotation in Bauchlage: Die Knie sind gebeugt, die Unterschenkel fallen nach innen über Kreuz. Mobilisiert die Außenrotation beider Hüften in gestreckter Position.",
+      ausfuehrung: [
+        "Leg dich auf den Bauch, die Stirn auf den Händen, die Knie etwas weiter als hüftbreit.",
+        "Beuge beide Knie, bis die Unterschenkel senkrecht stehen.",
+        "Lass die Unterschenkel langsam nach innen sinken, sodass sie sich über Kreuz bewegen.",
+        "Halte die Position, das Becken bleibt flach am Boden.",
+        "Wechsle nach der Hälfte der Zeit, welcher Unterschenkel vorn liegt.",
+        "Führ die Unterschenkel zurück nach oben und streck die Beine aus."
+      ],
+      atmung: "Ruhig in den Bauch atmen und die Beine mit jedem Ausatmen schwerer werden lassen.",
+      fehler: [
+        "Becken kippt zur Seite: Hüftknochen bleiben am Boden.",
+        "Knie rutschen zusammen: Knie bleiben etwas weiter als hüftbreit.",
+        "Ziehen im Knie: weniger weit kreuzen."
+      ],
+      vorteile: [
+        "Mobilisiert die Außenrotation der Hüfte in gestreckter Position.",
+        "Ergänzt die Innenrotation in Bauchlage.",
+        "Sehr einfach und ohne Gerät."
+      ],
+      tipps: [
+        "Im Wechsel mit der Innenrotation in Bauchlage als kurzer Hüftcheck.",
+        "Ein Kissen unter dem Bauch macht die Lage bei Rückenbeschwerden angenehmer."
+      ],
+      varianten: "Leichter: Knie enger. Schwerer: aus der Endposition aktiv halten.",
+      sicherheit: "Bei Knieschmerzen den Bewegungsumfang verringern."
+    }
+  },
+  {
+    id: "knie_zur_brust_liegend",
+    name: "Knie zur Brust ziehen in Rückenlage",
+    auch: ["Supine Knee to Chest Stretch", "Double Knee to Chest", "Apanasana"],
+    muster: "mobilitaet_huefte",
+    art: "mobilitaet",
+    muskeln: ["gesaess"],
+    sekundaer: ["ruecken_unten", "beinbeuger"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    info: {
+      kurz: "Einfache Dehnung in Rückenlage: Du ziehst ein oder beide Knie zur Brust. Dehnt Gesäß und unteren Rücken sanft und ist ein guter Einstieg in jede Bodenroutine.",
+      ausfuehrung: [
+        "Leg dich auf den Rücken, die Beine lang oder angewinkelt.",
+        "Zieh das rechte Knie zur Brust und umfass es mit beiden Händen unterhalb der Kniescheibe oder hinter dem Oberschenkel.",
+        "Zieh das Knie sanft weiter zur Brust, das andere Bein bleibt entspannt am Boden.",
+        "Halte die Position und spüre die Dehnung im Gesäß und unteren Rücken.",
+        "Wechsle das Bein oder zieh zum Schluss beide Knie gleichzeitig zur Brust.",
+        "Lass die Beine langsam wieder ab."
+      ],
+      atmung: "Ruhig in den Bauch atmen und beim Ausatmen das Knie sanft näher ziehen.",
+      fehler: [
+        "Kopf hebt ab: Kopf und Schultern bleiben entspannt am Boden.",
+        "Zu stark ziehen: sanft und gleichmäßig.",
+        "Anderes Bein hebt ab: lang am Boden lassen."
+      ],
+      vorteile: [
+        "Dehnt Gesäß und unteren Rücken sanft.",
+        "Kann bei Steifheit morgens als angenehm empfunden werden.",
+        "Für jedes Alter und Niveau geeignet."
+      ],
+      tipps: [
+        "Mit beiden Knien leicht von Seite zu Seite schaukeln, das massiert den unteren Rücken.",
+        "Ideal als erste Übung am Morgen im Bett."
+      ],
+      varianten: "Leichter: hinter dem Oberschenkel greifen. Schwerer: Knie Richtung gegenüberliegende Schulter ziehen.",
+      sicherheit: "Bei Hüftprothese die Beugung nur so weit wie freigegeben."
+    }
+  },
+  {
+    id: "vierfuessler_rock_back",
+    name: "Rock-Back im Vierfüßlerstand",
+    auch: ["Quadruped Rock Back", "Quadruped Hip Flexion Rock", "Rock Backs"],
+    muster: "mobilitaet_huefte",
+    art: "mobilitaet",
+    muskeln: ["gesaess"],
+    sekundaer: ["adduktoren", "ruecken_unten", "bauch"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: { knie: 1, handgelenk: 1 },
+    stufe: 1,
+    golf: 1,
+    info: {
+      kurz: "Aus dem Vierfüßlerstand schiebst du das Gesäß mit geradem Rücken nach hinten Richtung Fersen. Mobilisiert die Hüftbeugung und schult, die Hüfte zu beugen, ohne dass der Rücken rund wird, wie in der Kniebeuge.",
+      ausfuehrung: [
+        "Geh in den Vierfüßlerstand, Hände unter den Schultern, Knie unter der Hüfte, die Knie etwas weiter als hüftbreit.",
+        "Mach den Rücken lang und neutral, der Bauch ist leicht angespannt.",
+        "Schiebe das Gesäß langsam nach hinten Richtung Fersen.",
+        "Geh nur so weit, wie der untere Rücken gerade bleibt und sich nicht rundet.",
+        "Komm zurück in den Vierfüßlerstand.",
+        "Wiederhole rhythmisch und kontrolliert."
+      ],
+      atmung: "Beim Zurückschieben ausatmen, beim Vorkommen einatmen.",
+      fehler: [
+        "Unterer Rücken rundet sich: Bewegung früher stoppen.",
+        "Kopf hängt: Blick zum Boden, Nacken lang.",
+        "Zu schnell: ruhige Bewegung."
+      ],
+      vorteile: [
+        "Mobilisiert die Hüftbeugung bei neutralem Rücken.",
+        "Schult das Bewegungsmuster für die Kniebeuge.",
+        "Gute Aufwärmübung vor Beintraining."
+      ],
+      tipps: [
+        "Ein Stab auf dem Rücken mit Kontakt an Hinterkopf, Brustwirbelsäule und Kreuzbein zeigt dir, ob der Rücken gerade bleibt.",
+        "Füße weiter auseinander und Knie breiter verändert den Winkel wie bei einer breiten Kniebeuge."
+      ],
+      varianten: "Leichter: kleiner Weg. Schwerer: mit Stab auf dem Rücken oder Band um die Hüfte.",
+      sicherheit: "Bei Handgelenksbeschwerden auf Fäusten oder Unterarmen ausführen. Knie polstern."
+    }
+  },
+  {
+    id: "hueftbeugen_stab",
+    name: "Hüftbeugen mit Stab am Rücken",
+    auch: ["Dowel Hip Hinge", "Hip Hinge Drill", "PVC Hip Hinge"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["beinbeuger"],
+    sekundaer: ["gesaess", "ruecken_unten"],
+    geraete: [["stab"], ["golfschlaeger"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    golf: 2,
+    sport: ["golf"],
+    info: {
+      kurz: "Technikübung für das Beugen aus der Hüfte: Ein Stab liegt längs am Rücken und hat Kontakt an Hinterkopf, Brustwirbelsäule und Kreuzbein. Dehnt die Beinrückseite dynamisch und schult die Haltung für Kreuzheben und Golf.",
+      ausfuehrung: [
+        "Stell dich hüftbreit hin und halte einen Stab oder Golfschläger längs hinter dem Rücken: eine Hand im Nacken, die andere am unteren Rücken.",
+        "Der Stab berührt Hinterkopf, Brustwirbelsäule und Kreuzbein.",
+        "Beuge die Knie leicht und schiebe das Gesäß nach hinten, der Oberkörper neigt sich nach vorn.",
+        "Halte alle drei Kontaktpunkte am Stab, bis du eine deutliche Dehnung an der Beinrückseite spürst.",
+        "Spann das Gesäß an und schiebe die Hüfte wieder nach vorn in den aufrechten Stand.",
+        "Wiederhole langsam und kontrolliert."
+      ],
+      atmung: "Beim Vorneigen einatmen, beim Aufrichten ausatmen.",
+      fehler: [
+        "Kontakt am Kreuzbein oder Kopf geht verloren: Bewegung früher stoppen.",
+        "Knie beugen sich zu stark: Es ist ein Hüftbeugen, keine Kniebeuge.",
+        "Gewicht auf den Zehen: Gewicht mittig bis zur Ferse."
+      ],
+      vorteile: [
+        "Schult das Hüftbeugen mit neutralem Rücken.",
+        "Dehnt die Beinrückseite dynamisch.",
+        "Grundlage für Kreuzheben und die Golf-Ansprechhaltung."
+      ],
+      tipps: [
+        "Mit einem Golfschläger direkt vor der Runde nutzbar.",
+        "8 bis 12 langsame Wiederholungen."
+      ],
+      varianten: "Leichter: kleinerer Weg. Schwerer: einbeinig mit Stab.",
+      sicherheit: "Bei Rückenschmerzen nur im schmerzfreien Bereich.",
+      golf: "Die Ansprechhaltung im Golf ist ein Hüftbeugen mit neutralem Rücken. Diese Übung schult genau diese Position und hilft, im Schwung die Haltung zu behalten und den Rücken zu schonen."
+    }
+  },
+  {
+    id: "zinnsoldat_gehen",
+    name: "Zinnsoldat im Gehen",
+    auch: ["Toy Soldier", "Frankenstein Walk", "Straight Leg Kicks", "Walking Leg Kicks"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["beinbeuger"],
+    sekundaer: ["hueftbeuger", "gesaess"],
+    geraete: [[]],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    sport: ["laufen", "fussball"],
+    einseitig: true,
+    info: {
+      kurz: "Dynamische Aufwärmübung: Im Gehen schwingst du ein gestrecktes Bein nach vorn oben Richtung der ausgestreckten gegenüberliegenden Hand. Dehnt die Beinrückseite aktiv und aktiviert den Hüftbeuger.",
+      ausfuehrung: [
+        "Stell dich aufrecht hin und streck den linken Arm nach vorn auf Schulterhöhe.",
+        "Schwing das rechte Bein gestreckt nach vorn oben Richtung linke Hand.",
+        "Der Oberkörper bleibt aufrecht, das Standbein leicht gebeugt.",
+        "Setz den Fuß nach vorn ab und mach mit dem anderen Bein und Arm weiter.",
+        "Steigere die Höhe des Beins langsam von Schritt zu Schritt.",
+        "Geh so eine Strecke von 10 bis 20 Metern."
+      ],
+      atmung: "Locker im Rhythmus der Schritte weiteratmen.",
+      fehler: [
+        "Oberkörper beugt sich zum Bein: aufrecht bleiben.",
+        "Sofort maximal hoch: langsam steigern.",
+        "Knie beugt sich: Bein gestreckt halten, aber nicht durchdrücken."
+      ],
+      vorteile: [
+        "Dehnt die Beinrückseite dynamisch.",
+        "Aktiviert Hüftbeuger und Rumpf.",
+        "Fester Bestandteil vieler Aufwärmprogramme im Sport."
+      ],
+      tipps: [
+        "Nach dem Beinrückseiten-Sweep als zweite Stufe ausführen.",
+        "Kontrolle ist wichtiger als Höhe."
+      ],
+      varianten: "Leichter: geringere Höhe. Schwerer: mit kleinem Hüpfer auf dem Standbein.",
+      sicherheit: "Bei frischen Zerrungen der Beinrückseite auslassen."
+    }
+  },
+  {
+    id: "zehen_yoga",
+    name: "Zehen-Yoga",
+    auch: ["Toe Yoga", "Toe Splay and Lift", "Big Toe Little Toe Lifts"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["schienbein"],
+    sekundaer: ["waden"],
+    geraete: [[]],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    info: {
+      kurz: "Übung für die Beweglichkeit und Kontrolle der Zehen: Du hebst abwechselnd nur die Großzehe und nur die kleinen Zehen an. Verbessert das Fußgefühl und die Steuerung der kleinen Fußmuskeln.",
+      ausfuehrung: [
+        "Setz dich auf einen Stuhl, beide Füße stehen barfuß flach am Boden.",
+        "Heb nur die Großzehe an, während die anderen vier Zehen am Boden bleiben.",
+        "Senke die Großzehe ab und heb jetzt nur die vier kleinen Zehen an, die Großzehe drückt in den Boden.",
+        "Wechsle so langsam hin und her.",
+        "Spreize zum Abschluss alle Zehen so weit wie möglich auseinander und halte kurz.",
+        "Wiederhole die vorgegebene Anzahl."
+      ],
+      atmung: "Ruhig und gleichmäßig weiteratmen.",
+      fehler: [
+        "Der ganze Fuß rollt mit: Fußballen und Ferse bleiben am Boden.",
+        "Mit den Händen nachhelfen ohne eigene Ansteuerung: anfangs okay, später selbstständig.",
+        "Zu schnell: langsam und bewusst."
+      ],
+      vorteile: [
+        "Verbessert die Kontrolle über die Zehen.",
+        "Fördert das Fußgefühl für Gleichgewicht und Abdruck.",
+        "Ohne Gerät, auch unter dem Schreibtisch machbar."
+      ],
+      tipps: [
+        "Anfangs klappt es oft nur mit Hilfe der Hand. Mit Übung geht es von allein.",
+        "Später im Stehen ausführen."
+      ],
+      varianten: "Leichter: mit der Hand unterstützen. Schwerer: im Stehen oder auf einem Bein.",
+      sicherheit: "Bei Krämpfen in der Fußsohle kurz pausieren und ausschütteln."
+    }
+  },
 ]

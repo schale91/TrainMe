@@ -335,4 +335,14 @@ export interface Daten {
   erledigt: Erledigt[]
   spiel: Spielstand
   messungen: Messung[]
+  /** Werte aus Health Connect, je Tag */
+  gesundheit?: { verbunden: boolean; tage: Record<string, Tageswerte> }
+}
+
+export interface Tageswerte {
+  schritte?: number
+  /** Schlaf der Nacht vor diesem Tag in Minuten */
+  schlaf_min?: number
+  ruhepuls?: number
+  hrv?: number
 }

@@ -7,6 +7,7 @@ import { heute, montagVon, plusTage, wochenplan } from "../logik/plan"
 import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { KistenBild } from "./Abenteuer"
+import { tagesform } from "./gesundheit"
 import { Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { ROLLE, TERMINE, WT, datumText } from "./texte"
 
@@ -33,6 +34,13 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Hallo" : "Guten Abend"
   const termin = profil.woche[(new Date().getDay() + 6) % 7]
   const fokus = heutige && !istErledigt(daten, heutige) ? heutige : naechste
+  const gesundheit = daten.gesundheit?.verbunden ? daten.gesundheit.tage[tag] : undefined
+  const form = tagesform(
+    gesundheit,
+    Object.entries(daten.gesundheit?.tage || {})
+      .filter(([d]) => d < tag)
+      .map(([, w]) => w),
+  )
 
   return (
     <Seite titel={gruss + (profil.name ? ", " + profil.name : "")} untertitel={istEntlastung(w) ? "Entlastungswoche: locker bleiben" : "Block-Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1)}>
@@ -51,6 +59,32 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           <b>🪙 {daten.spiel.muenzen}</b>
         </button>
       </div>
+
+      {gesundheit ? (
+        <div className="gesundheitsreihe">
+          {gesundheit.schritte !== undefined ? (
+            <div className="statuskachel">
+              <small>Schritte heute</small>
+              <b>👟 {gesundheit.schritte.toLocaleString("de-DE")}</b>
+            </div>
+          ) : null}
+          {gesundheit.schlaf_min !== undefined ? (
+            <div className="statuskachel">
+              <small>Schlaf</small>
+              <b>
+                😴 {Math.floor(gesundheit.schlaf_min / 60)} h {gesundheit.schlaf_min % 60}
+              </b>
+            </div>
+          ) : null}
+          {gesundheit.ruhepuls ? (
+            <div className="statuskachel">
+              <small>Ruhepuls</small>
+              <b>❤️ {gesundheit.ruhepuls}</b>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {form ? <p className="hinweistext">{form}</p> : null}
 
       {daten.spiel.kisten.length ? (
         <button type="button" className="kistenbanner" onClick={props.zumAbenteuer}>

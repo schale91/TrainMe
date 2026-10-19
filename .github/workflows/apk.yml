@@ -77,6 +77,19 @@ jobs:
           name: TrainMe-${{ env.VERSION }}
           path: TrainMe.apk
 
+      - name: Vorschau veröffentlichen
+        if: github.event_name == 'pull_request' && env.SIGNIERT == 'ja'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Fester Link für Test-APKs aus offenen Pull Requests, ohne ZIP und ohne Anmeldung
+          gh release delete vorschau --yes --cleanup-tag 2>/dev/null || true
+          gh release create vorschau TrainMe.apk \
+            --target "${{ github.event.pull_request.head.sha }}" \
+            --title "TrainMe Vorschau $VERSION" \
+            --notes "Testversion aus einem offenen Pull Request. Kann Fehler enthalten. Stabile Version: Releases mit Versionsnummer." \
+            --prerelease
+
       - name: Release veröffentlichen
         if: github.ref == 'refs/heads/main' && env.SIGNIERT == 'ja'
         env:
