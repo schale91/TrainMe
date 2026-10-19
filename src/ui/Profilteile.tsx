@@ -7,7 +7,9 @@ import { moeglicheUebungen } from "../logik/plan"
 import { neuerOrt, studio } from "../logik/speicher"
 import type { Beschwerde, Geraet, Gelenk, Ort, Profil, Wochentag } from "../logik/typen"
 import { Chips, Feld, Karten, Zahl, Zahlenliste } from "./teile"
-import { ARTEN, ERFAHRUNG, GELENKE, GERAETE, SAISON, SCHWERPUNKT, TERMINE, WOCHENTAGE, ZIELE } from "./texte"
+import { ARTEN, ERFAHRUNG, GELENKE, GERAETE, GERAETE_GRUPPEN, SAISON, SCHWERPUNKT, TERMINE, WOCHENTAGE, ZIELE } from "./texte"
+import { MASCHINEN } from "../logik/typen"
+import { Sym } from "./symbole"
 
 type Teil = { profil: Profil; aendern: (p: Profil) => void }
 
@@ -97,11 +99,7 @@ function OrtKarte(props: { ort: Ort; aendern: (o: Ort) => void; entfernen?: () =
       <Feld titel="Deckenhöhe" text="Unter etwa 2,40 m fallen Überkopfübungen, Klimmzüge und Sprünge weg.">
         <Zahl wert={o.deckenhoehe_cm} min={150} max={1000} einheit="cm" onChange={(deckenhoehe_cm) => props.aendern({ ...o, deckenhoehe_cm })} />
       </Feld>
-      {Array.from(new Set(GERAETE.map((g) => g.gruppe))).map((gruppe) => (
-        <Feld key={gruppe} titel={gruppe}>
-          <Chips werte={GERAETE.filter((g) => g.gruppe === gruppe)} gewaehlt={o.geraete.filter((x) => GERAETE.some((g) => g.id === x && g.gruppe === gruppe))} onChange={(neu) => props.aendern({ ...o, geraete: [...o.geraete.filter((x) => !GERAETE.some((g) => g.id === x && g.gruppe === gruppe)), ...neu] })} />
-        </Feld>
-      ))}
+      <GeraeteListe gewaehlt={o.geraete} aendern={(geraete) => props.aendern({ ...o, geraete })} />
       {hat("kurzhantel") ? (
         <Feld titel="Kurzhanteln je Hand (kg)" text="Alle Gewichte, die du hast, getrennt mit Semikolon. Verstellbare Hanteln: jede mögliche Stufe.">
           <Zahlenliste wert={g.kurzhanteln} platzhalter="z. B. 2; 4; 6; 8; 10" onChange={(kurzhanteln) => setG({ kurzhanteln })} />
@@ -116,6 +114,11 @@ function OrtKarte(props: { ort: Ort; aendern: (o: Ort) => void; entfernen?: () =
             <Zahlenliste wert={g.scheiben} platzhalter="z. B. 1,25; 2,5; 5; 10; 10; 20" onChange={(scheiben) => setG({ scheiben })} />
           </Feld>
         </>
+      ) : null}
+      {hat("trap_bar") ? (
+        <Feld titel="Trap Bar" text="Nutzt dieselben Scheiben wie die Langhantel.">
+          <Zahl wert={g.trap_bar || 0} min={0} max={40} einheit="kg" onChange={(trap_bar) => setG({ trap_bar })} />
+        </Feld>
       ) : null}
       {hat("sz_stange") ? (
         <Feld titel="SZ-Stange" text="Nutzt dieselben Scheiben wie die Langhantel.">
@@ -142,7 +145,7 @@ function OrtKarte(props: { ort: Ort; aendern: (o: Ort) => void; entfernen?: () =
           <Zahlenliste wert={g.medizinbaelle} platzhalter="z. B. 3; 5" onChange={(medizinbaelle) => setG({ medizinbaelle })} />
         </Feld>
       ) : null}
-      {hat("kabelzug") || hat("maschine_beine") || hat("maschine_oberkoerper") ? (
+      {o.geraete.some((x) => MASCHINEN.indexOf(x) >= 0) ? (
         <div className="reihe">
           <Feld titel="Maschinen: Schritt">
             <Zahl wert={g.maschine_schritt} min={0.5} max={20} einheit="kg" onChange={(maschine_schritt) => setG({ maschine_schritt })} />
@@ -279,6 +282,43 @@ export function AusnahmenEditor({ profil, aendern }: Teil) {
           </button>
         ))}
       </div>
+    </>
+  )
+}
+
+/** Geräte als abhakbare Liste je Gruppe, mit „alle“ je Gruppe. */
+export function GeraeteListe(props: { gewaehlt: Geraet[]; aendern: (g: Geraet[]) => void }) {
+  const hat = (x: Geraet) => props.gewaehlt.indexOf(x) >= 0
+  const umschalten = (x: Geraet) => props.aendern(hat(x) ? props.gewaehlt.filter((y) => y !== x) : [...props.gewaehlt, x])
+  return (
+    <>
+      {GERAETE_GRUPPEN.map((gr) => {
+        const liste = GERAETE.filter((g) => g.gruppe === gr.id)
+        const alle = liste.every((g) => hat(g.id))
+        return (
+          <div key={gr.id} className="geraetegruppe">
+            <div className="geraetekopf">
+              <Sym name={gr.symbol} groesse={22} />
+              <b>{gr.name}</b>
+              <button type="button" className="textknopf" onClick={() => props.aendern(alle ? props.gewaehlt.filter((x) => !liste.some((g) => g.id === x)) : Array.from(new Set([...props.gewaehlt, ...liste.map((g) => g.id)])))}>
+                {alle ? "keine" : "alle"}
+              </button>
+            </div>
+            {gr.text ? <small className="geraetehinweis">{gr.text}</small> : null}
+            <div className="geraeteliste">
+              {liste.map((g) => (
+                <button key={g.id} type="button" className={"geraetzeile" + (hat(g.id) ? " an" : "")} onClick={() => umschalten(g.id)} aria-pressed={hat(g.id)}>
+                  <span className="kasten">{hat(g.id) ? <Sym name="haken" groesse={16} /> : null}</span>
+                  <span className="geraettext">
+                    <span>{g.name}</span>
+                    {g.text ? <small>{g.text}</small> : null}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </>
   )
 }

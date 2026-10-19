@@ -17,6 +17,7 @@ import Heute from "./ui/Heute"
 import { Icon } from "./ui/ios"
 import ProfilSeite from "./ui/Profil"
 import Training from "./ui/Training"
+import Fehlergrenze from "./ui/Fehlergrenze"
 import { gesundheitLesen } from "./ui/gesundheit"
 
 type Tab = "heute" | "uebungen" | "abenteuer" | "fortschritt" | "profil"
@@ -98,6 +99,10 @@ export default function App() {
   return (
     <div className="app">
       <main>
+        <Fehlergrenze key={(offen ? "t" : "") + tab} bereich={offen ? "Training" : tab} zurueck={() => {
+          setOffen(null)
+          setTab("heute")
+        }}>
         {offen ? (
           <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id) => aendern((d) => void (d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen, id]))} />
         ) : tab === "heute" ? (
@@ -120,6 +125,7 @@ export default function App() {
             }}
           />
         )}
+        </Fehlergrenze>
       </main>
       {!offen ? (
         <nav className="tableiste">

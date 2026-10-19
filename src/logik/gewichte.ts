@@ -1,11 +1,11 @@
 // Welche Lasten es mit der vorhandenen Ausrüstung wirklich gibt. Die App schlägt nie ein Gewicht vor, das man nicht
 // zusammenstecken kann.
 
-import type { Geraet, Gewichte, Uebung } from "./typen"
+import { LASTGERAETE, MASCHINEN, type Geraet, type Gewichte, type Uebung } from "./typen"
 
-export const LAST_GERAETE: Geraet[] = ["kurzhantel", "langhantel", "sz_stange", "kettlebell", "hantelscheibe", "kabelzug", "maschine_beine", "maschine_oberkoerper", "multipresse", "medizinball", "band"]
+export const LAST_GERAETE: readonly Geraet[] = LASTGERAETE
 
-export const LEER: Gewichte = { kurzhanteln: [], stange: 0, sz_stange: 0, multipresse_stange: 0, scheiben: [], kettlebells: [], medizinbaelle: [], maschine_schritt: 5, maschine_max: 100, baender: 0 }
+export const LEER: Gewichte = { kurzhanteln: [], stange: 0, sz_stange: 0, trap_bar: 0, multipresse_stange: 0, scheiben: [], kettlebells: [], medizinbaelle: [], maschine_schritt: 5, maschine_max: 100, baender: 0 }
 
 const rund = (x: number) => Math.round(x * 100) / 100
 
@@ -24,12 +24,13 @@ export function verfuegbar(geraet: Geraet, g: Gewichte): number[] {
   if (geraet === "kurzhantel") liste = g.kurzhanteln
   else if (geraet === "langhantel") liste = stangenGewichte(g.stange, g)
   else if (geraet === "sz_stange") liste = stangenGewichte(g.sz_stange || 0, g)
+  else if (geraet === "trap_bar") liste = stangenGewichte(g.trap_bar || 0, g)
   else if (geraet === "multipresse") liste = stangenGewichte(g.multipresse_stange || 0, g)
   else if (geraet === "hantelscheibe") liste = g.scheiben
   else if (geraet === "kettlebell") liste = g.kettlebells
   else if (geraet === "medizinball") liste = g.medizinbaelle
   else if (geraet === "band") liste = Array.from({ length: g.baender }, (_, i) => i + 1)
-  else if (geraet === "kabelzug" || geraet === "maschine_beine" || geraet === "maschine_oberkoerper") {
+  else if (MASCHINEN.indexOf(geraet) >= 0) {
     const schritt = g.maschine_schritt > 0 ? g.maschine_schritt : 5
     for (let x = schritt; x <= g.maschine_max + 1e-9; x += schritt) liste.push(rund(x))
   }

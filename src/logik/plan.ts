@@ -103,7 +103,8 @@ export function erlaubt(profil: Profil, u: Uebung): boolean {
 /** Passt die Übung an den Ort (Geräte und Raumhöhe)? */
 export function passtAnOrt(u: Uebung, ort: Ort): boolean {
   if (u.hoehe_cm > ort.deckenhoehe_cm && u.geraete.every((g) => g.indexOf("draussen") < 0)) return false
-  return passendeGruppe(u, ort.geraete) !== null
+  // Nach draußen kann man von überall: Gehen, Laufen und Sprints gehen auch ohne eingetragenen Platz
+  return passendeGruppe(u, ort.geraete.indexOf("draussen") >= 0 ? ort.geraete : [...ort.geraete, "draussen"]) !== null
 }
 
 function verlaufVon(protokoll: Protokoll[], id: string, vor: string): Protokoll[] {

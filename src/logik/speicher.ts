@@ -1,7 +1,7 @@
 // Daten bleiben auf dem Gerät (localStorage der App). Export und Import als JSON-Datei für Sicherung und Gerätewechsel.
 
 import { LEER } from "./gewichte"
-import type { Daten, Ort, Profil, Spielstand, Wochentag } from "./typen"
+import { GERAETE_IDS, type Daten, type Geraet, type Ort, type Profil, type Spielstand, type Wochentag } from "./typen"
 
 const SCHLUESSEL = "trainme.daten"
 
@@ -43,7 +43,15 @@ export function pruefen(x: unknown): Daten {
 
 function vervollstaendigen(p: Profil): Profil {
   const basis = neuesProfil()
-  const orte = Array.isArray(p.orte) && p.orte.length ? p.orte.map((o) => ({ ...neuerOrt(o.name || "Ort"), ...o, gewichte: { ...LEER, ...(o.gewichte || {}) } })) : basis.orte
+  const orte =
+    Array.isArray(p.orte) && p.orte.length
+      ? p.orte.map((o) => ({
+          ...neuerOrt(o.name || "Ort"),
+          ...o,
+          geraete: Array.from(new Set((o.geraete || []).flatMap((g) => ALT[g as string] || [g]))).filter((g) => (GERAETE_IDS as readonly string[]).includes(g)) as Geraet[],
+          gewichte: { ...LEER, ...(o.gewichte || {}) },
+        }))
+      : basis.orte
   const woche = Array.isArray(p.woche) && p.woche.length === 7 ? p.woche : basis.woche
   return { ...basis, ...p, orte, woche, beschwerden: p.beschwerden || [], ausgeschlossen: p.ausgeschlossen || [], arten: p.arten && p.arten.length ? p.arten : ["kraft"] }
 }
@@ -92,12 +100,21 @@ function montag(datum: string): string {
   return d.toISOString().slice(0, 10)
 }
 
+/** Was ein durchschnittliches Fitnessstudio meist hat. In der Einrichtung einmal durchgehen und anpassen. */
+export const STUDIO_GERAETE: Geraet[] = ["kurzhantel", "langhantel", "sz_stange", "kettlebell", "hantelscheibe", "medizinball", "bank", "scottbank", "rack", "klimmzugstange", "dip_station", "multipresse", "kabelzug", "kabelturm", "latzug", "kabelrudern", "beinpresse", "beinstrecker", "beinbeuger_liegend", "beinbeuger_sitzend", "ab_adduktoren", "wadenmaschine_stehend", "rueckenstrecker", "brustpresse", "butterfly", "schulterpresse", "rudermaschine", "bauchmaschine", "dip_assistent", "band", "mini_band", "gymnastikball", "box", "matte", "faszienrolle", "stab", "wand", "laufband", "fahrrad", "rudergeraet"]
+
+/** Alte Sammelbegriffe aus Version 0.2 in einzelne Maschinen übersetzen. */
+const ALT: Record<string, Geraet[]> = {
+  maschine_beine: ["beinpresse", "beinstrecker", "beinbeuger_liegend", "beinbeuger_sitzend", "ab_adduktoren", "wadenmaschine_stehend", "rueckenstrecker"],
+  maschine_oberkoerper: ["brustpresse", "butterfly", "schulterpresse", "rudermaschine", "latzug", "kabelrudern", "bauchmaschine", "dip_assistent"],
+}
+
 /** Typisches Fitnessstudio. */
 export function studio(): Ort {
   return {
     name: "Studio",
-    geraete: ["kurzhantel", "langhantel", "sz_stange", "kettlebell", "hantelscheibe", "kabelzug", "maschine_beine", "maschine_oberkoerper", "multipresse", "landmine", "klimmzugstange", "dip_station", "bank", "band", "mini_band", "schlingentrainer", "medizinball", "gymnastikball", "box", "matte", "wand", "stab", "faszienrolle", "laufband", "fahrrad", "rudergeraet"],
-    gewichte: { kurzhanteln: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40], stange: 20, sz_stange: 10, multipresse_stange: 15, scheiben: [1.25, 2.5, 5, 10, 10, 15, 20, 20, 25], kettlebells: [8, 12, 16, 20, 24, 28, 32], medizinbaelle: [3, 5, 7], maschine_schritt: 5, maschine_max: 150, baender: 3 },
+    geraete: [...STUDIO_GERAETE],
+    gewichte: { kurzhanteln: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40], stange: 20, sz_stange: 10, trap_bar: 0, multipresse_stange: 15, scheiben: [1.25, 2.5, 5, 10, 10, 15, 20, 20, 25], kettlebells: [8, 12, 16, 20, 24, 28, 32], medizinbaelle: [3, 5, 7], maschine_schritt: 5, maschine_max: 150, baender: 3 },
     deckenhoehe_cm: 400,
   }
 }

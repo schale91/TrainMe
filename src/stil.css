@@ -1887,3 +1887,30 @@ a.knopf.aus {
   gap: 8px;
   margin-top: 8px;
 }
+
+/* Fehleranzeige */
+.fehlerseite {
+  padding: 40px 0;
+}
+.fehlerseite pre,
+#fehlerhinweis {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  background: #2a1020;
+  color: #ffd0d8;
+  border-radius: 10px;
+  padding: 10px;
+}
+#fehlerhinweis {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  top: calc(env(safe-area-inset-top) + 8px);
+  z-index: 100;
+  max-height: 40vh;
+  overflow: auto;
+}
+.knopf.gefahr {
+  background: var(--rot);
+}

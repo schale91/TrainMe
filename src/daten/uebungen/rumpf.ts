@@ -1944,7 +1944,7 @@ export const RUMPF: Uebung[] = [
     art: "kraft",
     muskeln: ["bauch"],
     sekundaer: ["schraege_bauch"],
-    geraete: [["maschine_oberkoerper"]],
+    geraete: [["bauchmaschine"]],
     belastung: "gewicht",
     hoehe_cm: 160,
     gelenke: { ruecken: 1 },

@@ -1,7 +1,7 @@
 // Regeln für Einträge der Übungsdatenbank. Wird von den Tests genutzt.
-import { GERAETE_IDS, MUSKELN, MUSTER, type Uebung } from "../src/logik/typen"
+import { GERAETE_IDS, LASTGERAETE, MUSKELN, MUSTER, type Uebung } from "../src/logik/typen"
 
-const LAST = ["kurzhantel", "langhantel", "sz_stange", "kettlebell", "hantelscheibe", "kabelzug", "maschine_beine", "maschine_oberkoerper", "multipresse", "medizinball", "band"]
+const LAST: readonly string[] = LASTGERAETE
 const GELENKE = ["knie", "schulter", "ruecken", "huefte", "handgelenk", "ellbogen", "sprunggelenk", "nacken"]
 
 function texte(u: Uebung): string[] {

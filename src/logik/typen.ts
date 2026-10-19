@@ -44,23 +44,60 @@ export const MUSTER = [
 export type Muster = (typeof MUSTER)[number]
 
 export const GERAETE_IDS = [
+  // freie Gewichte
   "kurzhantel",
   "langhantel",
   "sz_stange",
+  "trap_bar",
   "kettlebell",
   "hantelscheibe",
-  "kabelzug",
-  "maschine_beine",
-  "maschine_oberkoerper",
-  "multipresse",
-  "landmine",
+  "medizinball",
+  // Bänke und Ständer
+  "bank",
+  "scottbank",
+  "rack",
   "klimmzugstange",
   "dip_station",
-  "bank",
+  "landmine",
+  "multipresse",
+  // Kabel
+  "kabelzug",
+  "kabelturm",
+  "latzug",
+  "kabelrudern",
+  // Maschinen Beine und Hüfte
+  "beinpresse",
+  "hackenschmidt",
+  "pendelkniebeuge",
+  "beltsquat",
+  "beinstrecker",
+  "beinbeuger_liegend",
+  "beinbeuger_sitzend",
+  "beinbeuger_stehend",
+  "ab_adduktoren",
+  "gesaessmaschine",
+  "wadenmaschine_stehend",
+  "wadenmaschine_sitzend",
+  "rueckenstrecker",
+  "ghd",
+  // Maschinen Oberkörper
+  "brustpresse",
+  "butterfly",
+  "schulterpresse",
+  "seitheben_maschine",
+  "rudermaschine",
+  "t_bar_rudern",
+  "iso_lateral",
+  "ueberzugmaschine",
+  "bizepsmaschine",
+  "trizepsmaschine",
+  "bauchmaschine",
+  "nackenmaschine",
+  "dip_assistent",
+  // Kleingeräte
   "band",
   "mini_band",
   "schlingentrainer",
-  "medizinball",
   "gymnastikball",
   "box",
   "matte",
@@ -69,6 +106,7 @@ export const GERAETE_IDS = [
   "golfschlaeger",
   "faszienrolle",
   "gleitscheiben",
+  // Ausdauer und Raum
   "laufband",
   "fahrrad",
   "rudergeraet",
@@ -77,7 +115,10 @@ export const GERAETE_IDS = [
 export type Geraet = (typeof GERAETE_IDS)[number]
 
 /** Geräte, deren Gewichtsstufen die Last bestimmen. */
-export type Lastgeraet = "kurzhantel" | "langhantel" | "sz_stange" | "kettlebell" | "hantelscheibe" | "kabelzug" | "maschine_beine" | "maschine_oberkoerper" | "multipresse" | "medizinball" | "band"
+export const MASCHINEN: readonly Geraet[] = ["kabelzug", "kabelturm", "latzug", "kabelrudern", "beinpresse", "hackenschmidt", "pendelkniebeuge", "beltsquat", "beinstrecker", "beinbeuger_liegend", "beinbeuger_sitzend", "beinbeuger_stehend", "ab_adduktoren", "gesaessmaschine", "wadenmaschine_stehend", "wadenmaschine_sitzend", "brustpresse", "butterfly", "schulterpresse", "seitheben_maschine", "rudermaschine", "t_bar_rudern", "iso_lateral", "ueberzugmaschine", "bizepsmaschine", "trizepsmaschine", "bauchmaschine", "nackenmaschine", "dip_assistent"]
+export const FREIE_LASTEN: readonly Geraet[] = ["kurzhantel", "langhantel", "sz_stange", "trap_bar", "kettlebell", "hantelscheibe", "multipresse", "medizinball", "band"]
+/** Geräte, deren Gewichtsstufen die Last bestimmen. */
+export const LASTGERAETE: readonly Geraet[] = [...FREIE_LASTEN, ...MASCHINEN]
 
 /** Wie eine Übung gesteigert wird. */
 export type Belastungsart = "gewicht" | "wiederholungen" | "zeit" | "distanz"
@@ -190,6 +231,8 @@ export interface Gewichte {
   stange: number
   /** SZ-Stange in kg (0: keine), nutzt dieselben Scheiben */
   sz_stange: number
+  /** Trap Bar (Sechseckstange) in kg (0: keine) */
+  trap_bar: number
   /** Stange der Multipresse in kg (0: keine) */
   multipresse_stange: number
   /** Hantelscheiben, die paarweise vorhanden sind (kg je Scheibe) */

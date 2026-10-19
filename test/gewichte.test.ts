@@ -10,7 +10,7 @@ describe("Gewichte", () => {
   })
 
   it("Maschine in Schritten bis zum Maximum", () => {
-    expect(verfuegbar("maschine_beine", g)).toEqual([7, 14, 21, 28, 35])
+    expect(verfuegbar("beinpresse", g)).toEqual([7, 14, 21, 28, 35])
   })
 
   it("rundet nur auf vorhandene Gewichte", () => {
