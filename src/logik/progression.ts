@@ -1,0 +1,220 @@
+// Steigerung: Blöcke mit Entlastungswoche, Ziel-RIR je Woche, Wiederholungsbereiche je Ziel und Rolle, und die
+// Vorgabe für die nächste Einheit aus dem bisherigen Protokoll.
+//
+// Grundlagen (siehe docs/KONZEPT.md): RIR-Skala nach Zourdos et al. 2016, geschätztes Maximum nach Epley,
+// Wochenvolumen nach Schoenfeld et al. 2017, Nähe zum Versagen eher für Muskelaufbau als für Kraft.
+
+import { abrunden, hoeher, niedriger } from "./gewichte"
+import type { Profil, Progressionsmodell, Protokoll, Rolle, Satz, Uebung, Vorgabe } from "./typen"
+
+export const BLOCK_WOCHEN = 5 // 4 Aufbauwochen und eine Entlastungswoche
+
+const TAG = 86400000
+
+/** Woche im Block (0 bis 3 Aufbau, 4 Entlastung) für ein Datum JJJJ-MM-TT. */
+export function blockWoche(profil: Profil, datum: string): number {
+  const d = Math.floor((Date.parse(datum + "T12:00:00Z") - Date.parse(profil.block_start + "T12:00:00Z")) / (7 * TAG))
+  return ((d % BLOCK_WOCHEN) + BLOCK_WOCHEN) % BLOCK_WOCHEN
+}
+
+export function istEntlastung(woche: number): boolean {
+  return woche === BLOCK_WOCHEN - 1
+}
+
+/** Geschätztes Maximum (1RM) aus einem Satz nach Epley, mit den Wiederholungen im Tank. */
+export function e1rm(s: Satz): number {
+  if (!s.last || s.last <= 0 || s.wdh <= 0) return 0
+  return s.last * (1 + (s.wdh + Math.max(0, s.rir)) / 30)
+}
+
+/** Bestes geschätztes Maximum eines Protokolls. */
+export function bestesE1rm(p: Protokoll): number {
+  return Math.max(0, ...p.saetze.map(e1rm))
+}
+
+/** Ziel-RIR je Woche im Block. */
+export function zielRir(profil: Profil, rolle: Rolle, woche: number): number {
+  if (istEntlastung(woche)) return 4
+  if (rolle === "schnellkraft") return 4
+  let reihe = [3, 2, 2, 2]
+  if (profil.ziel === "muskelaufbau") reihe = [3, 2, 1, 1]
+  else if (profil.ziel === "kraft" || profil.ziel === "sport") reihe = [3, 3, 2, 2]
+  if (profil.saison === "wettkampf") reihe = [3, 3, 3, 3]
+  let r = reihe[Math.min(3, woche)]
+  // Isolationsübungen dürfen beim Muskelaufbau näher ans Versagen
+  if (rolle === "isolation" && profil.ziel === "muskelaufbau") r -= 1
+  if (profil.erfahrung === "einsteiger") r = Math.max(2, r + 1)
+  return Math.max(0, r)
+}
+
+/** Wiederholungsbereich je Ziel und Rolle. */
+export function bereich(profil: Profil, rolle: Rolle, u: Uebung): [number, number] {
+  if (u.belastung === "zeit") return [20, 60]
+  if (rolle === "schnellkraft") return u.muster === "schnellkraft_wurf" ? [5, 6] : [4, 5]
+  if (u.belastung === "wiederholungen") return u.stufe >= 2 ? [5, 10] : [8, 15]
+  const z = profil.ziel
+  if (rolle === "haupt") {
+    if (z === "kraft") return [4, 6]
+    if (z === "sport") return profil.saison === "vorbereitung" ? [6, 8] : [4, 6]
+    if (z === "muskelaufbau") return [6, 10]
+    return [8, 12]
+  }
+  if (rolle === "neben") return z === "kraft" || z === "sport" ? [6, 10] : [8, 12]
+  if (rolle === "praevention") return [8, 12]
+  return [10, 15]
+}
+
+/** Pause zwischen den Sätzen in Sekunden. */
+export function pause(profil: Profil, rolle: Rolle): number {
+  if (rolle === "haupt") return profil.ziel === "kraft" || profil.ziel === "sport" ? 180 : 150
+  if (rolle === "neben") return 120
+  if (rolle === "schnellkraft") return 90
+  if (rolle === "mobil") return 15
+  return 75
+}
+
+/** Welches Steigerungsmodell eine Übung bekommt. */
+export function modellFuer(profil: Profil, rolle: Rolle, u: Uebung, einheitenBisher: number): Progressionsmodell {
+  if (u.belastung === "zeit") return "zeit"
+  if (rolle === "schnellkraft" || u.belastung === "distanz") return "qualitaet"
+  if (u.belastung === "wiederholungen") return "doppelt"
+  if (profil.erfahrung === "einsteiger" && einheitenBisher < 8) return "linear"
+  if (rolle === "haupt" && profil.erfahrung !== "einsteiger" && (profil.ziel === "kraft" || profil.ziel === "sport" || profil.erfahrung === "erfahren")) return "rir"
+  return "doppelt"
+}
+
+const kg = (x: number) => String(Math.round(x * 100) / 100).replace(".", ",")
+
+/**
+ * Vorgabe für die nächste Einheit. verlauf: bisherige Protokolle dieser Übung, älteste zuerst. lasten: verfügbare
+ * Gewichte (leer: Körpergewicht, Zeit oder Strecke).
+ */
+export function vorgabe(profil: Profil, rolle: Rolle, u: Uebung, saetze: number, verlauf: Protokoll[], lasten: number[], woche: number): Vorgabe {
+  const modell = modellFuer(profil, rolle, u, verlauf.length)
+  const [lo, hi] = bereich(profil, rolle, u)
+  const rir = zielRir(profil, rolle, woche)
+  const entlastung = istEntlastung(woche)
+  const letzte = verlauf.length ? verlauf[verlauf.length - 1] : null
+  const vorletzte = verlauf.length > 1 ? verlauf[verlauf.length - 2] : null
+  // ohne Zusatzgewicht reichen kürzere Pausen
+  const p = u.belastung === "gewicht" ? pause(profil, rolle) : Math.min(90, pause(profil, rolle))
+  const v: Vorgabe = { saetze, wdh_von: lo, wdh_bis: hi, rir, last: null, modell, pause_s: p, begruendung: "" }
+  const gezaehlt = (p: Protokoll | null) => (p ? p.saetze.filter((s) => s.wdh > 0 || (s.sekunden || 0) > 0) : [])
+
+  if (modell === "zeit") {
+    const sek = gezaehlt(letzte).map((s) => s.sekunden || 0)
+    const start = rolle === "mobil" ? 45 : 30
+    const ziel = sek.length ? Math.min(rolle === "mobil" ? 60 : 90, Math.min(...sek) + 5) : start
+    v.wdh_von = v.wdh_bis = 1
+    v.last = entlastung ? Math.max(20, ziel - 10) : ziel
+    v.begruendung = rolle === "mobil" ? "Je Seite halten, ruhig atmen, nicht in den Schmerz." : sek.length ? "Letztes Mal " + Math.min(...sek) + " s, jetzt 5 s mehr." : "Start mit " + ziel + " s."
+    return v
+  }
+
+  if (modell === "qualitaet") {
+    v.rir = 4
+    if (u.belastung === "distanz") {
+      v.wdh_von = v.wdh_bis = 1
+      v.last = u.muster === "sprint" ? 25 : 20
+      v.saetze = entlastung ? 3 : Math.min(8, saetze + 2)
+      v.pause_s = 120
+      v.begruendung = "Jeder Lauf mit voller Geschwindigkeit, volle Pause. Wird es langsamer, aufhören."
+      return v
+    }
+    const leicht = letzte && gezaehlt(letzte).length && gezaehlt(letzte).every((s) => s.rir >= 5)
+    if (lasten.length) {
+      const alt = letzte && letzte.saetze[0] ? letzte.saetze[0].last : null
+      v.last = alt === null ? lasten[0] : leicht ? hoeher(alt, lasten) : alt
+    }
+    v.begruendung = "Schnellkraft: jede Wiederholung so explosiv wie möglich, kein Satz bis zur Ermüdung." + (leicht ? " Fiel zuletzt leicht, deshalb schwerer." : "")
+    if (entlastung) v.saetze = Math.max(2, Math.ceil(saetze / 2))
+    return v
+  }
+
+  const saetzeLetzte = gezaehlt(letzte)
+  if (!saetzeLetzte.length) {
+    v.last = null
+    v.begruendung = lasten.length
+      ? "Erstes Mal: wähle ein Gewicht, bei dem nach " + hi + " Wiederholungen noch etwa " + (rir + 1) + " gegangen wären."
+      : "Erstes Mal: so sauber wie möglich, Ziel " + lo + " bis " + hi + " Wiederholungen."
+    if (entlastung) v.saetze = Math.max(1, Math.ceil(saetze / 2))
+    return v
+  }
+
+  const alleOben = saetzeLetzte.every((s) => s.wdh >= hi)
+  const alleUnten = saetzeLetzte.every((s) => s.wdh >= lo)
+  const minRir = Math.min(...saetzeLetzte.map((s) => s.rir))
+  const zuSchwer = (p: Protokoll | null) => {
+    const s = gezaehlt(p)
+    return s.length > 0 && (s.some((x) => x.wdh < lo) || Math.min(...s.map((x) => x.rir)) < rir - 1)
+  }
+  const altLast = saetzeLetzte[0].last
+
+  if (u.belastung === "wiederholungen" || !lasten.length || altLast === null) {
+    // Körpergewicht: mehr Wiederholungen, dann die schwerere Variante
+    v.last = null
+    const bestWdh = Math.max(...saetzeLetzte.map((s) => s.wdh))
+    v.begruendung = alleOben && u.schwerer ? "Ganz oben im Bereich: Zeit für die schwerere Variante." : alleOben ? "Alle Sätze am oberen Ende, ein Satz mehr wäre der nächste Schritt." : "Letztes Mal bis " + bestWdh + " Wiederholungen, heute eine mehr."
+  } else if (modell === "linear") {
+    v.wdh_von = v.wdh_bis = lo
+    if (alleUnten && minRir >= rir) {
+      v.last = hoeher(altLast, lasten)
+      v.begruendung = "Alle Sätze geschafft: eine Stufe mehr (" + kg(v.last) + ")."
+    } else if (zuSchwer(letzte) && zuSchwer(vorletzte)) {
+      v.last = niedriger(altLast, lasten)
+      v.begruendung = "Zweimal zu schwer: eine Stufe zurück und neu anlaufen."
+    } else {
+      v.last = altLast
+      v.begruendung = "Gleiches Gewicht, Ziel: alle Sätze mit " + lo + " Wiederholungen."
+    }
+  } else if (modell === "doppelt") {
+    if (alleOben && minRir >= rir) {
+      v.last = hoeher(altLast, lasten)
+      v.begruendung = v.last > altLast ? "Alle Sätze bei " + hi + " Wiederholungen: nächste Stufe, wieder ab " + lo + "." : "Oben angekommen, aber es gibt kein schwereres Gewicht: ein Satz mehr oder langsamer absenken."
+    } else if (zuSchwer(letzte) && zuSchwer(vorletzte)) {
+      v.last = niedriger(altLast, lasten)
+      v.begruendung = "Zweimal unter dem Bereich: eine Stufe leichter."
+    } else {
+      v.last = altLast
+      v.begruendung = "Gleiches Gewicht, eine Wiederholung mehr als letztes Mal anpeilen."
+    }
+  } else {
+    // RIR-gesteuert: aus dem geschätzten Maximum das Gewicht für die Mitte des Bereichs beim Ziel-RIR
+    const max = Math.max(...saetzeLetzte.map(e1rm))
+    const wdh = Math.round((lo + hi) / 2)
+    const roh = max / (1 + (wdh + rir) / 30)
+    const gerundet = abrunden(roh, lasten)
+    v.last = gerundet === null ? altLast : gerundet
+    v.wdh_von = v.wdh_bis = wdh
+    v.begruendung = "Geschätztes Maximum " + kg(max) + " kg: " + wdh + " Wiederholungen mit noch " + rir + " im Tank sind etwa " + Math.round((roh / max) * 100) + " % davon."
+  }
+
+  if (entlastung && v.last !== null) {
+    v.last = abrunden(v.last * 0.9, lasten) ?? v.last
+    v.saetze = Math.max(1, Math.ceil(saetze / 2))
+    v.begruendung = "Entlastungswoche: halbe Sätze, etwas leichter. Der Körper holt hier den Fortschritt ab."
+  } else if (entlastung) {
+    v.saetze = Math.max(1, Math.ceil(saetze / 2))
+    v.begruendung = "Entlastungswoche: halbe Sätze, locker bleiben."
+  }
+  return v
+}
+
+/** Hat die Übung in den letzten drei Einheiten kein neues Maximum gebracht? Dann Hinweis auf Plateau. */
+export function plateau(verlauf: Protokoll[]): boolean {
+  if (verlauf.length < 4) return false
+  const besteVorher = Math.max(...verlauf.slice(0, -3).map(bestesE1rm))
+  return besteVorher > 0 && verlauf.slice(-3).every((p) => bestesE1rm(p) <= besteVorher)
+}
+
+/** Ausdauer in Minuten: ruhig als ein Block, Intervalle als Wechsel aus 2 Minuten zügig und 2 Minuten locker. */
+export function ausdauerVorgabe(u: Uebung, minuten: number, woche: number): Vorgabe {
+  const entlastung = istEntlastung(woche)
+  const netto = Math.max(15, minuten - 10)
+  if (u.muster === "ausdauer_intervall") {
+    const runden = Math.max(3, Math.min(8, Math.floor((netto - 10) / 4) + Math.min(2, woche)))
+    return { saetze: entlastung ? 3 : runden, wdh_von: 1, wdh_bis: 1, rir: 2, last: 120, modell: "zeit", pause_s: 120, begruendung: "10 Minuten locker einlaufen, dann je 2 Minuten zügig (sprechen fällt schwer) und 2 Minuten locker." }
+  }
+  const min = entlastung ? Math.round(netto * 0.7) : netto
+  return { saetze: 1, wdh_von: 1, wdh_bis: 1, rir: 4, last: min * 60, modell: "zeit", pause_s: 0, begruendung: "Ruhig: du kannst dabei noch ganze Sätze sprechen." }
+}
