@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { UEBUNGEN } from "../daten/uebungen/index"
-import { SPORTARTEN } from "../daten/vorlagen"
+import { SPORTARTEN, positionVon } from "../daten/vorlagen"
 import { heute, montagVon } from "../logik/plan"
 import { exportieren, importieren } from "../logik/speicher"
 import type { Daten, Profil as ProfilT } from "../logik/typen"
@@ -82,7 +82,7 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
     <Seite titel="Profil" untertitel={profil.name || undefined}>
       <Gruppe titel="Training">
         <Zeile symbol={<SymKachel name="ziel" farbe="#e7792f" />} titel="Ziel und Erfahrung" wert={ziel?.name + ", " + ERFAHRUNG.find((e) => e.id === profil.erfahrung)?.name} onClick={() => setSeite("ziel")} />
-        <Zeile symbol={<SymKachel name="golf" farbe="#1f9e73" />} titel="Training und Sport" wert={sport?.name} onClick={() => setSeite("sport")} />
+        <Zeile symbol={<SymKachel name="golf" farbe="#1f9e73" />} titel="Training und Sport" wert={(sport?.name || "") + (profil.sport === "football" && positionVon(profil.position) ? ", " + positionVon(profil.position)!.kurz : "")} onClick={() => setSeite("sport")} />
         <Zeile symbol={<SymKachel name="kalender" farbe="#d8506a" />} titel="Woche" wert={tage + " Trainingstage"} onClick={() => setSeite("woche")} />
         <Zeile symbol={<SymKachel name="haus" farbe="#4f68f0" />} titel="Orte und Geräte" wert={profil.orte.map((o) => o.name).join(", ")} onClick={() => setSeite("orte")} />
       </Gruppe>
@@ -166,7 +166,7 @@ function Sicherung(props: { daten: Daten; ersetzen: (d: Daten) => void; zuruecks
         }}
       />
       {meldung ? <p className="hinweistext">{meldung}</p> : null}
-      <Gruppe titel="Zurücksetzen" fuss="Löscht Profil, Protokoll, Tests und Abenteuer auf diesem Handy.">
+      <Gruppe titel="Zurücksetzen" fuss="Löscht Profil, Protokoll und Tests auf diesem Handy.">
         <Zeile
           titel="Alles löschen"
           gefahr

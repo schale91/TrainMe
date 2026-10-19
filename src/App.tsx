@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react"
 import { uebung } from "./daten/uebungen/index"
 import { prozentMethode } from "./daten/fakten"
-import { kisteOeffnen, kisteVerdienen, type Inhalt } from "./logik/abenteuer"
 import { heute } from "./logik/plan"
 import { blockWoche, istEntlastung } from "./logik/progression"
 import { laden, leer, speichern } from "./logik/speicher"
 import { ABZEICHEN, abschliessen, stufe, type Ergebnis } from "./logik/spiel"
-import type { Daten, Einheit, Kiste, Profil, Protokoll } from "./logik/typen"
-import Abenteuer, { KisteAufmachen } from "./ui/Abenteuer"
+import type { Daten, Einheit, Profil, Protokoll } from "./logik/typen"
 import Bibliothek from "./ui/Bibliothek"
+import Weg, { BlockFortschritt } from "./ui/Weg"
+import { aktuellerBlock, wegStand } from "./logik/weg"
 import Einrichtung from "./ui/Einrichtung"
 import Fortschritt from "./ui/Fortschritt"
 import Heute from "./ui/Heute"
@@ -25,17 +25,17 @@ import Einstufung from "./ui/Einstufung"
 import Fehlergrenze from "./ui/Fehlergrenze"
 import { gesundheitLesen } from "./ui/gesundheit"
 
-type Tab = "heute" | "uebungen" | "abenteuer" | "fortschritt" | "profil"
+type Tab = "heute" | "weg" | "uebungen" | "fortschritt" | "profil"
 
 const TABS: { id: Tab; name: string; icon: string }[] = [
   { id: "heute", name: "Heute", icon: "heute" },
+  { id: "weg", name: "Dein Weg", icon: "weg" },
   { id: "uebungen", name: "Übungen", icon: "uebungen" },
-  { id: "abenteuer", name: "Abenteuer", icon: "abenteuer" },
   { id: "fortschritt", name: "Fortschritt", icon: "fortschritt" },
   { id: "profil", name: "Profil", icon: "profil" },
 ]
 
-type Belohnung = Ergebnis & { stufeVorher: number; stufeNachher: number; kiste: Kiste | null; einheiten: number }
+type Belohnung = Ergebnis & { stufeVorher: number; stufeNachher: number; einheiten: number }
 
 export default function App() {
   const [daten, setDatenRoh] = useState<Daten>(() => laden())
@@ -43,7 +43,6 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("heute")
   const [offen, setOffen] = useState<Einheit | null>(null)
   const [belohnung, setBelohnung] = useState<Belohnung | null>(null)
-  const [kisteAuf, setKisteAuf] = useState(false)
   const [einstufen, setEinstufen] = useState(false)
   const [profilStart, setProfilStart] = useState<Unterseite>(null)
   const [update, setUpdate] = useState<UpdateInfo | null>(() => updateBekannt())
@@ -112,7 +111,7 @@ export default function App() {
     aktuell.current = d
     setDatenRoh(d)
   }
-  // Synchron ändern, damit Ergebnisse (Kampf, Kiste) sofort vorliegen
+  // Synchron ändern, damit Ergebnisse (XP, Rekorde) sofort vorliegen
   const aendern = (f: (d: Daten) => void) => {
     const neu = structuredClone(aktuell.current)
     f(neu)
@@ -122,12 +121,11 @@ export default function App() {
   if (!daten.profil) return <Einrichtung fertig={(p) => aendern((d) => void (d.profil = { ...p, jahresplan: p.jahresplan || jahresplanVorschlag(p, p.block_start) }))} />
   const profil = daten.profil
 
-  const fertig = (e: Einheit, protokolle: Protokoll[], vollstaendig: boolean) => {
+  const fertig = (e: Einheit, protokolle: Protokoll[]) => {
     const tag = heute()
     const w = blockWoche(profil, e.datum)
     const vorher = stufe(aktuell.current.spiel.xp).stufe
     let ergebnis: Ergebnis | null = null
-    let kiste: Kiste | null = null
     let einheiten = 0
     aendern((d) => {
       ergebnis = abschliessen(
@@ -138,12 +136,11 @@ export default function App() {
         w,
       )
       if (e.datum !== tag) d.erledigt[d.erledigt.length - 1].geplant = e.datum
-      if (vollstaendig) kiste = kisteVerdienen(d.spiel, tag)
       einheiten = d.erledigt.length
     })
     setOffen(null)
     const r = ergebnis as unknown as Ergebnis
-    setBelohnung({ ...r, stufeVorher: vorher, stufeNachher: stufe(aktuell.current.spiel.xp).stufe, kiste, einheiten })
+    setBelohnung({ ...r, stufeVorher: vorher, stufeNachher: stufe(aktuell.current.spiel.xp).stufe, einheiten })
   }
 
   const zeigeProfil = (u: Unterseite) => {
@@ -152,6 +149,7 @@ export default function App() {
   }
 
   const pm = belohnung ? prozentMethode(belohnung.einheiten) : null
+  const weg = belohnung ? aktuellerBlock(wegStand(daten, heute())) : null
   // Vor dem ersten Training erst Kraftwerte und Mobilität erfassen
   const eingestuft = !!daten.einstufung?.kraft && !!daten.einstufung?.mobil
   const oeffnen = (e: Einheit) => {
@@ -197,11 +195,11 @@ export default function App() {
         ) : offen ? (
           <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id) => aendern((d) => void (d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen, id]))} />
         ) : tab === "heute" ? (
-          <Heute daten={daten} oeffnen={oeffnen} zumAbenteuer={() => setTab("abenteuer")} einstufen={() => setEinstufen(true)} zumJahresplan={() => zeigeProfil("jahresplan")} />
+          <Heute daten={daten} oeffnen={oeffnen} einstufen={() => setEinstufen(true)} zumWeg={() => setTab("weg")} />
+        ) : tab === "weg" ? (
+          <Weg daten={daten} einstufen={() => setEinstufen(true)} zumJahresplan={() => zeigeProfil("jahresplan")} oeffnen={oeffnen} />
         ) : tab === "uebungen" ? (
           <Bibliothek profil={profil} />
-        ) : tab === "abenteuer" ? (
-          <Abenteuer daten={daten} aendern={aendern} />
         ) : tab === "fortschritt" ? (
           <Fortschritt daten={daten} aendern={aendern} />
         ) : (
@@ -232,7 +230,6 @@ export default function App() {
             }}>
               <Icon name={t.icon} groesse={25} />
               <small>{t.name}</small>
-              {t.id === "abenteuer" && daten.spiel.kisten.length ? <i className="badge">{daten.spiel.kisten.length}</i> : null}
             </button>
           ))}
         </nav>
@@ -240,67 +237,47 @@ export default function App() {
       {belohnung ? (
         <div className="overlay">
           <div className="belohnung">
-            {!kisteAuf ? (
-              <>
-                <div className="konfetti" aria-hidden="true">
-                  {Array.from({ length: 28 }, (_, i) => (
-                    <i key={i} style={{ left: ((i * 37) % 100) + "%", animationDelay: (i % 9) * 0.1 + "s" }} />
-                  ))}
-                </div>
-                <h1>Geschafft!</h1>
-                <p className="xp">+{belohnung.xp} XP</p>
-                {belohnung.stufeNachher > belohnung.stufeVorher ? <p className="stufeauf">Stufe {belohnung.stufeNachher} erreicht!</p> : null}
-                {pm ? (
-                  <p className="prozentzeile">
-                    1-%-Methode: {belohnung.einheiten} {belohnung.einheiten === 1 ? "Einheit" : "Einheiten"}, also ×{String(Math.round(pm.faktor * 100) / 100).replace(".", ",")}
-                  </p>
-                ) : null}
-                {belohnung.rekorde.length ? (
-                  <div className="rekordliste">
-                    <b className="mitsym mitte">
-                      <Sym name="pokal" groesse={20} farbe="var(--gold)" /> Neue Bestwerte
-                    </b>
-                    {belohnung.rekorde.map((id) => (
-                      <span key={id}>{uebung(id)?.name}</span>
-                    ))}
-                  </div>
-                ) : null}
-                {belohnung.neueAbzeichen.map((id) => {
-                  const a = ABZEICHEN.find((x) => x.id === id)
-                  return a ? (
-                    <p key={id} className="neuabz">
-                      <SymKachel name={a.symbol} farbe="#c98a1e" groesse={28} /> Abzeichen „{a.name}“
-                    </p>
-                  ) : null
-                })}
-                {belohnung.kiste ? (
-                  <button type="button" className="knopf voll gross gold" onClick={() => setKisteAuf(true)}>
-                    <Sym name="geschenk" groesse={20} /> Kiste öffnen
-                  </button>
-                ) : (
-                  <p className="hinweistext klein">Keine Kiste diesmal: Dafür bei jeder Übung mindestens einen Satz eintragen.</p>
-                )}
-                <button type="button" className="knopf voll leise" onClick={() => setBelohnung(null)}>
-                  {belohnung.kiste ? "Später öffnen" : "Weiter"}
-                </button>
-              </>
-            ) : (
-              <KisteAufmachen
-                art={belohnung.kiste!.art}
-                oeffnen={() => {
-                  let inhalt: Inhalt | null = null
-                  aendern((d) => {
-                    inhalt = kisteOeffnen(d.spiel)
-                  })
-                  return inhalt
-                }}
-                fertig={() => {
-                  setKisteAuf(false)
-                  setBelohnung(null)
-                  setTab("abenteuer")
-                }}
-              />
-            )}
+            <div className="konfetti" aria-hidden="true">
+              {Array.from({ length: 28 }, (_, i) => (
+                <i key={i} style={{ left: ((i * 37) % 100) + "%", animationDelay: (i % 9) * 0.1 + "s" }} />
+              ))}
+            </div>
+            <h1>Geschafft!</h1>
+            <p className="xp">+{belohnung.xp} XP</p>
+            {belohnung.stufeNachher > belohnung.stufeVorher ? <p className="stufeauf">Stufe {belohnung.stufeNachher} erreicht!</p> : null}
+            {weg ? <BlockFortschritt stand={weg} /> : null}
+            {pm ? (
+              <p className="prozentzeile">
+                1-%-Methode: {belohnung.einheiten} {belohnung.einheiten === 1 ? "Einheit" : "Einheiten"}, also ×{String(Math.round(pm.faktor * 100) / 100).replace(".", ",")}
+              </p>
+            ) : null}
+            {belohnung.rekorde.length ? (
+              <div className="rekordliste">
+                <b className="mitsym mitte">
+                  <Sym name="pokal" groesse={20} farbe="var(--gold)" /> Neue Bestwerte
+                </b>
+                {belohnung.rekorde.map((id) => (
+                  <span key={id}>{uebung(id)?.name}</span>
+                ))}
+              </div>
+            ) : null}
+            {belohnung.neueAbzeichen.map((id) => {
+              const a = ABZEICHEN.find((x) => x.id === id)
+              return a ? (
+                <p key={id} className="neuabz">
+                  <SymKachel name={a.symbol} farbe="#c98a1e" groesse={28} /> Abzeichen „{a.name}“
+                </p>
+              ) : null
+            })}
+            <button type="button" className="knopf voll gross" onClick={() => setBelohnung(null)}>
+              Weiter
+            </button>
+            <button type="button" className="knopf voll leise" onClick={() => {
+              setBelohnung(null)
+              setTab("weg")
+            }}>
+              Dein Weg ansehen
+            </button>
           </div>
         </div>
       ) : null}

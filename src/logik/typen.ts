@@ -283,6 +283,8 @@ export interface Profil {
   beschwerden: Beschwerde[]
   ausgeschlossen: string[]
   koerpergewicht_kg?: number
+  /** Position im Football (qb, rb, wr, te, ol, dl, lb, db, k) */
+  position?: string
   /** Startdatum des aktuellen Blocks (JJJJ-MM-TT) */
   block_start: string
   /** Grober Plan für das Jahr, Phase je Block */
@@ -332,6 +334,7 @@ export type Grund =
   | { art: "aufstieg" }
   | { art: "phase"; phase: Phase }
   | { art: "getauscht" }
+  | { art: "position"; position: string }
 
 export interface Einheit {
   datum: string
@@ -372,28 +375,8 @@ export interface Erledigt {
 export interface Spielstand {
   xp: number
   abzeichen: Record<string, string> // id → Datum
-  /** Abenteuer */
-  muenzen: number
-  /** Gegenstand → { stufe (0 = noch nicht freigeschaltet), karten } */
-  inventar: Record<string, { stufe: number; karten: number }>
-  ausgeruestet: Partial<Record<Slot, string>>
-  /** Nächstes Level im Abenteuer (ab 1) */
-  level: number
-  /** Ungeöffnete Kisten */
-  kisten: Kiste[]
-  /** Position im Kistenzyklus */
-  zyklus: number
-  /** Startwert für den Zufall, damit Ergebnisse reproduzierbar sind */
-  saat: number
 }
 
-export type Slot = "waffe" | "ruestung" | "helm" | "schild" | "begleiter"
-export type Kistenart = "silber" | "gold" | "riesen" | "magisch" | "episch" | "legendaer" | "supermagisch"
-
-export interface Kiste {
-  art: Kistenart
-  datum: string
-}
 
 /** Ergebnis eines Beweglichkeitstests */
 export interface Messung {

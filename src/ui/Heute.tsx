@@ -1,4 +1,4 @@
-// Startseite: heutige Einheit mit einem Tipp starten, Woche im Überblick, Stufe, Serie, Kisten, Fakt des Tages.
+// Startseite: heutige Einheit mit einem Tipp starten, Woche im Überblick, Stufe, Serie, dein Weg, Fakt des Tages.
 
 import { useMemo, useState } from "react"
 import { faktDesTages } from "../daten/fakten"
@@ -6,11 +6,10 @@ import { BLOCK_WOCHEN, blockWoche, istEntlastung } from "../logik/progression"
 import { heute, montagVon, plusTage, wochenplan } from "../logik/plan"
 import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
-import { KistenBild } from "./Abenteuer"
 import { tagesform } from "./gesundheit"
 import { PHASEN, phaseAm } from "../logik/jahresplan"
-import { PhasenStreifen } from "./Jahresplan"
-import { Pixel } from "./pixel"
+import { BlockFortschritt } from "./Weg"
+import { aktuellerBlock, jahresAnteil, wegStand } from "../logik/weg"
 import { Sym } from "./symbole"
 import { Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { ROLLE, TERMINE, WT, datumText } from "./texte"
@@ -21,7 +20,7 @@ export function istErledigt(daten: Daten, e: Einheit): boolean {
 
 const ART_SYMBOL: Record<string, string> = { kraft: "hantel", mobilitaet: "dehnen", ausdauer: "puls", regeneration: "blatt" }
 
-export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; zumAbenteuer: () => void; einstufen: () => void; zumJahresplan: () => void }) {
+export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; einstufen: () => void; zumWeg: () => void }) {
   const { daten } = props
   const profil = daten.profil!
   const tag = heute()
@@ -39,6 +38,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const termin = profil.woche[(new Date().getDay() + 6) % 7]
   const fokus = heutige && !istErledigt(daten, heutige) ? heutige : naechste
   const phase = phaseAm(profil, montag)
+  const weg = aktuellerBlock(wegStand(daten, tag))
   const gesundheit = daten.gesundheit?.verbunden ? daten.gesundheit.tage[tag] : undefined
   const form = tagesform(
     gesundheit,
@@ -61,12 +61,12 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
             <Sym name="flamme" groesse={18} farbe="var(--orange)" /> {ser}
           </b>
         </div>
-        <button type="button" className="statuskachel" onClick={props.zumAbenteuer}>
-          <small>Münzen</small>
+        <div className="statuskachel">
+          <small>Einheiten</small>
           <b className="mitsym">
-            <Pixel name="muenze" groesse={18} /> {daten.spiel.muenzen}
+            <Sym name="haken" groesse={18} farbe="var(--gruen)" /> {daten.erledigt.length}
           </b>
-        </button>
+        </div>
       </div>
 
       {gesundheit ? (
@@ -99,16 +99,6 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
       ) : null}
       {form ? <p className="hinweistext">{form}</p> : null}
 
-      {daten.spiel.kisten.length ? (
-        <button type="button" className="kistenbanner" onClick={props.zumAbenteuer}>
-          <KistenBild art={daten.spiel.kisten[0].art} klein />
-          <span>
-            <b>{daten.spiel.kisten.length === 1 ? "Eine Kiste wartet" : daten.spiel.kisten.length + " Kisten warten"}</b>
-            <small>Öffnen und den Helden ausrüsten</small>
-          </span>
-          <Icon name="weiter" groesse={18} />
-        </button>
-      ) : null}
 
       {!daten.einstufung?.kraft || !daten.einstufung?.mobil ? (
         <button type="button" className="heutekarte" onClick={props.einstufen}>
@@ -159,15 +149,17 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         )
       ) : null}
 
-      <button type="button" className="phasenzeile" onClick={props.zumJahresplan}>
-        <span className="phasenkopf">
-          <b>{phase ? "Phase " + PHASEN[phase].name : "Jahresplan festlegen"}</b>
-          <small>
-            {phase ? PHASEN[phase].ziel : "Phasen für das Jahr, aufeinander aufbauend"} <Icon name="weiter" groesse={12} />
-          </small>
-        </span>
-        {profil.jahresplan ? <PhasenStreifen plan={profil.jahresplan} datum={tag} /> : null}
-      </button>
+      {weg ? (
+        <button type="button" className="wegkarte" onClick={props.zumWeg}>
+          <span className="wegkopf">
+            <b>Dein Weg</b>
+            <small>
+              {Math.round(jahresAnteil(daten, tag) * 100)} % des Jahres <Icon name="weiter" groesse={12} />
+            </small>
+          </span>
+          <BlockFortschritt stand={weg} klein />
+        </button>
+      ) : null}
 
       <div className="wochenkopf">
         <button type="button" className="rundknopf" aria-label="Vorige Woche" onClick={() => setMontag(plusTage(montag, -7))}>

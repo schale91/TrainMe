@@ -63,6 +63,9 @@ export const SAISON_VORSCHLAG: Record<string, { von: number; bis: number } | nul
   golf: { von: 4, bis: 10 },
   fussball: { von: 8, bis: 5 },
   laufen: { von: 4, bis: 10 },
+  // Football in Deutschland (GFL und Ligen darunter): Saison etwa Mai bis September
+  football: { von: 5, bis: 9 },
+  bodybuilding: null,
   allgemein: null,
 }
 
@@ -108,9 +111,15 @@ export function phaseNachRegel(start: string, i: number, saison: Jahresplan["sai
   return "grundlage"
 }
 
+/** Welche Reihe ohne Saison gilt: Sportler wie „sport“, Bodybuilding und Muskelaufbau wie „muskelaufbau“. */
+function reiheZiel(profil: Pick<Profil, "ziel" | "sport">): string {
+  if (profil.sport === "bodybuilding" || profil.ziel === "muskelaufbau") return "muskelaufbau"
+  return profil.sport !== "allgemein" ? "sport" : profil.ziel
+}
+
 /** Vorschlag für ein Jahr ab einem Blockbeginn. */
 export function jahresplanVorschlag(profil: Pick<Profil, "ziel" | "sport">, start: string, saison: Jahresplan["saison"] = SAISON_VORSCHLAG[profil.sport] ?? null): Jahresplan {
-  const ziel = profil.sport !== "allgemein" && profil.ziel !== "muskelaufbau" ? "sport" : profil.ziel
+  const ziel = reiheZiel(profil)
   return { start, saison, bloecke: Array.from({ length: BLOECKE_JAHR }, (_, i) => phaseNachRegel(start, i, saison, ziel)) }
 }
 
@@ -126,7 +135,7 @@ export function phaseAm(profil: Profil, datum: string): Phase | null {
   const i = blockIndex(plan, datum)
   if (i < 0) return plan.bloecke[0]
   if (i < plan.bloecke.length) return plan.bloecke[i]
-  const ziel = profil.sport !== "allgemein" && profil.ziel !== "muskelaufbau" ? "sport" : profil.ziel
+  const ziel = reiheZiel(profil)
   return phaseNachRegel(plan.start, i, plan.saison, ziel)
 }
 

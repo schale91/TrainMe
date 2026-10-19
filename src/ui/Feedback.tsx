@@ -52,7 +52,7 @@ export default function Feedback(props: { zurueck: { text: string; onClick: () =
           <label>
             <span>Wo in der App?</span>
             <select value={seite} onChange={(e) => setSeite(e.target.value)}>
-              {["Heute", "Training", "Pausentimer", "Übungen", "Abenteuer", "Fortschritt", "Beweglichkeitstests", "Profil", "Gesundheitsdaten", "Sonstiges"].map((x) => (
+              {["Heute", "Training", "Pausentimer", "Dein Weg", "Übungen", "Fortschritt", "Beweglichkeitstests", "Profil", "Gesundheitsdaten", "Sonstiges"].map((x) => (
                 <option key={x}>{x}</option>
               ))}
             </select>

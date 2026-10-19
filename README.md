@@ -12,12 +12,12 @@ Auf dem Android-Handy öffnen und installieren. Beim ersten Mal fragt Android, o
 - **Golf-Fokus:** eigene Golf-Übungen (Rotation, Würfe, Schnellkraft, Haltung, Handgelenk), immer passend zur Ausrüstung.
 - **Beweglichkeitstests** wie Finger-Boden-Abstand, Rotation im Sitzen oder Knie zur Wand, angelehnt an das TPI-Screening. Schwachstellen bekommen mehr Mobilität im Plan.
 - **Pausentimer im Hintergrund:** Restzeit in der Benachrichtigung und schwebend über anderen Apps, zum Beispiel über YouTube.
-- **Abenteuer:** Nach jedem vollständig eingetragenen Training gibt es eine Kiste mit Münzen und Karten. Der Held kämpft sich automatisch durch fünf Welten.
+- **Dein Weg und Jahresplan:** Phasen von der Grundlage über Kraft und Schnellkraft bis zur Saison. Eine Zeitleiste zeigt, was geschafft ist, wo du stehst und was als Nächstes kommt.
 - **1-%-Methode, Kraftkurven und Fakten mit Quellen.**
 
 - **Individuell:** Trainingstage und Minuten je Tag, mehrere Orte mit eigenen Geräten, echten Gewichtsstufen (Kurzhanteln, Scheibenpaare, Kettlebells, Maschinen) und Deckenhöhe, Ziel, Erfahrung, Beschwerden je Gelenk, ausgeschlossene Übungen.
 - **Kraft, Mobilität, Ausdauer:** einzeln anwählbar.
-- **Sportspezifisch:** Golf, Fußball, Laufen oder allgemein, mit Saisonphase. Keine schweren Beine vor dem Spiel, Regeneration danach.
+- **Sportspezifisch:** Golf, Football (mit Position), Fußball, Laufen, Bodybuilding oder allgemein, mit Saisonphase. Keine schweren Beine vor dem Spiel, Regeneration danach.
 - **Steigerung wie bei evidenzbasierten Coaches:** Blöcke mit Entlastungswoche, Reserve-Wiederholungen (RIR) je Woche, doppelte Progression, RIR-Steuerung über das geschätzte Maximum, Plateau-Erkennung. Jede Vorgabe sagt, warum.
 - **Spielerisch:** XP, Stufen, Wochenserie, Abzeichen, Bestwerte.
 - **Sicherung:** Export und Import als Datei.

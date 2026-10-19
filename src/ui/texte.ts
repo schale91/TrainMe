@@ -264,5 +264,7 @@ export function grundText(g: Grund): string {
       return "Phase " + PHASEN[g.phase].name + ": " + PHASEN[g.phase].training
     case "getauscht":
       return "Von dir getauscht."
+    case "position":
+      return "Extra für deine Position (" + g.position + ")."
   }
 }

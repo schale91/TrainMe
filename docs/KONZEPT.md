@@ -84,6 +84,8 @@ Aufstieg zur schwereren Variante, bisheriger Verlauf, gleiche Übung im ganzen B
 - **Golf:** Grundkraft (Kniebeuge, Hüftstreckung, einbeinig), Rotations- und Anti-Rotationskraft, Medizinballwürfe und Sprünge für die Schlägerkopfgeschwindigkeit, Schultergesundheit und Griff, Beweglichkeit von Hüfte und Brustwirbelsäule.
 - **Fußball:** Grundkraft, Schnellkraft und Sprints, dazu Vorbeugung mit Nordic Hamstrings und Adduktorentraining (Copenhagen), schwere Beine nie direkt vor dem Spiel.
 - **Laufen:** einbeinige Kraft, Waden, Beinbeuger, Rumpf.
+- **Football (American):** Maximalkraft, Antritt und Schnellkraft, Nacken, Beinbeuger und Adduktoren. Die Position ergänzt Plätze: Linie (OL, DL) mehr Kniebeuge, Trapez und Nacken; Kraft und Tempo (RB, TE, LB) zusätzliche Sprünge und Nacken; Tempo (WR, DB) mehr Sprints, Adduktoren und Beinbeuger; Quarterback Rotation, Schulter und Brustwirbelsäule, kein Nackentraining; Kicker und Punter Adduktoren, Hüftmobilität und Gleichgewicht. Saisonvorschlag Mai bis September (deutsche Ligen).
+- **Bodybuilding:** Splits Drücken, Ziehen, Beine oder Ober- und Unterkörper mit vielen Isolationsübungen, Ziel Muskelaufbau, Jahresplan ohne Saison (Grundlage, Grundlage, Kraft im Wechsel).
 
 Beispiel Golfer: Mo bis Fr je 60 min Studio (Unterkörper, Oberkörper und Rotation, Schnellkraft, Einbeinig und Hüfte, Zug und Schulter), Samstag 40 min Mobilität im Keller (2,05 m, nur Matte und Band), kein Ausdauertraining. Beispiel Fußballer: Di und Do Mannschaftstraining, Sa Spiel, Mo/Mi/Fr je 60 min zusätzlich. Freitag nur Oberkörper und locker. Beide Beispiele sind als Tests hinterlegt (`test/plan.test.ts`).
 
@@ -108,11 +110,10 @@ Die Planung wählt je Block feste Übungen (damit Fortschritt messbar ist) und w
 
 Nach jedem abgehakten Satz läuft die Pause. In der Android-App übernimmt ein Vordergrunddienst: Restzeit in der Benachrichtigung (auch auf dem Sperrbildschirm) und, wenn erlaubt, als verschiebbare Uhr über allen anderen Apps. Am Ende klingelt und vibriert es.
 
-## 8. Abenteuer und 1-%-Methode
+## 8. Dein Weg und 1-%-Methode
 
-- Nach jedem Training, bei dem jede Übung mindestens einen eingetragenen Satz hat, gibt es eine Kiste. Die Verteilung ist an den klassischen Kistenzyklus von Clash Royale angelehnt (240 Kisten: 180 Silber, 52 Gold, 4 Riesen, 4 Magisch; dazu sehr selten Episch, Legendär, Supermagisch). Supercell hat den Zyklus nie offiziell veröffentlicht, die Zahlen stammen von Spielerseiten.
-- Kisten enthalten Münzen und Karten. Mit Münzen kauft man im Laden (das Holzschwert kostet 100, die erste Kiste bringt mindestens 120), mit Karten und Münzen wertet man auf.
-- Der Held läuft nach rechts und kämpft automatisch, ohne Steuerung, höchstens 30 Sekunden. Sieg: nächstes Level, stärkere Gegner, alle 10 Level ein Boss und eine neue Welt. Stärker wird man nur durch Training (Stufe aus XP, Kisten).
+- Der Jahresplan erscheint als Zeitleiste: Start, Einstufung, jeder Block mit Phase, Kontrolltests in der Entlastungswoche vor einem Phasenwechsel und der Saisonstart. Geschafftes ist abgehakt, der laufende Block zeigt Wochen (1 bis 4 und Entlastung), Einheiten im Block, Bestwerte und die Tage bis zur nächsten Phase.
+- Das frühere Abenteuer (Kisten, Münzen, Held) ist vorerst entfernt und steht in der Git-Geschichte (bis Commit d21f807) für später bereit.
 - 1-%-Methode (James Clear): Jede Einheit zählt als 1 % besser, 1,01 hoch Anzahl der Einheiten.
 - Fakten nur mit Quelle (WHO, RKI, Eurobarometer, BJSM, Lancet Public Health, TrackMan). Prozentränge je Übung („du gehörst zu den x % der Welt“) gibt es bewusst nicht: Dafür existieren keine seriösen Daten. Stattdessen Aussagen zum Verhalten, etwa „mit zwei Krafteinheiten pro Woche gehörst du zu den 36 % in Deutschland, die die Empfehlung erfüllen“ (RKI).
 

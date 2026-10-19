@@ -317,7 +317,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       <button type="button" className="knopf voll gross" disabled={erledigt === 0} onClick={fertig}>
         Einheit abschließen
       </button>
-      <p className="hinweistext klein mitte">{vollstaendig ? "Jede Übung eingetragen: Es gibt eine Kiste!" : "Trag bei jeder Übung mindestens einen Satz ein, dann gibt es zusätzlich eine Kiste."}</p>
+      {!vollstaendig && erledigt > 0 ? <p className="hinweistext klein mitte">Noch nicht jede Übung eingetragen. Abschließen geht trotzdem, fehlende Übungen zählen dann nicht für den Fortschritt.</p> : null}
 
       {pauseBis !== null && rest > 0 ? (
         <div className="pausenleiste">

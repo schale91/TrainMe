@@ -11,7 +11,7 @@ export function leer(): Daten {
 }
 
 export function neuesSpiel(): Spielstand {
-  return { xp: 0, abzeichen: {}, muenzen: 0, inventar: {}, ausgeruestet: {}, level: 1, kisten: [], zyklus: 0, saat: Math.floor(Math.random() * 2 ** 31) }
+  return { xp: 0, abzeichen: {} }
 }
 
 export function laden(speicher: Pick<Storage, "getItem"> | null = typeof localStorage !== "undefined" ? localStorage : null): Daten {
@@ -36,7 +36,8 @@ export function pruefen(x: unknown): Daten {
   d.profil = o.profil ? vervollstaendigen(o.profil) : null
   d.protokoll = Array.isArray(o.protokoll) ? o.protokoll.filter((p) => p && typeof p.uebung === "string" && typeof p.datum === "string" && Array.isArray(p.saetze)) : []
   d.erledigt = Array.isArray(o.erledigt) ? o.erledigt.filter((e) => e && typeof e.datum === "string") : []
-  d.spiel = { ...neuesSpiel(), ...(o.spiel || {}), xp: Number(o.spiel?.xp) || 0, abzeichen: o.spiel && typeof o.spiel.abzeichen === "object" ? { ...o.spiel.abzeichen } : {} }
+  // Nur Erfahrungspunkte und Abzeichen übernehmen (das frühere Abenteuer ist entfernt)
+  d.spiel = { xp: Number(o.spiel?.xp) || 0, abzeichen: o.spiel && typeof o.spiel.abzeichen === "object" ? { ...o.spiel.abzeichen } : {} }
   if (o.maxwerte && typeof o.maxwerte === "object") d.maxwerte = { ...o.maxwerte }
   if (o.einstufung && typeof o.einstufung === "object") d.einstufung = { ...o.einstufung }
   if (o.gesundheit && typeof o.gesundheit === "object") d.gesundheit = { verbunden: !!o.gesundheit.verbunden, tage: { ...(o.gesundheit.tage || {}) } }

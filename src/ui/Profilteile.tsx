@@ -1,7 +1,9 @@
 // Abschnitte des Profils. Die Einrichtung zeigt sie nacheinander, die Einstellungen als aufklappbare Liste.
 
 import { useState } from "react"
-import { SPORTARTEN } from "../daten/vorlagen"
+import { POSITIONEN, SPORTARTEN, positionVon } from "../daten/vorlagen"
+import { SAISON_VORSCHLAG, neuPlanen } from "../logik/jahresplan"
+import { heute } from "../logik/plan"
 import { LAST_GERAETE } from "../logik/gewichte"
 import { moeglicheUebungen } from "../logik/plan"
 import { neuerOrt, studio } from "../logik/speicher"
@@ -37,8 +39,23 @@ export function SportWahl({ profil, aendern }: Teil) {
         <Chips werte={ARTEN} gewaehlt={profil.arten} onChange={(arten) => aendern({ ...profil, arten: arten.length ? arten : ["kraft"] })} />
       </Feld>
       <Feld titel="Sport" text={sport.text}>
-        <Chips einzeln werte={SPORTARTEN.map((s) => ({ id: s.id, name: s.name }))} gewaehlt={[profil.sport]} onChange={([s]) => aendern({ ...profil, sport: s, ziel: s !== "allgemein" && profil.ziel === "fitness" ? "sport" : profil.ziel })} />
+        <Chips
+          einzeln
+          werte={SPORTARTEN.map((s) => ({ id: s.id, name: s.name }))}
+          gewaehlt={[profil.sport]}
+          onChange={([s]) => {
+            const ziel = s === "bodybuilding" ? "muskelaufbau" : s !== "allgemein" && profil.ziel === "fitness" ? "sport" : profil.ziel
+            const neu = { ...profil, sport: s, ziel, position: s === "football" ? profil.position || "lb" : profil.position }
+            // Anderer Sport, andere Saison: Jahresplan ab dem laufenden Block neu vorschlagen
+            aendern(neu.jahresplan && s !== profil.sport ? { ...neu, jahresplan: neuPlanen(neu, heute(), SAISON_VORSCHLAG[s] ?? null) } : neu)
+          }}
+        />
       </Feld>
+      {profil.sport === "football" ? (
+        <Feld titel="Position" text={positionVon(profil.position)?.text || "Wähle deine Position, danach richten sich die Schwerpunkte."}>
+          <Chips einzeln werte={POSITIONEN.map((p) => ({ id: p.id, name: p.name }))} gewaehlt={profil.position ? [profil.position] : []} onChange={([p]) => aendern({ ...profil, position: p })} />
+        </Feld>
+      ) : null}
       {profil.sport !== "allgemein" && !profil.jahresplan ? (
         <Feld titel="Phase">
           <Karten werte={SAISON} gewaehlt={profil.saison} onChange={(saison) => aendern({ ...profil, saison })} />

@@ -1,7 +1,7 @@
 // Wochenplanung: welche Einheit an welchem Tag, welche Übung jeden Platz füllt und wie viele Sätze in die Zeit passen.
 // Alles ist deterministisch: gleiche Einstellungen und gleiches Protokoll ergeben den gleichen Plan.
 
-import { AUFTEILUNG, ERSATZ, VORLAGEN, type PlatzVorlage } from "../daten/vorlagen"
+import { AUFTEILUNG, ERSATZ, VORLAGEN, positionVon, type PlatzVorlage } from "../daten/vorlagen"
 import { UEBUNGEN, uebung } from "../daten/uebungen/index"
 import { passendeGruppe, verfuegbar } from "./gewichte"
 import { BLOCK_WOCHEN, ausdauerVorgabe, blockWoche, istEntlastung, plateau, vorgabe } from "./progression"
@@ -193,8 +193,9 @@ export function waehle(profil: Profil, ort: Ort, rolle: Rolle, muster: Muster, b
 }
 
 /** Warum die gewählte Übung auf dem Platz steht, in der Reihenfolge, in der die Planung entscheidet. */
-export function warum(profil: PlanProfil, ort: Ort, einheit: string, rolle: Rolle, vorlage: Muster, muster: Muster, u: Uebung, protokoll: Protokoll[], datum: string, schwach: Muster[]): Grund[] {
+export function warum(profil: PlanProfil, ort: Ort, einheit: string, rolle: Rolle, vorlage: Muster, muster: Muster, u: Uebung, protokoll: Protokoll[], datum: string, schwach: Muster[], position?: string): Grund[] {
   const g: Grund[] = [{ art: "platz", einheit, rolle, muster }]
+  if (position) g.push({ art: "position", position })
   if (muster !== vorlage) g.push({ art: "ersatz", statt: vorlage })
   if (rolle === "mobil" && schwach.indexOf(muster) >= 0) g.push({ art: "schwachstelle", muster })
   if (profil.sport === "golf" && u.golf) g.push({ art: "golf", stufe: u.golf })
@@ -254,6 +255,9 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
     if (profil.beschwerden.length) hinweise.push("Schonung bei Beschwerden: Übungen mit Belastung auf " + profil.beschwerden.map((b) => GELENK_NAME[b.gelenk]).join(", ") + " sind angepasst. Das ersetzt keine ärztliche oder physiotherapeutische Behandlung. Bei Schmerz aufhören.")
 
     let plaetze: PlatzVorlage[] = VORLAGEN[t.vorlage].plaetze.slice()
+    // Football: die Position ergänzt Plätze und lässt Unpassendes weg
+    const pos = profil.sport === "football" ? positionVon(profil.position) : null
+    if (pos) plaetze = [...plaetze.filter((p) => pos.ohne.indexOf(p.muster) < 0), ...(pos.extra[t.vorlage] || [])]
     if (t.einschraenkung > 0) plaetze = plaetze.filter((p) => BEIN_MUSTER.indexOf(p.muster) < 0 || (t.einschraenkung === 1 && p.rolle !== "haupt" && p.rolle !== "schnellkraft"))
     if (t.art === "regeneration" && profil.arten.indexOf("ausdauer") >= 0) plaetze.push({ rolle: "ausdauer", muster: "ausdauer_ruhig" })
     // Mobilität angewählt, aber kein eigener Tag: kurze Mobilität am Ende jeder Krafteinheit
@@ -286,7 +290,7 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
       heuteBenutzt.add(u.id)
       benutzt.add(u.id)
       const titel = t.art === "regeneration" ? "Regeneration" : VORLAGEN[t.vorlage].titel
-      gewaehlt.push({ rolle: pv.rolle, muster, uebung: u, vorgabe: null as never, warum: warum(profil, ort, titel, pv.rolle, pv.muster, muster, u, daten.protokoll, datum, schwach) })
+      gewaehlt.push({ rolle: pv.rolle, muster, uebung: u, vorgabe: null as never, warum: warum(profil, ort, titel, pv.rolle, pv.muster, muster, u, daten.protokoll, datum, schwach, pv.position && pos ? pos.name : undefined) })
     }
 
     // Sätze verteilen, bis die Zeit voll ist

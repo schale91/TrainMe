@@ -6,6 +6,8 @@ import type { Muster, Rolle } from "../logik/typen"
 export interface PlatzVorlage {
   rolle: Rolle
   muster: Muster
+  /** Kommt von der gewählten Position (Football) */
+  position?: boolean
 }
 
 export interface EinheitVorlage {
@@ -37,6 +39,19 @@ export const VORLAGEN: Record<string, EinheitVorlage> = {
   fb_unter: { id: "fb_unter", titel: "Unterkörper und Prävention", plaetze: [p("haupt", "kniebeuge"), p("haupt", "hueftstreckung"), p("praevention", "hamstring_praevention"), p("praevention", "adduktoren"), p("isolation", "wade"), p("isolation", "anti_rotation")] },
   fb_schnell: { id: "fb_schnell", titel: "Schnell und explosiv", plaetze: [p("schnellkraft", "schnellkraft_sprung"), p("schnellkraft", "sprint"), p("schnellkraft", "schnellkraft_wurf"), p("neben", "einbeinig"), p("praevention", "hamstring_praevention"), p("isolation", "rumpf")] },
   fb_ober: { id: "fb_ober", titel: "Oberkörper und Rumpf", plaetze: [p("haupt", "druecken_horizontal"), p("haupt", "ziehen_vertikal"), p("neben", "ziehen_horizontal"), p("neben", "druecken_vertikal"), p("isolation", "anti_rotation"), p("praevention", "schulter_gesund")] },
+
+  // American Football: Maximalkraft, Schnellkraft, Nacken und Beinbeuger; die Position ergänzt Plätze
+  af_unter: { id: "af_unter", titel: "Unterkörper Kraft", plaetze: [p("haupt", "kniebeuge"), p("haupt", "hueftstreckung"), p("neben", "einbeinig"), p("praevention", "hamstring_praevention"), p("isolation", "nacken"), p("isolation", "anti_rotation")] },
+  af_ober: { id: "af_ober", titel: "Oberkörper Kraft", plaetze: [p("haupt", "druecken_horizontal"), p("haupt", "ziehen_horizontal"), p("neben", "druecken_vertikal"), p("neben", "ziehen_vertikal"), p("praevention", "schulter_gesund"), p("isolation", "nacken")] },
+  af_schnell: { id: "af_schnell", titel: "Schnellkraft und Antritt", plaetze: [p("schnellkraft", "schnellkraft_sprung"), p("schnellkraft", "sprint"), p("schnellkraft", "schnellkraft_wurf"), p("haupt", "hueftstreckung"), p("praevention", "hamstring_praevention"), p("isolation", "rumpf")] },
+  af_ganz: { id: "af_ganz", titel: "Einbeinig, Griff und Rumpf", plaetze: [p("haupt", "einbeinig"), p("neben", "ziehen_vertikal"), p("neben", "druecken_vertikal"), p("praevention", "adduktoren"), p("isolation", "griff"), p("isolation", "anti_rotation")] },
+
+  // Bodybuilding: viel Volumen je Muskel, Isolationsübungen für jeden Bereich
+  bb_push: { id: "bb_push", titel: "Drücken: Brust, Schulter, Trizeps", plaetze: [p("haupt", "druecken_horizontal"), p("neben", "druecken_vertikal"), p("neben", "druecken_horizontal"), p("isolation", "brust_iso"), p("isolation", "schulter_seitlich"), p("isolation", "trizeps"), p("isolation", "trizeps")] },
+  bb_pull: { id: "bb_pull", titel: "Ziehen: Rücken, Bizeps", plaetze: [p("haupt", "ziehen_vertikal"), p("neben", "ziehen_horizontal"), p("neben", "ziehen_horizontal"), p("isolation", "schulter_gesund"), p("isolation", "trapez"), p("isolation", "bizeps"), p("isolation", "bizeps")] },
+  bb_beine: { id: "bb_beine", titel: "Beine und Po", plaetze: [p("haupt", "kniebeuge"), p("haupt", "hueftstreckung"), p("neben", "einbeinig"), p("isolation", "hamstring_praevention"), p("isolation", "adduktoren"), p("isolation", "wade"), p("isolation", "rumpf")] },
+  bb_ober: { id: "bb_ober", titel: "Oberkörper", plaetze: [p("haupt", "druecken_horizontal"), p("haupt", "ziehen_horizontal"), p("neben", "druecken_vertikal"), p("neben", "ziehen_vertikal"), p("isolation", "schulter_seitlich"), p("isolation", "bizeps"), p("isolation", "trizeps")] },
+  bb_unter: { id: "bb_unter", titel: "Unterkörper", plaetze: [p("haupt", "hueftstreckung"), p("haupt", "kniebeuge"), p("neben", "einbeinig"), p("isolation", "hamstring_praevention"), p("isolation", "abduktoren"), p("isolation", "wade")] },
 
   // Laufen: Kraft für Laufökonomie und Belastbarkeit (einbeinig, Waden, Beinbeuger)
   lauf_kraft: { id: "lauf_kraft", titel: "Kraft für Läufer", plaetze: [p("haupt", "einbeinig"), p("haupt", "hueftstreckung"), p("praevention", "hamstring_praevention"), p("isolation", "wade"), p("isolation", "anti_rotation"), p("mobil", "mobilitaet_beine")] },
@@ -73,6 +88,22 @@ export const AUFTEILUNG: Record<string, Record<number, string[]>> = {
     4: ["fb_unter", "fb_ober", "fb_schnell", "ganz_c"],
     5: ["fb_unter", "fb_ober", "fb_schnell", "unter_b", "ober_b"],
     6: ["fb_unter", "fb_ober", "fb_schnell", "unter_b", "ober_b", "mobil"],
+  },
+  football: {
+    1: ["af_ganz"],
+    2: ["af_unter", "af_ober"],
+    3: ["af_unter", "af_ober", "af_schnell"],
+    4: ["af_unter", "af_ober", "af_schnell", "af_ganz"],
+    5: ["af_unter", "af_ober", "af_schnell", "af_ganz", "ober_b"],
+    6: ["af_unter", "af_ober", "af_schnell", "af_ganz", "ober_b", "unter_b"],
+  },
+  bodybuilding: {
+    1: ["ganz_a"],
+    2: ["bb_ober", "bb_unter"],
+    3: ["bb_push", "bb_pull", "bb_beine"],
+    4: ["bb_ober", "bb_unter", "ober_b", "unter_b"],
+    5: ["bb_push", "bb_pull", "bb_beine", "bb_ober", "bb_unter"],
+    6: ["bb_push", "bb_pull", "bb_beine", "bb_push", "bb_pull", "bb_beine"],
   },
   laufen: {
     1: ["lauf_kraft"],
@@ -121,5 +152,42 @@ export const SPORTARTEN: { id: string; name: string; termine: { id: string; name
   { id: "allgemein", name: "Kein bestimmter Sport", termine: [], text: "Ausgewogener Plan nach deinem Ziel." },
   { id: "golf", name: "Golf", termine: [{ id: "runde", name: "Runde" }, { id: "turnier", name: "Turnier" }], text: "Kraft, Rotationskraft und Schnellkraft für mehr Schlägerkopfgeschwindigkeit, dazu Hüfte und Brustwirbelsäule beweglich halten." },
   { id: "fussball", name: "Fußball", termine: [{ id: "mannschaftstraining", name: "Mannschaftstraining" }, { id: "spiel", name: "Spiel" }], text: "Kraft, Schnelligkeit und Vorbeugung (Beinbeuger, Adduktoren). Schwere Beine nie direkt vor dem Spiel." },
+  { id: "football", name: "Football", termine: [{ id: "mannschaftstraining", name: "Teamtraining" }, { id: "spiel", name: "Spiel" }], text: "American Football: Maximalkraft, Antritt und Schnellkraft, dazu Nacken, Beinbeuger und Adduktoren. Die Position bestimmt die Schwerpunkte." },
   { id: "laufen", name: "Laufen", termine: [{ id: "lauf", name: "Lauf" }, { id: "turnier", name: "Wettkampf" }], text: "Einbeinige Kraft, Waden und Beinbeuger für Laufökonomie und Belastbarkeit." },
+  { id: "bodybuilding", name: "Bodybuilding", termine: [], text: "Muskelaufbau für jeden Bereich: viel Volumen, Isolationsübungen, Sätze nah ans Muskelversagen. Splits wie Drücken, Ziehen, Beine." },
 ]
+
+export interface Position {
+  id: string
+  name: string
+  kurz: string
+  /** Was die Position braucht, ein Satz */
+  text: string
+  /** Zusätzliche Plätze je Vorlage */
+  extra: Record<string, PlatzVorlage[]>
+  /** Muster, die für die Position wegfallen */
+  ohne: Muster[]
+}
+
+const x = (rolle: Rolle, muster: Muster): PlatzVorlage => ({ rolle, muster, position: true })
+
+// Gruppen nach Anforderung: Linie (Kraft und Masse), Kraft und Tempo, Tempo, Quarterback, Kicker
+const LINIE = { extra: { af_ober: [x("isolation", "trapez")], af_unter: [x("neben", "kniebeuge")], af_ganz: [x("isolation", "nacken")] }, ohne: [] as Muster[] }
+const KRAFT_TEMPO = { extra: { af_ganz: [x("isolation", "nacken")], af_schnell: [x("schnellkraft", "schnellkraft_sprung")] }, ohne: [] as Muster[] }
+const TEMPO = { extra: { af_unter: [x("praevention", "adduktoren")], af_schnell: [x("schnellkraft", "sprint")], af_ganz: [x("praevention", "hamstring_praevention")] }, ohne: [] as Muster[] }
+
+export const POSITIONEN: Position[] = [
+  { id: "qb", name: "Quarterback", kurz: "QB", text: "Wurfarm und Schulter gesund halten, Rotation aus der Hüfte, bewegliche Brustwirbelsäule, stabile Beine.", extra: { af_ober: [x("neben", "rotation"), x("mobil", "mobilitaet_bws")], af_ganz: [x("praevention", "schulter_gesund")], af_schnell: [x("neben", "rotation")] }, ohne: ["nacken"] },
+  { id: "rb", name: "Running Back", kurz: "RB", text: "Antritt, Richtungswechsel und Kontakt: Beinkraft, Schnellkraft und ein starker Nacken.", ...KRAFT_TEMPO },
+  { id: "wr", name: "Wide Receiver", kurz: "WR", text: "Sprinttempo und Richtungswechsel: Schnellkraft, Beinbeuger und Adduktoren schützen, Griff für den Fang.", ...TEMPO },
+  { id: "te", name: "Tight End", kurz: "TE", text: "Blocken und Fangen: Kraft wie die Linie, dazu Antritt.", ...KRAFT_TEMPO },
+  { id: "ol", name: "Offensive Line", kurz: "OL", text: "Maximalkraft und Masse, Druck aus der Hüfte, kräftiger Oberkörper und Nacken.", ...LINIE },
+  { id: "dl", name: "Defensive Line", kurz: "DL", text: "Explosiver erster Schritt, Maximalkraft, Hände und Griff, Nacken.", ...LINIE },
+  { id: "lb", name: "Linebacker", kurz: "LB", text: "Tackeln und Laufen: Kraft und Schnellkraft im Gleichgewicht, starker Nacken.", ...KRAFT_TEMPO },
+  { id: "db", name: "Defensive Back", kurz: "CB, S", text: "Rückwärtslaufen, Drehen, Sprinten: Tempo, Beinbeuger und Adduktoren schützen.", ...TEMPO },
+  { id: "k", name: "Kicker oder Punter", kurz: "K, P", text: "Schussbein: Hüftbeuger, Adduktoren und Beinbeuger kräftig und beweglich, einbeiniges Gleichgewicht.", extra: { af_unter: [x("praevention", "adduktoren"), x("mobil", "mobilitaet_huefte")], af_ganz: [x("isolation", "balance")], af_schnell: [x("mobil", "mobilitaet_beine")] }, ohne: ["nacken"] },
+]
+
+export function positionVon(id?: string): Position | null {
+  return POSITIONEN.find((p) => p.id === id) || null
+}

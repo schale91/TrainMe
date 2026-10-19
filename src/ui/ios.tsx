@@ -7,7 +7,7 @@ import { useEffect, useState, type ReactNode } from "react"
 const PFADE: Record<string, string> = {
   heute: "M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z",
   uebungen: "M3 9h2v6H3zM19 9h2v6h-2zM6 6h2.5v12H6zM15.5 6H18v12h-2.5zM8.5 11h7v2h-7z",
-  abenteuer: "M14.5 3.5 20.5 9.5 11 19l-3 .5.5-3zM4 20l3.5-3.5M13 5l6 6",
+  weg: "M5 21c0-4.5 3.5-5 6.5-6.5S16 11 16 8M16 3v6M16 3l4 1.6L16 6.2M4 21h3",
   fortschritt: "M4 19h16M6 16l4-5 3 3 5-7",
   profil: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0",
   info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 11v6M12 7.5v.5",
@@ -21,7 +21,6 @@ const PFADE: Record<string, string> = {
   plus: "M12 5v14M5 12h14",
   minus: "M5 12h14",
   kiste: "M3.5 9.5h17v10h-17zM3.5 9.5 6 5h12l2.5 4.5M12 9.5v10M10 13h4",
-  muenze: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4M12 7.5v9",
   flamme: "M12 21c-4 0-6.5-2.6-6.5-6 0-3.5 3-5.5 3.5-9 2 1.5 3 3.5 3 5.5 1-.8 1.6-2 1.8-3.3C16 10 18.5 12.6 18.5 15c0 3.4-2.5 6-6.5 6z",
   golf: "M8 21V3l9 4-9 4M5 21h8",
   filter: "M4 6h16M7 12h10M10 18h4",
