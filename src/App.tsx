@@ -42,6 +42,36 @@ export default function App() {
   const [kisteAuf, setKisteAuf] = useState(false)
 
   useEffect(() => speichern(daten), [daten])
+
+  // Lebenszeichen: Wurde eine Seite geöffnet, aber nie fertig angezeigt, hing die App beim letzten Mal dort
+  const [haenger] = useState<{ ziel: string; zeit: string } | null>(() => {
+    try {
+      const n = JSON.parse(localStorage.getItem("trainme.navigation") || "null")
+      return n && !n.fertig ? n : null
+    } catch {
+      return null
+    }
+  })
+  const [haengerZu, setHaengerZu] = useState(false)
+  const ziel = offen ? "Training" : tab
+  useEffect(() => {
+    try {
+      localStorage.setItem("trainme.navigation", JSON.stringify({ ziel, zeit: new Date().toISOString(), fertig: false }))
+    } catch {
+      /* egal */
+    }
+    // nach dem ersten gezeichneten Bild gilt die Seite als angekommen
+    const t = requestAnimationFrame(() =>
+      setTimeout(() => {
+        try {
+          localStorage.setItem("trainme.navigation", JSON.stringify({ ziel, zeit: new Date().toISOString(), fertig: true }))
+        } catch {
+          /* egal */
+        }
+      }, 300),
+    )
+    return () => cancelAnimationFrame(t)
+  }, [ziel])
   useEffect(() => window.scrollTo(0, 0), [tab, offen])
   // Gesundheitswerte beim Start und beim Zurückkehren in die App auffrischen
   useEffect(() => {
@@ -100,6 +130,14 @@ export default function App() {
   return (
     <div className="app">
       <main>
+        {haenger && !haengerZu ? (
+          <div className="hinweistext haenger">
+            <b>Beim letzten Mal hing die App beim Öffnen von „{haenger.ziel}“.</b> Wenn das wieder passiert, schick bitte diese Meldung über Profil, Feedback (Bereich: {haenger.ziel}, Zeit: {haenger.zeit.slice(0, 16).replace("T", " ")}).
+            <button type="button" className="textknopf" onClick={() => setHaengerZu(true)}>
+              Ausblenden
+            </button>
+          </div>
+        ) : null}
         <Fehlergrenze key={(offen ? "t" : "") + tab} bereich={offen ? "Training" : tab} zurueck={() => {
           setOffen(null)
           setTab("heute")
