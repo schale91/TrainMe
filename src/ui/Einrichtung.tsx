@@ -1,7 +1,7 @@
 // Einrichtung in sechs Schritten. Am Ende steht der erste Plan.
 
 import { useState } from "react"
-import { neuesProfil } from "../logik/speicher"
+import { beispielGolf, neuesProfil } from "../logik/speicher"
 import type { Profil } from "../logik/typen"
 import { AusnahmenEditor, Grunddaten, KoerperEditor, OrteEditor, SportWahl, WocheEditor } from "./Profilteile"
 
@@ -33,7 +33,18 @@ export default function Einrichtung(props: { fertig: (p: Profil) => void; start?
       <h1>{s.titel}</h1>
       <p className="unter">{s.text}</p>
       <div className="schritt">
-        {schritt === 0 ? <Grunddaten {...teil} /> : null}
+        {schritt === 0 ? (
+          <>
+            <button type="button" className="schnellstart" onClick={() => setProfil({ ...beispielGolf(new Date().toISOString().slice(0, 10)), name: profil.name })}>
+              <span className="gross">⛳</span>
+              <span>
+                <b>Schnellstart Golf</b>
+                <small>5 × 60 min Studio, Samstag Mobilität im Keller, kein Ausdauertraining. Alles lässt sich danach anpassen.</small>
+              </span>
+            </button>
+            <Grunddaten {...teil} />
+          </>
+        ) : null}
         {schritt === 1 ? <SportWahl {...teil} /> : null}
         {schritt === 2 ? <OrteEditor {...teil} /> : null}
         {schritt === 3 ? <WocheEditor {...teil} /> : null}

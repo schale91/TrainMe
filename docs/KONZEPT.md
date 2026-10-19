@@ -71,7 +71,29 @@ Beispiel Golfer: Mo bis Fr je 60 min Studio (Unterkörper, Oberkörper und Rotat
 - Wochenserie: eine Woche zählt, wenn alle geplanten Einheiten bis auf eine geschafft sind.
 - Abzeichen für Meilensteine, Rekorde, Serien, Mobilität, durchgezogene Entlastung und Vielseitigkeit.
 
-## 5. Grenzen
+## 5. Übungsdatenbank
+
+Rund 1000 Übungen, jede mit ausführlicher Anleitung im Info-Fenster (Schritte, Atmung, typische Fehler, Nutzen, Profi-Tipps, Varianten, Vorsicht, Golfbezug). Varianten mit anderer Wirkung sind eigene Einträge, zum Beispiel Seitheben, Seitheben-Isohold und ägyptisches Seitheben. Die Übungen aus dem persönlichen Kraftbuch sind enthalten. Regeln für Einträge: `docs/UEBUNGEN_SPEZ.md`, geprüft durch `test/uebungen.test.ts`.
+
+Die Planung wählt je Block feste Übungen (damit Fortschritt messbar ist) und wechselt mit jedem neuen Block einen Teil davon. Für Golfer werden golfspezifische Übungen bevorzugt, immer nur mit der Ausrüstung, die am Ort vorhanden ist.
+
+## 6. Beweglichkeitstests
+
+15 Selbsttests mit Orientierungswerten, angelehnt an Fachliteratur und das öffentlich beschriebene Screening des Titleist Performance Institute (TPI): Finger-Boden-Abstand, Rumpfbeuge im Sitzen, Knie zur Wand, Rotation im Sitzen, Beckenrotation, Hüft-Innen- und Außenrotation, gestrecktes Beinheben, Hände hinter dem Rücken, Einbeinstand mit geschlossenen Augen, Brücke mit Beinstreckung, Halswirbelsäule, tiefe Kniebeuge über Kopf, Schulter 90/90, Becken kippen. Schwach bewertete Bereiche bekommen im Plan zusätzliche Mobilitätsübungen. Die Werte sind eine Orientierung, keine Diagnose.
+
+## 7. Pausentimer
+
+Nach jedem abgehakten Satz läuft die Pause. In der Android-App übernimmt ein Vordergrunddienst: Restzeit in der Benachrichtigung (auch auf dem Sperrbildschirm) und, wenn erlaubt, als verschiebbare Uhr über allen anderen Apps. Am Ende klingelt und vibriert es.
+
+## 8. Abenteuer und 1-%-Methode
+
+- Nach jedem Training, bei dem jede Übung mindestens einen eingetragenen Satz hat, gibt es eine Kiste. Die Verteilung ist an den klassischen Kistenzyklus von Clash Royale angelehnt (240 Kisten: 180 Silber, 52 Gold, 4 Riesen, 4 Magisch; dazu sehr selten Episch, Legendär, Supermagisch). Supercell hat den Zyklus nie offiziell veröffentlicht, die Zahlen stammen von Spielerseiten.
+- Kisten enthalten Münzen und Karten. Mit Münzen kauft man im Laden (das Holzschwert kostet 100, die erste Kiste bringt mindestens 120), mit Karten und Münzen wertet man auf.
+- Der Held läuft nach rechts und kämpft automatisch, ohne Steuerung, höchstens 30 Sekunden. Sieg: nächstes Level, stärkere Gegner, alle 10 Level ein Boss und eine neue Welt. Stärker wird man nur durch Training (Stufe aus XP, Kisten).
+- 1-%-Methode (James Clear): Jede Einheit zählt als 1 % besser, 1,01 hoch Anzahl der Einheiten.
+- Fakten nur mit Quelle (WHO, RKI, Eurobarometer, BJSM, Lancet Public Health, TrackMan). Prozentränge je Übung („du gehörst zu den x % der Welt“) gibt es bewusst nicht: Dafür existieren keine seriösen Daten. Stattdessen Aussagen zum Verhalten, etwa „mit zwei Krafteinheiten pro Woche gehörst du zu den 36 % in Deutschland, die die Empfehlung erfüllen“ (RKI).
+
+## 9. Grenzen
 
 - Die Rücksicht auf Beschwerden ist Schonung, keine Therapie. Die App weist darauf an jeder betroffenen Einheit hin.
 - RIR ist eine Selbsteinschätzung. Sie wird mit Übung genauer, besonders nah am Versagen (Zourdos et al. 2016).
@@ -87,4 +109,13 @@ Beispiel Golfer: Mo bis Fr je 60 min Studio (Unterkörper, Oberkörper und Rotat
 - Epley B (1985): Poundage Chart. Boyd Epley Workout, Lincoln (Nebraska). Formel für das geschätzte Maximum.
 - van der Horst N et al. (2015): The preventive effect of the Nordic hamstring exercise on hamstring injuries in amateur soccer players: a randomized controlled trial. *American Journal of Sports Medicine* 43(6), 1316–1323.
 - Harøy J et al. (2019): The Adductor Strengthening Programme prevents groin problems among male football players: a cluster-randomised controlled trial. *British Journal of Sports Medicine* 53(3), 150–157.
+- WHO (2024): Nearly 1.8 billion adults at risk of disease from not doing enough physical activity.
+- Robert Koch-Institut: GEDA 2019/2020-EHIS, Bewegungsverhalten von Erwachsenen in Deutschland.
+- Bennie JA et al. (2020): Auswertung muskelkräftigender Aktivität in 28 europäischen Ländern (EHIS 2013/14). *PLOS ONE* 15(11), e0242220.
+- Momma H et al. (2022): Muscle-strengthening activities are associated with lower risk and mortality in major non-communicable diseases. *British Journal of Sports Medicine* 56(13), 755–763.
+- Ding D et al. (2025): Daily steps and health outcomes. *Lancet Public Health* 10(8), e668–e681.
+- Pope R et al. (1998), Hoch MC et al. (2012), Powden CJ et al. (2015): Weight-Bearing Lunge Test.
+- Johnson KD et al. (2012): Reliability of thoracic spine rotation range of motion measurements. *Journal of Athletic Training*.
+- Titleist Performance Institute: Level 1 Screening, mytpi.com.
+- Clear J (2018): Atomic Habits.
 - Ehlert A (2020): The effects of strength and conditioning interventions on golf performance: a systematic review. *Journal of Sports Sciences* 38(23), 2720–2731.

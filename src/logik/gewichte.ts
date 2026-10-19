@@ -3,26 +3,29 @@
 
 import type { Geraet, Gewichte, Uebung } from "./typen"
 
-export const LAST_GERAETE: Geraet[] = ["kurzhantel", "langhantel", "kettlebell", "kabelzug", "maschine_beine", "maschine_oberkoerper", "medizinball", "band"]
+export const LAST_GERAETE: Geraet[] = ["kurzhantel", "langhantel", "sz_stange", "kettlebell", "hantelscheibe", "kabelzug", "maschine_beine", "maschine_oberkoerper", "multipresse", "medizinball", "band"]
 
-export const LEER: Gewichte = { kurzhanteln: [], stange: 0, scheiben: [], kettlebells: [], medizinbaelle: [], maschine_schritt: 5, maschine_max: 100, baender: 0 }
+export const LEER: Gewichte = { kurzhanteln: [], stange: 0, sz_stange: 0, multipresse_stange: 0, scheiben: [], kettlebells: [], medizinbaelle: [], maschine_schritt: 5, maschine_max: 100, baender: 0 }
 
 const rund = (x: number) => Math.round(x * 100) / 100
 
-/** Alle Gesamtgewichte einer Langhantel: Stange plus beliebige Auswahl der Scheibenpaare. */
-function langhantelGewichte(g: Gewichte): number[] {
-  if (!g.stange) return []
+/** Alle Gesamtgewichte einer Stange: Stange plus beliebige Auswahl der Scheibenpaare. */
+function stangenGewichte(stange: number, g: Gewichte): number[] {
+  if (!stange) return []
   const scheiben = g.scheiben.slice(0, 14)
   const summen = new Set<number>([0])
   for (const s of scheiben) for (const x of Array.from(summen)) summen.add(rund(x + 2 * s))
-  return Array.from(summen).map((x) => rund(g.stange + x))
+  return Array.from(summen).map((x) => rund(stange + x))
 }
 
 /** Verfügbare Lasten für ein Lastgerät, aufsteigend. */
 export function verfuegbar(geraet: Geraet, g: Gewichte): number[] {
   let liste: number[] = []
   if (geraet === "kurzhantel") liste = g.kurzhanteln
-  else if (geraet === "langhantel") liste = langhantelGewichte(g)
+  else if (geraet === "langhantel") liste = stangenGewichte(g.stange, g)
+  else if (geraet === "sz_stange") liste = stangenGewichte(g.sz_stange || 0, g)
+  else if (geraet === "multipresse") liste = stangenGewichte(g.multipresse_stange || 0, g)
+  else if (geraet === "hantelscheibe") liste = g.scheiben
   else if (geraet === "kettlebell") liste = g.kettlebells
   else if (geraet === "medizinball") liste = g.medizinbaelle
   else if (geraet === "band") liste = Array.from({ length: g.baender }, (_, i) => i + 1)

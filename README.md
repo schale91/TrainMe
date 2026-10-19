@@ -8,6 +8,13 @@ Auf dem Android-Handy öffnen und installieren. Beim ersten Mal fragt Android, o
 
 ## Was TrainMe kann
 
+- **Rund 1000 Übungen** mit ausführlicher Anleitung hinter jedem „i“: Schritte, Atmung, Fehler, Nutzen, Tipps, Golfbezug.
+- **Golf-Fokus:** eigene Golf-Übungen (Rotation, Würfe, Schnellkraft, Haltung, Handgelenk), immer passend zur Ausrüstung.
+- **Beweglichkeitstests** wie Finger-Boden-Abstand, Rotation im Sitzen oder Knie zur Wand, angelehnt an das TPI-Screening. Schwachstellen bekommen mehr Mobilität im Plan.
+- **Pausentimer im Hintergrund:** Restzeit in der Benachrichtigung und schwebend über anderen Apps, zum Beispiel über YouTube.
+- **Abenteuer:** Nach jedem vollständig eingetragenen Training gibt es eine Kiste mit Münzen und Karten. Der Held kämpft sich automatisch durch fünf Welten.
+- **1-%-Methode, Kraftkurven und Fakten mit Quellen.**
+
 - **Individuell:** Trainingstage und Minuten je Tag, mehrere Orte mit eigenen Geräten, echten Gewichtsstufen (Kurzhanteln, Scheibenpaare, Kettlebells, Maschinen) und Deckenhöhe, Ziel, Erfahrung, Beschwerden je Gelenk, ausgeschlossene Übungen.
 - **Kraft, Mobilität, Ausdauer:** einzeln anwählbar.
 - **Sportspezifisch:** Golf, Fußball, Laufen oder allgemein, mit Saisonphase. Keine schweren Beine vor dem Spiel, Regeneration danach.

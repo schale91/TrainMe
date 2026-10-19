@@ -2,10 +2,11 @@
 // Alles ist deterministisch: gleiche Einstellungen und gleiches Protokoll ergeben den gleichen Plan.
 
 import { AUFTEILUNG, ERSATZ, VORLAGEN, type PlatzVorlage } from "../daten/vorlagen"
-import { UEBUNGEN, uebung } from "../daten/uebungen"
+import { UEBUNGEN, uebung } from "../daten/uebungen/index"
 import { passendeGruppe, verfuegbar } from "./gewichte"
-import { ausdauerVorgabe, blockWoche, istEntlastung, plateau, vorgabe } from "./progression"
-import type { Daten, Einheit, Geraet, Muster, Ort, Platz, Profil, Protokoll, Rolle, Trainingsart, Uebung } from "./typen"
+import { BLOCK_WOCHEN, ausdauerVorgabe, blockWoche, istEntlastung, plateau, vorgabe } from "./progression"
+import { bewerte, testNach } from "../daten/tests"
+import type { Daten, Einheit, Geraet, Messung, Muster, Ort, Platz, Profil, Protokoll, Rolle, Trainingsart, Uebung } from "./typen"
 
 const TAG = 86400000
 export const AUFWAERMEN_MIN = 8
@@ -117,6 +118,39 @@ function aufgestiegen(u: Uebung, protokoll: Protokoll[], vor: string): boolean {
   return s.length >= 2 && s.every((x) => x.wdh >= 15)
 }
 
+/** Gleichmäßig verteilte Zahl 0 bis 1 aus einem Text. */
+function streuung(text: string): number {
+  let h = 2166136261
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
+  return ((h >>> 0) % 1000) / 1000
+}
+
+function blockNummer(profil: Profil, datum: string): number {
+  return Math.floor((Date.parse(datum + "T12:00:00Z") - Date.parse(profil.block_start + "T12:00:00Z")) / (7 * TAG * BLOCK_WOCHEN))
+}
+
+/** Schwache Bereiche aus den letzten Beweglichkeitstests, wichtigste zuerst. */
+export function schwachstellen(daten: Daten): Muster[] {
+  const letzte = new Map<string, Messung>()
+  for (const m of daten.messungen || []) {
+    const alt = letzte.get(m.test)
+    if (!alt || alt.datum <= m.datum) letzte.set(m.test, m)
+  }
+  const punkte = new Map<Muster, number>()
+  for (const m of letzte.values()) {
+    const t = testNach(m.test)
+    if (!t) continue
+    const werte = [m.wert, ...(m.rechts !== undefined ? [m.rechts] : [])]
+    const b = werte.map((w) => bewerte(t, w))
+    const gewicht = b.includes("schwach") ? 2 : b.includes("mittel") ? 1 : 0
+    if (!gewicht) continue
+    for (const mu of t.muster) if (mu.startsWith("mobilitaet_") || mu === "balance") punkte.set(mu, (punkte.get(mu) || 0) + gewicht)
+  }
+  return Array.from(punkte.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([m]) => m)
+}
+
 /** Beste Übung für einen Platz. benutzt: in dieser Woche schon gewählt (für Abwechslung). */
 export function waehle(profil: Profil, ort: Ort, rolle: Rolle, muster: Muster, benutzt: Set<string>, schonBeiHeute: Set<string>, protokoll: Protokoll[], datum: string): Uebung | null {
   const kandidaten = UEBUNGEN.filter((u) => u.muster === muster && erlaubt(profil, u) && passtAnOrt(u, ort) && !schonBeiHeute.has(u.id))
@@ -126,6 +160,9 @@ export function waehle(profil: Profil, ort: Ort, rolle: Rolle, muster: Muster, b
     let p = 0
     // Hauptübungen: die Grundübung zählt mehr als der Sportbezug
     if (u.sport && u.sport.indexOf(profil.sport) >= 0) p += rolle === "haupt" ? 1 : 3
+    if (profil.sport === "golf" && u.golf) p += rolle === "haupt" ? u.golf * 0.5 : u.golf * 1.5
+    // Abwechslung je Block: innerhalb eines Blocks bleiben die Übungen gleich, damit Fortschritt messbar ist
+    p += streuung(u.id + "|" + blockNummer(profil, datum)) * 1.5
     const g = geraet(u)
     const lastbar = u.belastung === "gewicht" && g && g.last && verfuegbar(g.last, ort.gewichte).length > 0
     if (lastbar && (rolle === "haupt" || rolle === "neben")) p += 3
@@ -176,6 +213,7 @@ export function einheitFuer(profil: Profil, daten: Daten, datum: string): Einhei
 export function wochenplan(profil: Profil, daten: Daten, montag: string): Einheit[] {
   const benutzt = new Set<string>()
   const ergebnis: Einheit[] = []
+  const schwach = schwachstellen(daten)
   for (const t of wochenaufteilung(profil)) {
     const datum = plusTage(montag, t.tag)
     const tag = profil.woche[t.tag]
@@ -197,6 +235,12 @@ export function wochenplan(profil: Profil, daten: Daten, montag: string): Einhei
       plaetze.push({ rolle: "mobil", muster: profil.sport === "golf" ? "mobilitaet_bws" : "mobilitaet_huefte" })
     }
     if (t.art === "kraft" && profil.arten.indexOf("mobilitaet") < 0) plaetze = plaetze.filter((p) => p.rolle !== "mobil")
+    // Schwachstellen aus den Tests: Mobilitätsplätze gezielt darauf ausrichten
+    if (schwach.length) {
+      let k = t.tag
+      plaetze = plaetze.map((p) => (p.rolle === "mobil" && (t.art !== "mobilitaet" || k % 2 === 0) ? { ...p, muster: schwach[k++ % schwach.length] } : (k++, p)))
+      if (t.art === "kraft" && profil.arten.indexOf("mobilitaet") >= 0 && !plaetze.some((p) => p.rolle === "mobil")) plaetze.push({ rolle: "mobil", muster: schwach[t.tag % schwach.length] })
+    }
 
     const heuteBenutzt = new Set<string>()
     const gewaehlt: Platz[] = []

@@ -18,20 +18,20 @@ const p = (rolle: Rolle, muster: Muster): PlatzVorlage => ({ rolle, muster })
 
 export const VORLAGEN: Record<string, EinheitVorlage> = {
   // Allgemein
-  ganz_a: { id: "ganz_a", titel: "Ganzkörper A", plaetze: [p("haupt", "kniebeuge"), p("haupt", "druecken_horizontal"), p("neben", "ziehen_vertikal"), p("neben", "hueftstreckung"), p("isolation", "schulter_gesund"), p("isolation", "rumpf"), p("isolation", "arme")] },
-  ganz_b: { id: "ganz_b", titel: "Ganzkörper B", plaetze: [p("haupt", "hueftstreckung"), p("haupt", "ziehen_horizontal"), p("neben", "druecken_vertikal"), p("neben", "einbeinig"), p("isolation", "anti_rotation"), p("isolation", "arme"), p("isolation", "wade")] },
+  ganz_a: { id: "ganz_a", titel: "Ganzkörper A", plaetze: [p("haupt", "kniebeuge"), p("haupt", "druecken_horizontal"), p("neben", "ziehen_vertikal"), p("neben", "hueftstreckung"), p("isolation", "schulter_seitlich"), p("isolation", "rumpf"), p("isolation", "bizeps")] },
+  ganz_b: { id: "ganz_b", titel: "Ganzkörper B", plaetze: [p("haupt", "hueftstreckung"), p("haupt", "ziehen_horizontal"), p("neben", "druecken_vertikal"), p("neben", "einbeinig"), p("isolation", "anti_rotation"), p("isolation", "trizeps"), p("isolation", "wade")] },
   ganz_c: { id: "ganz_c", titel: "Ganzkörper C", plaetze: [p("haupt", "einbeinig"), p("haupt", "ziehen_vertikal"), p("neben", "druecken_horizontal"), p("neben", "hueftstreckung"), p("isolation", "schulter_gesund"), p("isolation", "rumpf")] },
-  ober_a: { id: "ober_a", titel: "Oberkörper A", plaetze: [p("haupt", "druecken_horizontal"), p("haupt", "ziehen_horizontal"), p("neben", "druecken_vertikal"), p("neben", "ziehen_vertikal"), p("isolation", "arme"), p("isolation", "schulter_gesund")] },
+  ober_a: { id: "ober_a", titel: "Oberkörper A", plaetze: [p("haupt", "druecken_horizontal"), p("haupt", "ziehen_horizontal"), p("neben", "druecken_vertikal"), p("neben", "ziehen_vertikal"), p("isolation", "schulter_seitlich"), p("isolation", "bizeps"), p("isolation", "trizeps")] },
   unter_a: { id: "unter_a", titel: "Unterkörper A", plaetze: [p("haupt", "kniebeuge"), p("haupt", "hueftstreckung"), p("neben", "einbeinig"), p("isolation", "hamstring_praevention"), p("isolation", "wade"), p("isolation", "rumpf")] },
-  ober_b: { id: "ober_b", titel: "Oberkörper B", plaetze: [p("haupt", "ziehen_vertikal"), p("haupt", "druecken_vertikal"), p("neben", "ziehen_horizontal"), p("neben", "druecken_horizontal"), p("isolation", "arme"), p("isolation", "anti_rotation")] },
+  ober_b: { id: "ober_b", titel: "Oberkörper B", plaetze: [p("haupt", "ziehen_vertikal"), p("haupt", "druecken_vertikal"), p("neben", "ziehen_horizontal"), p("neben", "druecken_horizontal"), p("isolation", "brust_iso"), p("isolation", "schulter_gesund"), p("isolation", "bizeps"), p("isolation", "trizeps")] },
   unter_b: { id: "unter_b", titel: "Unterkörper B", plaetze: [p("haupt", "hueftstreckung"), p("haupt", "einbeinig"), p("neben", "kniebeuge"), p("isolation", "adduktoren"), p("isolation", "wade"), p("isolation", "anti_rotation")] },
 
   // Golf: Kraft, Rotationskraft und Schnellkraft (Schlägerkopfgeschwindigkeit), Hüfte und Brustwirbelsäule beweglich
   golf_unter: { id: "golf_unter", titel: "Unterkörper Kraft", plaetze: [p("haupt", "kniebeuge"), p("haupt", "hueftstreckung"), p("neben", "einbeinig"), p("praevention", "anti_rotation"), p("isolation", "rumpf"), p("mobil", "mobilitaet_huefte")] },
   golf_ober: { id: "golf_ober", titel: "Oberkörper und Rotation", plaetze: [p("schnellkraft", "schnellkraft_wurf"), p("haupt", "ziehen_horizontal"), p("haupt", "druecken_horizontal"), p("neben", "rotation"), p("praevention", "schulter_gesund"), p("mobil", "mobilitaet_bws")] },
   golf_schnell: { id: "golf_schnell", titel: "Schnellkraft", plaetze: [p("schnellkraft", "schnellkraft_wurf"), p("schnellkraft", "schnellkraft_sprung"), p("haupt", "hueftstreckung"), p("neben", "rotation"), p("isolation", "anti_rotation"), p("mobil", "mobilitaet_bws")] },
-  golf_einbein: { id: "golf_einbein", titel: "Einbeinig und Hüfte", plaetze: [p("haupt", "einbeinig"), p("neben", "hueftstreckung"), p("neben", "adduktoren"), p("praevention", "anti_rotation"), p("isolation", "wade"), p("mobil", "mobilitaet_huefte")] },
-  golf_zug: { id: "golf_zug", titel: "Zug, Schulter und Griff", plaetze: [p("haupt", "ziehen_vertikal"), p("neben", "druecken_vertikal"), p("neben", "ziehen_horizontal"), p("praevention", "schulter_gesund"), p("isolation", "griff"), p("isolation", "arme")] },
+  golf_einbein: { id: "golf_einbein", titel: "Einbeinig und Hüfte", plaetze: [p("haupt", "einbeinig"), p("neben", "hueftstreckung"), p("neben", "adduktoren"), p("praevention", "anti_rotation"), p("isolation", "balance"), p("mobil", "mobilitaet_huefte")] },
+  golf_zug: { id: "golf_zug", titel: "Zug, Schulter und Griff", plaetze: [p("haupt", "ziehen_vertikal"), p("neben", "druecken_vertikal"), p("neben", "ziehen_horizontal"), p("praevention", "schulter_gesund"), p("isolation", "griff"), p("isolation", "anti_rotation"), p("mobil", "mobilitaet_handgelenk")] },
 
   // Fußball: Kraft, Schnelligkeit, Verletzungsvorbeugung (Beinbeuger, Adduktoren)
   fb_unter: { id: "fb_unter", titel: "Unterkörper und Prävention", plaetze: [p("haupt", "kniebeuge"), p("haupt", "hueftstreckung"), p("praevention", "hamstring_praevention"), p("praevention", "adduktoren"), p("isolation", "wade"), p("isolation", "anti_rotation")] },
@@ -43,7 +43,7 @@ export const VORLAGEN: Record<string, EinheitVorlage> = {
   lauf_ganz: { id: "lauf_ganz", titel: "Ganzkörper und Rumpf", plaetze: [p("haupt", "kniebeuge"), p("neben", "ziehen_horizontal"), p("neben", "druecken_horizontal"), p("praevention", "adduktoren"), p("isolation", "wade"), p("isolation", "rumpf")] },
 
   // Mobilität und Ausdauer
-  mobil: { id: "mobil", titel: "Mobilität", plaetze: [p("mobil", "mobilitaet_bws"), p("mobil", "mobilitaet_huefte"), p("mobil", "mobilitaet_schulter"), p("mobil", "mobilitaet_beine"), p("mobil", "mobilitaet_huefte"), p("mobil", "mobilitaet_bws")] },
+  mobil: { id: "mobil", titel: "Mobilität", plaetze: [p("mobil", "mobilitaet_ganzkoerper"), p("mobil", "mobilitaet_bws"), p("mobil", "mobilitaet_huefte"), p("mobil", "mobilitaet_schulter"), p("mobil", "mobilitaet_beine"), p("mobil", "mobilitaet_sprunggelenk"), p("mobil", "mobilitaet_huefte"), p("mobil", "mobilitaet_bws")] },
   ausdauer_ruhig: { id: "ausdauer_ruhig", titel: "Ausdauer ruhig", plaetze: [p("ausdauer", "ausdauer_ruhig")] },
   ausdauer_intervall: { id: "ausdauer_intervall", titel: "Ausdauer Intervalle", plaetze: [p("ausdauer", "ausdauer_intervall")] },
 }
@@ -97,7 +97,18 @@ export const ERSATZ: Partial<Record<Muster, Muster[]>> = {
   adduktoren: ["einbeinig"],
   griff: ["anti_rotation"],
   hamstring_praevention: ["hueftstreckung"],
-  arme: ["schulter_gesund"],
+  bizeps: ["ziehen_horizontal"],
+  trizeps: ["druecken_horizontal"],
+  brust_iso: ["druecken_horizontal"],
+  schulter_seitlich: ["schulter_gesund", "druecken_vertikal"],
+  trapez: ["ziehen_horizontal"],
+  nacken: ["schulter_gesund"],
+  abduktoren: ["einbeinig"],
+  balance: ["einbeinig"],
+  mobilitaet_sprunggelenk: ["mobilitaet_beine"],
+  mobilitaet_handgelenk: ["mobilitaet_schulter"],
+  mobilitaet_nacken: ["mobilitaet_bws"],
+  mobilitaet_ganzkoerper: ["mobilitaet_huefte"],
   wade: ["einbeinig"],
   mobilitaet_huefte: ["mobilitaet_beine"],
   mobilitaet_schulter: ["mobilitaet_bws"],

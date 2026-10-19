@@ -1,6 +1,6 @@
 import { einheitFuer, erlaubt, wochenaufteilung, wochenplan } from "../src/logik/plan"
 import { beispielFussball, beispielGolf, leer, neuesProfil, neuerOrt } from "../src/logik/speicher"
-import { uebung } from "../src/daten/uebungen"
+import { uebung } from "../src/daten/uebungen/index"
 import type { Daten, Profil } from "../src/logik/typen"
 
 const MONTAG = "2026-10-19"
@@ -112,5 +112,37 @@ describe("Einschränkungen", () => {
     const tage = wochenaufteilung(profil)
     expect(tage.every((t) => t.art === "ausdauer")).toBe(true)
     expect(tage.filter((t) => t.vorlage === "ausdauer_intervall").length).toBe(1)
+  })
+})
+
+describe("Golf-Fokus und Schwachstellen", () => {
+  const profil = beispielGolf(MONTAG)
+
+  it("Golfer bekommt viele golfspezifische Übungen", () => {
+    const plan = wochenplan(profil, daten(profil), MONTAG)
+    const alle = plan.flatMap((e) => e.plaetze.map((p) => p.uebung))
+    const golf = alle.filter((u) => (u.golf || 0) >= 2)
+    expect(golf.length).toBeGreaterThanOrEqual(alle.length / 3)
+  })
+
+  it("Keller-Mobilität nutzt Golfschläger oder Band, wenn sinnvoll, und nichts, was dort fehlt", () => {
+    const plan = wochenplan(profil, daten(profil), MONTAG)
+    const keller = plan[plan.length - 1]
+    for (const p of keller.plaetze) expect(p.uebung.geraete.some((g) => g.every((x) => profil.orte[1].geraete.includes(x)))).toBe(true)
+  })
+
+  it("schwache Brustwirbelsäule im Test: mehr BWS-Mobilität im Plan", () => {
+    const d = { ...daten(profil), messungen: [{ test: "bws_rotation", datum: "2026-10-18", wert: 25, rechts: 30 }] }
+    const plan = wochenplan(profil, d, MONTAG)
+    const bws = plan.flatMap((e) => e.plaetze).filter((p) => p.muster === "mobilitaet_bws").length
+    const ohne = wochenplan(profil, daten(profil), MONTAG).flatMap((e) => e.plaetze).filter((p) => p.muster === "mobilitaet_bws").length
+    expect(bws).toBeGreaterThan(ohne)
+  })
+
+  it("Übungen bleiben innerhalb eines Blocks gleich und wechseln mit dem nächsten Block teilweise", () => {
+    const ids = (m: string) => wochenplan(profil, daten(profil), m).flatMap((e) => e.plaetze.map((p) => p.uebung.id))
+    expect(ids(MONTAG)).toEqual(ids("2026-10-26"))
+    const naechsterBlock = ids("2026-11-23")
+    expect(naechsterBlock).not.toEqual(ids(MONTAG))
   })
 })

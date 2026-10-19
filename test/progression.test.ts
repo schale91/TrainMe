@@ -1,6 +1,6 @@
 import { blockWoche, e1rm, plateau, vorgabe, zielRir } from "../src/logik/progression"
 import { beispielGolf, neuesProfil } from "../src/logik/speicher"
-import { uebung } from "../src/daten/uebungen"
+import { uebung } from "../src/daten/uebungen/index"
 import type { Protokoll } from "../src/logik/typen"
 
 const kh = [10, 12.5, 15, 17.5, 20, 22.5, 25]

@@ -1,6 +1,6 @@
 import { abrunden, hoeher, niedriger, verfuegbar, passendeGruppe } from "../src/logik/gewichte"
 import { LEER } from "../src/logik/gewichte"
-import { uebung } from "../src/daten/uebungen"
+import { uebung } from "../src/daten/uebungen/index"
 
 describe("Gewichte", () => {
   const g = { ...LEER, kurzhanteln: [5, 10, 12.5, 15], stange: 20, scheiben: [2.5, 5, 10], maschine_schritt: 7, maschine_max: 35 }

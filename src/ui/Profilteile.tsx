@@ -97,9 +97,11 @@ function OrtKarte(props: { ort: Ort; aendern: (o: Ort) => void; entfernen?: () =
       <Feld titel="Deckenhöhe" text="Unter etwa 2,40 m fallen Überkopfübungen, Klimmzüge und Sprünge weg.">
         <Zahl wert={o.deckenhoehe_cm} min={150} max={1000} einheit="cm" onChange={(deckenhoehe_cm) => props.aendern({ ...o, deckenhoehe_cm })} />
       </Feld>
-      <Feld titel="Geräte">
-        <Chips werte={GERAETE} gewaehlt={o.geraete} onChange={(geraete) => props.aendern({ ...o, geraete })} />
-      </Feld>
+      {Array.from(new Set(GERAETE.map((g) => g.gruppe))).map((gruppe) => (
+        <Feld key={gruppe} titel={gruppe}>
+          <Chips werte={GERAETE.filter((g) => g.gruppe === gruppe)} gewaehlt={o.geraete.filter((x) => GERAETE.some((g) => g.id === x && g.gruppe === gruppe))} onChange={(neu) => props.aendern({ ...o, geraete: [...o.geraete.filter((x) => !GERAETE.some((g) => g.id === x && g.gruppe === gruppe)), ...neu] })} />
+        </Feld>
+      ))}
       {hat("kurzhantel") ? (
         <Feld titel="Kurzhanteln je Hand (kg)" text="Alle Gewichte, die du hast, getrennt mit Semikolon. Verstellbare Hanteln: jede mögliche Stufe.">
           <Zahlenliste wert={g.kurzhanteln} platzhalter="z. B. 2; 4; 6; 8; 10" onChange={(kurzhanteln) => setG({ kurzhanteln })} />
@@ -114,6 +116,21 @@ function OrtKarte(props: { ort: Ort; aendern: (o: Ort) => void; entfernen?: () =
             <Zahlenliste wert={g.scheiben} platzhalter="z. B. 1,25; 2,5; 5; 10; 10; 20" onChange={(scheiben) => setG({ scheiben })} />
           </Feld>
         </>
+      ) : null}
+      {hat("sz_stange") ? (
+        <Feld titel="SZ-Stange" text="Nutzt dieselben Scheiben wie die Langhantel.">
+          <Zahl wert={g.sz_stange || 0} min={0} max={20} einheit="kg" onChange={(sz_stange) => setG({ sz_stange })} />
+        </Feld>
+      ) : null}
+      {hat("multipresse") ? (
+        <Feld titel="Stange der Multipresse" text="Steht oft an der Maschine, sonst 15 kg schätzen.">
+          <Zahl wert={g.multipresse_stange || 0} min={0} max={30} einheit="kg" onChange={(multipresse_stange) => setG({ multipresse_stange })} />
+        </Feld>
+      ) : null}
+      {(hat("hantelscheibe") || hat("sz_stange") || hat("multipresse")) && !hat("langhantel") ? (
+        <Feld titel="Hantelscheiben (kg je Scheibe)" text="Jeden Eintrag gibt es als Paar.">
+          <Zahlenliste wert={g.scheiben} platzhalter="z. B. 1,25; 2,5; 5; 10" onChange={(scheiben) => setG({ scheiben })} />
+        </Feld>
       ) : null}
       {hat("kettlebell") ? (
         <Feld titel="Kettlebells (kg)">

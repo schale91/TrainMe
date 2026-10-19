@@ -1,12 +1,16 @@
 // Daten bleiben auf dem Gerät (localStorage der App). Export und Import als JSON-Datei für Sicherung und Gerätewechsel.
 
 import { LEER } from "./gewichte"
-import type { Daten, Ort, Profil, Wochentag } from "./typen"
+import type { Daten, Ort, Profil, Spielstand, Wochentag } from "./typen"
 
 const SCHLUESSEL = "trainme.daten"
 
 export function leer(): Daten {
-  return { version: 1, profil: null, protokoll: [], erledigt: [], spiel: { xp: 0, abzeichen: {} } }
+  return { version: 1, profil: null, protokoll: [], erledigt: [], spiel: neuesSpiel(), messungen: [] }
+}
+
+export function neuesSpiel(): Spielstand {
+  return { xp: 0, abzeichen: {}, muenzen: 0, inventar: {}, ausgeruestet: {}, level: 1, kisten: [], zyklus: 0, saat: Math.floor(Math.random() * 2 ** 31) }
 }
 
 export function laden(speicher: Pick<Storage, "getItem"> | null = typeof localStorage !== "undefined" ? localStorage : null): Daten {
@@ -31,7 +35,8 @@ export function pruefen(x: unknown): Daten {
   d.profil = o.profil ? vervollstaendigen(o.profil) : null
   d.protokoll = Array.isArray(o.protokoll) ? o.protokoll.filter((p) => p && typeof p.uebung === "string" && typeof p.datum === "string" && Array.isArray(p.saetze)) : []
   d.erledigt = Array.isArray(o.erledigt) ? o.erledigt.filter((e) => e && typeof e.datum === "string") : []
-  d.spiel = { xp: Number(o.spiel?.xp) || 0, abzeichen: o.spiel && typeof o.spiel.abzeichen === "object" ? { ...o.spiel.abzeichen } : {} }
+  d.spiel = { ...neuesSpiel(), ...(o.spiel || {}), xp: Number(o.spiel?.xp) || 0, abzeichen: o.spiel && typeof o.spiel.abzeichen === "object" ? { ...o.spiel.abzeichen } : {} }
+  d.messungen = Array.isArray(o.messungen) ? o.messungen.filter((m) => m && typeof m.test === "string" && typeof m.wert === "number") : []
   return d
 }
 
@@ -90,8 +95,8 @@ function montag(datum: string): string {
 export function studio(): Ort {
   return {
     name: "Studio",
-    geraete: ["kurzhantel", "langhantel", "kettlebell", "kabelzug", "maschine_beine", "maschine_oberkoerper", "klimmzugstange", "bank", "band", "medizinball", "box", "matte", "wand", "laufband", "fahrrad", "rudergeraet"],
-    gewichte: { kurzhanteln: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40], stange: 20, scheiben: [1.25, 2.5, 5, 10, 10, 15, 20, 20, 25], kettlebells: [8, 12, 16, 20, 24, 28, 32], medizinbaelle: [3, 5, 7], maschine_schritt: 5, maschine_max: 150, baender: 3 },
+    geraete: ["kurzhantel", "langhantel", "sz_stange", "kettlebell", "hantelscheibe", "kabelzug", "maschine_beine", "maschine_oberkoerper", "multipresse", "landmine", "klimmzugstange", "dip_station", "bank", "band", "mini_band", "schlingentrainer", "medizinball", "gymnastikball", "box", "matte", "wand", "stab", "faszienrolle", "laufband", "fahrrad", "rudergeraet"],
+    gewichte: { kurzhanteln: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40], stange: 20, sz_stange: 10, multipresse_stange: 15, scheiben: [1.25, 2.5, 5, 10, 10, 15, 20, 20, 25], kettlebells: [8, 12, 16, 20, 24, 28, 32], medizinbaelle: [3, 5, 7], maschine_schritt: 5, maschine_max: 150, baender: 3 },
     deckenhoehe_cm: 400,
   }
 }
@@ -109,7 +114,7 @@ export function beispielGolf(start: string): Profil {
     saison: "vorbereitung",
     arten: ["kraft", "mobilitaet"],
     woche: [studioTag, studioTag, studioTag, studioTag, studioTag, { art: "training", ort: 1, minuten: 40, schwerpunkt: "mobilitaet" }, { art: "sporttermin", termin: "runde" }],
-    orte: [studio(), { name: "Keller", geraete: ["matte", "wand", "band"], gewichte: { ...LEER, baender: 2 }, deckenhoehe_cm: 205 }],
+    orte: [studio(), { name: "Keller", geraete: ["matte", "wand", "band", "mini_band", "stab", "golfschlaeger", "faszienrolle"], gewichte: { ...LEER, baender: 2 }, deckenhoehe_cm: 205 }],
   }
 }
 
