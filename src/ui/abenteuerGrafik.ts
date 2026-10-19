@@ -302,7 +302,7 @@ export function zeichne(c: CanvasRenderingContext2D, B: number, H: number, s: Sz
         if (tr.von === "gegner") heldGetroffen = alt < 0.1
         else gegnerGetroffen = alt < 0.1
       }
-      if (alt < 0.9) zahlen.push({ t: alt, text: (tr.krit ? "💥 " : "") + tr.schaden, farbe: tr.von === "gegner" ? "#ff6b81" : tr.krit ? "#ffd166" : "#ffffff", ziel: tr.von === "gegner" ? "held" : "gegner" })
+      if (alt < 0.9) zahlen.push({ t: alt, text: tr.schaden + (tr.krit ? "!" : ""), farbe: tr.von === "gegner" ? "#ff6b81" : tr.krit ? "#ffd166" : "#ffffff", ziel: tr.von === "gegner" ? "held" : "gegner" })
     }
   }
   const heldBesiegt = !!k && !k.sieg && k.grund === "besiegt" && nach > 0

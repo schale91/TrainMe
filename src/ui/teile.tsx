@@ -1,6 +1,7 @@
 // Kleine Bausteine, die mehrere Seiten nutzen.
 
 import { useState, type ReactNode } from "react"
+import { Sym } from "./symbole"
 
 export function Chips<T extends string>(props: { werte: { id: T; name: string; symbol?: string }[]; gewaehlt: T[]; onChange: (x: T[]) => void; einzeln?: boolean }) {
   return (
@@ -17,7 +18,7 @@ export function Chips<T extends string>(props: { werte: { id: T; name: string; s
               else props.onChange(an ? props.gewaehlt.filter((x) => x !== w.id) : [...props.gewaehlt, w.id])
             }}
           >
-            {w.symbol ? <span className="sym">{w.symbol}</span> : null}
+            {w.symbol ? <Sym name={w.symbol} groesse={18} /> : null}
             {w.name}
           </button>
         )
@@ -31,7 +32,7 @@ export function Karten<T extends string>(props: { werte: { id: T; name: string; 
     <div className="karten">
       {props.werte.map((w) => (
         <button key={w.id} type="button" className={"auswahl" + (props.gewaehlt === w.id ? " an" : "")} onClick={() => props.onChange(w.id)}>
-          {w.symbol ? <span className="gross">{w.symbol}</span> : null}
+          {w.symbol ? <Sym name={w.symbol} groesse={30} farbe="var(--akzent)" /> : null}
           <b>{w.name}</b>
           {w.text ? <small>{w.text}</small> : null}
         </button>

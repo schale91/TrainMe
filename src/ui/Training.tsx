@@ -8,6 +8,7 @@ import { Blatt, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
 import { ROLLE, datumText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
+import { Sym } from "./symbole"
 
 type Eingabe = Satz & { fertig: boolean }
 type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][] }
@@ -167,7 +168,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           <section key={i + u.id} className={"uebungskarte" + (alle ? " geschafft" : "")}>
             <div className="uebungskopf">
               <span className={"marke " + p.rolle}>{ROLLE[p.rolle]}</span>
-              {u.golf && profil.sport === "golf" ? <span className="marke golf">⛳ Golf</span> : null}
+              {u.golf && profil.sport === "golf" ? (
+                <span className="marke golf mitsym">
+                  <Sym name="golf" groesse={13} /> Golf
+                </span>
+              ) : null}
               <span className="flex" />
               {p.rolle !== "ausdauer" ? (
                 <button type="button" className="rundknopf" aria-label="Übung tauschen" onClick={() => setTausch(i)}>
@@ -192,7 +197,12 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               {v.pause_s > 0 && p.rolle !== "ausdauer" ? <span className="vorgabe leise">Pause {v.pause_s >= 120 ? zahl(v.pause_s / 60) + " min" : v.pause_s + " s"}</span> : null}
             </div>
             <p className="begruendung">{v.begruendung}</p>
-            {u.hinweis ? <p className="tipp">💡 {u.hinweis}</p> : null}
+            {u.hinweis ? (
+              <p className="tipp">
+                <Sym name="gluehbirne" groesse={18} farbe="var(--gold)" />
+                <span>{u.hinweis}</span>
+              </p>
+            ) : null}
 
             <div className="saetze">
               <div className="satzkopf">
@@ -266,7 +276,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       <button type="button" className="knopf voll gross" disabled={erledigt === 0} onClick={fertig}>
         Einheit abschließen
       </button>
-      <p className="hinweistext klein mitte">{vollstaendig ? "Jede Übung eingetragen: Es gibt eine Kiste! 🎁" : "Trag bei jeder Übung mindestens einen Satz ein, dann gibt es zusätzlich eine Kiste."}</p>
+      <p className="hinweistext klein mitte">{vollstaendig ? "Jede Übung eingetragen: Es gibt eine Kiste!" : "Trag bei jeder Übung mindestens einen Satz ein, dann gibt es zusätzlich eine Kiste."}</p>
 
       {pauseBis !== null && rest > 0 ? (
         <div className="pausenleiste">

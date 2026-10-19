@@ -8,6 +8,8 @@ import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { KistenBild } from "./Abenteuer"
 import { tagesform } from "./gesundheit"
+import { Pixel } from "./pixel"
+import { Sym } from "./symbole"
 import { Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { ROLLE, TERMINE, WT, datumText } from "./texte"
 
@@ -15,7 +17,7 @@ export function istErledigt(daten: Daten, e: Einheit): boolean {
   return daten.erledigt.some((x) => (x.geplant || x.datum) === e.datum && x.titel === e.titel)
 }
 
-const ART_SYMBOL: Record<string, string> = { kraft: "🏋️", mobilitaet: "🧘", ausdauer: "🏃", regeneration: "🌿" }
+const ART_SYMBOL: Record<string, string> = { kraft: "hantel", mobilitaet: "dehnen", ausdauer: "puls", regeneration: "blatt" }
 
 export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; zumAbenteuer: () => void }) {
   const { daten } = props
@@ -52,11 +54,15 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         </div>
         <div className="statuskachel">
           <small>Wochen-Serie</small>
-          <b>🔥 {ser}</b>
+          <b className="mitsym">
+            <Sym name="flamme" groesse={18} farbe="var(--orange)" /> {ser}
+          </b>
         </div>
         <button type="button" className="statuskachel" onClick={props.zumAbenteuer}>
           <small>Münzen</small>
-          <b>🪙 {daten.spiel.muenzen}</b>
+          <b className="mitsym">
+            <Pixel name="muenze" groesse={18} /> {daten.spiel.muenzen}
+          </b>
         </button>
       </div>
 
@@ -65,21 +71,25 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           {gesundheit.schritte !== undefined ? (
             <div className="statuskachel">
               <small>Schritte heute</small>
-              <b>👟 {gesundheit.schritte.toLocaleString("de-DE")}</b>
+              <b className="mitsym">
+                <Sym name="schuh" groesse={18} farbe="var(--akzent2)" /> {gesundheit.schritte.toLocaleString("de-DE")}
+              </b>
             </div>
           ) : null}
           {gesundheit.schlaf_min !== undefined ? (
             <div className="statuskachel">
               <small>Schlaf</small>
-              <b>
-                😴 {Math.floor(gesundheit.schlaf_min / 60)} h {gesundheit.schlaf_min % 60}
+              <b className="mitsym">
+                <Sym name="mond" groesse={18} farbe="var(--akzent)" /> {Math.floor(gesundheit.schlaf_min / 60)} h {gesundheit.schlaf_min % 60}
               </b>
             </div>
           ) : null}
           {gesundheit.ruhepuls ? (
             <div className="statuskachel">
               <small>Ruhepuls</small>
-              <b>❤️ {gesundheit.ruhepuls}</b>
+              <b className="mitsym">
+                <Sym name="herz" groesse={18} farbe="var(--rot)" /> {gesundheit.ruhepuls}
+              </b>
             </div>
           ) : null}
         </div>
@@ -107,7 +117,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
               </span>
             </span>
             <span className="heutetitel">
-              {ART_SYMBOL[fokus.art]} {fokus.titel}
+              <Sym name={ART_SYMBOL[fokus.art]} groesse={26} /> {fokus.titel}
             </span>
             <span className="heutevorschau">
               {fokus.plaetze
@@ -120,7 +130,10 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           </button>
         ) : (
           <div className="heutekarte ruhig">
-            <span className="heutetitel">{heutige ? "Heute erledigt ✅" : termin.art === "sporttermin" ? "⛳ " + (TERMINE.find((x) => x.id === termin.termin)?.name || "Sporttermin") : "Ruhetag 🌙"}</span>
+            <span className="heutetitel">
+              <Sym name={heutige ? "haken" : termin.art === "sporttermin" ? "golf" : "mond"} groesse={26} />
+              {heutige ? "Heute erledigt" : termin.art === "sporttermin" ? TERMINE.find((x) => x.id === termin.termin)?.name || "Sporttermin" : "Ruhetag"}
+            </span>
             <span className="heutevorschau">Erholung gehört zum Training. Diese Woche ist alles geschafft.</span>
           </div>
         )
@@ -152,9 +165,21 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                   <small>{datum.slice(8)}</small>
                 </span>
               }
-              titel={e ? ART_SYMBOL[e.art] + " " + e.titel : t.art === "sporttermin" ? "⛳ " + (TERMINE.find((x) => x.id === t.termin)?.name || "Termin") : "frei"}
+              titel={
+                e ? (
+                  <span className="mitsym">
+                    <Sym name={ART_SYMBOL[e.art]} groesse={18} farbe="var(--akzent)" /> {e.titel}
+                  </span>
+                ) : t.art === "sporttermin" ? (
+                  <span className="mitsym">
+                    <Sym name="golf" groesse={18} farbe="var(--gold)" /> {TERMINE.find((x) => x.id === t.termin)?.name || "Termin"}
+                  </span>
+                ) : (
+                  <span className="leise">frei</span>
+                )
+              }
               untertitel={e ? e.minuten + " min · " + rollen : undefined}
-              wert={fertig ? "✓" : undefined}
+              rechts={fertig ? <Sym name="haken" groesse={20} farbe="var(--gruen)" /> : undefined}
               onClick={e ? () => props.oeffnen(e) : undefined}
             />
           )

@@ -3,11 +3,11 @@
 import type { Erfahrung, Gelenk, Geraet, Muskel, Muster, Rolle, Saison, Schwerpunkt, Termin, Trainingsart, Ziel } from "../logik/typen"
 
 export const ZIELE: { id: Ziel; name: string; text: string; symbol: string }[] = [
-  { id: "muskelaufbau", name: "Muskelaufbau", text: "Mehr Muskeln, mittlere Wiederholungen, nah an die Grenze.", symbol: "💪" },
-  { id: "kraft", name: "Kraft", text: "Schwerer werden, wenige Wiederholungen, lange Pausen.", symbol: "🏋️" },
-  { id: "sport", name: "Leistung im Sport", text: "Kraft und Schnellkraft für deinen Sport, abgestimmt auf Termine.", symbol: "⚽" },
-  { id: "fitness", name: "Fit und gesund", text: "Ausgewogen, alltagstauglich, nicht zu hart.", symbol: "🌱" },
-  { id: "abnehmen", name: "Abnehmen", text: "Kraft erhalten, viel Bewegung. Der Rest passiert in der Küche.", symbol: "🔥" },
+  { id: "muskelaufbau", name: "Muskelaufbau", text: "Mehr Muskeln, mittlere Wiederholungen, nah an die Grenze.", symbol: "muskel" },
+  { id: "kraft", name: "Kraft", text: "Schwerer werden, wenige Wiederholungen, lange Pausen.", symbol: "kraft" },
+  { id: "sport", name: "Leistung im Sport", text: "Kraft und Schnellkraft für deinen Sport, abgestimmt auf Termine.", symbol: "ball" },
+  { id: "fitness", name: "Fit und gesund", text: "Ausgewogen, alltagstauglich, nicht zu hart.", symbol: "spross" },
+  { id: "abnehmen", name: "Abnehmen", text: "Kraft erhalten, viel Bewegung. Der Rest passiert in der Küche.", symbol: "flamme" },
 ]
 
 export const ERFAHRUNG: { id: Erfahrung; name: string; text: string }[] = [
@@ -23,9 +23,9 @@ export const SAISON: { id: Saison; name: string; text: string }[] = [
 ]
 
 export const ARTEN: { id: Trainingsart; name: string; symbol: string }[] = [
-  { id: "kraft", name: "Kraft", symbol: "🏋️" },
-  { id: "mobilitaet", name: "Mobilität", symbol: "🧘" },
-  { id: "ausdauer", name: "Ausdauer", symbol: "🏃" },
+  { id: "kraft", name: "Kraft", symbol: "hantel" },
+  { id: "mobilitaet", name: "Mobilität", symbol: "dehnen" },
+  { id: "ausdauer", name: "Ausdauer", symbol: "puls" },
 ]
 
 export const SCHWERPUNKT: { id: Schwerpunkt; name: string }[] = [

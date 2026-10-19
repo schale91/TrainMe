@@ -278,7 +278,7 @@ export function AusnahmenEditor({ profil, aendern }: Teil) {
             onClick={() => aendern({ ...profil, ausgeschlossen: aus(u.id) ? profil.ausgeschlossen.filter((x) => x !== u.id) : [...profil.ausgeschlossen, u.id] })}
           >
             <span>{u.name}</span>
-            <span>{aus(u.id) ? "🚫 ausgeschlossen" : ""}</span>
+            <span className="mitsym leise">{aus(u.id) ? <><Sym name="verbot" groesse={16} farbe="var(--rot)" /> aus</> : ""}</span>
           </button>
         ))}
       </div>

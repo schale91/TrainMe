@@ -7,6 +7,7 @@ import type { Profil, Uebung } from "../logik/typen"
 import { Gruppe, Icon, Seite, Zeile } from "./ios"
 import { BEREICHE, MUSTER_NAME } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
+import { Sym } from "./symbole"
 
 function normal(t: string): string {
   return t.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
@@ -67,7 +68,7 @@ export default function Bibliothek(props: { profil: Profil }) {
           Nur machbar
         </button>
         <button type="button" className={"filterchip golf" + (nurGolf ? " an" : "")} onClick={() => setNurGolf(!nurGolf)}>
-          ⛳ Golf
+          <Sym name="golf" groesse={15} /> Golf
         </button>
       </div>
       {gruppen.length === 0 ? <p className="leerhinweis">Keine Übung gefunden. Filter lockern?</p> : null}
@@ -78,7 +79,7 @@ export default function Bibliothek(props: { profil: Profil }) {
               key={u.id}
               titel={u.name}
               untertitel={u.info.kurz}
-              symbol={u.golf ? <span className="golfpunkt" title="Golf">⛳</span> : undefined}
+              symbol={u.golf ? <Sym name="golf" groesse={18} farbe="var(--gruen)" titel="Golf" /> : undefined}
               onClick={() => setOffen(u)}
             />
           ))}

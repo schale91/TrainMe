@@ -26,6 +26,7 @@ import {
 import type { Daten, Kistenart, Slot } from "../logik/typen"
 import { zeichne, type Szene } from "./abenteuerGrafik"
 import { Blatt, Gruppe, Icon, Seite, Segment, Zeile } from "./ios"
+import { Pixel, PixelWert } from "./pixel"
 
 const SLOT_NAME: Record<Slot, string> = { waffe: "Waffe", ruestung: "Rüstung", helm: "Helm", schild: "Schild", begleiter: "Begleiter" }
 const SELTEN_NAME = { gewoehnlich: "Gewöhnlich", selten: "Selten", episch: "Episch", legendaer: "Legendär" }
@@ -66,7 +67,7 @@ export function KisteAufmachen(props: { art: Kistenart; oeffnen: () => Inhalt | 
       {phase === "offen" && inhalt ? (
         <div className="kisteninhalt">
           <div className="beute muenzen">
-            <span>🪙</span>
+            <Pixel name="muenze" groesse={34} />
             <b>+{inhalt.muenzen}</b>
             <small>Münzen</small>
           </div>
@@ -74,7 +75,7 @@ export function KisteAufmachen(props: { art: Kistenart; oeffnen: () => Inhalt | 
             const g = gegenstand(k.id)!
             return (
               <div key={k.id} className="beute" style={{ animationDelay: 0.15 * (i + 1) + "s", borderColor: SELTEN_FARBE[g.seltenheit] }}>
-                <span>{g.symbol}</span>
+                <Pixel name={g.id} groesse={34} />
                 <b>×{k.anzahl}</b>
                 <small>{g.name}</small>
                 {k.neu ? <em>Neu</em> : null}
@@ -101,23 +102,29 @@ function GegenstandZeile(props: { daten: Daten; g: Gegenstand; aendern: (f: (d: 
   const kannAufwerten = !!kosten && karten >= kosten.karten && s.muenzen >= kosten.muenzen
   const kannKaufen = st === 0 && !!g.preis && s.muenzen >= g.preis
   const w = werte(g, Math.max(1, st))
-  const werteText = [w.angriff ? "⚔️ " + Math.round(w.angriff) : "", w.verteidigung ? "🛡️ " + Math.round(w.verteidigung) : "", w.leben ? "❤️ " + Math.round(w.leben) : ""].filter(Boolean).join("  ")
+  const werteText = (
+    <>
+      {w.angriff ? <PixelWert name="angriff" wert={Math.round(w.angriff)} groesse={12} /> : null}
+      {w.verteidigung ? <PixelWert name="verteidigung" wert={Math.round(w.verteidigung)} groesse={12} /> : null}
+      {w.leben ? <PixelWert name="herz" wert={Math.round(w.leben)} groesse={12} /> : null}
+    </>
+  )
   return (
     <div className={"gegenstand" + (angelegt ? " angelegt" : "") + (st === 0 ? " gesperrt" : "")}>
       <span className="gsymbol" style={{ borderColor: SELTEN_FARBE[g.seltenheit] }}>
-        {g.symbol}
+        <Pixel name={g.id} groesse={30} />
       </span>
       <div className="gtext">
         <b>
           {g.name} {st > 0 ? <small>Stufe {st}</small> : null}
         </b>
-        <small>
-          {SELTEN_NAME[g.seltenheit]} · {werteText}
+        <small className="gwerte">
+          {SELTEN_NAME[g.seltenheit]} {werteText}
         </small>
         {kosten ? (
           <small className="karten">
             Karten {karten}/{kosten.karten}
-            {kosten.muenzen ? " · " + kosten.muenzen + " 🪙" : ""}
+            {kosten.muenzen ? <> · <PixelWert name="muenze" wert={kosten.muenzen} groesse={11} /></> : null}
           </small>
         ) : (
           <small className="karten">Höchste Stufe</small>
@@ -126,10 +133,12 @@ function GegenstandZeile(props: { daten: Daten; g: Gegenstand; aendern: (f: (d: 
       <div className="gknoepfe">
         {kannKaufen ? (
           <button type="button" className="knopf klein" onClick={() => props.aendern((d) => void kaufen(d.spiel, g.id))}>
-            {g.preis} 🪙
+            <PixelWert name="muenze" wert={g.preis || 0} groesse={14} />
           </button>
         ) : st === 0 && g.preis ? (
-          <span className="preis">{g.preis} 🪙</span>
+          <span className="preis">
+            <PixelWert name="muenze" wert={g.preis} groesse={13} />
+          </span>
         ) : null}
         {kannAufwerten ? (
           <button type="button" className="knopf klein gruen" onClick={() => props.aendern((d) => void aufwerten(d.spiel, g.id))}>
@@ -219,7 +228,7 @@ export default function Abenteuer(props: { daten: Daten; aendern: (f: (d: Daten)
       untertitel={welt.name + " · Level " + level + (g.boss ? " · Boss" : "")}
       rechts={
         <span className="muenzanzeige">
-          🪙 <b>{s.muenzen}</b>
+          <PixelWert name="muenze" wert={s.muenzen} groesse={18} />
         </span>
       }
     >
@@ -227,10 +236,12 @@ export default function Abenteuer(props: { daten: Daten; aendern: (f: (d: Daten)
         <canvas ref={canvas} className="spielfeld" />
         <div className="buehnenfuss">
           <span>
-            ❤️ {Math.round(h.leben)} · ⚔️ {Math.round(h.angriff)} · 🛡️ {Math.round(h.verteidigung)}
+            <PixelWert name="herz" wert={Math.round(h.leben)} groesse={14} />
+            <PixelWert name="angriff" wert={Math.round(h.angriff)} groesse={14} />
+            <PixelWert name="verteidigung" wert={Math.round(h.verteidigung)} groesse={14} />
           </span>
           <span>
-            Gegner: {anzeige.name} ❤️ {anzeige.leben}
+            {anzeige.name} <PixelWert name="herz" wert={anzeige.leben} groesse={14} />
           </span>
         </div>
       </div>
@@ -238,7 +249,7 @@ export default function Abenteuer(props: { daten: Daten; aendern: (f: (d: Daten)
         <div className={"kampfergebnis " + (ergebnis.sieg ? "sieg" : "niederlage")}>
           {ergebnis.sieg ? (
             <>
-              <b>Sieg nach {Math.round(ergebnis.dauer)} s!</b> +{ergebnis.belohnung} 🪙{(level - 1) % LEVEL_JE_WELT === 0 && level > 1 ? " · Neue Welt: " + WELTEN[Math.min(WELTEN.length - 1, Math.floor((level - 1) / LEVEL_JE_WELT))].name : ""}
+              <b>Sieg nach {Math.round(ergebnis.dauer)} s!</b> +{ergebnis.belohnung} Münzen{(level - 1) % LEVEL_JE_WELT === 0 && level > 1 ? " · Neue Welt: " + WELTEN[Math.min(WELTEN.length - 1, Math.floor((level - 1) / LEVEL_JE_WELT))].name : ""}
             </>
           ) : ergebnis.grund === "zeit" ? (
             <b>Nach 30 Sekunden noch nicht besiegt. Rückzug! Mehr Training, bessere Ausrüstung, dann klappt es.</b>
@@ -248,7 +259,7 @@ export default function Abenteuer(props: { daten: Daten; aendern: (f: (d: Daten)
         </div>
       ) : null}
       <button type="button" className="knopf voll gross" disabled={!fertig} onClick={kaempfen}>
-        {fertig ? "Weiterziehen ⚔️" : "Kampf läuft …"}
+        {fertig ? "Weiterziehen" : "Kampf läuft …"}
       </button>
       {!ausg.waffe ? <p className="hinweistext">Tipp: Ohne Waffe wird es schwer. Das Holzschwert gibt es im Laden für 100 Münzen, deine erste Kiste nach dem Training reicht dafür.</p> : null}
 

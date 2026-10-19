@@ -58,7 +58,9 @@ const S: Record<string, { l: string; f?: string; text?: string }> = {
 }
 
 export function Sym(props: { name: string; groesse?: number; farbe?: string; akzent?: string; text?: string; titel?: string }) {
-  const s = S[props.name] || S.info
+  const [name, zusatz] = props.name.split(":")
+  const s = S[name] || S.info
+  const text = props.text ?? zusatz
   const g = props.groesse || 22
   return (
     <svg
@@ -73,9 +75,9 @@ export function Sym(props: { name: string; groesse?: number; farbe?: string; akz
     >
       {s.f ? <path d={s.f} fill={props.akzent || "currentColor"} opacity={props.akzent ? 1 : 0.22} /> : null}
       <path d={s.l} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      {props.text ? (
+      {text ? (
         <text x="12" y="17.6" textAnchor="middle" fontSize="6.5" fontWeight="800" fill="currentColor" fontFamily="system-ui, sans-serif">
-          {props.text}
+          {text}
         </text>
       ) : null}
     </svg>

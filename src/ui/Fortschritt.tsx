@@ -10,6 +10,7 @@ import type { Daten, Messung, Protokoll } from "../logik/typen"
 import { Blatt, Gruppe, Icon, Seite, Segment, Zeile } from "./ios"
 import { MUSTER_NAME, datumText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
+import { Sym, SymKachel } from "./symbole"
 
 type Punkt = { datum: string; wert: number }
 
@@ -66,7 +67,7 @@ export function Kurve(props: { punkte: Punkt[]; einheit: string; hoehe?: number;
       {!props.mini ? (
         <text x={x(p.length - 1)} y={Math.max(14, y(letzte.wert) - 10)} textAnchor="end" className="kurventext">
           {zahl(letzte.wert)} {props.einheit}
-          {rekord[p.length - 1] ? " 🏆" : ""}
+          {rekord[p.length - 1] ? " · Bestwert" : ""}
         </text>
       ) : null}
       {!props.mini ? (
@@ -114,7 +115,7 @@ function Kraft(props: { daten: Daten }) {
   if (!daten.protokoll.length) {
     return (
       <div className="leer">
-        <span className="gross">📈</span>
+        <Sym name="kurve" groesse={44} farbe="var(--akzent)" />
         <h2>Noch keine Daten</h2>
         <p>Nach dem ersten Training siehst du hier für jede Übung deine Kraftkurve.</p>
       </div>
@@ -244,7 +245,7 @@ function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => void) =
             <Zeile
               key={t.id}
               titel={t.name}
-              untertitel={m ? (t.seiten ? "L " + wertText(t, m.wert) + (m.rechts !== undefined ? " · R " + wertText(t, m.rechts) : "") : wertText(t, m.wert)) + " · " + datumText(m.datum) : t.bereich + (t.golf ? " · ⛳" : "")}
+              untertitel={m ? (t.seiten ? "L " + wertText(t, m.wert) + (m.rechts !== undefined ? " · R " + wertText(t, m.rechts) : "") : wertText(t, m.wert)) + " · " + datumText(m.datum) : t.bereich + (t.golf ? " · Golf-Screening" : "")}
               symbol={<span className="punkt" style={{ background: schlecht ? FARBE[schlecht] : "var(--linie)" }} />}
               wert={schlecht ? WORT[schlecht] : "messen"}
               onClick={() => oeffne(t)}
@@ -372,7 +373,7 @@ function EinProzent(props: { daten: Daten }) {
       <Gruppe titel="Abzeichen">
         {ABZEICHEN.map((a) => {
           const am = daten.spiel.abzeichen[a.id]
-          return <Zeile key={a.id} symbol={<span className={"abzsymbol" + (am ? "" : " gesperrt")}>{am ? a.symbol : "🔒"}</span>} titel={a.name} untertitel={am ? "erreicht am " + datumText(am) : a.text} />
+          return <Zeile key={a.id} symbol={<SymKachel name={am ? a.symbol : "schloss"} farbe={am ? "#c98a1e" : "#3a3570"} groesse={34} />} titel={a.name} untertitel={am ? "erreicht am " + datumText(am) : a.text} />
         })}
       </Gruppe>
       <Gruppe titel="Alle Fakten">

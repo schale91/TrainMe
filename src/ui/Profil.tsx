@@ -11,6 +11,7 @@ import { benachrichtigungErlauben, overlayErlauben, timerStatus } from "./pausen
 import { AusnahmenEditor, Grunddaten, KoerperEditor, OrteEditor, SportWahl, WocheEditor } from "./Profilteile"
 import { dateiTeilen } from "./teilen"
 import Feedback from "./Feedback"
+import { SymKachel } from "./symbole"
 import { gesundheitEinstellungen, gesundheitLesen, gesundheitVerbinden, gesundheitVerfuegbar } from "./gesundheit"
 import { ERFAHRUNG, GELENKE, ZIELE } from "./texte"
 
@@ -72,24 +73,24 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
   return (
     <Seite titel="Profil" untertitel={profil.name || undefined}>
       <Gruppe titel="Training">
-        <Zeile symbol="🎯" titel="Ziel und Erfahrung" wert={ziel?.name + ", " + ERFAHRUNG.find((e) => e.id === profil.erfahrung)?.name} onClick={() => setSeite("ziel")} />
-        <Zeile symbol="⛳" titel="Training und Sport" wert={sport?.name} onClick={() => setSeite("sport")} />
-        <Zeile symbol="📅" titel="Woche" wert={tage + " Trainingstage"} onClick={() => setSeite("woche")} />
-        <Zeile symbol="🏠" titel="Orte und Geräte" wert={profil.orte.map((o) => o.name).join(", ")} onClick={() => setSeite("orte")} />
+        <Zeile symbol={<SymKachel name="ziel" farbe="#e7792f" />} titel="Ziel und Erfahrung" wert={ziel?.name + ", " + ERFAHRUNG.find((e) => e.id === profil.erfahrung)?.name} onClick={() => setSeite("ziel")} />
+        <Zeile symbol={<SymKachel name="golf" farbe="#1f9e73" />} titel="Training und Sport" wert={sport?.name} onClick={() => setSeite("sport")} />
+        <Zeile symbol={<SymKachel name="kalender" farbe="#d8506a" />} titel="Woche" wert={tage + " Trainingstage"} onClick={() => setSeite("woche")} />
+        <Zeile symbol={<SymKachel name="haus" farbe="#4f68f0" />} titel="Orte und Geräte" wert={profil.orte.map((o) => o.name).join(", ")} onClick={() => setSeite("orte")} />
       </Gruppe>
       <Gruppe titel="Körper">
-        <Zeile symbol="🩹" titel="Beschwerden" wert={beschwerden || "keine"} onClick={() => setSeite("koerper")} />
-        <Zeile symbol="🚫" titel="Ausnahmen" wert={profil.ausgeschlossen.length ? profil.ausgeschlossen.length + " Übungen" : "keine"} onClick={() => setSeite("ausnahmen")} />
+        <Zeile symbol={<SymKachel name="pflaster" farbe="#c9536a" />} titel="Beschwerden" wert={beschwerden || "keine"} onClick={() => setSeite("koerper")} />
+        <Zeile symbol={<SymKachel name="verbot" farbe="#6b6593" />} titel="Ausnahmen" wert={profil.ausgeschlossen.length ? profil.ausgeschlossen.length + " Übungen" : "keine"} onClick={() => setSeite("ausnahmen")} />
       </Gruppe>
       <Gruppe titel="Plan" fuss="Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Der Plan beginnt dann wieder mit mehr Reserve.">
-        <Zeile symbol="🔄" titel="Neuen Block ab dieser Woche" onClick={() => props.profilAendern({ ...profil, block_start: montagVon(heute()) })} pfeil={false} />
+        <Zeile symbol={<SymKachel name="wiederholen" farbe="#2b9cc2" />} titel="Neuen Block ab dieser Woche" onClick={() => props.profilAendern({ ...profil, block_start: montagVon(heute()) })} pfeil={false} />
       </Gruppe>
       <Gruppe titel="App">
-        <Zeile symbol="⏱️" titel="Pausentimer" wert="Hintergrund, über Apps" onClick={() => setSeite("timer")} />
-        <Zeile symbol="❤️" titel="Gesundheitsdaten" wert={props.daten.gesundheit?.verbunden ? "verbunden" : "aus"} onClick={() => setSeite("gesundheit")} />
-        <Zeile symbol="💬" titel="Feedback, Fehler, Ideen" onClick={() => setSeite("feedback")} />
-        <Zeile symbol="💾" titel="Sicherung" onClick={() => setSeite("sicherung")} />
-        <Zeile symbol="ℹ️" titel="Über TrainMe und Quellen" onClick={() => setSeite("ueber")} />
+        <Zeile symbol={<SymKachel name="stoppuhr" farbe="#6a58f5" />} titel="Pausentimer" wert="Hintergrund, über Apps" onClick={() => setSeite("timer")} />
+        <Zeile symbol={<SymKachel name="herz" farbe="#e0455f" />} titel="Gesundheitsdaten" wert={props.daten.gesundheit?.verbunden ? "verbunden" : "aus"} onClick={() => setSeite("gesundheit")} />
+        <Zeile symbol={<SymKachel name="sprechblase" farbe="#2aa58a" />} titel="Feedback, Fehler, Ideen" onClick={() => setSeite("feedback")} />
+        <Zeile symbol={<SymKachel name="archiv" farbe="#7d7a99" />} titel="Sicherung" onClick={() => setSeite("sicherung")} />
+        <Zeile symbol={<SymKachel name="info" farbe="#5d5891" />} titel="Über TrainMe und Quellen" onClick={() => setSeite("ueber")} />
       </Gruppe>
     </Seite>
   )
@@ -123,7 +124,7 @@ function Sicherung(props: { daten: Daten; ersetzen: (d: Daten) => void; zuruecks
     <Seite titel="Sicherung" zurueck={props.zurueck}>
       <Gruppe fuss="Deine Daten liegen nur auf diesem Handy. Ohne Sicherung sind sie beim Deinstallieren oder Handywechsel weg.">
         <Zeile
-          symbol="📤"
+          symbol={<SymKachel name="export" farbe="#4f68f0" />}
           titel="Sicherung erstellen"
           onClick={() =>
             dateiTeilen("TrainMe-Sicherung-" + heute() + ".json", exportieren(props.daten))
@@ -131,7 +132,7 @@ function Sicherung(props: { daten: Daten; ersetzen: (d: Daten) => void; zuruecks
               .catch((e) => setMeldung("Hat nicht geklappt: " + String(e?.message || e)))
           }
         />
-        <Zeile symbol="📥" titel="Sicherung laden" onClick={() => datei.current?.click()} />
+        <Zeile symbol={<SymKachel name="import" farbe="#2aa58a" />} titel="Sicherung laden" onClick={() => datei.current?.click()} />
       </Gruppe>
       <input
         ref={datei}
@@ -247,7 +248,7 @@ function GesundheitSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void)
             <Zeile
               key={d}
               titel={d.split("-").reverse().join(".")}
-              untertitel={[w.schritte !== undefined ? "👟 " + w.schritte.toLocaleString("de-DE") : "", w.schlaf_min !== undefined ? "😴 " + Math.floor(w.schlaf_min / 60) + " h " + (w.schlaf_min % 60) + " min" : "", w.ruhepuls ? "❤️ " + w.ruhepuls : "", w.hrv ? "HRV " + w.hrv : ""].filter(Boolean).join(" · ") || "keine Werte"}
+              untertitel={[w.schritte !== undefined ? w.schritte.toLocaleString("de-DE") + " Schritte" : "", w.schlaf_min !== undefined ? "Schlaf " + Math.floor(w.schlaf_min / 60) + " h " + (w.schlaf_min % 60) + " min" : "", w.ruhepuls ? "Ruhepuls " + w.ruhepuls : "", w.hrv ? "HRV " + w.hrv : ""].filter(Boolean).join(" · ") || "keine Werte"}
             />
           ))}
         </Gruppe>

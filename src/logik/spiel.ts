@@ -89,18 +89,18 @@ export interface Abzeichen {
 }
 
 export const ABZEICHEN: Abzeichen[] = [
-  { id: "erste_einheit", name: "Losgelegt", text: "Die erste Einheit ist geschafft.", symbol: "🚀" },
-  { id: "einheiten_10", name: "Zehner", text: "10 Einheiten erledigt.", symbol: "🔟" },
-  { id: "einheiten_50", name: "Fünfzig", text: "50 Einheiten erledigt.", symbol: "🏅" },
-  { id: "einheiten_100", name: "Hundert", text: "100 Einheiten erledigt.", symbol: "💯" },
-  { id: "rekord", name: "Neuer Bestwert", text: "Zum ersten Mal einen persönlichen Rekord aufgestellt.", symbol: "📈" },
-  { id: "rekorde_25", name: "Rekordjäger", text: "25 persönliche Rekorde.", symbol: "🏆" },
-  { id: "serie_4", name: "Ein Monat dran", text: "4 Wochen hintereinander das Wochenziel erreicht.", symbol: "🔥" },
-  { id: "serie_12", name: "Gewohnheit", text: "12 Wochen hintereinander das Wochenziel erreicht.", symbol: "⚡" },
-  { id: "mobil_10", name: "Geschmeidig", text: "10 Mobilitäts- oder Regenerationseinheiten.", symbol: "🧘" },
-  { id: "entlastung", name: "Klug pausiert", text: "Eine Entlastungswoche durchgezogen statt übersprungen.", symbol: "🛌" },
-  { id: "block", name: "Block geschafft", text: "Einen ganzen Block mit " + BLOCK_WOCHEN + " Wochen trainiert.", symbol: "🧱" },
-  { id: "vielseitig", name: "Vielseitig", text: "Kraft, Mobilität und Ausdauer in einer Woche.", symbol: "🎯" },
+  { id: "erste_einheit", name: "Losgelegt", text: "Die erste Einheit ist geschafft.", symbol: "rakete" },
+  { id: "einheiten_10", name: "Zehner", text: "10 Einheiten erledigt.", symbol: "zahl:10" },
+  { id: "einheiten_50", name: "Fünfzig", text: "50 Einheiten erledigt.", symbol: "zahl:50" },
+  { id: "einheiten_100", name: "Hundert", text: "100 Einheiten erledigt.", symbol: "zahl:100" },
+  { id: "rekord", name: "Neuer Bestwert", text: "Zum ersten Mal einen persönlichen Rekord aufgestellt.", symbol: "kurve" },
+  { id: "rekorde_25", name: "Rekordjäger", text: "25 persönliche Rekorde.", symbol: "pokal" },
+  { id: "serie_4", name: "Ein Monat dran", text: "4 Wochen hintereinander das Wochenziel erreicht.", symbol: "flamme" },
+  { id: "serie_12", name: "Gewohnheit", text: "12 Wochen hintereinander das Wochenziel erreicht.", symbol: "blitz" },
+  { id: "mobil_10", name: "Geschmeidig", text: "10 Mobilitäts- oder Regenerationseinheiten.", symbol: "dehnen" },
+  { id: "entlastung", name: "Klug pausiert", text: "Eine Entlastungswoche durchgezogen statt übersprungen.", symbol: "bett" },
+  { id: "block", name: "Block geschafft", text: "Einen ganzen Block mit " + BLOCK_WOCHEN + " Wochen trainiert.", symbol: "bausteine" },
+  { id: "vielseitig", name: "Vielseitig", text: "Kraft, Mobilität und Ausdauer in einer Woche.", symbol: "ziel" },
 ]
 
 export interface Ergebnis {

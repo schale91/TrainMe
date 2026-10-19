@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { beispielGolf, neuesProfil } from "../logik/speicher"
 import type { Profil } from "../logik/typen"
+import { Sym } from "./symbole"
 import { AusnahmenEditor, Grunddaten, KoerperEditor, OrteEditor, SportWahl, WocheEditor } from "./Profilteile"
 
 const SCHRITTE = [
@@ -36,7 +37,7 @@ export default function Einrichtung(props: { fertig: (p: Profil) => void; start?
         {schritt === 0 ? (
           <>
             <button type="button" className="schnellstart" onClick={() => setProfil({ ...beispielGolf(new Date().toISOString().slice(0, 10)), name: profil.name })}>
-              <span className="gross">⛳</span>
+              <Sym name="golf" groesse={34} farbe="var(--gruen)" />
               <span>
                 <b>Schnellstart Golf</b>
                 <small>5 × 60 min Studio, Samstag Mobilität im Keller, kein Ausdauertraining. Alles lässt sich danach anpassen.</small>
@@ -60,7 +61,7 @@ export default function Einrichtung(props: { fertig: (p: Profil) => void; start?
           <span />
         )}
         <button type="button" className="knopf" disabled={!kannWeiter} onClick={() => (letzter ? props.fertig(profil) : setSchritt(schritt + 1))}>
-          {letzter ? "Plan erstellen 🚀" : kannWeiter ? "Weiter" : "Mindestens ein Trainingstag"}
+          {letzter ? "Plan erstellen" : kannWeiter ? "Weiter" : "Mindestens ein Trainingstag"}
         </button>
       </div>
     </div>

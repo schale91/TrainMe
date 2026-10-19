@@ -39,30 +39,29 @@ export interface Gegenstand {
   tempo?: number
   /** Preis im Laden (nur gewöhnliche und seltene), sonst nur über Karten */
   preis?: number
-  symbol: string
   text: string
 }
 
 export const GEGENSTAENDE: Gegenstand[] = [
-  { id: "holzschwert", name: "Holzschwert", slot: "waffe", seltenheit: "gewoehnlich", angriff: 7, verteidigung: 0, leben: 0, tempo: 1.2, preis: 100, symbol: "🗡️", text: "Leicht und schnell. Für den Anfang genau richtig." },
-  { id: "eisenschwert", name: "Eisenschwert", slot: "waffe", seltenheit: "gewoehnlich", angriff: 12, verteidigung: 0, leben: 0, tempo: 1.1, preis: 350, symbol: "⚔️", text: "Solide Klinge aus der Dorfschmiede." },
-  { id: "streitaxt", name: "Streitaxt", slot: "waffe", seltenheit: "selten", angriff: 20, verteidigung: 0, leben: 0, tempo: 0.8, preis: 900, symbol: "🪓", text: "Langsam, aber jeder Treffer sitzt." },
-  { id: "kriegshammer", name: "Kriegshammer", slot: "waffe", seltenheit: "selten", angriff: 26, verteidigung: 2, leben: 0, tempo: 0.65, symbol: "🔨", text: "Zerlegt Rüstungen. Nur aus Kisten." },
-  { id: "flammenklinge", name: "Flammenklinge", slot: "waffe", seltenheit: "episch", angriff: 30, verteidigung: 0, leben: 0, tempo: 1.15, symbol: "🔥", text: "Brennt bei jedem Treffer nach." },
-  { id: "donnerspeer", name: "Donnerspeer", slot: "waffe", seltenheit: "legendaer", angriff: 42, verteidigung: 3, leben: 20, tempo: 1.0, symbol: "⚡", text: "Ein Blitz in Speerform." },
-  { id: "lederwams", name: "Lederwams", slot: "ruestung", seltenheit: "gewoehnlich", angriff: 0, verteidigung: 3, leben: 25, preis: 150, symbol: "🦺", text: "Besser als ein T-Shirt." },
-  { id: "kettenhemd", name: "Kettenhemd", slot: "ruestung", seltenheit: "selten", angriff: 0, verteidigung: 7, leben: 50, preis: 1000, symbol: "🛡️", text: "Klirrt, schützt aber gut." },
-  { id: "plattenruestung", name: "Plattenrüstung", slot: "ruestung", seltenheit: "episch", angriff: 0, verteidigung: 13, leben: 90, symbol: "🥋", text: "Schwer wie eine Kniebeuge mit 140 kg." },
-  { id: "drachenschuppen", name: "Drachenschuppen", slot: "ruestung", seltenheit: "legendaer", angriff: 4, verteidigung: 18, leben: 140, symbol: "🐉", text: "Aus den Schuppen eines alten Drachen." },
-  { id: "lederkappe", name: "Lederkappe", slot: "helm", seltenheit: "gewoehnlich", angriff: 0, verteidigung: 1, leben: 15, preis: 80, symbol: "🧢", text: "Hält wenigstens die Sonne ab." },
-  { id: "eisenhelm", name: "Eisenhelm", slot: "helm", seltenheit: "selten", angriff: 0, verteidigung: 4, leben: 30, preis: 700, symbol: "⛑️", text: "Ordentlicher Kopfschutz." },
-  { id: "kronenhelm", name: "Kronenhelm", slot: "helm", seltenheit: "episch", angriff: 3, verteidigung: 7, leben: 50, symbol: "👑", text: "Für echte Könige des Studios." },
-  { id: "holzschild", name: "Holzschild", slot: "schild", seltenheit: "gewoehnlich", angriff: 0, verteidigung: 2, leben: 20, preis: 120, symbol: "🪵", text: "Ein Brett mit Griff." },
-  { id: "eisenschild", name: "Eisenschild", slot: "schild", seltenheit: "selten", angriff: 0, verteidigung: 6, leben: 35, preis: 800, symbol: "🛡️", text: "Fängt fast alles ab." },
-  { id: "turmschild", name: "Turmschild", slot: "schild", seltenheit: "episch", angriff: 0, verteidigung: 10, leben: 70, symbol: "🏰", text: "Man kann sich dahinter verstecken." },
-  { id: "wolf", name: "Wolf", slot: "begleiter", seltenheit: "selten", angriff: 8, verteidigung: 0, leben: 0, symbol: "🐺", text: "Beißt mit, sobald der Kampf beginnt." },
-  { id: "falke", name: "Falke", slot: "begleiter", seltenheit: "episch", angriff: 12, verteidigung: 2, leben: 0, symbol: "🦅", text: "Greift aus der Luft an." },
-  { id: "drachenjunges", name: "Drachenjunges", slot: "begleiter", seltenheit: "legendaer", angriff: 20, verteidigung: 3, leben: 30, symbol: "🐲", text: "Klein, aber spuckt Feuer." },
+  { id: "holzschwert", name: "Holzschwert", slot: "waffe", seltenheit: "gewoehnlich", angriff: 7, verteidigung: 0, leben: 0, tempo: 1.2, preis: 100, text: "Leicht und schnell. Für den Anfang genau richtig." },
+  { id: "eisenschwert", name: "Eisenschwert", slot: "waffe", seltenheit: "gewoehnlich", angriff: 12, verteidigung: 0, leben: 0, tempo: 1.1, preis: 350, text: "Solide Klinge aus der Dorfschmiede." },
+  { id: "streitaxt", name: "Streitaxt", slot: "waffe", seltenheit: "selten", angriff: 20, verteidigung: 0, leben: 0, tempo: 0.8, preis: 900, text: "Langsam, aber jeder Treffer sitzt." },
+  { id: "kriegshammer", name: "Kriegshammer", slot: "waffe", seltenheit: "selten", angriff: 26, verteidigung: 2, leben: 0, tempo: 0.65, text: "Zerlegt Rüstungen. Nur aus Kisten." },
+  { id: "flammenklinge", name: "Flammenklinge", slot: "waffe", seltenheit: "episch", angriff: 30, verteidigung: 0, leben: 0, tempo: 1.15, text: "Brennt bei jedem Treffer nach." },
+  { id: "donnerspeer", name: "Donnerspeer", slot: "waffe", seltenheit: "legendaer", angriff: 42, verteidigung: 3, leben: 20, tempo: 1.0, text: "Ein Blitz in Speerform." },
+  { id: "lederwams", name: "Lederwams", slot: "ruestung", seltenheit: "gewoehnlich", angriff: 0, verteidigung: 3, leben: 25, preis: 150, text: "Besser als ein T-Shirt." },
+  { id: "kettenhemd", name: "Kettenhemd", slot: "ruestung", seltenheit: "selten", angriff: 0, verteidigung: 7, leben: 50, preis: 1000, text: "Klirrt, schützt aber gut." },
+  { id: "plattenruestung", name: "Plattenrüstung", slot: "ruestung", seltenheit: "episch", angriff: 0, verteidigung: 13, leben: 90, text: "Schwer wie eine Kniebeuge mit 140 kg." },
+  { id: "drachenschuppen", name: "Drachenschuppen", slot: "ruestung", seltenheit: "legendaer", angriff: 4, verteidigung: 18, leben: 140, text: "Aus den Schuppen eines alten Drachen." },
+  { id: "lederkappe", name: "Lederkappe", slot: "helm", seltenheit: "gewoehnlich", angriff: 0, verteidigung: 1, leben: 15, preis: 80, text: "Hält wenigstens die Sonne ab." },
+  { id: "eisenhelm", name: "Eisenhelm", slot: "helm", seltenheit: "selten", angriff: 0, verteidigung: 4, leben: 30, preis: 700, text: "Ordentlicher Kopfschutz." },
+  { id: "kronenhelm", name: "Kronenhelm", slot: "helm", seltenheit: "episch", angriff: 3, verteidigung: 7, leben: 50, text: "Für echte Könige des Studios." },
+  { id: "holzschild", name: "Holzschild", slot: "schild", seltenheit: "gewoehnlich", angriff: 0, verteidigung: 2, leben: 20, preis: 120, text: "Ein Brett mit Griff." },
+  { id: "eisenschild", name: "Eisenschild", slot: "schild", seltenheit: "selten", angriff: 0, verteidigung: 6, leben: 35, preis: 800, text: "Fängt fast alles ab." },
+  { id: "turmschild", name: "Turmschild", slot: "schild", seltenheit: "episch", angriff: 0, verteidigung: 10, leben: 70, text: "Man kann sich dahinter verstecken." },
+  { id: "wolf", name: "Wolf", slot: "begleiter", seltenheit: "selten", angriff: 8, verteidigung: 0, leben: 0, text: "Beißt mit, sobald der Kampf beginnt." },
+  { id: "falke", name: "Falke", slot: "begleiter", seltenheit: "episch", angriff: 12, verteidigung: 2, leben: 0, text: "Greift aus der Luft an." },
+  { id: "drachenjunges", name: "Drachenjunges", slot: "begleiter", seltenheit: "legendaer", angriff: 20, verteidigung: 3, leben: 30, text: "Klein, aber spuckt Feuer." },
 ]
 
 export const gegenstand = (id: string) => GEGENSTAENDE.find((g) => g.id === id)

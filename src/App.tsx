@@ -15,6 +15,7 @@ import Einrichtung from "./ui/Einrichtung"
 import Fortschritt from "./ui/Fortschritt"
 import Heute from "./ui/Heute"
 import { Icon } from "./ui/ios"
+import { Sym, SymKachel } from "./ui/symbole"
 import ProfilSeite from "./ui/Profil"
 import Training from "./ui/Training"
 import Fehlergrenze from "./ui/Fehlergrenze"
@@ -158,7 +159,9 @@ export default function App() {
                 ) : null}
                 {belohnung.rekorde.length ? (
                   <div className="rekordliste">
-                    <b>Neue Bestwerte 🏆</b>
+                    <b className="mitsym mitte">
+                      <Sym name="pokal" groesse={20} farbe="var(--gold)" /> Neue Bestwerte
+                    </b>
                     {belohnung.rekorde.map((id) => (
                       <span key={id}>{uebung(id)?.name}</span>
                     ))}
@@ -168,13 +171,13 @@ export default function App() {
                   const a = ABZEICHEN.find((x) => x.id === id)
                   return a ? (
                     <p key={id} className="neuabz">
-                      <span>{a.symbol}</span> Abzeichen „{a.name}“
+                      <SymKachel name={a.symbol} farbe="#c98a1e" groesse={28} /> Abzeichen „{a.name}“
                     </p>
                   ) : null
                 })}
                 {belohnung.kiste ? (
                   <button type="button" className="knopf voll gross gold" onClick={() => setKisteAuf(true)}>
-                    🎁 Kiste öffnen
+                    <Sym name="geschenk" groesse={20} /> Kiste öffnen
                   </button>
                 ) : (
                   <p className="hinweistext klein">Keine Kiste diesmal: Dafür bei jeder Übung mindestens einen Satz eintragen.</p>
