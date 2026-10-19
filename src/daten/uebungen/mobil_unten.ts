@@ -3839,7 +3839,7 @@ export const MOBIL_UNTEN: Uebung[] = [
         "Zieh das gestreckte rechte Bein mit dem Band nach oben, bis eine deutliche Dehnung entsteht, und halte etwa 20 Sekunden.",
         "Drück das Bein mit etwa halber Kraft gegen das Band nach unten Richtung Boden, ohne dass es sich bewegt. Halte 5 bis 10 Sekunden.",
         "Lass die Spannung los, atme aus und zieh das Bein ein Stück weiter heran.",
-        "Spann für einige Sekunden den Oberschenkelvorderseite aktiv an, als wolltest du das Bein selbst weiter heranziehen.",
+        "Spann für einige Sekunden die Oberschenkelvorderseite aktiv an, als wolltest du das Bein selbst weiter heranziehen.",
         "Wiederhole den Ablauf zwei bis drei Mal und wechsle dann die Seite."
       ],
       atmung: "Während des Anspannens normal weiteratmen, beim Loslassen lang ausatmen.",
@@ -4383,6 +4383,918 @@ export const MOBIL_UNTEN: Uebung[] = [
       ],
       varianten: "Leichter: Spagat mit Stütze oder halber Spagat. Schwerer: Arme über den Kopf oder vordere Ferse erhöht (Überspagat, nur für Fortgeschrittene).",
       sicherheit: "Bei Hüft-, Leisten- oder Knieproblemen nicht ausführen. Nie ruckartig in die Position."
+    }
+  },
+  // ---------- Waden ----------
+  {
+    id: "waden_dehnen",
+    name: "Wade dehnen an der Wand mit gestrecktem Knie",
+    auch: ["Wall Calf Stretch", "Gastrocnemius Stretch", "Standing Calf Stretch"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["wand"]],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    golf: 1,
+    sport: ["laufen", "fussball", "golf"],
+    einseitig: true,
+    info: {
+      kurz: "Klassische Wadendehnung im Schrittstand an der Wand mit gestrecktem hinteren Bein. Dehnt vor allem den Zwillingswadenmuskel, der über das Knie zieht.",
+      ausfuehrung: [
+        "Stell dich etwa einen Schritt vor eine Wand und stütz beide Hände auf Schulterhöhe ab.",
+        "Stell den rechten Fuß weit nach hinten, die Fußspitze zeigt gerade nach vorn.",
+        "Das linke Bein steht vorn mit gebeugtem Knie.",
+        "Drück die rechte Ferse fest in den Boden und halte das rechte Knie gestreckt.",
+        "Schiebe die Hüfte langsam Richtung Wand, bis du die Dehnung in der rechten Wade spürst.",
+        "Halte die Position und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und beim Ausatmen die Hüfte etwas weiter zur Wand schieben.",
+      fehler: [
+        "Ferse hebt ab: Fuß etwas näher zur Wand stellen.",
+        "Fuß dreht nach außen: Fußspitze zeigt gerade nach vorn.",
+        "Hohlkreuz: Bauch leicht anspannen, Körper bildet eine Linie vom Kopf bis zur Ferse."
+      ],
+      vorteile: [
+        "Dehnt den Zwillingswadenmuskel gezielt.",
+        "Kann die Beweglichkeit im Sprunggelenk unterstützen.",
+        "Gut nach Laufen, Springen und langem Stehen."
+      ],
+      tipps: [
+        "Direkt danach das Knie beugen, dann dehnst du den tiefen Wadenmuskel (Soleus).",
+        "30 bis 60 Sekunden je Seite nach dem Training."
+      ],
+      varianten: "Leichter: hinterer Fuß näher an der Wand. Schwerer: Fuß weiter zurück oder Fußballen an der Wand.",
+      sicherheit: "Bei Achillessehnenbeschwerden nur sanft dehnen und bei Schmerzen abklären lassen."
+    }
+  },
+  {
+    id: "soleus_dehnen_wand",
+    name: "Wade dehnen an der Wand mit gebeugtem Knie (Soleus)",
+    auch: ["Soleus Stretch", "Bent-Knee Calf Stretch", "Wall Soleus Stretch"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["wand"]],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    golf: 1,
+    sport: ["laufen", "fussball"],
+    einseitig: true,
+    info: {
+      kurz: "Wadendehnung an der Wand mit gebeugtem hinteren Knie. Dadurch wird der Zwillingswadenmuskel entspannt und der tiefer liegende Schollenmuskel (Soleus) gedehnt, der für die Beugung im Sprunggelenk wichtig ist.",
+      ausfuehrung: [
+        "Stell dich vor eine Wand und stütz die Hände auf Schulterhöhe ab.",
+        "Stell den rechten Fuß nur etwa eine Fußlänge hinter den linken, beide Fußspitzen zeigen nach vorn.",
+        "Beuge beide Knie und senke das Gesäß etwas ab, die rechte Ferse bleibt fest am Boden.",
+        "Schiebe das rechte Knie nach vorn unten, bis du die Dehnung tief unten in der Wade und an der Achillessehne spürst.",
+        "Halte die Position, das Gewicht liegt hauptsächlich auf dem hinteren Bein.",
+        "Löse die Position und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und beim Ausatmen das Knie etwas weiter nach vorn sinken lassen.",
+      fehler: [
+        "Ferse hebt ab: weniger tief beugen.",
+        "Schritt zu groß: Füße näher zusammen.",
+        "Knie fällt nach innen: Knie über die zweite Zehe ausrichten."
+      ],
+      vorteile: [
+        "Dehnt den Schollenmuskel, der beim gestreckten Knie kaum erreicht wird.",
+        "Kann die Beugung im Sprunggelenk für tiefe Kniebeugen verbessern.",
+        "Wichtig für Läufer, da der Soleus beim Laufen stark arbeitet."
+      ],
+      tipps: [
+        "Immer im Paar mit der Variante mit gestrecktem Knie ausführen.",
+        "Die Dehnung liegt tiefer und fühlt sich oft schwächer an. Das ist normal."
+      ],
+      varianten: "Leichter: weniger Kniebeugung. Schwerer: Fußballen auf eine kleine Erhöhung stellen.",
+      sicherheit: "Bei Achillessehnenbeschwerden nur sanft und schmerzfrei."
+    }
+  },
+  {
+    id: "waden_dehnen_stufe",
+    name: "Wade dehnen auf der Stufe",
+    auch: ["Calf Stretch on Step", "Heel Drop Stretch", "Step Calf Stretch"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["box"], ["hantelscheibe"], []],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    golf: 1,
+    sport: ["laufen"],
+    einseitig: true,
+    hinweis: "Ohne Gerät auf einer Treppenstufe, mit Halt am Geländer.",
+    info: {
+      kurz: "Wadendehnung mit dem Fußballen auf einer Stufe, die Ferse sinkt unter Stufenhöhe. Die Schwerkraft dehnt die Wade, und du kannst das Gewicht sehr fein dosieren.",
+      ausfuehrung: [
+        "Stell dich mit dem rechten Fußballen auf die Kante einer Stufe, Box oder Hantelscheibe und halte dich fest.",
+        "Der linke Fuß steht entspannt auf der Stufe oder in der Luft.",
+        "Lass die rechte Ferse langsam unter die Stufenkante sinken, das Knie bleibt gestreckt.",
+        "Halte die Position, sobald du eine deutliche Dehnung in der Wade spürst.",
+        "Für den Soleus das Knie zusätzlich leicht beugen und weiter halten.",
+        "Drück dich langsam hoch und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und mit jedem Ausatmen die Ferse etwas schwerer werden lassen.",
+      fehler: [
+        "Ferse ruckartig absinken lassen: langsam und kontrolliert.",
+        "Ohne Halt: Immer an Geländer, Wand oder Rack festhalten.",
+        "Fuß zu weit auf der Stufe: nur der Fußballen steht auf der Kante."
+      ],
+      vorteile: [
+        "Intensive Wadendehnung durch die Schwerkraft.",
+        "Gewicht und Intensität fein dosierbar.",
+        "Kombinierbar mit gestrecktem und gebeugtem Knie."
+      ],
+      tipps: [
+        "Nach dem Wadenheben bietet sich die Dehnung direkt an.",
+        "Beidbeinig ist sie sanfter, einbeinig intensiver."
+      ],
+      varianten: "Leichter: beidbeinig, Gewicht auf beide Füße verteilen. Schwerer: einbeinig mit gestrecktem Knie.",
+      sicherheit: "Bei Achillessehnenbeschwerden nur nach Rücksprache. Immer gut festhalten."
+    }
+  },
+  {
+    id: "waden_dehnen_zehen_wand",
+    name: "Wade dehnen mit Fußballen an der Wand",
+    auch: ["Toe-Up Wall Calf Stretch", "Calf Stretch Toes on Wall", "Forefoot Wall Stretch"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    sekundaer: ["beinbeuger"],
+    geraete: [["wand"]],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    sport: ["laufen"],
+    einseitig: true,
+    info: {
+      kurz: "Wadendehnung im Stehen: Die Ferse steht am Boden, der Fußballen an der Wand, du lehnst den Körper nach vorn. Dehnt Wade und Fußsohle zugleich und ist sehr kompakt.",
+      ausfuehrung: [
+        "Stell dich frontal vor eine Wand.",
+        "Setz die rechte Ferse am Boden direkt vor der Wand ab und stell den Fußballen an die Wand, die Zehen zeigen nach oben.",
+        "Das rechte Knie ist gestreckt, die Hände stützen sich an der Wand ab.",
+        "Lehn den Körper langsam nach vorn zur Wand, bis du die Dehnung in Wade und Fußsohle spürst.",
+        "Halte die Position aufrecht.",
+        "Löse die Dehnung und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und beim Ausatmen etwas näher an die Wand lehnen.",
+      fehler: [
+        "Hüfte bleibt hinten: Körper als Ganzes zur Wand bringen.",
+        "Knie beugt sich: gestreckt halten, wenn die Wade gedehnt werden soll.",
+        "Fußballen zu hoch an der Wand: anfangs niedriger."
+      ],
+      vorteile: [
+        "Dehnt Wade und Fußsohle gleichzeitig.",
+        "Sehr wenig Platzbedarf.",
+        "Gut für Läufer und nach langem Stehen."
+      ],
+      tipps: [
+        "Mit leicht gebeugtem Knie verlagerst du die Dehnung in den tiefen Wadenmuskel.",
+        "Auch an einem Pfosten oder Baum machbar."
+      ],
+      varianten: "Leichter: Fußballen tiefer an der Wand. Schwerer: Fußballen höher oder Körper weiter vorlehnen.",
+      sicherheit: "Bei Beschwerden an der Fußsohle oder Achillessehne sanft dosieren."
+    }
+  },
+  {
+    id: "waden_dehnen_band_sitzend",
+    name: "Wade dehnen im Langsitz mit Band",
+    auch: ["Seated Calf Stretch with Strap", "Towel Calf Stretch", "Long Sitting Calf Stretch"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    sekundaer: ["beinbeuger"],
+    geraete: [["band", "matte"], ["band"]],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Wadendehnung im Sitzen: Mit einem Band oder Handtuch um den Fußballen ziehst du die Fußspitze zu dir. Ideal morgens, nach dem Aufstehen oder für alle, die nicht lange stehen möchten.",
+      ausfuehrung: [
+        "Setz dich mit gestreckten Beinen auf den Boden, eventuell an eine Wand gelehnt.",
+        "Leg ein Band, einen Gurt oder ein Handtuch um den rechten Fußballen.",
+        "Halte die Enden mit beiden Händen und richte den Oberkörper auf.",
+        "Zieh die Fußspitze langsam zu dir, das Knie bleibt gestreckt.",
+        "Halte die Position, sobald du die Dehnung in der Wade spürst.",
+        "Lass langsam nach und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und beim Ausatmen etwas mehr ziehen.",
+      fehler: [
+        "Knie beugt sich: Kniekehle Richtung Boden drücken.",
+        "Ruckartiges Ziehen: langsam und gleichmäßig.",
+        "Rundrücken: aufrecht sitzen oder an die Wand lehnen."
+      ],
+      vorteile: [
+        "Dehnt die Wade ohne Belastung durch das Körpergewicht.",
+        "Fein dosierbar und gelenkschonend.",
+        "Gut morgens im Bett oder nach Verletzungspausen."
+      ],
+      tipps: [
+        "Kissen unter dem Knie und leicht gebeugtes Knie verlagert die Dehnung zum Soleus.",
+        "Wird oft am Morgen bei steifer Wade und Fußsohle als angenehm empfunden."
+      ],
+      varianten: "Leichter: weniger Zug. Schwerer: Oberkörper zusätzlich nach vorn neigen.",
+      sicherheit: "Bei Achillessehnenbeschwerden sanft dosieren."
+    }
+  },
+  {
+    id: "hund_wadendehnung",
+    name: "Herabschauender Hund mit Wadendehnung",
+    auch: ["Downward Dog Calf Stretch", "Downward Dog Pedal", "Down Dog Calf Pedaling"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["waden", "beinbeuger"],
+    sekundaer: ["latissimus", "schulter_vorn"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { handgelenk: 1, schulter: 1 },
+    stufe: 1,
+    sport: ["laufen"],
+    info: {
+      kurz: "Im herabschauenden Hund drückst du abwechselnd eine Ferse Richtung Boden, während das andere Knie sich beugt. Dynamische Dehnung für Waden und Beinrückseite, die gleichzeitig Schultern und Rumpf fordert.",
+      ausfuehrung: [
+        "Starte im Vierfüßlerstand, stell die Zehen auf und schieb das Gesäß nach oben, bis dein Körper ein umgedrehtes V bildet.",
+        "Die Hände sind schulterbreit, die Finger gespreizt, der Rücken lang.",
+        "Beuge das linke Knie und drück die rechte Ferse Richtung Boden, das rechte Knie ist gestreckt.",
+        "Halte eine bis zwei Sekunden und wechsle die Seite, wie beim Gehen auf der Stelle.",
+        "Halte den Rücken lang und schiebe die Brust Richtung Oberschenkel.",
+        "Wiederhole die vorgegebene Anzahl und komm über die Knie zurück."
+      ],
+      atmung: "Gleichmäßig im Rhythmus der Bewegung atmen.",
+      fehler: [
+        "Runder Rücken: Knie stärker beugen und das Gesäß nach oben schieben.",
+        "Schultern hängen: Hände aktiv in den Boden drücken.",
+        "Zu schnell treten: jede Seite kurz halten."
+      ],
+      vorteile: [
+        "Dehnt Waden und Beinrückseite dynamisch.",
+        "Mobilisiert zugleich Schultern und Rücken.",
+        "Gut im Aufwärmen oder in Yoga-Abläufen."
+      ],
+      tipps: [
+        "Am Ende beide Fersen gleichzeitig zum Boden sinken lassen und halten.",
+        "Zehn Wechsel je Seite reichen."
+      ],
+      varianten: "Leichter: Knie gebeugt lassen, nur sanft pedalen. Schwerer: einen Fuß auf die andere Ferse legen und halten.",
+      sicherheit: "Bei Handgelenks- oder Schulterbeschwerden auf Unterarmen oder an der Wand ausführen. Bei Bluthochdruck vorsichtig."
+    }
+  },
+  {
+    id: "waden_rolle",
+    name: "Wade ausrollen mit der Faszienrolle",
+    auch: ["Calf Foam Rolling", "Foam Roll Calves"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["faszienrolle"]],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { handgelenk: 1 },
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Selbstmassage der Wade mit der Faszienrolle im Sitzen. Kann das Spannungsgefühl nach Laufen, Springen oder Wadentraining verringern und bereitet auf Wadendehnungen vor.",
+      ausfuehrung: [
+        "Setz dich auf den Boden und leg die Rolle unter die rechte Wade knapp oberhalb der Achillessehne.",
+        "Stütz die Hände hinter dir auf und heb das Gesäß leicht an.",
+        "Roll langsam von unten nach oben bis knapp unter die Kniekehle und wieder zurück.",
+        "Dreh das Bein leicht nach innen und außen, um alle Bereiche der Wade zu erreichen.",
+        "Für mehr Druck das linke Bein über das rechte legen.",
+        "Nach ein bis zwei Minuten das Bein wechseln."
+      ],
+      atmung: "Ruhig weiteratmen, an empfindlichen Stellen lang ausatmen.",
+      fehler: [
+        "Über die Achillessehne oder Kniekehle rollen: nur über den Muskel.",
+        "Zu schnell: langsam und an Verspannungen verweilen.",
+        "Zu viel Druck sofort: erst beidbeinig, dann einbeinig."
+      ],
+      vorteile: [
+        "Kann das Spannungsgefühl in der Wade verringern.",
+        "Gute Vorbereitung auf Sprunggelenkmobilisation und Dehnung.",
+        "Kann nach Läufen angenehm sein."
+      ],
+      tipps: [
+        "Fuß während des Rollens kreisen oder anziehen und strecken.",
+        "Danach direkt die Wadendehnung an der Wand."
+      ],
+      varianten: "Leichter: beide Beine gleichzeitig. Schwerer: Bein überschlagen oder festere Rolle.",
+      sicherheit: "Nicht bei Krampfadern, Venenentzündung oder Thromboseverdacht. Bei Achillessehnenbeschwerden die Sehne aussparen."
+    }
+  },
+  {
+    id: "waden_pnf_wand",
+    name: "Wade dehnen mit Anspannen und Entspannen",
+    auch: ["PNF Calf Stretch", "Contract-Relax Calf Stretch", "Wall Calf PNF"],
+    muster: "mobilitaet_beine",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["wand"]],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 2,
+    einseitig: true,
+    hinweis: "Fußballen 5 bis 10 Sekunden in den Boden drücken, dann tiefer.",
+    info: {
+      kurz: "Wadendehnung an der Wand nach dem Prinzip Anspannen und Entspannen: Du drückst den Fußballen in den Boden, lässt locker und dehnst tiefer. Wirksam bei steifen Waden und eingeschränkter Sprunggelenkbeugung.",
+      ausfuehrung: [
+        "Stell dich in die Wadendehnung an der Wand, das rechte Bein hinten mit gestrecktem Knie, die Ferse am Boden.",
+        "Halte die Dehnung etwa 20 Sekunden.",
+        "Drück nun den rechten Fußballen mit etwa halber Kraft in den Boden, als wolltest du auf die Zehenspitzen gehen, ohne dass die Ferse abhebt. Halte 5 bis 10 Sekunden.",
+        "Lass locker, atme aus und schiebe die Hüfte ein Stück weiter zur Wand.",
+        "Zieh die Fußspitze aktiv nach oben und halte die neue Position einige Sekunden.",
+        "Wiederhole zwei bis drei Mal und wechsle dann die Seite."
+      ],
+      atmung: "Beim Anspannen ruhig weiteratmen, beim Lösen lang ausatmen.",
+      fehler: [
+        "Ferse hebt beim Drücken ab: Druck nur so stark, dass die Ferse unten bleibt.",
+        "Zu viel Kraft: halbe Kraft reicht.",
+        "Fuß dreht nach außen: Fußspitze gerade."
+      ],
+      vorteile: [
+        "Kann mehr Beweglichkeit bringen als reines Halten.",
+        "Gut bei hartnäckig steifer Wade.",
+        "Kräftigt nebenbei die Fußhebermuskeln."
+      ],
+      tipps: [
+        "Nach dem Training oder an Mobilitätstagen, nicht direkt vor Sprüngen.",
+        "Auch mit gebeugtem Knie für den Soleus möglich."
+      ],
+      varianten: "Leichter: kürzer anspannen. Schwerer: mit Fußballen auf einer kleinen Erhöhung.",
+      sicherheit: "Bei Achillessehnenbeschwerden nur nach Rücksprache."
+    }
+  },
+  // ---------- Sprunggelenk ----------
+  {
+    id: "knie_zur_wand",
+    name: "Knie zur Wand (Sprunggelenk-Mobilisation)",
+    auch: ["Knee to Wall Ankle Mobilization", "Knee to Wall Drill", "Ankle Dorsiflexion Wall Test"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["wand"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 200,
+    gelenke: { sprunggelenk: 1 },
+    stufe: 1,
+    golf: 2,
+    sport: ["golf", "laufen", "fussball"],
+    einseitig: true,
+    hinweis: "Ferse bleibt am Boden, Knie über die zweite Zehe.",
+    info: {
+      kurz: "Bekannte Mobilisation und zugleich Test für die Beugung im Sprunggelenk: Du schiebst das Knie über den Zehen zur Wand, während die Ferse am Boden bleibt. Wichtig für tiefe Kniebeugen, Ausfallschritte und Landungen.",
+      ausfuehrung: [
+        "Stell dich frontal vor eine Wand, den rechten Fuß etwa eine Handbreit vor der Wand, die Fußspitze zeigt gerade zur Wand.",
+        "Der linke Fuß steht entspannt hinter dir, die Hände stützen sich an der Wand ab.",
+        "Schiebe das rechte Knie langsam nach vorn über die zweite Zehe Richtung Wand.",
+        "Die rechte Ferse bleibt fest am Boden.",
+        "Berühr die Wand kurz mit dem Knie oder halte am Endpunkt zwei Sekunden, dann zurück.",
+        "Wenn es leicht geht, den Fuß etwas weiter von der Wand weg stellen. Nach den Wiederholungen Seite wechseln."
+      ],
+      atmung: "Beim Vorschieben ausatmen, beim Zurückgehen einatmen.",
+      fehler: [
+        "Ferse hebt ab: Fuß näher an die Wand.",
+        "Knie fällt nach innen: Knie zielt über die zweite Zehe.",
+        "Fußgewölbe kollabiert: Fußgewölbe aktiv halten."
+      ],
+      vorteile: [
+        "Verbessert die Beugung im Sprunggelenk.",
+        "Kann Tiefe und Haltung bei Kniebeugen verbessern.",
+        "Liefert zugleich einen einfachen Test: Abstand Fuß zur Wand in Zentimetern messen und Seiten vergleichen."
+      ],
+      tipps: [
+        "Miss regelmäßig den Abstand, bei dem das Knie die Wand gerade noch berührt.",
+        "Das Knie auch leicht nach innen und außen zur Wand führen, um alle Richtungen zu mobilisieren."
+      ],
+      varianten: "Leichter: Fuß näher an der Wand. Schwerer: weiter weg, mit Band oder mit Gewicht auf dem Knie.",
+      sicherheit: "Bei Schmerzen vorn im Sprunggelenk (Einklemmgefühl) nicht weiter verstärken und abklären lassen.",
+      golf: "Ein gut bewegliches Sprunggelenk hilft dir, in der Ansprechhaltung stabil zu stehen und die Knie im Schwung frei arbeiten zu lassen. Fehlt Beweglichkeit, weichen Knie und Hüfte oft aus, was die Konstanz und den Rücken belasten kann."
+    }
+  },
+  {
+    id: "sprunggelenk_band",
+    name: "Sprunggelenk-Mobilisation mit Band",
+    auch: ["Banded Ankle Mobilization", "Banded Ankle Distraction", "Banded Dorsiflexion Mobilization"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["band"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: { sprunggelenk: 1, knie: 1 },
+    stufe: 2,
+    golf: 1,
+    einseitig: true,
+    hinweis: "Band vorn über dem Sprunggelenk, Zug nach hinten.",
+    info: {
+      kurz: "Sprunggelenkmobilisation im halben Kniestand mit einem Band, das vorn um das Sprunggelenk liegt und nach hinten zieht. Der Zug kann das Gelenk in der Beugung freier anfühlen lassen.",
+      ausfuehrung: [
+        "Befestige ein kräftiges Band knapp über dem Boden an einem Rack oder Pfosten.",
+        "Leg die Schlaufe vorn um das rechte Sprunggelenk, direkt auf die Falte zwischen Fußrücken und Schienbein.",
+        "Geh vom Befestigungspunkt weg, bis das Band gespannt ist, und knie dich in den halben Kniestand mit dem rechten Fuß vorn.",
+        "Schiebe das rechte Knie langsam über die Zehen nach vorn, die Ferse bleibt am Boden.",
+        "Halte zwei Sekunden am Endpunkt und geh zurück.",
+        "Wiederhole rhythmisch und wechsle danach die Seite."
+      ],
+      atmung: "Beim Vorschieben ausatmen, beim Zurückgehen einatmen.",
+      fehler: [
+        "Band sitzt zu hoch am Schienbein: tief auf die Gelenkfalte legen.",
+        "Ferse hebt ab: weniger weit vor.",
+        "Zu wenig Spannung: weiter vom Befestigungspunkt weg."
+      ],
+      vorteile: [
+        "Kann die Beugung im Sprunggelenk freier wirken lassen.",
+        "Gute Vorbereitung auf Kniebeugen und Ausfallschritte.",
+        "Hilft besonders bei einem Engegefühl vorn im Gelenk."
+      ],
+      tipps: [
+        "Ein leichtes Gewicht auf dem vorderen Knie verstärkt den Effekt.",
+        "Zwei Sätze mit 10 bis 15 Wiederholungen pro Seite."
+      ],
+      varianten: "Leichter: weniger Bandspannung. Schwerer: Fuß auf eine Erhöhung stellen oder mit Gewicht auf dem Knie.",
+      sicherheit: "Band sicher befestigen. Bei akuten Bänderverletzungen oder Schwellung nicht ausführen."
+    }
+  },
+  {
+    id: "sprunggelenk_cars",
+    name: "Kontrolliertes Fußkreisen",
+    auch: ["Ankle CARs", "Ankle Controlled Articular Rotations", "Ankle Circles"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden", "schienbein"],
+    geraete: [[]],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    golf: 1,
+    einseitig: true,
+    info: {
+      kurz: "Langsames, maximal großes Kreisen des Fußes, während der Unterschenkel ruhig gehalten wird. Bewegt das Sprunggelenk durch seinen gesamten Bewegungsumfang und trainiert die Kontrolle.",
+      ausfuehrung: [
+        "Setz dich auf einen Stuhl oder auf den Boden und heb das rechte Bein an.",
+        "Halte den Unterschenkel mit beiden Händen fest, damit sich nur der Fuß bewegt.",
+        "Zieh die Fußspitze so weit wie möglich zu dir.",
+        "Dreh den Fuß langsam nach außen, dann nach unten in die Streckung, nach innen und zurück nach oben.",
+        "Mach den Kreis so groß und langsam wie möglich, etwa 5 bis 10 Sekunden pro Kreis.",
+        "Nach einigen Kreisen die Richtung wechseln, dann das Bein."
+      ],
+      atmung: "Ruhig und gleichmäßig weiteratmen.",
+      fehler: [
+        "Unterschenkel dreht mit: festhalten.",
+        "Nur die Zehen bewegen: Die Bewegung kommt aus dem Sprunggelenk.",
+        "Zu schnell: Langsamkeit ist die Wirkung."
+      ],
+      vorteile: [
+        "Bewegt das Sprunggelenk in alle Richtungen.",
+        "Fördert die Kontrolle und das Gelenkgefühl.",
+        "Sehr gut als tägliche Pflege und zum Aufwärmen."
+      ],
+      tipps: [
+        "Drei bis fünf Kreise pro Richtung und Fuß.",
+        "Im Stehen auf einem Bein wird es zusätzlich zur Gleichgewichtsübung."
+      ],
+      varianten: "Leichter: sitzend mit kleinerem Kreis. Schwerer: im Stehen ohne Festhalten.",
+      sicherheit: "Bei akuten Verletzungen des Sprunggelenks nur nach Freigabe."
+    }
+  },
+  {
+    id: "sprunggelenk_rocks_gewicht",
+    name: "Sprunggelenk-Wippen mit Gewicht im Kniestand",
+    auch: ["Weighted Ankle Rocks", "Loaded Ankle Dorsiflexion", "Half-Kneeling Weighted Ankle Mobilization"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["kurzhantel"], ["kettlebell"], ["hantelscheibe"]],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: { sprunggelenk: 1, knie: 1 },
+    stufe: 2,
+    golf: 1,
+    einseitig: true,
+    hinweis: "Gewicht auf das vordere Knie legen, Ferse bleibt unten.",
+    info: {
+      kurz: "Sprunggelenkmobilisation im halben Kniestand mit einem Gewicht auf dem vorderen Knie. Das Gewicht drückt das Knie nach vorn und verstärkt die Beugung im Sprunggelenk.",
+      ausfuehrung: [
+        "Knie dich in den halben Kniestand mit dem rechten Fuß vorn, etwas näher am Körper als gewohnt.",
+        "Leg eine Kurzhantel, Kettlebell oder Hantelscheibe auf den rechten Oberschenkel knapp über dem Knie und halte sie fest.",
+        "Lehn dich mit dem Oberkörper leicht nach vorn auf das Gewicht.",
+        "Schiebe das Knie über die Zehen nach vorn, die rechte Ferse bleibt am Boden.",
+        "Halte am Endpunkt zwei bis drei Sekunden und geh zurück.",
+        "Wiederhole und wechsle danach die Seite."
+      ],
+      atmung: "Beim Vorschieben ausatmen, beim Zurückgehen einatmen.",
+      fehler: [
+        "Ferse hebt ab: Gewicht reduzieren oder Fuß weiter vorn.",
+        "Knie fällt nach innen: Knie über die zweite Zehe führen.",
+        "Zu schweres Gewicht: Die Bewegung muss kontrolliert bleiben."
+      ],
+      vorteile: [
+        "Verstärkt die Mobilisation der Sprunggelenkbeugung.",
+        "Bereitet sehr gut auf tiefe Kniebeugen vor.",
+        "Kräftigt die Waden zugleich in gedehnter Position."
+      ],
+      tipps: [
+        "8 bis 16 Kilogramm reichen den meisten.",
+        "Gut direkt vor Kniebeugen oder Front Squats."
+      ],
+      varianten: "Leichter: ohne Gewicht. Schwerer: Fuß auf einer kleinen Erhöhung oder längere Haltezeiten.",
+      sicherheit: "Bei Schmerzen vorn im Sprunggelenk oder nach Verletzungen vorsichtig. Knie polstern."
+    }
+  },
+  {
+    id: "sprunggelenk_rocks_kniestand",
+    name: "Sprunggelenk-Wippen im Kniestand",
+    auch: ["Half-Kneeling Ankle Rocks", "Kneeling Ankle Dorsiflexion Rocks"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["matte"], []],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: { knie: 1 },
+    stufe: 1,
+    golf: 1,
+    einseitig: true,
+    schwerer: "sprunggelenk_rocks_gewicht",
+    info: {
+      kurz: "Einfache Sprunggelenkmobilisation ohne Wand und Gerät: Im halben Kniestand wippst du das vordere Knie über die Zehen nach vorn. Ideal zum Aufwärmen, überall machbar.",
+      ausfuehrung: [
+        "Knie dich in den halben Kniestand mit dem rechten Fuß vorn.",
+        "Stell den rechten Fuß so nah an das hintere Knie, dass das Schienbein etwa senkrecht steht.",
+        "Leg die Hände auf das rechte Knie.",
+        "Verlagere das Gewicht nach vorn und schiebe das Knie über die Zehen, die Ferse bleibt am Boden.",
+        "Halte kurz am Endpunkt und geh zurück.",
+        "Wiederhole rhythmisch und wechsle dann die Seite."
+      ],
+      atmung: "Beim Vorschieben ausatmen, beim Zurückgehen einatmen.",
+      fehler: [
+        "Ferse hebt ab: nur so weit vor, wie die Ferse unten bleibt.",
+        "Knie fällt nach innen: über die zweite Zehe zielen.",
+        "Zu schnell: rhythmisch, aber ruhig."
+      ],
+      vorteile: [
+        "Mobilisiert die Sprunggelenkbeugung ohne Gerät.",
+        "Gut im Aufwärmen vor Beintraining und Laufen.",
+        "Leicht steigerbar mit Gewicht oder Band."
+      ],
+      tipps: [
+        "Das Knie auch leicht nach außen und innen führen.",
+        "10 bis 15 Wiederholungen je Seite."
+      ],
+      varianten: "Leichter: kleinerer Weg. Schwerer: mit Gewicht auf dem Knie oder Band um das Sprunggelenk.",
+      sicherheit: "Hinteres Knie polstern. Bei Einklemmgefühl vorn im Sprunggelenk nicht verstärken."
+    }
+  },
+  {
+    id: "schienbein_dehnen_kniend",
+    name: "Schienbein dehnen im Fersensitz",
+    auch: ["Kneeling Tibialis Stretch", "Shin Stretch Kneeling", "Seiza Shin Stretch"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["schienbein"],
+    sekundaer: ["quadrizeps"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { knie: 1, sprunggelenk: 1 },
+    stufe: 1,
+    sport: ["laufen"],
+    info: {
+      kurz: "Dehnung von Schienbeinmuskel und Fußrücken: Du sitzt auf den Fersen, die Fußrücken liegen flach, und hebst die Knie leicht vom Boden ab. Ausgleich zu viel Laufen und Wadentraining.",
+      ausfuehrung: [
+        "Knie dich auf eine weiche Matte, die Fußrücken liegen flach, die Zehen zeigen nach hinten.",
+        "Setz dich langsam mit dem Gesäß auf die Fersen.",
+        "Stütz die Hände hinter dir auf den Boden.",
+        "Lehn dich leicht zurück und heb die Knie ein paar Zentimeter vom Boden ab, bis du die Dehnung vorn am Schienbein und Fußrücken spürst.",
+        "Halte die Position ruhig.",
+        "Senke die Knie ab und komm langsam aus dem Fersensitz."
+      ],
+      atmung: "Ruhig weiteratmen, beim Ausatmen die Knie etwas höher heben.",
+      fehler: [
+        "Fersen kippen nach außen: Fersen bleiben unter dem Gesäß.",
+        "Zu stark in die Knie: Kissen zwischen Gesäß und Fersen legen.",
+        "Zu schnell hineingehen: langsam steigern."
+      ],
+      vorteile: [
+        "Dehnt den Schienbeinmuskel und den Fußrücken.",
+        "Verbessert die Streckung im Sprunggelenk.",
+        "Ausgleich für Läufer und Springer."
+      ],
+      tipps: [
+        "Wenn das Knieheben zu intensiv ist, bleib einfach im Fersensitz.",
+        "Ein gefaltetes Handtuch unter den Fußgelenken macht es angenehmer."
+      ],
+      varianten: "Leichter: Kissen unter dem Gesäß, Knie bleiben unten. Schwerer: Knie höher anheben.",
+      sicherheit: "Bei Knieschmerzen in starker Beugung die stehende Variante wählen."
+    }
+  },
+  {
+    id: "schienbein_dehnen_stehend",
+    name: "Schienbein dehnen im Stehen",
+    auch: ["Standing Tibialis Stretch", "Standing Shin Stretch", "Toe Tuck Stretch"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["schienbein"],
+    geraete: [["wand"], []],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    sport: ["laufen"],
+    einseitig: true,
+    info: {
+      kurz: "Schienbeindehnung im Stehen: Die Zehenoberseite eines Fußes wird hinter dir auf den Boden gesetzt, das Knie schiebt nach vorn. Unkompliziert und ohne Knien.",
+      ausfuehrung: [
+        "Stell dich aufrecht hin, bei Bedarf mit einer Hand an der Wand.",
+        "Stell den rechten Fuß etwas hinter den linken und setz die Oberseite der Zehen auf den Boden, die Fußsohle zeigt nach hinten oben.",
+        "Beuge leicht das linke Standbein.",
+        "Schiebe das rechte Knie sanft nach vorn, bis du die Dehnung vorn am Schienbein und Fußrücken spürst.",
+        "Halte die Position ruhig und gleichmäßig für die vorgegebene Zeit.",
+        "Löse den Fuß und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und beim Ausatmen das Knie etwas weiter nach vorn schieben.",
+      fehler: [
+        "Zu viel Gewicht auf dem gedehnten Fuß: Das Gewicht bleibt auf dem Standbein.",
+        "Fuß knickt seitlich: Zehen gerade nach hinten.",
+        "Ruckartig drücken: sanft und langsam."
+      ],
+      vorteile: [
+        "Dehnt Schienbeinmuskel und Fußrücken ohne Knien.",
+        "Überall in Schuhen oder barfuß möglich.",
+        "Gut nach dem Laufen."
+      ],
+      tipps: [
+        "Barfuß oder in weichen Schuhen klappt es am besten.",
+        "Kombiniere sie mit Wadendehnungen."
+      ],
+      varianten: "Leichter: weniger Druck. Schwerer: Fersensitz-Variante.",
+      sicherheit: "Bei Verletzungen des Fußrückens nicht ausführen."
+    }
+  },
+  {
+    id: "schienbein_rolle",
+    name: "Schienbeinmuskel ausrollen mit der Faszienrolle",
+    auch: ["Tibialis Anterior Foam Rolling", "Shin Foam Roll", "Foam Roll Shins"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["schienbein"],
+    geraete: [["faszienrolle"]],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { handgelenk: 1, knie: 1 },
+    stufe: 1,
+    einseitig: true,
+    hinweis: "Seitlich neben der Schienbeinkante rollen, nicht auf dem Knochen.",
+    info: {
+      kurz: "Selbstmassage des vorderen Schienbeinmuskels im Vierfüßlerstand. Kann das Spannungsgefühl vorn am Unterschenkel nach dem Laufen verringern.",
+      ausfuehrung: [
+        "Geh in den Vierfüßlerstand und leg die Rolle quer unter die Schienbeine knapp unter den Knien.",
+        "Dreh das rechte Bein leicht nach innen, damit der Muskel außen neben der Schienbeinkante auf der Rolle liegt.",
+        "Stütz dich mit den Händen ab und roll langsam von unterhalb des Knies Richtung Sprunggelenk.",
+        "Bleib an empfindlichen Stellen kurz liegen.",
+        "Roll nur auf dem Muskel, nicht direkt auf der Schienbeinkante.",
+        "Wechsle nach ein bis zwei Minuten das Bein."
+      ],
+      atmung: "Ruhig weiteratmen und an empfindlichen Stellen lang ausatmen.",
+      fehler: [
+        "Auf dem Knochen rollen: leicht seitlich nach außen versetzt bleiben.",
+        "Zu viel Gewicht: mit den Händen abstützen.",
+        "Zu schnell: langsam."
+      ],
+      vorteile: [
+        "Kann das Spannungsgefühl im Schienbeinmuskel verringern.",
+        "Ergänzt Wadenrollen und Dehnungen.",
+        "Kann für Läufer angenehm sein."
+      ],
+      tipps: [
+        "Kombiniere mit der Schienbeindehnung im Fersensitz.",
+        "Eine weiche Rolle reicht hier meist."
+      ],
+      varianten: "Leichter: mehr Gewicht auf die Hände. Schwerer: ein Bein entlasten und nur ein Bein rollen.",
+      sicherheit: "Bei Schmerzen direkt am Knochen, etwa bei Verdacht auf Schienbeinkantensyndrom oder Ermüdungsbruch, nicht rollen und ärztlich abklären lassen."
+    }
+  },
+  // ---------- Fuß und Zehen ----------
+  {
+    id: "fusssohle_rollen",
+    name: "Fußsohle ausrollen",
+    auch: ["Plantar Fascia Roll", "Foot Rolling", "Golf Ball Foot Roll", "Tennis Ball Foot Roll"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["faszienrolle"], []],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    golf: 1,
+    einseitig: true,
+    hinweis: "Ohne Rolle geht ein Tennis- oder Golfball.",
+    info: {
+      kurz: "Selbstmassage der Fußsohle mit einer kleinen Faszienrolle, einem Tennisball oder Golfball. Kann ein Spannungsgefühl in der Fußsohle verringern und die Füße vor dem Training oder Golfen beleben.",
+      ausfuehrung: [
+        "Stell dich hin oder setz dich auf einen Stuhl und leg die Rolle oder den Ball unter den rechten Fuß.",
+        "Halte dich im Stehen an einer Wand oder Stuhllehne fest.",
+        "Roll langsam von der Ferse bis zu den Zehenballen und zurück.",
+        "Verlagere so viel Gewicht auf den Fuß, dass der Druck deutlich, aber angenehm ist.",
+        "Bleib an empfindlichen Stellen kurz stehen und roll auch die Innen- und Außenkante.",
+        "Nach ein bis zwei Minuten den Fuß wechseln."
+      ],
+      atmung: "Ruhig weiteratmen und an empfindlichen Stellen lang ausatmen.",
+      fehler: [
+        "Zu viel Druck sofort: erst im Sitzen beginnen.",
+        "Auf dem Fersenknochen hart rollen: sanfter Druck an der Ferse.",
+        "Zu schnell: langsame Bewegungen."
+      ],
+      vorteile: [
+        "Kann das Spannungsgefühl in der Fußsohle verringern.",
+        "Kann die Füße vor dem Training oder Golfen beleben.",
+        "Einfach und überall machbar, selbst unter dem Schreibtisch."
+      ],
+      tipps: [
+        "Ein Golfball im Bag eignet sich perfekt für die Runde.",
+        "Danach Wadendehnung oder Zehendehnung anschließen."
+      ],
+      varianten: "Leichter: im Sitzen mit weichem Ball. Schwerer: im Stehen mit hartem Ball.",
+      sicherheit: "Bei starken Fersenschmerzen ärztlich abklären lassen. Bei Diabetes mit Empfindungsstörungen in den Füßen vorsichtig."
+    }
+  },
+  {
+    id: "fusssohle_dehnen_hand",
+    name: "Fußsohle dehnen mit der Hand",
+    auch: ["Plantar Fascia Stretch", "Seated Toe Extension Stretch", "Hand Plantar Fascia Stretch"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [[]],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Dehnung der Fußsohle im Sitzen: Ein Fuß liegt auf dem anderen Knie, die Hand zieht die Zehen nach oben. Bekannte Übung, die besonders morgens vor den ersten Schritten als angenehm empfunden wird.",
+      ausfuehrung: [
+        "Setz dich auf einen Stuhl und leg den rechten Fuß auf das linke Knie.",
+        "Greif mit der rechten Hand die Zehen.",
+        "Zieh die Zehen langsam nach oben Richtung Schienbein, bis du die Dehnung in der Fußsohle spürst.",
+        "Taste mit der linken Hand die gespannte Sehnenplatte in der Fußsohle, sie soll deutlich gespannt sein.",
+        "Halte die Position etwa 10 bis 30 Sekunden.",
+        "Lass los und wiederhole, dann wechsle die Seite."
+      ],
+      atmung: "Ruhig und gleichmäßig weiteratmen.",
+      fehler: [
+        "Nur an der Großzehe ziehen: alle Zehen greifen.",
+        "Zu starkes Ziehen: sanfte, deutliche Dehnung reicht.",
+        "Fuß kippt zur Seite: Fuß gerade halten."
+      ],
+      vorteile: [
+        "Dehnt die Fußsohle gezielt.",
+        "Morgens vor den ersten Schritten gut machbar.",
+        "Benötigt nichts außer einem Stuhl."
+      ],
+      tipps: [
+        "Drei Wiederholungen pro Fuß morgens und abends.",
+        "Gut kombinierbar mit Fußsohle ausrollen."
+      ],
+      varianten: "Leichter: weniger Zug. Schwerer: zusätzlich die Fußspitze zum Schienbein ziehen.",
+      sicherheit: "Bei anhaltenden Fersenschmerzen ärztlich abklären lassen."
+    }
+  },
+  {
+    id: "zehen_dehnen_kniend",
+    name: "Zehen aufgestellt im Fersensitz",
+    auch: ["Toe Squat", "Kneeling Toe Stretch", "Toe Sit", "Toes Tucked Kneeling"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["matte"], []],
+    belastung: "zeit",
+    hoehe_cm: 130,
+    gelenke: { knie: 1 },
+    stufe: 2,
+    info: {
+      kurz: "Du sitzt auf den Fersen mit aufgestellten Zehen. Dehnt Zehen und Fußsohle intensiv und mobilisiert die Zehengrundgelenke, die beim Abdruck im Gehen, Laufen und Golfschwung stark beansprucht werden.",
+      ausfuehrung: [
+        "Knie dich auf eine Matte und stell die Zehen auf, die Fersen zeigen nach oben.",
+        "Achte darauf, dass auch die kleinen Zehen aufgestellt sind und nicht umknicken.",
+        "Setz dich langsam mit dem Gesäß auf die Fersen.",
+        "Halte den Oberkörper aufrecht, die Hände auf den Oberschenkeln.",
+        "Bleib in der Position, solange die Dehnung gut erträglich ist, anfangs 15 bis 30 Sekunden.",
+        "Lehn dich zum Lösen nach vorn auf die Hände und leg die Fußrücken ab."
+      ],
+      atmung: "Ruhig weiteratmen. Wenn es intensiv wird, lang ausatmen.",
+      fehler: [
+        "Kleine Zehen knicken um: mit der Hand aufstellen.",
+        "Sofort lange sitzen: kurz beginnen und langsam steigern.",
+        "Fersen kippen nach außen: Fersen zusammen."
+      ],
+      vorteile: [
+        "Mobilisiert die Zehengrundgelenke.",
+        "Dehnt die Fußsohle intensiv.",
+        "Gute Ergänzung zur Schienbeindehnung im Fersensitz."
+      ],
+      tipps: [
+        "Wechsle zwischen Zehen aufgestellt und Fußrücken flach, das ist ein bekanntes Fuß-Duo.",
+        "Gewicht mit den Händen am Boden reduzieren, wenn es zu intensiv ist."
+      ],
+      varianten: "Leichter: Hände vorn abstützen und Gewicht reduzieren. Schwerer: länger halten.",
+      sicherheit: "Bei Knieschmerzen, Gicht oder Großzehengrundgelenksarthrose vorsichtig oder auslassen."
+    }
+  },
+  {
+    id: "grosszehe_dehnen_wand",
+    name: "Großzehe dehnen an der Wand",
+    auch: ["Big Toe Extension Stretch", "Wall Big Toe Stretch", "Hallux Extension Stretch"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["waden"],
+    geraete: [["wand"]],
+    belastung: "zeit",
+    hoehe_cm: 200,
+    gelenke: {},
+    stufe: 1,
+    golf: 1,
+    einseitig: true,
+    info: {
+      kurz: "Gezielte Dehnung der Großzehe: Die Großzehe liegt gestreckt an der Wand, der Fußballen am Boden, das Knie schiebt nach vorn. Die Großzehe braucht Beweglichkeit für den Abdruck beim Gehen und für den Druck auf den Ballen des hinteren Fußes im Golfschwung.",
+      ausfuehrung: [
+        "Stell dich frontal vor eine Wand.",
+        "Setz die rechte Großzehe so an die Wand, dass sie nach oben gestreckt ist und der Fußballen am Boden bleibt.",
+        "Die anderen Zehen dürfen entspannt am Boden liegen.",
+        "Schiebe das rechte Knie langsam nach vorn zur Wand, bis du die Dehnung unter der Großzehe und in der Fußsohle spürst.",
+        "Halte die Position ruhig und gleichmäßig für die vorgegebene Zeit.",
+        "Löse die Dehnung und wechsle die Seite."
+      ],
+      atmung: "Ruhig weiteratmen und beim Ausatmen das Knie etwas weiter zur Wand schieben.",
+      fehler: [
+        "Fußballen hebt ab: Ballen bleibt am Boden.",
+        "Fuß dreht nach außen: gerade zur Wand ausrichten.",
+        "Zu starke Dehnung: sanft beginnen."
+      ],
+      vorteile: [
+        "Verbessert die Streckung der Großzehe.",
+        "Wichtig für den Abdruck beim Gehen und Laufen.",
+        "Dehnt die Fußsohle zugleich."
+      ],
+      tipps: [
+        "Kombiniere mit Fußsohle ausrollen.",
+        "Barfuß ausführen."
+      ],
+      varianten: "Leichter: kleinere Streckung. Schwerer: Knie weiter vor und länger halten.",
+      sicherheit: "Bei Gicht, Arthrose oder Schmerzen im Großzehengrundgelenk vorsichtig oder auslassen."
+    }
+  },
+  {
+    id: "fussalphabet",
+    name: "Fußalphabet",
+    auch: ["Ankle Alphabet", "Foot Alphabet", "ABC Ankle Exercise"],
+    muster: "mobilitaet_sprunggelenk",
+    art: "mobilitaet",
+    muskeln: ["schienbein", "waden"],
+    geraete: [[]],
+    belastung: "wiederholungen",
+    hoehe_cm: 130,
+    gelenke: {},
+    stufe: 1,
+    einseitig: true,
+    info: {
+      kurz: "Du schreibst mit der großen Zehe die Buchstaben des Alphabets in die Luft. Bewegt das Sprunggelenk spielerisch in alle Richtungen und ist eine bekannte Übung aus der Reha.",
+      ausfuehrung: [
+        "Setz dich auf einen Stuhl oder leg dich auf den Rücken.",
+        "Heb das rechte Bein an oder leg den Unterschenkel auf einer Erhöhung ab, der Fuß hängt frei.",
+        "Schreib mit der großen Zehe die Großbuchstaben von A bis Z in die Luft.",
+        "Die Bewegung kommt aus dem Sprunggelenk, der Unterschenkel bleibt ruhig.",
+        "Mach die Buchstaben so groß wie möglich.",
+        "Danach das Bein wechseln."
+      ],
+      atmung: "Ruhig und gleichmäßig weiteratmen.",
+      fehler: [
+        "Das ganze Bein bewegt sich: Unterschenkel ruhig halten.",
+        "Zu kleine Buchstaben: den ganzen Bewegungsumfang nutzen.",
+        "Hektisch durchschreiben: lieber langsam."
+      ],
+      vorteile: [
+        "Bewegt das Sprunggelenk in alle Richtungen.",
+        "Sehr schonend und für jedes Alter geeignet.",
+        "Gut im Büro, auf Reisen und morgens."
+      ],
+      tipps: [
+        "Ein Alphabet zählt als eine Wiederholung pro Fuß.",
+        "Mit Schreibschrift wird es abwechslungsreicher."
+      ],
+      varianten: "Leichter: nur einige Buchstaben. Schwerer: im Stehen auf einem Bein."
     }
   },
 ]
