@@ -56,6 +56,29 @@ Das System ist an die Arbeitsweise evidenzbasierter Coaches wie Jeff Nippard ang
 - Alle Gewichte werden auf das abgerundet, was am Ort wirklich vorhanden ist (Kurzhanteln, Stange plus Scheibenpaare, Kettlebells, Maschinen in Schritten).
 - **Plateau:** drei Einheiten ohne neuen Bestwert, dann ein Hinweis (Schlaf, Essen, Technik prüfen, sonst nach dem Block tauschen).
 
+### Jahresplan (Phasen je Block)
+
+Jeder 5-Wochen-Block bekommt eine Phase. Die Phasen bauen aufeinander auf (Blockperiodisierung nach Issurin 2010):
+
+| Phase | Hauptübungen | Reserve je Woche | Sonst |
+|---|---|---|---|
+| Grundlage | 8 bis 12 Wdh | 3, 2, 2, 1 | Zusatzübungen näher ans Versagen |
+| Kraft | 4 bis 6 Wdh (Einsteiger 6 bis 8) | 3, 3, 2, 2 | 3 min Pause |
+| Schnellkraft | 3 bis 5 Wdh (Einsteiger 5 bis 6) | 3, 3, 3, 2 | Schnellkraft +1 Satz, Zusatz −1 Satz |
+| Erhalt | 4 bis 6 Wdh | immer 3 | Haupt- und Ergänzungsübungen −1 Satz (Rønnestad et al. 2011) |
+| Übergang | 10 bis 15 Wdh | immer 4 | höchstens 2 Sätze, kurze Pausen |
+
+Mit Saison (Golf als Vorschlag April bis Oktober): Blöcke in der Saison sind Erhalt, der Block direkt davor Schnellkraft,
+die zwei davor Kraft, alles Frühere Grundlage, der Block nach der Saison Übergang (nie als allererster Block). Ohne
+Saison wiederholt sich eine Reihe je Ziel. Jede Phase lässt sich einzeln ändern. „Neuer Block ab dieser Woche“ startet
+die laufende Phase neu und schiebt den Rest nach hinten.
+
+### Warum diese Übung?
+
+Jeder Platz speichert die Gründe der Auswahl: Platz in der Vorlage, Ersatzmuster, Schwachstelle aus den Tests,
+Golf- oder Sportbezug, steigerbares Gerät am Ort, Schwierigkeit passend zur Erfahrung, Schonung bei Beschwerden,
+Aufstieg zur schwereren Variante, bisheriger Verlauf, gleiche Übung im ganzen Block und die Phase.
+
 ## 3. Sportprofile
 
 - **Golf:** Grundkraft (Kniebeuge, Hüftstreckung, einbeinig), Rotations- und Anti-Rotationskraft, Medizinballwürfe und Sprünge für die Schlägerkopfgeschwindigkeit, Schultergesundheit und Griff, Beweglichkeit von Hüfte und Brustwirbelsäule.
@@ -106,6 +129,8 @@ Nach jedem abgehakten Satz läuft die Pause. In der Android-App übernimmt ein V
 - Robinson ZP et al. (2024): Exploring the Dose–Response Relationship Between Estimated Resistance Training Proximity to Failure, Strength Gain, and Muscle Hypertrophy: A Series of Meta-Regressions. *Sports Medicine* 54, 2209–2231. Kernaussage: Muskelaufbau profitiert von Sätzen nah am Versagen, Kraft eher von der Last.
 - Schoenfeld BJ, Ogborn D, Krieger JW (2017): Dose-response relationship between weekly resistance training volume and increases in muscle mass. *Journal of Sports Sciences* 35(11), 1073–1082.
 - Bell L et al. (2023): Integrating Deloading into Strength and Physique Sports Training Programmes: An International Delphi Consensus Approach. *Sports Medicine – Open* 9, 87.
+- Issurin VB (2010): New horizons for the methodology and physiology of training periodization. *Sports Medicine* 40(3), 189–206.
+- Rønnestad BR, Nymark BS, Raastad T (2011): Effects of in-season strength maintenance training frequency in professional soccer players. *Journal of Strength and Conditioning Research* 25(10), 2653–2660.
 - Epley B (1985): Poundage Chart. Boyd Epley Workout, Lincoln (Nebraska). Formel für das geschätzte Maximum.
 - van der Horst N et al. (2015): The preventive effect of the Nordic hamstring exercise on hamstring injuries in amateur soccer players: a randomized controlled trial. *American Journal of Sports Medicine* 43(6), 1316–1323.
 - Harøy J et al. (2019): The Adductor Strengthening Programme prevents groin problems among male football players: a cluster-randomised controlled trial. *British Journal of Sports Medicine* 53(3), 150–157.

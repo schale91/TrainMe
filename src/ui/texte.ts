@@ -1,6 +1,7 @@
 // Anzeigenamen für die Auswahllisten.
 
-import type { Erfahrung, Gelenk, Geraet, Muskel, Muster, Rolle, Saison, Schwerpunkt, Termin, Trainingsart, Ziel } from "../logik/typen"
+import { PHASEN } from "../logik/jahresplan"
+import type { Erfahrung, Gelenk, Geraet, Grund, Muskel, Muster, Rolle, Saison, Schwerpunkt, Termin, Trainingsart, Ziel } from "../logik/typen"
 
 export const ZIELE: { id: Ziel; name: string; text: string; symbol: string }[] = [
   { id: "muskelaufbau", name: "Muskelaufbau", text: "Mehr Muskeln, mittlere Wiederholungen, nah an die Grenze.", symbol: "muskel" },
@@ -231,3 +232,37 @@ export function datumText(d: string): string {
 }
 
 export const zahl = (x: number) => String(Math.round(x * 100) / 100).replace(".", ",")
+
+/** Ein Grund aus der Planung als Satz. */
+export function grundText(g: Grund): string {
+  switch (g.art) {
+    case "platz":
+      return "„" + g.einheit + "“ sieht hier eine " + ROLLE[g.rolle] + " für " + MUSTER_NAME[g.muster] + " vor."
+    case "ersatz":
+      return "Für " + MUSTER_NAME[g.statt] + " passt an diesem Ort nichts, deshalb ein verwandtes Muster."
+    case "schwachstelle":
+      return "Dein Beweglichkeitstest zeigte hier Nachholbedarf (" + MUSTER_NAME[g.muster] + ")."
+    case "golf":
+      return g.stufe >= 3 ? "Starker Golfbezug: trainiert direkt Bewegungen aus dem Schwung." : g.stufe === 2 ? "Guter Golfbezug: unterstützt Rotation, Stabilität oder Schnellkraft im Schwung." : "Leichter Golfbezug."
+    case "sport":
+      return "Passt besonders zu deinem Sport."
+    case "geraet":
+      return "Mit " + (GERAET_NAME[g.geraet] || g.geraet) + " an diesem Ort genau steigerbar."
+    case "stufe":
+      return g.erfahrung === "einsteiger" ? "Technisch einfach, passend für den Einstieg." : "Anspruchsvolle Variante, passend zu deiner Erfahrung."
+    case "schonung":
+      return "Belastet " + g.gelenke.map((x) => GELENK_NAME[x] || x).join(" und ") + " nicht, wegen deiner Beschwerden."
+    case "aufstieg":
+      return "Die leichtere Variante hast du ausgereizt: Das hier ist der nächste Schritt."
+    case "verlauf":
+      return "Schon " + g.einheiten + " Mal trainiert, so bleibt dein Fortschritt vergleichbar."
+    case "block":
+      return "Bleibt den ganzen Block gleich, damit Fortschritt messbar ist. Im nächsten Block kann eine andere Übung kommen."
+    case "abwechslung":
+      return "Diese Woche noch nicht dran gewesen, für Abwechslung."
+    case "phase":
+      return "Phase " + PHASEN[g.phase].name + ": " + PHASEN[g.phase].training
+    case "getauscht":
+      return "Von dir getauscht."
+  }
+}

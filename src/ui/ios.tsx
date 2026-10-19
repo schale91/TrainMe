@@ -40,7 +40,8 @@ export function Icon(props: { name: keyof typeof PFADE | string; groesse?: numbe
 
 // ---------- Seite ----------
 
-export function Seite(props: { titel: string; untertitel?: string; rechts?: ReactNode; zurueck?: { text: string; onClick: () => void }; children: ReactNode }) {
+/** leiste: bleibt mit der Navigationsleiste beim Scrollen oben stehen, z. B. ein Fortschrittsbalken. */
+export function Seite(props: { titel: string; untertitel?: string; rechts?: ReactNode; zurueck?: { text: string; onClick: () => void }; leiste?: ReactNode; children: ReactNode }) {
   return (
     <div className="seite">
       {props.zurueck ? (
@@ -50,6 +51,7 @@ export function Seite(props: { titel: string; untertitel?: string; rechts?: Reac
             <span>{props.zurueck.text}</span>
           </button>
           {props.rechts}
+          {props.leiste ? <div className="navunten">{props.leiste}</div> : null}
         </div>
       ) : null}
       <header className="grosstitel">

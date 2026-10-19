@@ -39,7 +39,7 @@ export function SportWahl({ profil, aendern }: Teil) {
       <Feld titel="Sport" text={sport.text}>
         <Chips einzeln werte={SPORTARTEN.map((s) => ({ id: s.id, name: s.name }))} gewaehlt={[profil.sport]} onChange={([s]) => aendern({ ...profil, sport: s, ziel: s !== "allgemein" && profil.ziel === "fitness" ? "sport" : profil.ziel })} />
       </Feld>
-      {profil.sport !== "allgemein" ? (
+      {profil.sport !== "allgemein" && !profil.jahresplan ? (
         <Feld titel="Phase">
           <Karten werte={SAISON} gewaehlt={profil.saison} onChange={(saison) => aendern({ ...profil, saison })} />
         </Feld>

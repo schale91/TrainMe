@@ -16,7 +16,10 @@ import Fortschritt from "./ui/Fortschritt"
 import Heute from "./ui/Heute"
 import { Icon } from "./ui/ios"
 import { Sym, SymKachel } from "./ui/symbole"
-import ProfilSeite from "./ui/Profil"
+import ProfilSeite, { type Unterseite } from "./ui/Profil"
+import { jahresplanVorschlag } from "./logik/jahresplan"
+import type { UpdateInfo } from "./logik/update"
+import { updateAusblenden, updateAusgeblendet, updateBekannt, updateSuchen } from "./ui/update"
 import Training from "./ui/Training"
 import Einstufung from "./ui/Einstufung"
 import Fehlergrenze from "./ui/Fehlergrenze"
@@ -42,6 +45,16 @@ export default function App() {
   const [belohnung, setBelohnung] = useState<Belohnung | null>(null)
   const [kisteAuf, setKisteAuf] = useState(false)
   const [einstufen, setEinstufen] = useState(false)
+  const [profilStart, setProfilStart] = useState<Unterseite>(null)
+  const [update, setUpdate] = useState<UpdateInfo | null>(() => updateBekannt())
+  const [updateZu, setUpdateZu] = useState(false)
+
+  // Beim Start still nach einer neueren APK suchen (ohne Netz passiert nichts)
+  useEffect(() => {
+    updateSuchen()
+      .then(setUpdate)
+      .catch(() => undefined)
+  }, [])
 
   // Effekte geben bewusst nichts zurück: Manche Android-WebViews liefern bei scrollTo einen Wert, den React sonst als
   // Aufräumfunktion aufrufen würde
@@ -106,7 +119,7 @@ export default function App() {
     setDaten(neu)
   }
 
-  if (!daten.profil) return <Einrichtung fertig={(p) => aendern((d) => void (d.profil = p))} />
+  if (!daten.profil) return <Einrichtung fertig={(p) => aendern((d) => void (d.profil = { ...p, jahresplan: p.jahresplan || jahresplanVorschlag(p, p.block_start) }))} />
   const profil = daten.profil
 
   const fertig = (e: Einheit, protokolle: Protokoll[], vollstaendig: boolean) => {
@@ -133,6 +146,11 @@ export default function App() {
     setBelohnung({ ...r, stufeVorher: vorher, stufeNachher: stufe(aktuell.current.spiel.xp).stufe, kiste, einheiten })
   }
 
+  const zeigeProfil = (u: Unterseite) => {
+    setProfilStart(u)
+    setTab("profil")
+  }
+
   const pm = belohnung ? prozentMethode(belohnung.einheiten) : null
   // Vor dem ersten Training erst Kraftwerte und Mobilität erfassen
   const eingestuft = !!daten.einstufung?.kraft && !!daten.einstufung?.mobil
@@ -156,12 +174,30 @@ export default function App() {
           setOffen(null)
           setTab("heute")
         }}>
+        {update && !updateZu && !offen && !einstufen && tab === "heute" && !updateAusgeblendet(update.version) ? (
+          <div className="updatebanner">
+            <Sym name="import" groesse={26} farbe="var(--akzent)" />
+            <span>
+              <b>Update {update.version} verfügbar</b>
+              <small>Deine Daten bleiben erhalten.</small>
+            </span>
+            <button type="button" className="knopf klein" onClick={() => zeigeProfil("update")}>
+              Ansehen
+            </button>
+            <button type="button" className="rundknopf" aria-label="Ausblenden" onClick={() => {
+              updateAusblenden(update.version)
+              setUpdateZu(true)
+            }}>
+              <Icon name="schliessen" groesse={16} />
+            </button>
+          </div>
+        ) : null}
         {einstufen ? (
           <Einstufung daten={daten} aendern={aendern} fertig={() => setEinstufen(false)} zurueck={() => setEinstufen(false)} />
         ) : offen ? (
           <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id) => aendern((d) => void (d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen, id]))} />
         ) : tab === "heute" ? (
-          <Heute daten={daten} oeffnen={oeffnen} zumAbenteuer={() => setTab("abenteuer")} einstufen={() => setEinstufen(true)} />
+          <Heute daten={daten} oeffnen={oeffnen} zumAbenteuer={() => setTab("abenteuer")} einstufen={() => setEinstufen(true)} zumJahresplan={() => zeigeProfil("jahresplan")} />
         ) : tab === "uebungen" ? (
           <Bibliothek profil={profil} />
         ) : tab === "abenteuer" ? (
@@ -170,6 +206,10 @@ export default function App() {
           <Fortschritt daten={daten} aendern={aendern} />
         ) : (
           <ProfilSeite
+            key={profilStart || "profil"}
+            start={profilStart}
+            update={update}
+            updateGefunden={setUpdate}
             daten={daten}
             profilAendern={(p: Profil) => aendern((d) => void (d.profil = p))}
             ersetzen={setDaten}
@@ -186,7 +226,10 @@ export default function App() {
       {!offen && !einstufen ? (
         <nav className="tableiste">
           {TABS.map((t) => (
-            <button key={t.id} type="button" className={tab === t.id ? "an" : ""} onClick={() => setTab(t.id)}>
+            <button key={t.id} type="button" className={tab === t.id ? "an" : ""} onClick={() => {
+              setProfilStart(null)
+              setTab(t.id)
+            }}>
               <Icon name={t.icon} groesse={25} />
               <small>{t.name}</small>
               {t.id === "abenteuer" && daten.spiel.kisten.length ? <i className="badge">{daten.spiel.kisten.length}</i> : null}

@@ -1,5 +1,6 @@
 // Daten bleiben auf dem Gerät (localStorage der App). Export und Import als JSON-Datei für Sicherung und Gerätewechsel.
 
+import { PHASEN, SAISON_VORSCHLAG, neuPlanen } from "./jahresplan"
 import { LEER } from "./gewichte"
 import { GERAETE_IDS, type Daten, type Geraet, type Ort, type Profil, type Spielstand, type Wochentag } from "./typen"
 
@@ -55,7 +56,12 @@ function vervollstaendigen(p: Profil): Profil {
         }))
       : basis.orte
   const woche = Array.isArray(p.woche) && p.woche.length === 7 ? p.woche : basis.woche
-  return { ...basis, ...p, orte, woche, beschwerden: p.beschwerden || [], ausgeschlossen: p.ausgeschlossen || [], arten: p.arten && p.arten.length ? p.arten : ["kraft"] }
+  const neu: Profil = { ...basis, ...p, orte, woche, beschwerden: p.beschwerden || [], ausgeschlossen: p.ausgeschlossen || [], arten: p.arten && p.arten.length ? p.arten : ["kraft"] }
+  // Ältere Stände ohne Jahresplan bekommen den Vorschlag ab dem laufenden Block
+  const j = p.jahresplan
+  const gueltig = j && typeof j.start === "string" && Array.isArray(j.bloecke) && j.bloecke.length > 0 && j.bloecke.every((b) => b in PHASEN)
+  neu.jahresplan = gueltig ? { start: j.start, bloecke: j.bloecke.slice(), saison: j.saison && j.saison.von >= 1 && j.saison.bis <= 12 ? { von: j.saison.von, bis: j.saison.bis } : null } : neuPlanen(neu, new Date().toISOString().slice(0, 10), SAISON_VORSCHLAG[neu.sport] ?? null)
+  return neu
 }
 
 export function exportieren(d: Daten): string {

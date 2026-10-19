@@ -4,7 +4,7 @@ Trainingsplaner für Kraft, Mobilität und Ausdauer, komplett auf dem Handy. Kei
 
 **Download:** [TrainMe.apk (neueste Version)](https://github.com/schale91/TrainMe/releases/latest/download/TrainMe.apk)
 
-Auf dem Android-Handy öffnen und installieren. Beim ersten Mal fragt Android, ob der Browser oder die Dateien-App „unbekannte Apps installieren“ darf. Updates einfach über die alte Version installieren, die Daten bleiben erhalten.
+Auf dem Android-Handy öffnen und installieren. Beim ersten Mal fragt Android, ob der Browser oder die Dateien-App „unbekannte Apps installieren“ darf. Updates einfach über die alte Version installieren, die Daten bleiben erhalten. Ab Version 0.4 meldet die App selbst, wenn ein Update bereitliegt (Profil, App-Update).
 
 ## Was TrainMe kann
 

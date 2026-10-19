@@ -5,7 +5,8 @@
 // Wochenvolumen nach Schoenfeld et al. 2017, Nähe zum Versagen eher für Muskelaufbau als für Kraft.
 
 import { abrunden, hoeher, niedriger } from "./gewichte"
-import type { Profil, Progressionsmodell, Protokoll, Rolle, Satz, Uebung, Vorgabe } from "./typen"
+import type { PlanProfil } from "./jahresplan"
+import type { Phase, Profil, Progressionsmodell, Protokoll, Rolle, Satz, Uebung, Vorgabe } from "./typen"
 
 export const BLOCK_WOCHEN = 5 // 4 Aufbauwochen und eine Entlastungswoche
 
@@ -32,26 +33,46 @@ export function bestesE1rm(p: Protokoll): number {
   return Math.max(0, ...p.saetze.map(e1rm))
 }
 
+/** Reserve je Woche im Block, wenn ein Jahresplan die Phase vorgibt. */
+const PHASEN_RIR: Record<Phase, number[]> = {
+  grundlage: [3, 2, 2, 1],
+  kraft: [3, 3, 2, 2],
+  schnellkraft: [3, 3, 3, 2],
+  erhalt: [3, 3, 3, 3],
+  uebergang: [4, 4, 4, 4],
+}
+
 /** Ziel-RIR je Woche im Block. */
-export function zielRir(profil: Profil, rolle: Rolle, woche: number): number {
+export function zielRir(profil: PlanProfil, rolle: Rolle, woche: number): number {
   if (istEntlastung(woche)) return 4
   if (rolle === "schnellkraft") return 4
   let reihe = [3, 2, 2, 2]
   if (profil.ziel === "muskelaufbau") reihe = [3, 2, 1, 1]
   else if (profil.ziel === "kraft" || profil.ziel === "sport") reihe = [3, 3, 2, 2]
   if (profil.saison === "wettkampf") reihe = [3, 3, 3, 3]
+  if (profil.phase) reihe = PHASEN_RIR[profil.phase]
   let r = reihe[Math.min(3, woche)]
   // Isolationsübungen dürfen beim Muskelaufbau näher ans Versagen
-  if (rolle === "isolation" && profil.ziel === "muskelaufbau") r -= 1
+  if (rolle === "isolation" && (profil.ziel === "muskelaufbau" || profil.phase === "grundlage") && profil.phase !== "uebergang") r -= 1
   if (profil.erfahrung === "einsteiger") r = Math.max(2, r + 1)
   return Math.max(0, r)
 }
 
 /** Wiederholungsbereich je Ziel und Rolle. */
-export function bereich(profil: Profil, rolle: Rolle, u: Uebung): [number, number] {
+export function bereich(profil: PlanProfil, rolle: Rolle, u: Uebung): [number, number] {
   if (u.belastung === "zeit") return [20, 60]
   if (rolle === "schnellkraft") return u.muster === "schnellkraft_wurf" ? [5, 6] : [4, 5]
   if (u.belastung === "wiederholungen") return u.stufe >= 2 ? [5, 10] : [8, 15]
+  const ph = profil.phase
+  if (ph && (rolle === "haupt" || rolle === "neben")) {
+    const einsteiger = profil.erfahrung === "einsteiger"
+    if (ph === "uebergang") return [10, 15]
+    if (ph === "grundlage") return [8, 12]
+    if (rolle === "neben") return [6, 10]
+    if (ph === "schnellkraft") return einsteiger ? [5, 6] : [3, 5]
+    return einsteiger ? [6, 8] : [4, 6]
+  }
+  if (ph === "uebergang") return [12, 15]
   const z = profil.ziel
   if (rolle === "haupt") {
     if (z === "kraft") return [4, 6]
@@ -65,7 +86,10 @@ export function bereich(profil: Profil, rolle: Rolle, u: Uebung): [number, numbe
 }
 
 /** Pause zwischen den Sätzen in Sekunden. */
-export function pause(profil: Profil, rolle: Rolle): number {
+export function pause(profil: PlanProfil, rolle: Rolle): number {
+  if (profil.phase === "uebergang" && rolle !== "mobil") return rolle === "haupt" || rolle === "neben" ? 90 : 60
+  if (rolle === "haupt" && profil.phase === "grundlage") return 120
+  if (rolle === "haupt" && profil.phase) return 180
   if (rolle === "haupt") return profil.ziel === "kraft" || profil.ziel === "sport" ? 180 : 150
   if (rolle === "neben") return 120
   if (rolle === "schnellkraft") return 90
@@ -89,7 +113,7 @@ const kg = (x: number) => String(Math.round(x * 100) / 100).replace(".", ",")
  * Vorgabe für die nächste Einheit. verlauf: bisherige Protokolle dieser Übung, älteste zuerst. lasten: verfügbare
  * Gewichte (leer: Körpergewicht, Zeit oder Strecke).
  */
-export function vorgabe(profil: Profil, rolle: Rolle, u: Uebung, saetze: number, verlauf: Protokoll[], lasten: number[], woche: number, max?: number): Vorgabe {
+export function vorgabe(profil: PlanProfil, rolle: Rolle, u: Uebung, saetze: number, verlauf: Protokoll[], lasten: number[], woche: number, max?: number): Vorgabe {
   const modell = modellFuer(profil, rolle, u, verlauf.length)
   const [lo, hi] = bereich(profil, rolle, u)
   const rir = zielRir(profil, rolle, woche)

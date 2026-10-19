@@ -35,7 +35,12 @@ jobs:
           npx tsc -b
 
       - name: Web-App bauen
-        run: npm run build
+        env:
+          TRAINME_BUILD: ${{ github.run_number }}
+          TRAINME_KANAL: ${{ github.event_name == 'pull_request' && 'vorschau' || 'stabil' }}
+        run: |
+          export TRAINME_VERSION="$(node -p "require('./package.json').version").$TRAINME_BUILD"
+          npm run build
 
       - uses: actions/setup-java@v5
         with:
@@ -97,5 +102,6 @@ jobs:
         run: |
           gh release create "v$VERSION" TrainMe.apk \
             --title "TrainMe $VERSION" \
+            --generate-notes \
             --notes "APK herunterladen, öffnen und installieren (einmalig „Unbekannte Apps installieren“ erlauben). Updates einfach drüber installieren, die Daten bleiben erhalten." \
             --latest

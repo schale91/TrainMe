@@ -210,6 +210,18 @@ export type Ziel = "muskelaufbau" | "kraft" | "fitness" | "abnehmen" | "sport"
 export type Erfahrung = "einsteiger" | "fortgeschritten" | "erfahren"
 export type Saison = "vorbereitung" | "wettkampf" | "pause"
 
+/** Trainingsphase eines Blocks im Jahresplan. Die Phasen bauen aufeinander auf: Grundlage, Kraft, Schnellkraft, Erhalt, Übergang. */
+export type Phase = "grundlage" | "kraft" | "schnellkraft" | "erhalt" | "uebergang"
+
+export interface Jahresplan {
+  /** Montag, an dem der erste Block des Plans beginnt */
+  start: string
+  /** Phase je Block (ein Block = 5 Wochen) */
+  bloecke: Phase[]
+  /** Wettkampf- oder Spielsaison als Monate 1 bis 12, null ohne feste Saison */
+  saison: { von: number; bis: number } | null
+}
+
 /** Was an einem Wochentag ansteht. */
 export type Tagesart = "frei" | "training" | "sporttermin"
 export type Schwerpunkt = "automatisch" | "kraft" | "mobilitaet" | "ausdauer"
@@ -273,6 +285,8 @@ export interface Profil {
   koerpergewicht_kg?: number
   /** Startdatum des aktuellen Blocks (JJJJ-MM-TT) */
   block_start: string
+  /** Grober Plan für das Jahr, Phase je Block */
+  jahresplan?: Jahresplan
 }
 
 /** Ein Platz in einer Einheit, bevor eine Übung gewählt ist. */
@@ -298,7 +312,26 @@ export interface Platz {
   muster: Muster
   uebung: Uebung
   vorgabe: Vorgabe
+  /** Warum genau diese Übung auf diesem Platz steht */
+  warum?: Grund[]
 }
+
+/** Ein Grund für die Auswahl einer Übung, als Text aufbereitet in der Oberfläche. */
+export type Grund =
+  | { art: "platz"; einheit: string; rolle: Rolle; muster: Muster }
+  | { art: "ersatz"; statt: Muster }
+  | { art: "schwachstelle"; muster: Muster }
+  | { art: "golf"; stufe: number }
+  | { art: "sport"; sport: string }
+  | { art: "geraet"; geraet: string }
+  | { art: "stufe"; stufe: number; erfahrung: Erfahrung }
+  | { art: "schonung"; gelenke: string[] }
+  | { art: "verlauf"; einheiten: number }
+  | { art: "block" }
+  | { art: "abwechslung" }
+  | { art: "aufstieg" }
+  | { art: "phase"; phase: Phase }
+  | { art: "getauscht" }
 
 export interface Einheit {
   datum: string

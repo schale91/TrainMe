@@ -8,6 +8,8 @@ import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { KistenBild } from "./Abenteuer"
 import { tagesform } from "./gesundheit"
+import { PHASEN, phaseAm } from "../logik/jahresplan"
+import { PhasenStreifen } from "./Jahresplan"
 import { Pixel } from "./pixel"
 import { Sym } from "./symbole"
 import { Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
@@ -19,7 +21,7 @@ export function istErledigt(daten: Daten, e: Einheit): boolean {
 
 const ART_SYMBOL: Record<string, string> = { kraft: "hantel", mobilitaet: "dehnen", ausdauer: "puls", regeneration: "blatt" }
 
-export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; zumAbenteuer: () => void; einstufen: () => void }) {
+export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; zumAbenteuer: () => void; einstufen: () => void; zumJahresplan: () => void }) {
   const { daten } = props
   const profil = daten.profil!
   const tag = heute()
@@ -36,6 +38,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Hallo" : "Guten Abend"
   const termin = profil.woche[(new Date().getDay() + 6) % 7]
   const fokus = heutige && !istErledigt(daten, heutige) ? heutige : naechste
+  const phase = phaseAm(profil, montag)
   const gesundheit = daten.gesundheit?.verbunden ? daten.gesundheit.tage[tag] : undefined
   const form = tagesform(
     gesundheit,
@@ -45,7 +48,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   )
 
   return (
-    <Seite titel={gruss + (profil.name ? ", " + profil.name : "")} untertitel={istEntlastung(w) ? "Entlastungswoche: locker bleiben" : "Block-Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1)}>
+    <Seite titel={gruss + (profil.name ? ", " + profil.name : "")} untertitel={(phase ? PHASEN[phase].name + " · " : "") + (istEntlastung(w) ? "Entlastungswoche: locker bleiben" : "Block-Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1))}>
       <div className="statusreihe">
         <div className="statuskachel">
           <small>Stufe {s.stufe}</small>
@@ -155,6 +158,16 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           </div>
         )
       ) : null}
+
+      <button type="button" className="phasenzeile" onClick={props.zumJahresplan}>
+        <span className="phasenkopf">
+          <b>{phase ? "Phase " + PHASEN[phase].name : "Jahresplan festlegen"}</b>
+          <small>
+            {phase ? PHASEN[phase].ziel : "Phasen für das Jahr, aufeinander aufbauend"} <Icon name="weiter" groesse={12} />
+          </small>
+        </span>
+        {profil.jahresplan ? <PhasenStreifen plan={profil.jahresplan} datum={tag} /> : null}
+      </button>
 
       <div className="wochenkopf">
         <button type="button" className="rundknopf" aria-label="Vorige Woche" onClick={() => setMontag(plusTage(montag, -7))}>

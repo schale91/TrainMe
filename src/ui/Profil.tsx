@@ -14,12 +14,17 @@ import Feedback from "./Feedback"
 import { SymKachel } from "./symbole"
 import { gesundheitEinstellungen, gesundheitLesen, gesundheitVerbinden, gesundheitVerfuegbar } from "./gesundheit"
 import { ERFAHRUNG, GELENKE, ZIELE } from "./texte"
+import JahresplanSeite from "./Jahresplan"
+import { PHASEN, blockNeuStarten, phaseAm } from "../logik/jahresplan"
+import type { UpdateInfo } from "../logik/update"
+import { RELEASES_SEITE } from "../logik/update"
+import { updateSuchen } from "./update"
 
-type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback"
+export type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback" | "jahresplan" | "update"
 
-export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT) => void; ersetzen: (d: Daten) => void; zuruecksetzen: () => void; aendern: (f: (d: Daten) => void) => void; einstufen: () => void }) {
+export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT) => void; ersetzen: (d: Daten) => void; zuruecksetzen: () => void; aendern: (f: (d: Daten) => void) => void; einstufen: () => void; start?: Unterseite; update: UpdateInfo | null; updateGefunden: (u: UpdateInfo | null) => void }) {
   const profil = props.daten.profil!
-  const [seite, setSeite] = useState<Unterseite>(null)
+  const [seite, setSeite] = useState<Unterseite>(props.start || null)
   const teil = { profil, aendern: props.profilAendern }
   const zurueck = { text: "Profil", onClick: () => setSeite(null) }
 
@@ -63,11 +68,14 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
   if (seite === "sicherung") return <Sicherung daten={props.daten} ersetzen={props.ersetzen} zuruecksetzen={props.zuruecksetzen} zurueck={zurueck} />
   if (seite === "ueber") return <Ueber zurueck={zurueck} />
   if (seite === "feedback") return <Feedback zurueck={zurueck} />
+  if (seite === "jahresplan") return <JahresplanSeite profil={profil} heute={heute()} aendern={props.profilAendern} zurueck={zurueck} />
+  if (seite === "update") return <UpdateSeite update={props.update} gefunden={props.updateGefunden} zurueck={zurueck} />
   if (seite === "gesundheit") return <GesundheitSeite daten={props.daten} aendern={props.aendern} zurueck={zurueck} />
 
   const ziel = ZIELE.find((z) => z.id === profil.ziel)
   const sport = SPORTARTEN.find((s) => s.id === profil.sport)
   const tage = profil.woche.filter((t) => t.art === "training").length
+  const phase = phaseAm(profil, heute())
   const beschwerden = profil.beschwerden.map((b) => GELENKE.find((g) => g.id === b.gelenk)?.name).join(", ")
 
   return (
@@ -82,11 +90,13 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
         <Zeile symbol={<SymKachel name="pflaster" farbe="#c9536a" />} titel="Beschwerden" wert={beschwerden || "keine"} onClick={() => setSeite("koerper")} />
         <Zeile symbol={<SymKachel name="verbot" farbe="#6b6593" />} titel="Ausnahmen" wert={profil.ausgeschlossen.length ? profil.ausgeschlossen.length + " Übungen" : "keine"} onClick={() => setSeite("ausnahmen")} />
       </Gruppe>
-      <Gruppe titel="Plan" fuss="Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Der Plan beginnt dann wieder mit mehr Reserve.">
+      <Gruppe titel="Plan" fuss="Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Die laufende Phase beginnt dann von vorn, der Jahresplan rückt nach hinten.">
+        <Zeile symbol={<SymKachel name="kalender" farbe="#2aa58a" />} titel="Jahresplan" wert={phase ? PHASEN[phase].name : "festlegen"} onClick={() => setSeite("jahresplan")} />
         <Zeile symbol={<SymKachel name="ziel" farbe="#c98a1e" />} titel="Kraftwerte und Mobilität neu einstufen" untertitel={props.daten.einstufung?.kraft ? "zuletzt " + props.daten.einstufung.kraft.split("-").reverse().join(".") : "noch nicht erledigt"} onClick={props.einstufen} />
-        <Zeile symbol={<SymKachel name="wiederholen" farbe="#2b9cc2" />} titel="Neuen Block ab dieser Woche" onClick={() => props.profilAendern({ ...profil, block_start: montagVon(heute()) })} pfeil={false} />
+        <Zeile symbol={<SymKachel name="wiederholen" farbe="#2b9cc2" />} titel="Neuen Block ab dieser Woche" onClick={() => props.profilAendern(blockNeuStarten(profil, montagVon(heute())))} pfeil={false} />
       </Gruppe>
       <Gruppe titel="App">
+        <Zeile symbol={<SymKachel name="import" farbe="#8b7bff" />} titel="App-Update" wert={props.update ? props.update.version + " verfügbar" : "Version " + __VERSION__} onClick={() => setSeite("update")} />
         <Zeile symbol={<SymKachel name="stoppuhr" farbe="#6a58f5" />} titel="Pausentimer" wert="Hintergrund, über Apps" onClick={() => setSeite("timer")} />
         <Zeile symbol={<SymKachel name="herz" farbe="#e0455f" />} titel="Gesundheitsdaten" wert={props.daten.gesundheit?.verbunden ? "verbunden" : "aus"} onClick={() => setSeite("gesundheit")} />
         <Zeile symbol={<SymKachel name="sprechblase" farbe="#2aa58a" />} titel="Feedback, Fehler, Ideen" onClick={() => setSeite("feedback")} />
@@ -178,6 +188,7 @@ function Ueber(props: { zurueck: { text: string; onClick: () => void } }) {
         <Zeile titel="Golf-Übungen" wert={String(UEBUNGEN.filter((u) => u.golf).length)} />
       </Gruppe>
       <Gruppe titel="Wie TrainMe plant">
+        <Zeile titel="Jahresplan" untertitel="Jeder Block hat eine Phase: Grundlage, Kraft, Schnellkraft vor der Saison, Erhalt in der Saison, danach Übergang." />
         <Zeile titel="Blöcke mit Entlastung" untertitel="4 Aufbauwochen, dann eine leichtere Woche. Die Reserve (RIR) sinkt im Block, wie in evidenzbasierten Programmen, etwa von Jeff Nippard." />
         <Zeile titel="Steigerung" untertitel="Doppelte Progression, RIR-Steuerung über das geschätzte Maximum (Epley-Formel), Gewichte immer auf deine echten Stufen gerundet." />
         <Zeile titel="Sport" untertitel="Golf: Rotation, Schnellkraft, Hüfte und Brustwirbelsäule. Fußball: keine schweren Beine vor dem Spiel, Vorbeugung für Beinbeuger und Adduktoren." />
@@ -188,6 +199,8 @@ function Ueber(props: { zurueck: { text: string; onClick: () => void } }) {
         <Zeile titel="Robinson et al. 2024" untertitel="Nähe zum Versagen, Kraft und Muskelaufbau, Sports Medicine" />
         <Zeile titel="Schoenfeld et al. 2017" untertitel="Trainingsvolumen und Muskelaufbau, Journal of Sports Sciences" />
         <Zeile titel="Bell et al. 2023" untertitel="Entlastungswochen, Sports Medicine Open" />
+        <Zeile titel="Issurin 2010" untertitel="Blockperiodisierung, Sports Medicine" />
+        <Zeile titel="Rønnestad et al. 2011" untertitel="Krafterhalt in der Saison, Journal of Strength and Conditioning Research" />
         <Zeile titel="Ehlert 2020" untertitel="Krafttraining und Golfleistung, Journal of Sports Sciences" />
         <Zeile titel="van der Horst et al. 2015, Harøy et al. 2019" untertitel="Verletzungsvorbeugung im Fußball" />
         <Zeile titel="Titleist Performance Institute" untertitel="Golf-Screening, mytpi.com" />
@@ -254,6 +267,53 @@ function GesundheitSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void)
           ))}
         </Gruppe>
       ) : null}
+    </Seite>
+  )
+}
+
+function UpdateSeite(props: { update: UpdateInfo | null; gefunden: (u: UpdateInfo | null) => void; zurueck: { text: string; onClick: () => void } }) {
+  const [laeuft, setLaeuft] = useState(false)
+  const [meldung, setMeldung] = useState("")
+  const u = props.update
+  const suchen = () => {
+    setLaeuft(true)
+    setMeldung("")
+    updateSuchen(true)
+      .then((neu) => {
+        props.gefunden(neu)
+        if (!neu) setMeldung(__BUILD__ ? "Du hast die neueste Version." : "Diese Version wurde nicht über GitHub gebaut und sucht keine Updates.")
+      })
+      .catch(() => setMeldung("Keine Verbindung zu GitHub. Später noch einmal versuchen."))
+      .finally(() => setLaeuft(false))
+  }
+  return (
+    <Seite titel="App-Update" zurueck={props.zurueck}>
+      <Gruppe>
+        <Zeile titel="Installiert" wert={__VERSION__ + (__KANAL__ === "vorschau" ? " (Vorschau)" : "")} />
+        <Zeile titel="Neueste" wert={u ? u.version + (u.vorschau ? " (Vorschau)" : "") : "keine neuere"} />
+        <Zeile titel={laeuft ? "Suche …" : "Nach Updates suchen"} onClick={laeuft ? undefined : suchen} pfeil={false} />
+      </Gruppe>
+      {meldung ? <p className="hinweistext">{meldung}</p> : null}
+      {u ? (
+        <>
+          <a className="knopf voll gross" href={u.apk} target="_blank" rel="noreferrer">
+            Version {u.version} herunterladen
+          </a>
+          <Gruppe titel="So geht es" fuss="Deine Daten bleiben erhalten: Das Update wird einfach über die alte Version installiert.">
+            <Zeile titel="1. Herunterladen" untertitel="Der Link öffnet den Browser (am besten Chrome), dort lädt die APK." />
+            <Zeile titel="2. Öffnen" untertitel="Benachrichtigung „Download abgeschlossen“ antippen oder im Ordner Downloads öffnen." />
+            <Zeile titel="3. Installieren" untertitel="Beim ersten Mal fragt Android, ob der Browser Apps installieren darf: erlauben." />
+          </Gruppe>
+          {u.notizen ? (
+            <Gruppe titel={"Neu in " + u.version}>
+              <p className="updatenotizen">{u.notizen}</p>
+            </Gruppe>
+          ) : null}
+        </>
+      ) : null}
+      <p className="hinweistext klein">
+        Alle Versionen: <a href={RELEASES_SEITE} target="_blank" rel="noreferrer">GitHub Releases</a>. TrainMe sucht beim Start höchstens alle 6 Stunden nach Updates, nur mit Internet.
+      </p>
     </Seite>
   )
 }

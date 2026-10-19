@@ -35,7 +35,8 @@ body {
   font-size: 16px;
   line-height: 1.38;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* clip statt hidden: hidden auf html und body macht body zum Scrollbereich, dann bleibt nichts mehr oben kleben */
+  overflow-x: clip;
 }
 
 /* Lange deutsche Wörter umbrechen statt überlaufen. Bewusst ohne „hyphens: auto“: Das lädt auf manchen Android-Geräten
@@ -111,6 +112,14 @@ select:focus {
   margin: 0 -16px;
   padding: calc(env(safe-area-inset-top) + 6px) 8px 6px;
   background: rgba(18, 16, 39, 0.97);
+  flex-wrap: wrap;
+}
+.navunten {
+  flex-basis: 100%;
+  padding: 4px 8px 4px;
+}
+.navunten .pbalken.dick {
+  margin: 0;
 }
 .navzurueck {
   display: flex;
@@ -2099,4 +2108,157 @@ a.knopf.aus {
 }
 .einstufkarte.heute {
   border: 1px solid var(--akzent);
+}
+
+/* ---------- Warum diese Übung ---------- */
+
+.warumknopf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 6px 0;
+  min-height: 36px;
+}
+.warumliste {
+  margin: 0 0 12px;
+  padding: 10px 12px 10px 30px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--leise);
+  font-size: 14px;
+}
+.warumliste li + li {
+  margin-top: 4px;
+}
+
+/* ---------- Jahresplan ---------- */
+
+.phasenstreifen {
+  margin: 4px 0 14px;
+}
+.phasenbalken {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+}
+.phasenbalken span {
+  position: relative;
+  flex: 1;
+  border-radius: 4px;
+  opacity: 0.9;
+}
+.phasenbalken span.vorbei {
+  opacity: 0.35;
+}
+.phasenbalken span.jetzt {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+.phasenbalken .hier {
+  position: absolute;
+  top: -7px;
+  width: 0;
+  height: 0;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: var(--text);
+}
+.phasenmonate {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--leise);
+}
+.phasenmonate span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+.phasenkarte {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid;
+  background: var(--flaeche);
+}
+.phasenkarte .marke {
+  color: #fff;
+}
+.phasenkarte p {
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+.phasenkarte .leise {
+  color: var(--leise);
+}
+.phasenpunkt {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.jetztmarke {
+  color: var(--akzent);
+  font-size: 13px;
+}
+.phasenzeile {
+  display: block;
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--flaeche);
+  color: var(--text);
+  text-align: left;
+}
+.phasenzeile .phasenkopf {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+.phasenzeile .phasenkopf small {
+  color: var(--leise);
+  font-size: 13px;
+}
+.phasenzeile .phasenstreifen {
+  margin: 0;
+}
+
+/* ---------- Update ---------- */
+
+.updatebanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.28), rgba(124, 92, 255, 0.12));
+  border: 1px solid rgba(124, 92, 255, 0.5);
+}
+.updatebanner > span {
+  flex: 1;
+  min-width: 0;
+}
+.updatebanner small {
+  display: block;
+  color: var(--leise);
+}
+.updatenotizen {
+  white-space: pre-wrap;
+  font-size: 14px;
+  color: var(--leise);
+  margin: 0;
+  padding: 12px 16px;
+}
+/* Auswahlfeld rechts in einer Listenzeile: nur so breit wie nötig, der Text links behält seinen Platz */
+.zeile > select {
+  width: auto;
+  flex: 0 0 auto;
+  max-width: 55%;
 }

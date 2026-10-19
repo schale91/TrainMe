@@ -7,7 +7,7 @@ import { satzAnpassung, type Anpassung } from "../logik/progression"
 import type { Daten, Einheit, Platz, Protokoll, Satz, Uebung } from "../logik/typen"
 import { Blatt, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
-import { ROLLE, datumText, zahl } from "./texte"
+import { ROLLE, datumText, grundText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
 
@@ -66,6 +66,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [tausch, setTausch] = useState<number | null>(null)
   const [info, setInfo] = useState<Uebung | null>(null)
   const [rirHilfe, setRirHilfe] = useState(false)
+  const [warumOffen, setWarumOffen] = useState<number | null>(null)
   const [anpassungen, setAnpassungen] = useState<Record<number, (Anpassung & { satz: number }) | undefined>>({})
   const gepiept = useRef(false)
 
@@ -162,10 +163,12 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   }
 
   return (
-    <Seite titel={einheit.titel} untertitel={datumText(einheit.datum) + " · " + ort.name + " · etwa " + einheit.minuten + " min"} zurueck={{ text: "Zurück", onClick: props.zurueck }} rechts={<span className="satzzaehler">{erledigt}/{gesamt}</span>}>
-      <div className="pbalken dick">
-        <div style={{ width: (gesamt ? (erledigt / gesamt) * 100 : 0) + "%" }} />
-      </div>
+    <Seite titel={einheit.titel} untertitel={datumText(einheit.datum) + " · " + ort.name + " · etwa " + einheit.minuten + " min"} zurueck={{ text: "Zurück", onClick: props.zurueck }} rechts={<span className="satzzaehler">{erledigt}/{gesamt}</span>}
+      leiste={
+        <div className="pbalken dick" role="progressbar" aria-valuenow={erledigt} aria-valuemax={gesamt}>
+          <div style={{ width: (gesamt ? (erledigt / gesamt) * 100 : 0) + "%" }} />
+        </div>
+      }>
       {einheit.hinweise.map((h, i) => (
         <p key={i} className="hinweistext">
           {h}
@@ -213,6 +216,20 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               {v.pause_s > 0 && p.rolle !== "ausdauer" ? <span className="vorgabe leise">Pause {v.pause_s >= 120 ? zahl(v.pause_s / 60) + " min" : v.pause_s + " s"}</span> : null}
             </div>
             <p className="begruendung">{v.begruendung}</p>
+            {p.warum?.length ? (
+              <>
+                <button type="button" className="textknopf warumknopf" aria-expanded={warumOffen === i} onClick={() => setWarumOffen(warumOffen === i ? null : i)}>
+                  <Sym name="info" groesse={16} /> {warumOffen === i ? "Weniger" : "Warum diese Übung?"}
+                </button>
+                {warumOffen === i ? (
+                  <ul className="warumliste">
+                    {p.warum.map((g, k) => (
+                      <li key={k}>{grundText(g)}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </>
+            ) : null}
             {u.hinweis ? (
               <p className="tipp">
                 <Sym name="gluehbirne" groesse={18} farbe="var(--gold)" />

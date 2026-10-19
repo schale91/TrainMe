@@ -1,3 +1,4 @@
+import { jahresplanVorschlag } from "../src/logik/jahresplan"
 import { abschliessen, serie, stufe, stufenXp } from "../src/logik/spiel"
 import { wochenplan } from "../src/logik/plan"
 import { beispielGolf, exportieren, importieren, leer } from "../src/logik/speicher"
@@ -46,9 +47,13 @@ describe("Abschließen", () => {
 
 describe("Export und Import", () => {
   it("bleibt verlustfrei und weist Fremddateien ab", () => {
-    const d = { ...leer(), profil: beispielGolf("2026-10-05") }
+    const d = { ...leer(), profil: { ...beispielGolf("2026-10-05"), jahresplan: jahresplanVorschlag(beispielGolf("2026-10-05"), "2026-10-05") } }
     d.spiel.xp = 123
     expect(importieren(exportieren(d))).toEqual(d)
+    // ältere Sicherungen ohne Jahresplan bekommen einen Vorschlag
+    const alt = importieren(exportieren({ ...leer(), profil: beispielGolf("2026-10-05") }))
+    expect(alt.profil?.jahresplan?.bloecke.length).toBe(10)
+    expect(alt.profil?.jahresplan?.saison).toEqual({ von: 4, bis: 10 })
     expect(() => importieren("{\"a\":1}")).toThrow()
   })
 })
