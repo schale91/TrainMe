@@ -14,17 +14,17 @@ export function neuesSpiel(): Spielstand {
   return { xp: 0, abzeichen: {} }
 }
 
-export function laden(speicher: Pick<Storage, "getItem"> | null = typeof localStorage !== "undefined" ? localStorage : null): Daten {
+export function laden(speicher: Pick<Storage, "getItem"> | null = typeof localStorage !== "undefined" ? localStorage : null, schluessel = SCHLUESSEL): Daten {
   try {
-    const roh = speicher ? speicher.getItem(SCHLUESSEL) : null
+    const roh = speicher ? speicher.getItem(schluessel) : null
     return roh ? pruefen(JSON.parse(roh)) : leer()
   } catch {
     return leer()
   }
 }
 
-export function speichern(d: Daten, speicher: Pick<Storage, "setItem"> | null = typeof localStorage !== "undefined" ? localStorage : null): void {
-  if (speicher) speicher.setItem(SCHLUESSEL, JSON.stringify(d))
+export function speichern(d: Daten, speicher: Pick<Storage, "setItem"> | null = typeof localStorage !== "undefined" ? localStorage : null, schluessel = SCHLUESSEL): void {
+  if (speicher) speicher.setItem(schluessel, JSON.stringify(d))
 }
 
 /** Prüft und vervollständigt importierte Daten. Wirft bei unbrauchbaren Dateien. */
@@ -40,8 +40,15 @@ export function pruefen(x: unknown): Daten {
   d.spiel = { xp: Number(o.spiel?.xp) || 0, abzeichen: o.spiel && typeof o.spiel.abzeichen === "object" ? { ...o.spiel.abzeichen } : {} }
   if (o.maxwerte && typeof o.maxwerte === "object") d.maxwerte = { ...o.maxwerte }
   if (o.einstufung && typeof o.einstufung === "object") d.einstufung = { ...o.einstufung }
-  if (o.gesundheit && typeof o.gesundheit === "object") d.gesundheit = { verbunden: !!o.gesundheit.verbunden, tage: { ...(o.gesundheit.tage || {}) } }
+  if (o.gesundheit && typeof o.gesundheit === "object") {
+    d.gesundheit = { verbunden: !!o.gesundheit.verbunden, tage: { ...(o.gesundheit.tage || {}) } }
+    if (o.gesundheit.garmin && typeof o.gesundheit.garmin === "object") d.gesundheit.garmin = { stand: String(o.gesundheit.garmin.stand || ""), tage: { ...(o.gesundheit.garmin.tage || {}) } }
+  }
   d.messungen = Array.isArray(o.messungen) ? o.messungen.filter((m) => m && typeof m.test === "string" && typeof m.wert === "number") : []
+  if (o.eigenerPlan && typeof o.eigenerPlan === "object" && Array.isArray(o.eigenerPlan.tage)) d.eigenerPlan = { ...o.eigenerPlan, tage: o.eigenerPlan.tage.filter((t) => t && typeof t.nr === "number" && Array.isArray(t.uebungen)) }
+  if (o.bandfarben && typeof o.bandfarben === "object") d.bandfarben = { ...o.bandfarben }
+  if (o.archiv && typeof o.archiv === "object") d.archiv = { ...o.archiv }
+  if (o.uebernahmen && typeof o.uebernahmen === "object") d.uebernahmen = { ...o.uebernahmen }
   return d
 }
 

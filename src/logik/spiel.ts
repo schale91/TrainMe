@@ -117,6 +117,7 @@ export function abschliessen(daten: Daten, einheit: Einheit, protokolle: Protoko
   const xp = xpFuer(einheit, saetze, neu.length, entlastung)
   daten.protokoll.push(...protokolle)
   const eintrag: Erledigt = { datum: einheit.datum, titel: einheit.titel, minuten: einheit.minuten, saetze, xp, rekorde: neu, art: einheit.art, entlastung }
+  if (einheit.plan_nr !== undefined) eintrag.plan_nr = einheit.plan_nr
   daten.erledigt.push(eintrag)
   daten.spiel.xp += xp
 

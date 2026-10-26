@@ -2316,3 +2316,47 @@ select.ampel.rot {
 .einordnung.schwach {
   background: rgba(255, 107, 129, 0.18);
 }
+
+/* Eigener Plan: Gewicht frei eintragen, wenn am Ort keine Lasten hinterlegt sind */
+.mini.breit {
+  flex: 1.7;
+}
+.mini.breit input {
+  width: 100%;
+}
+
+/* Bandfarbe je Übung */
+.bandwahl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.bandwahl small {
+  color: var(--leise, #888);
+  margin-right: 2px;
+}
+.bandfarbe {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.bandfarbe.an {
+  border-color: var(--text, #fff);
+  box-shadow: 0 0 0 2px var(--akzent);
+}
+
+/* Übungsfigur (3D) im Training und im Info-Fenster */
+.figur {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  margin: 4px auto 8px;
+  border-radius: 12px;
+  background: var(--flaeche2, rgba(127, 127, 127, 0.08));
+}

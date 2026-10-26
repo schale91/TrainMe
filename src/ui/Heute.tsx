@@ -7,6 +7,9 @@ import { heute, montagVon, plusTage, wochenplan } from "../logik/plan"
 import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { tagesform } from "./gesundheit"
+import { alleTage, tageswerte } from "../logik/gesundheit"
+import { letzterPlanTag, naechsterPlanTag, planZuEnde, ueberspringen } from "../logik/eigenerPlan"
+import { jahresplanVorschlag } from "../logik/jahresplan"
 import { offeneReaktion, rehaAktiv, rehaSperre } from "../logik/reha"
 import { wissenFuer } from "../daten/reha"
 import { Warnzeichen } from "./RehaTeile"
@@ -19,12 +22,13 @@ import { Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { ROLLE, TERMINE, WT, datumText } from "./texte"
 
 export function istErledigt(daten: Daten, e: Einheit): boolean {
+  if (e.plan_nr !== undefined) return daten.erledigt.some((x) => x.plan_nr === e.plan_nr)
   return daten.erledigt.some((x) => (x.geplant || x.datum) === e.datum && x.titel === e.titel)
 }
 
 const ART_SYMBOL: Record<string, string> = { kraft: "hantel", mobilitaet: "dehnen", ausdauer: "puls", regeneration: "blatt" }
 
-export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; einstufen: () => void; zumWeg: () => void; aendern?: (f: (d: Daten) => void) => void }) {
+export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; einstufen: () => void; zumWeg: () => void; aendern?: (f: (d: Daten) => void) => void; lebenswelt?: boolean }) {
   const { daten } = props
   const profil = daten.profil!
   const tag = heute()
@@ -35,7 +39,10 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const ser = serie(profil, daten.erledigt, tag)
   const aktuell = montag === montagVon(tag)
   const heutige = aktuell ? plan.find((e) => e.datum === tag) : undefined
-  const naechste = aktuell ? plan.find((e) => e.datum >= tag && !istErledigt(daten, e)) : undefined
+  // Fortlaufend: auch Verpasstes aus dieser Woche nachholen, sonst nur ab heute
+  const naechste = aktuell ? plan.find((e) => (profil.folge === "fortlaufend" || e.datum >= tag) && !istErledigt(daten, e)) : undefined
+  const eigen = profil.planart === "eigen" && !!daten.eigenerPlan
+  const planTag = eigen ? naechsterPlanTag(daten) : null
   const fakt = faktDesTages(tag, profil.sport === "golf" ? "golf" : undefined)
   const reha = rehaAktiv(profil)
   const sperre = reha ? rehaSperre(profil, tag) : null
@@ -48,22 +55,25 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const fokus = heutige && !istErledigt(daten, heutige) ? heutige : naechste
   const phase = phaseAm(profil, montag)
   const weg = aktuellerBlock(wegStand(daten, tag))
-  const gesundheit = daten.gesundheit?.verbunden ? daten.gesundheit.tage[tag] : undefined
+  const gesundheit = tageswerte(daten, tag)
   const form = tagesform(
     gesundheit,
-    Object.entries(daten.gesundheit?.tage || {})
+    Object.entries(alleTage(daten))
       .filter(([d]) => d < tag)
       .map(([, w]) => w),
   )
+  const planUntertitel = eigen ? daten.eigenerPlan!.name + (planTag ? " · Tag " + planTag.nr + (planTag.abschnitt ? ", " + planTag.abschnitt : "") + (planTag.woche ? ", Woche " + planTag.woche : "") : " · geschafft") : null
 
   return (
-    <Seite titel={gruss + (profil.name ? ", " + profil.name : "")} untertitel={(phase ? phaseInfo(phase, profil.sport).name + " · " : "") + (istEntlastung(w) ? "Entlastungswoche: locker bleiben" : "Block-Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1))}>
+    <Seite titel={gruss + (profil.name ? ", " + profil.name : "")} untertitel={planUntertitel ?? (phase ? phaseInfo(phase, profil.sport).name + " · " : "") + (istEntlastung(w) ? "Entlastungswoche: locker bleiben" : "Block-Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1))}>
       <div className="statusreihe">
-        <div className="statuskachel">
-          <small>Stufe {s.stufe}</small>
-          <b>{stufenName(s.stufe)}</b>
-          <Fortschrittsbalken wert={s.imLevel} max={s.noetig} farbe="var(--gold)" hoehe={6} />
-        </div>
+        {props.lebenswelt ? null : (
+          <div className="statuskachel">
+            <small>Stufe {s.stufe}</small>
+            <b>{stufenName(s.stufe)}</b>
+            <Fortschrittsbalken wert={s.imLevel} max={s.noetig} farbe="var(--gold)" hoehe={6} />
+          </div>
+        )}
         <div className="statuskachel">
           <small>Wochen-Serie</small>
           <b className="mitsym">
@@ -172,8 +182,33 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           <span className="losknopf">{daten.einstufung?.kraft ? "Mobilität messen" : "Einstufung starten"}</span>
         </button>
         )
+      ) : eigen && planZuEnde(daten) && aktuell ? (
+        <div className="heutekarte ruhig">
+          <span className="heutetitel">
+            <Sym name="pokal" groesse={26} /> Plan geschafft
+          </span>
+          <span className="heutevorschau">Alle {daten.eigenerPlan!.tage.length} Tage von „{daten.eigenerPlan!.name}“ sind erledigt. Wie geht es weiter?</span>
+          <span className="tauschknoepfe">
+            <button type="button" className="knopf klein" onClick={() => props.aendern?.((d) => {
+              const p = d.profil!
+              p.planart = "trainme"
+              p.block_start = montagVon(tag)
+              p.jahresplan = jahresplanVorschlag(p, p.block_start)
+            })}>
+              TrainMe plant ab jetzt
+            </button>
+            <button type="button" className="knopf klein leise" onClick={() => props.aendern?.((d) => {
+              // Von vorn: die Tage bekommen neue Nummern nach dem letzten erledigten Tag
+              const ab = letzterPlanTag(d)
+              d.eigenerPlan = { ...d.eigenerPlan!, tage: d.eigenerPlan!.tage.map((t) => ({ ...t, nr: t.nr + ab })) }
+            })}>
+              Plan von vorn
+            </button>
+          </span>
+        </div>
       ) : aktuell ? (
         fokus ? (
+          <>
           <button type="button" className="heutekarte" onClick={() => props.oeffnen(fokus)}>
             <span className="heutekopf">
               <span className="marke">{fokus.datum === tag ? "Heute" : WT[(new Date(fokus.datum + "T12:00:00Z").getUTCDay() + 6) % 7] + " · vorziehen"}</span>
@@ -193,6 +228,12 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
             </span>
             <span className="losknopf">Training starten</span>
           </button>
+          {fokus.plan_nr !== undefined && planTag && fokus.plan_nr === planTag.nr ? (
+            <button type="button" className="textknopf" onClick={() => props.aendern?.((d) => ueberspringen(d, planTag, tag))}>
+              Diesen Plantag auslassen
+            </button>
+          ) : null}
+          </>
         ) : (
           <div className="heutekarte ruhig">
             <span className="heutetitel">

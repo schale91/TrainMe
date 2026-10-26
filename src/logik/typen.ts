@@ -294,6 +294,58 @@ export interface Profil {
   block_start: string
   /** Grober Plan für das Jahr, Phase je Block */
   jahresplan?: Jahresplan
+  /** Woher die Einheiten kommen: TrainMe plant selbst (Standard) oder ein eigener Plan (daten.eigenerPlan) */
+  planart?: "trainme" | "eigen"
+  /**
+   * Wochentage: Einheiten stehen an festen Tagen, Verpasstes bleibt verpasst (Standard). Fortlaufend: immer die
+   * nächste offene Einheit, egal an welchem Tag.
+   */
+  folge?: "wochentage" | "fortlaufend"
+}
+
+/** Eine Übung in einem eigenen Plan (zum Beispiel vom Coach oder aus einem Heft). */
+export interface PlanUebung {
+  /** Name wie im Plan */
+  name: string
+  /** Zugeordnete TrainMe-Übung; ohne Zuordnung eine freie Übung mit Protokoll unter "frei:<name>" */
+  id?: string
+  saetze: number
+  wdh_von: number
+  wdh_bis: number
+  /** Vorgabe im Wortlaut, wenn sie nicht in eine Spanne passt (z. B. „10 (+3+3+3)“ oder „7 / 7 / 7“) */
+  wdh_text?: string
+  /** Sekunden statt Wiederholungen (z. B. „10 bis 20 Sek.“) */
+  zeit?: boolean
+  /** Anteil am Maximum (0 bis 1), als Spanne; bezieht sich auf basis oder die Übung selbst */
+  prozent?: [number, number]
+  /** Übung, deren Maximum die Prozentangabe meint (z. B. Kniebeuge für Pin Squat) */
+  basis?: string
+  /** Wiederholungen im Tank laut Plan (aus RPE: 10 − RPE) */
+  rir?: number
+  pause_s?: number
+  /** Supersatz: gleiche Gruppe = abwechselnd, Pause erst nach der letzten Übung der Gruppe */
+  gruppe?: string
+  hinweis?: string
+  aufwaermsaetze?: string
+}
+
+export interface PlanTag {
+  /** Fortlaufende Nummer im Plan, ab 1 */
+  nr: number
+  titel: string
+  /** Woche im Plan und Abschnitt (z. B. Phase 2), nur zur Anzeige */
+  woche?: number
+  abschnitt?: string
+  uebungen: PlanUebung[]
+}
+
+export interface EigenerPlan {
+  name: string
+  /** Woher der Plan kam, z. B. "kraftbuch" */
+  quelle?: string
+  tage: PlanTag[]
+  /** Ab diesem Datum gilt der Plan */
+  start: string
 }
 
 export type RehaBild = "huefte_arthrose" | "huefte_tep" | "huefte_seitlich" | "huefte_leiste" | "knie_arthrose" | "knie_tep" | "ruecken"
@@ -341,6 +393,10 @@ export interface Platz {
   warum?: Grund[]
   /** Eigene Beschriftung statt der Rolle (z. B. Reha-Kreis „Gleichgewicht“) */
   etikett?: string
+  /** Supersatz-Gruppe aus einem eigenen Plan (A, B, …) */
+  gruppe?: string
+  /** Vorgabe im Wortlaut aus dem eigenen Plan */
+  plantext?: string
 }
 
 /** Ein Grund für die Auswahl einer Übung, als Text aufbereitet in der Oberfläche. */
@@ -371,6 +427,8 @@ export interface Einheit {
   minuten: number
   plaetze: Platz[]
   hinweise: string[]
+  /** Tag im eigenen Plan */
+  plan_nr?: number
 }
 
 export interface Satz {
@@ -386,6 +444,11 @@ export interface Protokoll {
   datum: string
   uebung: string
   saetze: Satz[]
+  /** Name einer freien Übung (ohne Eintrag in der Übungsdatenbank) */
+  name?: string
+  /** Übernommen, z. B. aus dem Kraftbuch; geschaetzt: Datum oder Wiederholungen nicht genau bekannt */
+  quelle?: string
+  geschaetzt?: boolean
 }
 
 export interface Erledigt {
@@ -403,6 +466,9 @@ export interface Erledigt {
   schmerz_vor?: number
   /** Reha: wie es am Morgen danach war, verglichen mit vor dem Training */
   reaktion?: "besser" | "gleich" | "schlechter"
+  /** Tag im eigenen Plan */
+  plan_nr?: number
+  quelle?: string
 }
 
 export interface Spielstand {
@@ -427,12 +493,20 @@ export interface Daten {
   erledigt: Erledigt[]
   spiel: Spielstand
   messungen: Messung[]
-  /** Werte aus Health Connect, je Tag */
-  gesundheit?: { verbunden: boolean; tage: Record<string, Tageswerte> }
+  /** Werte aus Health Connect, je Tag; garmin: Werte der Uhr aus der Lebenswelt (stand: letzte Synchronisierung) */
+  gesundheit?: { verbunden: boolean; tage: Record<string, Tageswerte>; garmin?: { stand: string; tage: Record<string, Tageswerte> } }
   /** Geschätztes oder gemessenes Maximum (1 Wiederholung) je Übung aus der Einstufung */
   maxwerte?: Record<string, { kg: number; datum: string }>
   /** Wann die Einstufung erledigt wurde */
   einstufung?: { kraft?: string; mobil?: string }
+  /** Eigener Plan, wenn profil.planart = "eigen" */
+  eigenerPlan?: EigenerPlan
+  /** Gewählte Bandfarbe je Übung */
+  bandfarben?: Record<string, string>
+  /** Übernommene ältere 1RM-Werte je Übung (z. B. Phase 1 des Kraftbuchs), nur für die Kurven */
+  archiv?: Record<string, { datum: string; kg: number; text?: string }[]>
+  /** Einmal erledigte Übernahmen, z. B. kraftbuch → Datum */
+  uebernahmen?: Record<string, string>
 }
 
 export interface Tageswerte {

@@ -3,7 +3,7 @@
 
 import { phaseInfo } from "../logik/jahresplan"
 import { heute, wochenplan, montagVon } from "../logik/plan"
-import { aktuellerBlock, jahresAnteil, wegStand, type Schritt } from "../logik/weg"
+import { aktuellerBlock, jahresAnteil, planWeg, wegStand, type Schritt } from "../logik/weg"
 import type { Daten, Einheit } from "../logik/typen"
 import { istErledigt } from "./Heute"
 import { Fortschrittsbalken, Icon, Seite } from "./ios"
@@ -64,6 +64,37 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
   const plan = daten.profil?.jahresplan
   const anteil = jahresAnteil(daten, tag)
   const naechste = daten.profil ? wochenplan(daten.profil, daten, montagVon(tag)).find((e) => e.datum >= tag && !istErledigt(daten, e)) : undefined
+
+  const eigen = daten.profil?.planart === "eigen" && daten.eigenerPlan
+  if (eigen) {
+    const abschnitte = planWeg(daten)
+    const gesamt = abschnitte.reduce((n, x) => n + x.tage, 0)
+    const fertig = abschnitte.reduce((n, x) => n + x.erledigt, 0)
+    return (
+      <Seite titel="Dein Weg" untertitel={daten.eigenerPlan!.name + " · " + fertig + " von " + gesamt + " Tagen"}>
+        {naechste ? (
+          <button type="button" className="knopf voll" onClick={() => props.oeffnen(naechste)}>
+            Nächster Schritt: {naechste.titel} {naechste.datum === tag ? "heute" : datumText(naechste.datum)}
+          </button>
+        ) : null}
+        <ol className="zeitleiste">
+          {abschnitte.map((x, i) => (
+            <li key={i} className={x.status}>
+              <span className="knoten">{knoten(x.status)}</span>
+              <div>
+                <b>{x.name}</b>
+                <small>
+                  {x.erledigt} von {x.tage} Tagen
+                </small>
+                <Fortschrittsbalken wert={x.erledigt} max={x.tage} hoehe={6} />
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="hinweistext klein">Eigener Plan: TrainMe rechnet die Gewichte, die Tage und Übungen gibt der Plan vor. Unter Profil, Plan kannst du zurück zur Planung von TrainMe wechseln.</p>
+      </Seite>
+    )
+  }
 
   if (!plan || !jetzt) {
     return (
