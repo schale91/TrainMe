@@ -9,7 +9,8 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "typecheck": "tsc -b",
-    "android": "npm run build && npx cap sync android"
+    "android": "npm run build && npx cap sync android",
+    "build:lebenswelt": "vite build --mode lebenswelt && node -e \"require('fs').renameSync('dist-lebenswelt/index.html', 'dist-lebenswelt/trainme.html')\""
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
