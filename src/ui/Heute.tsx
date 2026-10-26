@@ -7,6 +7,7 @@ import { heute, montagVon, plusTage, wochenplan } from "../logik/plan"
 import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { tagesform } from "./gesundheit"
+import { wischen } from "./navigation"
 import { PHASEN, phaseAm } from "../logik/jahresplan"
 import { BlockFortschritt } from "./Weg"
 import { aktuellerBlock, jahresAnteil, wegStand } from "../logik/weg"
@@ -172,7 +173,8 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           <Icon name="weiter" groesse={18} dick={2.4} />
         </button>
       </div>
-      <Gruppe>
+      <div className="wochenwisch" {...wischen(() => setMontag(plusTage(montag, 7)), () => setMontag(plusTage(montag, -7)))}>
+      <Gruppe fuss="Nach links oder rechts wischen für die nächste oder vorige Woche.">
         {profil.woche.map((t, i) => {
           const datum = plusTage(montag, i)
           const e = plan.find((x) => x.datum === datum)
@@ -207,6 +209,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           )
         })}
       </Gruppe>
+      </div>
 
       <Gruppe titel="Wusstest du?" fuss={<a href={fakt.url} target="_blank" rel="noreferrer">{fakt.quelle}</a>}>
         <Zeile titel={fakt.text} />

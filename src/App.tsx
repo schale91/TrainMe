@@ -14,7 +14,7 @@ import { aktuellerBlock, wegStand } from "./logik/weg"
 import Einrichtung from "./ui/Einrichtung"
 import Fortschritt from "./ui/Fortschritt"
 import Heute from "./ui/Heute"
-import { Icon } from "./ui/ios"
+import { Icon, useEbene } from "./ui/ios"
 import { Sym, SymKachel } from "./ui/symbole"
 import ProfilSeite, { type Unterseite } from "./ui/Profil"
 import { jahresplanVorschlag } from "./logik/jahresplan"
@@ -47,6 +47,8 @@ export default function App() {
   const [profilStart, setProfilStart] = useState<Unterseite>(null)
   const [update, setUpdate] = useState<UpdateInfo | null>(() => updateBekannt())
   const [updateZu, setUpdateZu] = useState(false)
+  // Zurückgeste auf einem anderen Tab führt erst zu „Heute“, dann aus der App
+  useEbene(tab !== "heute" && !!daten.profil, () => setTab("heute"))
 
   // Beim Start still nach einer neueren APK suchen (ohne Netz passiert nichts)
   useEffect(() => {

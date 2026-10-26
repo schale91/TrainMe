@@ -1,6 +1,17 @@
 // Bausteine im Stil von iOS: große Titel, gruppierte Listen, Schalter, Segmente, Blätter von unten.
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
+import { ebeneOeffnen } from "./navigation"
+
+/** Solange aktiv, schließt die Zurückgeste (Android, Wischen vom Rand) diese Ebene. */
+export function useEbene(aktiv: boolean, schliessen?: () => void) {
+  const ref = useRef(schliessen)
+  ref.current = schliessen
+  useEffect(() => {
+    if (!aktiv) return
+    return ebeneOeffnen(() => ref.current?.())
+  }, [aktiv])
+}
 
 // ---------- Symbole (eigene, einfarbige Linien-Icons) ----------
 
@@ -41,6 +52,7 @@ export function Icon(props: { name: keyof typeof PFADE | string; groesse?: numbe
 
 /** leiste: bleibt mit der Navigationsleiste beim Scrollen oben stehen, z. B. ein Fortschrittsbalken. */
 export function Seite(props: { titel: string; untertitel?: string; rechts?: ReactNode; zurueck?: { text: string; onClick: () => void }; leiste?: ReactNode; children: ReactNode }) {
+  useEbene(!!props.zurueck, props.zurueck?.onClick)
   return (
     <div className="seite">
       {props.zurueck ? (
@@ -127,6 +139,7 @@ export function Segment<T extends string>(props: { werte: { id: T; name: string 
 
 export function Blatt(props: { offen: boolean; onClose: () => void; titel?: string; children: ReactNode; hoch?: boolean }) {
   const [sichtbar, setSichtbar] = useState(props.offen)
+  useEbene(props.offen, props.onClose)
   useEffect(() => {
     if (props.offen) setSichtbar(true)
     else {
