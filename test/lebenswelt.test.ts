@@ -1,7 +1,7 @@
 // TrainMe in der Lebenswelt: Abgleich mit der Datenbank, Übernahme aus dem Kraftbuch, eigener Plan.
 import { abgleichen, neuerStand, pruefsumme, stabil, tagZusammen, teilen, zusammensetzen, type Anfrage, type TagEintrag } from "../src/logik/abgleich"
 import { einspielen, nameKey, prozent, uebernehmen, wiederholungen, zuordnen, type KbDok } from "../src/logik/kraftbuch"
-import { einheitAusPlan, idVon, maximum, naechsterPlanTag, planZuEnde, ueberspringen } from "../src/logik/eigenerPlan"
+import { einheitAusPlan, idVon, maximum, naechsterPlanTag, offenePlanTage, planAusText, planZuEnde, planZuText, ueberspringen } from "../src/logik/eigenerPlan"
 import { leer, neuesProfil } from "../src/logik/speicher"
 import { wochenplan } from "../src/logik/plan"
 import type { Daten, Protokoll } from "../src/logik/typen"
@@ -272,5 +272,69 @@ describe("Eigener Plan", () => {
     expect(woche.find((e) => e.datum === t)?.plan_nr).toBe(4)
     ueberspringen(d, d.eigenerPlan!.tage[3], t)
     expect(planZuEnde(d)).toBe(true)
+  })
+})
+
+describe("Plan als Text (z. B. vom Physio-Zettel)", () => {
+  const text = `Tag 1: Hüfte
+Brücke 3 x 12
+Seitlage Bein abspreizen 3 x 10 je Seite
+Wandsitzen 3 x 30 s
+
+Tag 2: Kraft
+A1: Kniebeuge 4 x 5 75 %
+A2: Hammer Curl 3 x 10-12, 2 im Tank
+Etwas Unbekanntes`
+
+  test("Tage, Sätze, Zeiten, Prozent, Reserve und Supersatz werden gelesen", () => {
+    const p = planAusText(text, "Physio", zuordnen)
+    expect(p.tage.map((t) => t.titel)).toEqual(["Hüfte", "Kraft"])
+    const [bruecke, seitlage, wand] = p.tage[0].uebungen
+    expect(bruecke).toMatchObject({ name: "Brücke", saetze: 3, wdh_von: 12 })
+    expect(seitlage.hinweis).toBe("je Seite")
+    expect(wand).toMatchObject({ zeit: true, wdh_von: 30 })
+    const [kb, curl, frei] = p.tage[1].uebungen
+    expect(kb).toMatchObject({ gruppe: "A", prozent: [0.75, 0.75] })
+    expect(curl).toMatchObject({ gruppe: "A", wdh_von: 10, wdh_bis: 12, rir: 2 })
+    expect(curl.id).toBeTruthy()
+    expect(frei).toMatchObject({ name: "Etwas Unbekanntes", wdh_text: "nach Vorgabe" })
+    // Zurück in Text und wieder gelesen ergibt denselben Plan
+    const wieder = planAusText(planZuText(p), "Physio", zuordnen)
+    expect(wieder.tage.map((t) => t.uebungen.map((u) => [u.name, u.saetze, u.wdh_von, u.wdh_bis, u.gruppe, u.rir, u.prozent?.[0]]))).toEqual(p.tage.map((t) => t.uebungen.map((u) => [u.name, u.saetze, u.wdh_von, u.wdh_bis, u.gruppe, u.rir, u.prozent?.[0]])))
+  })
+
+  test("Ein Plan, der sich wiederholt, ist nie zu Ende und beginnt nach dem letzten Tag von vorn", () => {
+    const d = mitProfil()
+    d.eigenerPlan = { ...planAusText(text, "Physio", zuordnen), wiederholen: true }
+    d.profil!.planart = "eigen"
+    d.erledigt.push({ datum: "2026-10-20", titel: "Hüfte", minuten: 30, saetze: 9, xp: 0, rekorde: [], plan_nr: 1 }, { datum: "2026-10-21", titel: "Kraft", minuten: 30, saetze: 9, xp: 0, rekorde: [], plan_nr: 2 })
+    expect(planZuEnde(d)).toBe(false)
+    const [n3, n4] = offenePlanTage(d)
+    expect([n3.nr, n3.titel, n4.nr, n4.titel]).toEqual([3, "Hüfte", 4, "Kraft"])
+  })
+
+  test("Zusätzliche TrainMe-Tage neben dem Plan, in der Reha erst nach der Freigabe", () => {
+    const d = mitProfil()
+    d.eigenerPlan = { ...planAusText(text, "Physio", zuordnen), wiederholen: true }
+    const p = d.profil!
+    p.planart = "eigen"
+    p.woche = p.woche.map((t, i) => (i === 6 ? { art: "training" as const, ort: 0, minuten: 30, schwerpunkt: "automatisch" as const, quelle: "trainme" as const } : t))
+    const montag = "2026-10-26"
+    const mitZusatz = wochenplan(p, d, montag).filter((e) => e.plan_nr === undefined)
+    expect(mitZusatz.map((e) => e.datum)).toEqual(["2026-11-01"])
+    p.reha = { bilder: [{ id: "huefte_arthrose", seite: "beide" }], boden: false, halt: true, freigabe: false, tep_grenzen: false }
+    expect(wochenplan(p, d, montag).filter((e) => e.plan_nr === undefined)).toEqual([])
+  })
+})
+
+describe("Übungsfiguren", () => {
+  test("TrainMe-Übungen finden ihre Figur über den Zweitnamen", async () => {
+    const { figurName } = await import("../src/ui/figuren3d")
+    const { uebung } = await import("../src/daten/uebungen/index")
+    for (const n of ["Back Squat", "Barbell Bench Press", "Deadlift", "Hammer Curl"]) {
+      const u = uebung(zuordnen(n)!)!
+      expect(figurName([u.name, ...(u.auch || [])]), n).toBeTruthy()
+    }
+    expect(figurName(["Etwas ganz Unbekanntes"])).toBeNull()
   })
 })

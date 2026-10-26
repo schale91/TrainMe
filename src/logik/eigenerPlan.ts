@@ -6,7 +6,7 @@
 import { FREI, uebung } from "../daten/uebungen/index"
 import { abrunden } from "./gewichte"
 import { e1rm } from "./progression"
-import type { Daten, Einheit, Erledigt, PlanTag, PlanUebung, Platz, Profil, Protokoll, Rolle, Uebung, Vorgabe } from "./typen"
+import type { Daten, EigenerPlan, Einheit, Erledigt, PlanTag, PlanUebung, Platz, Profil, Protokoll, Rolle, Uebung, Vorgabe } from "./typen"
 
 export { FREI }
 
@@ -30,11 +30,28 @@ export function letzterPlanTag(daten: Daten): number {
   return n
 }
 
+/**
+ * Plantag zu einer Nummer. Ein Plan, der sich wiederholt, geht nach dem letzten Tag mit dem ersten weiter; die
+ * Nummern zählen dabei weiter (Tag 8 eines Plans mit 7 Tagen ist wieder sein erster Tag).
+ */
+export function tagMitNr(plan: EigenerPlan, nr: number): PlanTag | undefined {
+  const genau = plan.tage.find((t) => t.nr === nr)
+  if (genau || !plan.wiederholen || !plan.tage.length) return genau
+  const liste = [...plan.tage].sort((a, b) => a.nr - b.nr)
+  const i = (((nr - liste[0].nr) % liste.length) + liste.length) % liste.length
+  return { ...liste[i], nr }
+}
+
 /** Die nächsten offenen Tage des Plans, ab dem ersten nach dem zuletzt erledigten. */
 export function offenePlanTage(daten: Daten): PlanTag[] {
   const plan = daten.eigenerPlan
-  if (!plan) return []
+  if (!plan || !plan.tage.length) return []
   const ab = letzterPlanTag(daten)
+  if (plan.wiederholen) {
+    const erste = Math.min(...plan.tage.map((t) => t.nr))
+    const start = Math.max(ab + 1, erste)
+    return Array.from({ length: 14 }, (_, k) => tagMitNr(plan, start + k) as PlanTag)
+  }
   return plan.tage.filter((t) => t.nr > ab).sort((a, b) => a.nr - b.nr)
 }
 
@@ -44,7 +61,7 @@ export function naechsterPlanTag(daten: Daten): PlanTag | null {
 
 /** Plan zu Ende: Es gibt einen Plan, aber keinen offenen Tag mehr. */
 export function planZuEnde(daten: Daten): boolean {
-  return !!daten.eigenerPlan && daten.eigenerPlan.tage.length > 0 && !naechsterPlanTag(daten)
+  return !!daten.eigenerPlan && !daten.eigenerPlan.wiederholen && daten.eigenerPlan.tage.length > 0 && !naechsterPlanTag(daten)
 }
 
 /** Maximum (1 Wiederholung) einer Übung: eingetragen (Einstufung, Kraftbuch) oder geschätzt aus den letzten drei Einheiten. */
@@ -110,7 +127,7 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
     if (max) {
       v.last = runde(max.kg * anteil, lasten)
       v.begruendung = pz + " von " + kg(max.kg) + " kg (" + (max.quelle === "max" ? "dein Maximum vom " + max.datum.split("-").reverse().join(".") : "geschätzt aus deinen letzten Einheiten") + (basis !== idVon(pu) ? ", " + (planUebung(basis)?.name || basis) : "") + ")."
-    } else v.begruendung = pz + " von deinem Maximum. Trag unter Fortschritt ein Maximum ein, dann rechnet TrainMe das Gewicht aus."
+    } else v.begruendung = pz + " von deinem Maximum. Unter Profil, „Kraftwerte neu einstufen“ kannst du es eintragen, dann rechnet TrainMe das Gewicht aus."
     return v
   }
   const verlauf = daten.protokoll.filter((p) => p.uebung === u.id && p.datum < datum).sort((a, b) => (a.datum < b.datum ? -1 : 1))
@@ -140,7 +157,7 @@ export function einheitAusPlan(profil: Profil, daten: Daten, tag: PlanTag, datum
     const u = planUebung(idVon(pu)) as Uebung
     const rolle = rolleVon(pu, i)
     const vorgabe = planVorgabe(daten, pu, u, u.id.startsWith(FREI) ? [] : lastenFuer(u), datum, rolle)
-    const p: Platz = { rolle, muster: u.muster, uebung: u, vorgabe, warum: [], plantext: planText(pu) + (pu.rir !== undefined ? " · " + pu.rir + " im Tank" : "") }
+    const p: Platz = { rolle, muster: u.muster, uebung: u, vorgabe, warum: [], plantext: planText(pu) }
     if (pu.gruppe) p.gruppe = pu.gruppe
     return p
   })
@@ -154,7 +171,7 @@ export function einheitAusPlan(profil: Profil, daten: Daten, tag: PlanTag, datum
 
 /** Trainingstage der Woche (0 = Montag) laut Profil. */
 function trainingsTage(profil: Profil): number[] {
-  return profil.woche.map((t, i) => (t.art === "training" ? i : -1)).filter((i) => i >= 0)
+  return profil.woche.map((t, i) => (t.art === "training" && t.quelle !== "trainme" ? i : -1)).filter((i) => i >= 0)
 }
 
 /**
@@ -162,7 +179,7 @@ function trainingsTage(profil: Profil): number[] {
  * Reihe nach auf die verbleibenden Trainingstage ab heute (fortlaufend: der nächste offene Tag auch heute, wenn heute
  * kein Trainingstag ist).
  */
-export function planWoche(profil: Profil, daten: Daten, montag: string, heute: string, plusTage: (d: string, n: number) => string, lastenFuer: (u: Uebung, ort: number) => number[]): Einheit[] {
+export function planWoche(profil: Profil, daten: Daten, montag: string, heute: string, plusTage: (d: string, n: number) => string, lastenFuer: (u: Uebung, ort: number) => number[], zusatz?: (p: Profil) => Einheit[]): Einheit[] {
   const plan = daten.eigenerPlan
   if (!plan) return []
   const ende = plusTage(montag, 7)
@@ -170,12 +187,19 @@ export function planWoche(profil: Profil, daten: Daten, montag: string, heute: s
   // Erledigtes aus dieser Woche
   for (const e of daten.erledigt) {
     if (!planEintrag(e) || e.datum < montag || e.datum >= ende || e.quelle === "uebersprungen") continue
-    const tag = plan.tage.find((t) => t.nr === e.plan_nr)
+    const tag = tagMitNr(plan, e.plan_nr as number)
     if (!tag) continue
     const ort = profil.woche[(new Date(e.datum + "T12:00:00Z").getUTCDay() + 6) % 7]?.ort ?? 0
     aus.push(einheitAusPlan(profil, daten, tag, e.datum, ort, (u) => lastenFuer(u, ort)))
   }
-  if (heute >= ende) return aus
+  // Tage, an denen TrainMe zusätzlich plant (z. B. leichte Einheiten neben einem Physio-Plan). In der Reha erst nach
+  // der Freigabe durch Arzt oder Physiotherapie.
+  const zusatzTage = profil.woche.map((t, i) => (t.art === "training" && t.quelle === "trainme" ? i : -1)).filter((i) => i >= 0)
+  if (zusatz && zusatzTage.length && (!profil.reha || profil.reha.freigabe)) {
+    const nur: Profil = { ...profil, planart: "trainme", woche: profil.woche.map((t, i) => (zusatzTage.indexOf(i) >= 0 ? t : { art: "frei" as const })) }
+    aus.push(...zusatz(nur))
+  }
+  if (heute >= ende) return aus.sort((a, b) => (a.datum < b.datum ? -1 : 1))
   const offen = offenePlanTage(daten)
   const heuteErledigt = daten.erledigt.some((e) => planEintrag(e) && e.datum === heute && e.quelle !== "uebersprungen")
   let tage = trainingsTage(profil)
@@ -199,4 +223,82 @@ export function ueberspringen(daten: Daten, tag: PlanTag, datum: string): void {
 /** Protokolle einer Übung, für Gewichtsvorschläge im Training. */
 export function planVerlauf(daten: Daten, id: string, vor: string): Protokoll[] {
   return daten.protokoll.filter((p) => p.uebung === id && p.datum < vor)
+}
+
+/**
+ * Plan aus Text, zum Beispiel vom Zettel der Physiotherapie:
+ *   Tag 1: Hüfte
+ *   Brücke 3 x 12
+ *   Seitlage Bein abspreizen 3 x 10 je Seite
+ *   Wandsitzen 3 x 30 s
+ * Zeilen mit „Tag …“ oder „#“ beginnen einen Tag; „A1:“ und „A2:“ bilden einen Supersatz; „75 %“ und „2 im Tank“
+ * (oder „RIR 2“, „@8“) gelten als Vorgabe. Ohne Tageszeile wird alles ein Tag.
+ */
+export function planAusText(text: string, name: string, zuordnen: (n: string) => string | undefined): EigenerPlan {
+  const tage: PlanTag[] = []
+  let tag: PlanTag | null = null
+  for (const roh of text.split(/\r?\n/)) {
+    const zeile = roh.trim()
+    if (!zeile) continue
+    const kopf = /^(?:#+\s*|tag\s*\d*\s*[:.)-]?\s*)(.*)$/i.exec(zeile)
+    if (kopf && /^(#|tag\b)/i.test(zeile)) {
+      tag = { nr: tage.length + 1, titel: kopf[1].trim() || "Tag " + (tage.length + 1), uebungen: [] }
+      tage.push(tag)
+      continue
+    }
+    if (!tag) {
+      tag = { nr: 1, titel: name || "Plan", uebungen: [] }
+      tage.push(tag)
+    }
+    tag.uebungen.push(uebungAusZeile(zeile, zuordnen))
+  }
+  return { name: name || "Eigener Plan", tage: tage.filter((t) => t.uebungen.length), start: new Date().toISOString().slice(0, 10) }
+}
+
+
+function uebungAusZeile(zeile: string, zuordnen: (n: string) => string | undefined): PlanUebung {
+  let rest = zeile
+  const gruppe = /^([A-Z])\d+\s*[:.)]\s*/.exec(rest)
+  if (gruppe) rest = rest.slice(gruppe[0].length)
+  const m = /^(.*?)\s+(\d+)\s*[x×]\s*(\d+)(?:\s*[-–]\s*(\d+))?\s*(s|sek\.?|sekunden|min\.?|minuten)?(?=[\s,;]|$)(.*)$/i.exec(rest)
+  const name = (m ? m[1] : rest).replace(/[,;:]\s*$/, "").trim()
+  const pu: PlanUebung = m ? { name, saetze: +m[2], wdh_von: +m[3], wdh_bis: m[4] ? +m[4] : +m[3] } : { name, saetze: 2, wdh_von: 10, wdh_bis: 10, wdh_text: "nach Vorgabe" }
+  if (m && m[5]) {
+    pu.zeit = true
+    if (/^min/i.test(m[5])) {
+      pu.wdh_von *= 60
+      pu.wdh_bis *= 60
+    }
+  }
+  const zusatz = (m ? m[6] : "").trim()
+  const pz = /(\d+(?:[.,]\d+)?)\s*(?:[-–]\s*(\d+(?:[.,]\d+)?))?\s*%/.exec(zusatz)
+  if (pz) pu.prozent = [parseFloat(pz[1].replace(",", ".")) / 100, parseFloat((pz[2] || pz[1]).replace(",", ".")) / 100]
+  const rir = /(\d+)\s*im\s*tank|rir\s*(\d+)/i.exec(zusatz)
+  const rpe = /@\s*(\d+(?:[.,]5)?)/.exec(zusatz)
+  if (rir) pu.rir = +(rir[1] || rir[2])
+  else if (rpe) pu.rir = Math.max(0, 10 - parseFloat(rpe[1].replace(",", ".")))
+  const hinweis = zusatz.replace(pz?.[0] || "", "").replace(rir?.[0] || "", "").replace(rpe?.[0] || "", "").replace(/^[\s,;·-]+|[\s,;·-]+$/g, "")
+  if (hinweis) pu.hinweis = hinweis
+  if (gruppe) pu.gruppe = gruppe[1]
+  const id = zuordnen(name)
+  if (id) pu.id = id
+  return pu
+}
+
+/** Plan als Text zum Bearbeiten (Gegenstück zu planAusText). */
+export function planZuText(plan: EigenerPlan): string {
+  const zahl = (x: number) => String(Math.round(x * 1000) / 10).replace(".", ",")
+  return [...plan.tage]
+    .sort((a, b) => a.nr - b.nr)
+    .map((t) => {
+      const gruppen: Record<string, number> = {}
+      const zeilen = t.uebungen.map((u) => {
+        const g = u.gruppe ? u.gruppe + (gruppen[u.gruppe] = (gruppen[u.gruppe] || 0) + 1) + ": " : ""
+        const wdh = u.zeit ? (u.wdh_von === u.wdh_bis ? u.wdh_von : u.wdh_von + "-" + u.wdh_bis) + " s" : u.wdh_von === u.wdh_bis ? String(u.wdh_von) : u.wdh_von + "-" + u.wdh_bis
+        const extra = [u.prozent ? (u.prozent[0] === u.prozent[1] ? zahl(u.prozent[0]) : zahl(u.prozent[0]) + "-" + zahl(u.prozent[1])) + " %" : "", u.rir !== undefined ? u.rir + " im Tank" : "", u.hinweis || ""].filter(Boolean).join(", ")
+        return g + u.name + " " + u.saetze + " x " + wdh + (extra ? " " + extra : "")
+      })
+      return ["Tag " + t.nr + ": " + t.titel, ...zeilen].join("\n")
+    })
+    .join("\n\n")
 }

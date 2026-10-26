@@ -2360,3 +2360,23 @@ select.ampel.rot {
   border-radius: 12px;
   background: var(--flaeche2, rgba(127, 127, 127, 0.08));
 }
+
+/* Plan als Text */
+.plantext {
+  width: 100%;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--linie, rgba(127, 127, 127, 0.3));
+  background: var(--flaeche3, transparent);
+  color: inherit;
+  resize: vertical;
+}
+.segmentzeile {
+  padding: 10px 12px;
+}
+.figur.klein {
+  max-width: 200px;
+}

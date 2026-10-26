@@ -20,8 +20,10 @@ import { phaseInfo, blockNeuStarten, phaseAm } from "../logik/jahresplan"
 import type { UpdateInfo } from "../logik/update"
 import { RELEASES_SEITE } from "../logik/update"
 import { updateSuchen } from "./update"
+import { LebensweltSeite, PlanSeite } from "./PlanSeiten"
+import { kopplung, modus } from "./lebenswelt"
 
-export type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback" | "jahresplan" | "update"
+export type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback" | "jahresplan" | "update" | "plan" | "lebenswelt"
 
 export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT) => void; ersetzen: (d: Daten) => void; zuruecksetzen: () => void; aendern: (f: (d: Daten) => void) => void; einstufen: () => void; start?: Unterseite; update: UpdateInfo | null; updateGefunden: (u: UpdateInfo | null) => void }) {
   const profil = props.daten.profil!
@@ -72,6 +74,8 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
   if (seite === "jahresplan") return <JahresplanSeite profil={profil} heute={heute()} aendern={props.profilAendern} zurueck={zurueck} />
   if (seite === "update") return <UpdateSeite update={props.update} gefunden={props.updateGefunden} zurueck={zurueck} />
   if (seite === "gesundheit") return <GesundheitSeite daten={props.daten} aendern={props.aendern} zurueck={zurueck} />
+  if (seite === "plan") return <PlanSeite daten={props.daten} aendern={props.aendern} zurueck={zurueck} />
+  if (seite === "lebenswelt") return <LebensweltSeite zurueck={zurueck} />
 
   const ziel = ZIELE.find((z) => z.id === profil.ziel)
   const sport = SPORTARTEN.find((s) => s.id === profil.sport)
@@ -91,13 +95,15 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
         <Zeile symbol={<SymKachel name="pflaster" farbe="#c9536a" />} titel="Beschwerden" wert={beschwerden || "keine"} onClick={() => setSeite("koerper")} />
         <Zeile symbol={<SymKachel name="verbot" farbe="#6b6593" />} titel="Ausnahmen" wert={profil.ausgeschlossen.length ? profil.ausgeschlossen.length + " Übungen" : "keine"} onClick={() => setSeite("ausnahmen")} />
       </Gruppe>
-      <Gruppe titel="Plan" fuss="Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Die laufende Phase beginnt dann von vorn, der Jahresplan rückt nach hinten.">
+      <Gruppe titel="Plan" fuss={profil.planart === "eigen" ? "Mit eigenem Plan gibt der Plan Tage und Übungen vor. Kraftwerte zählen weiter für Prozentangaben." : "Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Die laufende Phase beginnt dann von vorn, der Jahresplan rückt nach hinten."}>
+        <Zeile symbol={<SymKachel name="bausteine" farbe="#4f68f0" />} titel="Woher der Plan kommt" wert={profil.planart === "eigen" ? props.daten.eigenerPlan?.name || "Eigener Plan" : "TrainMe plant"} onClick={() => setSeite("plan")} />
         <Zeile symbol={<SymKachel name="kalender" farbe="#2aa58a" />} titel="Jahresplan" wert={phase ? phaseInfo(phase, profil.sport).name : "festlegen"} onClick={() => setSeite("jahresplan")} />
         <Zeile symbol={<SymKachel name="ziel" farbe="#c98a1e" />} titel="Kraftwerte und Mobilität neu einstufen" untertitel={props.daten.einstufung?.kraft ? "zuletzt " + props.daten.einstufung.kraft.split("-").reverse().join(".") : "noch nicht erledigt"} onClick={props.einstufen} />
         <Zeile symbol={<SymKachel name="wiederholen" farbe="#2b9cc2" />} titel="Neuen Block ab dieser Woche" onClick={() => props.profilAendern(blockNeuStarten(profil, montagVon(heute())))} pfeil={false} />
       </Gruppe>
       <Gruppe titel="App">
-        <Zeile symbol={<SymKachel name="import" farbe="#8b7bff" />} titel="App-Update" wert={props.update ? props.update.version + " verfügbar" : "Version " + __VERSION__} onClick={() => setSeite("update")} />
+        <Zeile symbol={<SymKachel name="haus" farbe="#1f9e73" />} titel="Lebenswelt" wert={modus() === "eingebettet" ? "eingebettet" : kopplung() ? "gekoppelt" : "nicht gekoppelt"} onClick={() => setSeite("lebenswelt")} />
+        {modus() === "eingebettet" ? null : <Zeile symbol={<SymKachel name="import" farbe="#8b7bff" />} titel="App-Update" wert={props.update ? props.update.version + " verfügbar" : "Version " + __VERSION__} onClick={() => setSeite("update")} />}
         <Zeile symbol={<SymKachel name="stoppuhr" farbe="#6a58f5" />} titel="Pausentimer" wert="Hintergrund, über Apps" onClick={() => setSeite("timer")} />
         <Zeile symbol={<SymKachel name="herz" farbe="#e0455f" />} titel="Gesundheitsdaten" wert={props.daten.gesundheit?.verbunden ? "verbunden" : "aus"} onClick={() => setSeite("gesundheit")} />
         <Zeile symbol={<SymKachel name="sprechblase" farbe="#2aa58a" />} titel="Feedback, Fehler, Ideen" onClick={() => setSeite("feedback")} />

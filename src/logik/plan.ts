@@ -244,10 +244,18 @@ export function einheitFuer(profil: Profil, daten: Daten, datum: string): Einhei
 export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): Einheit[] {
   // Eigener Plan statt der Planung von TrainMe
   if (grundprofil.planart === "eigen" && daten.eigenerPlan) {
-    return planWoche(grundprofil, daten, montag, heute(), plusTage, (u, i) => {
-      const ort = grundprofil.orte[i] || grundprofil.orte[0]
-      return ort ? lastenAn(u, ort) : []
-    })
+    return planWoche(
+      grundprofil,
+      daten,
+      montag,
+      heute(),
+      plusTage,
+      (u, i) => {
+        const ort = grundprofil.orte[i] || grundprofil.orte[0]
+        return ort ? lastenAn(u, ort) : []
+      },
+      (nur) => wochenplan(nur, daten, montag),
+    )
   }
   const benutzt = new Set<string>()
   const ergebnis: Einheit[] = []

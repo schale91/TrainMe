@@ -15,6 +15,7 @@ import { ROLLE, datumText, grundText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
 import { FREI } from "../daten/uebungen/index"
+import Figur from "./Figur"
 
 type Eingabe = Satz & { fertig: boolean }
 type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][] }
@@ -254,6 +255,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             <h2 className="uebungsname" onClick={() => setInfo(u)}>
               {u.name}
             </h2>
+            <Figur uebung={u} geraet={geraet} klein />
             <div className="vorgabezeile">
               <span className="vorgabe">{vorgabeText(p)}</span>
               {v.last !== null && u.belastung === "gewicht" ? <span className="vorgabe gewicht">{lastText(v.last, geraet)}</span> : null}

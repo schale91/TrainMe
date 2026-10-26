@@ -237,6 +237,8 @@ export interface Wochentag {
   minuten?: number
   schwerpunkt?: Schwerpunkt
   termin?: Termin
+  /** Mit eigenem Plan: an diesem Tag plant TrainMe zusätzlich (sonst kommt der nächste Plantag) */
+  quelle?: "plan" | "trainme"
 }
 
 export interface Gewichte {
@@ -346,6 +348,8 @@ export interface EigenerPlan {
   tage: PlanTag[]
   /** Ab diesem Datum gilt der Plan */
   start: string
+  /** Nach dem letzten Tag wieder von vorn (z. B. ein Physio-Plan) */
+  wiederholen?: boolean
 }
 
 export type RehaBild = "huefte_arthrose" | "huefte_tep" | "huefte_seitlich" | "huefte_leiste" | "knie_arthrose" | "knie_tep" | "ruecken"
