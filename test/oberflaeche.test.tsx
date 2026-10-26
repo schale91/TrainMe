@@ -31,6 +31,11 @@ it("rendert Startseite und jede Einheit für 300 zufällige Profile ohne Fehler 
     p.sport = w(["allgemein", "golf", "fussball", "laufen", "football", "bodybuilding", "reha"])
     if (p.sport === "reha") p.reha = { bilder: [{ id: w(["huefte_arthrose", "huefte_tep", "huefte_seitlich", "huefte_leiste", "knie_arthrose", "knie_tep", "ruecken"] as const), op_datum: w([undefined, "2026-10-01", "2026-08-01", "2025-01-01"]) }], boden: r() < 0.5, halt: r() < 0.5, freigabe: r() < 0.5, tep_grenzen: r() < 0.5, warnzeichen: r() < 0.7 ? "2026-10-19" : undefined }
     if (p.sport === "football") p.position = w(["qb", "rb", "wr", "te", "ol", "dl", "lb", "db", "k"])
+    // Mehrfachauswahl: manchmal ein zweiter Sport, ein zweites Ziel und mehrere Positionen
+    if (r() < 0.3) p.sporte = [p.sport, w(["golf", "football", "bodybuilding", "reha", "laufen"])].filter((x, i, l) => l.indexOf(x) === i)
+    if (r() < 0.3) p.ziele = [p.ziel, w(["muskelaufbau", "kraft", "sport"] as const)].filter((x, i, l) => l.indexOf(x) === i)
+    if (p.sporte?.includes("football")) p.positionen = [w(["qb", "rb", "wr", "te"]), w(["ol", "dl", "lb", "db", "k"])]
+    if (p.sporte?.includes("reha") && !p.reha) p.reha = { bilder: [{ id: "huefte_arthrose" }], boden: false, halt: true, freigabe: true, tep_grenzen: false, warnzeichen: "2026-10-19" }
     p.saison = w(["vorbereitung", "wettkampf", "pause"])
     p.arten = (["kraft", "mobilitaet", "ausdauer"] as Trainingsart[]).filter(() => r() < 0.6)
     if (!p.arten.length) p.arten = ["kraft"]

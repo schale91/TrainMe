@@ -1,6 +1,7 @@
 // Dein Weg: Jahresplan als Zeitleiste. Geschafftes abgehakt, der aktuelle Block hervorgehoben, Kommendes mit dem,
 // was es aufbaut. So ist jederzeit sichtbar, wo man im Prozess steht.
 
+import { hatSport } from "../logik/auswahl"
 import { phaseInfo } from "../logik/jahresplan"
 import { heute, wochenplan, montagVon } from "../logik/plan"
 import { aktuellerBlock, jahresAnteil, planWeg, wegStand, type Schritt } from "../logik/weg"
@@ -148,7 +149,7 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
             return (
               <li key={i} className={s.status + " meilenstein"}>
                 <span className="knoten">
-                  <Sym name={daten.profil?.sport === "golf" ? "golf" : "ziel"} groesse={14} />
+                  <Sym name={(!!daten.profil && hatSport(daten.profil, "golf")) ? "golf" : "ziel"} groesse={14} />
                 </span>
                 <div>
                   <b>Saisonstart</b>
@@ -161,9 +162,9 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
               <li key={i} className={s.status + (s.erledigt ? "" : " offen")}>
                 <span className="knoten">{knoten(s.status, s.erledigt)}</span>
                 <div>
-                  <b>{daten.profil?.sport === "reha" ? "Funktionstests" : "Kontrolle"}</b>
+                  <b>{(!!daten.profil && hatSport(daten.profil, "reha")) ? "Funktionstests" : "Kontrolle"}</b>
                   <small>
-                    {datumText(s.datum)} · {s.erledigt ? "Erledigt" : s.status === "vorbei" ? "Ausgelassen" : daten.profil?.sport === "reha" ? "Aufstehen, Aufstehen und Gehen, Einbeinstand: Was hat der Block gebracht?" : "In der Entlastungswoche Kraft und Mobilität neu messen"}
+                    {datumText(s.datum)} · {s.erledigt ? "Erledigt" : s.status === "vorbei" ? "Ausgelassen" : (!!daten.profil && hatSport(daten.profil, "reha")) ? "Aufstehen, Aufstehen und Gehen, Einbeinstand: Was hat der Block gebracht?" : "In der Entlastungswoche Kraft und Mobilität neu messen"}
                   </small>
                   {s.status === "jetzt" && !s.erledigt ? (
                     <button type="button" className="knopf klein" onClick={props.einstufen}>

@@ -41,6 +41,24 @@ export function Karten<T extends string>(props: { werte: { id: T; name: string; 
   )
 }
 
+/** Karten mit Mehrfachauswahl; mindestens eine bleibt gewählt. */
+export function MehrKarten<T extends string>(props: { werte: { id: T; name: string; text?: string; symbol?: string }[]; gewaehlt: T[]; onChange: (x: T[]) => void }) {
+  return (
+    <div className="karten">
+      {props.werte.map((w) => {
+        const an = props.gewaehlt.indexOf(w.id) >= 0
+        return (
+          <button key={w.id} type="button" aria-pressed={an} className={"auswahl" + (an ? " an" : "")} onClick={() => props.onChange(an ? (props.gewaehlt.length > 1 ? props.gewaehlt.filter((x) => x !== w.id) : props.gewaehlt) : [...props.gewaehlt, w.id])}>
+            {w.symbol ? <Sym name={w.symbol} groesse={30} farbe="var(--akzent)" /> : null}
+            <b>{w.name}</b>
+            {w.text ? <small>{w.text}</small> : null}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /** Eingabe einer Zahlenliste wie „2, 4, 6,5“. */
 export function Zahlenliste(props: { wert: number[]; onChange: (x: number[]) => void; platzhalter?: string }) {
   const [text, setText] = useState(props.wert.map((x) => String(x).replace(".", ",")).join("; "))

@@ -1,6 +1,8 @@
 // Zurück wie auf dem Handy gewohnt: Android-Zurückgeste, Wischen vom linken Rand nach rechts und Escape schließen die
-// oberste Ebene (Unterseite, Blatt, Tab). Jede Ebene legt dafür einen Eintrag in den Browserverlauf; Capacitor geht beim
-// Zurück im Verlauf zurück und beendet die App erst, wenn nichts mehr offen ist.
+// oberste Ebene (Unterseite, Blatt, Tab). Solange eine Ebene offen ist, liegt genau ein Platzhalter im Browserverlauf.
+// Zurück verbraucht ihn: Die oberste Ebene schließt sich, und ist danach noch eine offen, kommt ein neuer Platzhalter.
+// Capacitor beendet die App erst, wenn kein Platzhalter mehr da ist. Ein Eintrag je Ebene wäre fehleranfällig, weil
+// history.back() verzögert wirkt und sich mit neuen Einträgen überholt.
 
 type Ebene = { id: number; zurueck: () => void }
 
@@ -8,6 +10,14 @@ const stapel: Ebene[] = []
 let zaehler = 0
 let ueberspringen = 0
 let bereit = false
+/** Platzhalter liegt im Verlauf */
+let platzhalter = false
+
+function platzhalterSetzen() {
+  if (platzhalter) return
+  history.pushState({ trainme: true }, "")
+  platzhalter = true
+}
 
 function einrichten() {
   if (bereit || typeof window === "undefined") return
@@ -17,7 +27,9 @@ function einrichten() {
       ueberspringen--
       return
     }
+    platzhalter = false
     stapel.pop()?.zurueck()
+    if (stapel.length) platzhalterSetzen()
   })
   // Wischen vom linken Rand nach rechts wie auf dem iPhone
   let start: { x: number; y: number; zeit: number } | null = null
@@ -50,20 +62,24 @@ export function ebeneOeffnen(zurueck: () => void): () => void {
   einrichten()
   const id = ++zaehler
   stapel.push({ id, zurueck })
-  history.pushState({ trainme: id }, "")
+  platzhalterSetzen()
   return () => {
     const i = stapel.findIndex((x) => x.id === id)
-    // schon über die Zurückgeste geschlossen: Der Verlaufseintrag ist bereits weg
+    // schon über die Zurückgeste geschlossen
     if (i < 0) return
     stapel.splice(i, 1)
-    ueberspringen++
-    history.back()
+    // letzte Ebene über die eigene Schaltfläche geschlossen: Platzhalter wieder entfernen
+    if (!stapel.length && platzhalter) {
+      platzhalter = false
+      ueberspringen++
+      history.back()
+    }
   }
 }
 
 /** Oberste Ebene schließen, als hätte man Zurück gedrückt. */
 export function zurueck() {
-  if (stapel.length) history.back()
+  if (stapel.length && platzhalter) history.back()
 }
 
 type Punkte = { length: number; [i: number]: { clientX: number; clientY: number } }

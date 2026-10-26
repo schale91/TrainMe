@@ -288,8 +288,16 @@ export interface Profil {
   beschwerden: Beschwerde[]
   ausgeschlossen: string[]
   koerpergewicht_kg?: number
+  /** Mehrere Sportarten; sport ist die wichtigste davon */
+  sporte?: string[]
+  /** Mehrere Ziele; ziel ist das erste davon */
+  ziele?: Ziel[]
   /** Position im Football (qb, rb, wr, te, ol, dl, lb, db, k) */
   position?: string
+  /** Mehrere Positionen (z. B. in beide Richtungen spielen) */
+  positionen?: string[]
+  /** Änderungen, die erst mit dem nächsten Block gelten */
+  vorgemerkt?: { ab: string; aenderung: Partial<Profil> }
   /** Reha: Beschwerdebilder und Sicherheitsangaben */
   reha?: RehaProfil
   /** Startdatum des aktuellen Blocks (JJJJ-MM-TT) */

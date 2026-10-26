@@ -2,13 +2,12 @@
 
 import { useState } from "react"
 import { POSITIONEN, SPORTARTEN, positionVon } from "../daten/vorlagen"
-import { SAISON_VORSCHLAG, neuPlanen } from "../logik/jahresplan"
-import { heute } from "../logik/plan"
+import { hatSport, hatZiel, mitPositionen, mitSporten, mitZielen, positionen, sporte, ziele } from "../logik/auswahl"
 import { LAST_GERAETE } from "../logik/gewichte"
 import { moeglicheUebungen } from "../logik/plan"
 import { neuerOrt, studio } from "../logik/speicher"
 import type { Beschwerde, Geraet, Gelenk, Ort, Profil, Wochentag } from "../logik/typen"
-import { Chips, Feld, Karten, Zahl, Zahlenliste } from "./teile"
+import { Chips, Feld, Karten, MehrKarten, Zahl, Zahlenliste } from "./teile"
 import { ARTEN, ERFAHRUNG, GELENKE, GERAETE, GERAETE_GRUPPEN, SAISON, SCHWERPUNKT, TERMINE, WOCHENTAGE, ZIELE } from "./texte"
 import { MASCHINEN } from "../logik/typen"
 import { Sym } from "./symbole"
@@ -22,9 +21,6 @@ export function Grunddaten({ profil, aendern }: Teil) {
       <Feld titel="Wie dürfen wir dich nennen?">
         <input value={profil.name} placeholder="Name oder Spitzname" onChange={(e) => aendern({ ...profil, name: e.target.value })} />
       </Feld>
-      <Feld titel="Dein Ziel">
-        <Karten werte={ZIELE} gewaehlt={profil.ziel} onChange={(ziel) => aendern({ ...profil, ziel })} />
-      </Feld>
       <Feld titel="Erfahrung">
         <Karten werte={ERFAHRUNG} gewaehlt={profil.erfahrung} onChange={(erfahrung) => aendern({ ...profil, erfahrung })} />
       </Feld>
@@ -33,32 +29,40 @@ export function Grunddaten({ profil, aendern }: Teil) {
 }
 
 export function SportWahl({ profil, aendern }: Teil) {
-  const sport = SPORTARTEN.find((s) => s.id === profil.sport) || SPORTARTEN[0]
+  const liste = sporte(profil)
+  const pos = positionen(profil)
   return (
     <>
       <Feld titel="Was soll trainiert werden?" text="Mehrfachauswahl. Ohne Ausdauer gibt es auch keine Ausdauereinheiten.">
         <Chips werte={ARTEN} gewaehlt={profil.arten} onChange={(arten) => aendern({ ...profil, arten: arten.length ? arten : ["kraft"] })} />
       </Feld>
-      <Feld titel="Sport" text={sport.text}>
+      <Feld titel="Sport" text={"Mehrfachauswahl. " + (liste.length > 1 ? "Die Krafttage wechseln zwischen den Sportarten." : SPORTARTEN.find((s) => s.id === liste[0])?.text || "")}>
         <Chips
-          einzeln
           werte={SPORTARTEN.map((s) => ({ id: s.id, name: s.name }))}
-          gewaehlt={[profil.sport]}
-          onChange={([s]) => {
-            const ziel = s === "bodybuilding" ? "muskelaufbau" : s === "reha" ? "fitness" : s !== "allgemein" && profil.ziel === "fitness" ? "sport" : profil.ziel
-            const neu = { ...profil, sport: s, ziel, position: s === "football" ? profil.position || "lb" : profil.position, reha: s === "reha" ? profil.reha || leeresReha() : profil.reha, erfahrung: s === "reha" ? "einsteiger" as const : profil.erfahrung }
-            // Anderer Sport, andere Saison: Jahresplan ab dem laufenden Block neu vorschlagen
-            aendern(neu.jahresplan && s !== profil.sport ? { ...neu, jahresplan: neuPlanen(neu, heute(), SAISON_VORSCHLAG[s] ?? null) } : neu)
+          gewaehlt={liste}
+          onChange={(neu) => {
+            // „Kein bestimmter Sport“ schließt die anderen aus und umgekehrt
+            const dazu = neu.find((s) => liste.indexOf(s) < 0)
+            const auswahl = dazu === "allgemein" ? ["allgemein"] : neu.filter((s) => s !== "allgemein")
+            let p = mitSporten(profil, auswahl)
+            if (auswahl.indexOf("reha") >= 0 && !p.reha) p = { ...p, reha: leeresReha(), erfahrung: "einsteiger" }
+            if (auswahl.indexOf("football") >= 0 && !positionen(p).length) p = mitPositionen(p, ["lb"])
+            if (dazu === "bodybuilding" && !hatZiel(p, "muskelaufbau")) p = mitZielen(p, [...ziele(p).filter((z) => z !== "fitness"), "muskelaufbau"])
+            if (dazu && dazu !== "allgemein" && dazu !== "reha" && dazu !== "bodybuilding" && ziele(p).join() === "fitness") p = mitZielen(p, ["sport"])
+            aendern(p)
           }}
         />
       </Feld>
-      {profil.sport === "reha" ? <RehaEditor profil={profil} aendern={aendern} /> : null}
-      {profil.sport === "football" ? (
-        <Feld titel="Position" text={positionVon(profil.position)?.text || "Wähle deine Position, danach richten sich die Schwerpunkte."}>
-          <Chips einzeln werte={POSITIONEN.map((p) => ({ id: p.id, name: p.name }))} gewaehlt={profil.position ? [profil.position] : []} onChange={([p]) => aendern({ ...profil, position: p })} />
+      <Feld titel="Ziele" text="Mehrfachauswahl. Das anspruchsvollste Ziel bestimmt die Hauptübungen (Kraft vor Sport vor Muskelaufbau), Muskelaufbau prägt die übrigen Übungen.">
+        <MehrKarten werte={ZIELE} gewaehlt={ziele(profil)} onChange={(z) => aendern(mitZielen(profil, z))} />
+      </Feld>
+      {hatSport(profil, "football") ? (
+        <Feld titel="Position" text={pos.length ? pos.map((id) => positionVon(id)?.text).join(" ") : "Wähle deine Positionen, danach richten sich die Schwerpunkte."}>
+          <Chips werte={POSITIONEN.map((p) => ({ id: p.id, name: p.name }))} gewaehlt={pos} onChange={(p) => aendern(mitPositionen(profil, p.length ? p : pos))} />
         </Feld>
       ) : null}
-      {profil.sport !== "allgemein" && profil.sport !== "reha" && !profil.jahresplan ? (
+      {hatSport(profil, "reha") ? <RehaEditor profil={profil} aendern={aendern} /> : null}
+      {liste.some((s) => s !== "allgemein" && s !== "reha") && !profil.jahresplan ? (
         <Feld titel="Phase">
           <Karten werte={SAISON} gewaehlt={profil.saison} onChange={(saison) => aendern({ ...profil, saison })} />
         </Feld>
@@ -186,8 +190,9 @@ function OrtKarte(props: { ort: Ort; aendern: (o: Ort) => void; entfernen?: () =
 
 export function WocheEditor({ profil, aendern }: Teil) {
   const setTag = (i: number, t: Wochentag) => aendern({ ...profil, woche: profil.woche.map((x, k) => (k === i ? t : x)) })
-  const sport = SPORTARTEN.find((s) => s.id === profil.sport)
-  const termine = TERMINE.filter((t) => !sport || !sport.termine.length || sport.termine.some((x) => x.id === t.id))
+  // Termine aller gewählten Sportarten
+  const erlaubt = SPORTARTEN.filter((s) => hatSport(profil, s.id)).flatMap((s) => s.termine.map((x) => x.id))
+  const termine = TERMINE.filter((t) => !erlaubt.length || erlaubt.indexOf(t.id) >= 0)
   return (
     <div className="woche-edit">
       {profil.woche.map((t, i) => (

@@ -12,6 +12,7 @@ import Bibliothek from "./ui/Bibliothek"
 import Weg, { BlockFortschritt } from "./ui/Weg"
 import { aktuellerBlock, wegStand } from "./logik/weg"
 import { rehaAktiv, rehaSperre } from "./logik/reha"
+import { vorgemerktAnwenden } from "./logik/umstellen"
 import Einrichtung from "./ui/Einrichtung"
 import Fortschritt from "./ui/Fortschritt"
 import Heute from "./ui/Heute"
@@ -71,6 +72,18 @@ export default function App() {
   const [updateZu, setUpdateZu] = useState(false)
   // Zurückgeste auf einem anderen Tab führt erst zu „Heute“, dann aus der App
   useEbene(tab !== "heute" && !!daten.profil, () => setTab("heute"))
+
+  // Vorgemerkte Planänderung übernehmen, sobald der neue Block begonnen hat
+  useEffect(() => {
+    const pruefen = () => {
+      const p = aktuell.current.profil
+      if (p?.vorgemerkt && heute() >= p.vorgemerkt.ab) aendern((d) => void (d.profil = vorgemerktAnwenden(d.profil!, heute())))
+    }
+    pruefen()
+    document.addEventListener("visibilitychange", pruefen)
+    return () => document.removeEventListener("visibilitychange", pruefen)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Beim Start still nach einer neueren APK suchen (ohne Netz passiert nichts); eingebettet kommt das Update mit der Lebenswelt
   useEffect(() => {

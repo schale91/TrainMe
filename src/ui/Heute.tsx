@@ -1,5 +1,6 @@
 // Startseite: heutige Einheit mit einem Tipp starten, Woche im Überblick, Stufe, Serie, dein Weg, Fakt des Tages.
 
+import { hatSport } from "../logik/auswahl"
 import { useMemo, useState } from "react"
 import { faktDesTages } from "../daten/fakten"
 import { BLOCK_WOCHEN, blockWoche, istEntlastung } from "../logik/progression"
@@ -14,6 +15,7 @@ import { offeneReaktion, rehaAktiv, rehaSperre } from "../logik/reha"
 import { wissenFuer } from "../daten/reha"
 import { Warnzeichen } from "./RehaTeile"
 import { wischen } from "./navigation"
+import { aenderungsText } from "../logik/auswahl"
 import { phaseInfo, phaseAm } from "../logik/jahresplan"
 import { BlockFortschritt } from "./Weg"
 import { aktuellerBlock, jahresAnteil, wegStand } from "../logik/weg"
@@ -43,7 +45,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const naechste = aktuell ? plan.find((e) => (profil.folge === "fortlaufend" || e.datum >= tag) && !istErledigt(daten, e)) : undefined
   const eigen = profil.planart === "eigen" && !!daten.eigenerPlan
   const planTag = eigen ? naechsterPlanTag(daten) : null
-  const fakt = faktDesTages(tag, profil.sport === "golf" ? "golf" : undefined)
+  const fakt = faktDesTages(tag, hatSport(profil, "golf") ? "golf" : undefined)
   const reha = rehaAktiv(profil)
   const sperre = reha ? rehaSperre(profil, tag) : null
   const reaktion = reha ? offeneReaktion(daten, tag) : -1
@@ -117,6 +119,11 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         </div>
       ) : null}
       {form ? <p className="hinweistext">{form}</p> : null}
+      {profil.vorgemerkt ? (
+        <p className="hinweistext">
+          Ab {datumText(profil.vorgemerkt.ab)} gilt dein geänderter Plan ({aenderungsText(profil, { ...profil, ...profil.vorgemerkt.aenderung })}). Bis dahin läuft der Block wie gehabt.
+        </p>
+      ) : null}
 
 
       {reaktion >= 0 ? (

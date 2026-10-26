@@ -1,7 +1,9 @@
 // Wochenplanung: welche Einheit an welchem Tag, welche Übung jeden Platz füllt und wie viele Sätze in die Zeit passen.
 // Alles ist deterministisch: gleiche Einstellungen und gleiches Protokoll ergeben den gleichen Plan.
 
-import { AUFTEILUNG, ERSATZ, VORLAGEN, positionVon, type PlatzVorlage } from "../daten/vorlagen"
+import { AUFTEILUNG, ERSATZ, VORLAGEN, positionVon, type PlatzVorlage, type Position } from "../daten/vorlagen"
+import { hatSport, positionen, sporte } from "./auswahl"
+import { bildInfo } from "../daten/reha"
 import { UEBUNGEN, uebung } from "../daten/uebungen/index"
 import { passendeGruppe, verfuegbar } from "./gewichte"
 import { BLOCK_WOCHEN, ausdauerVorgabe, blockWoche, istEntlastung, plateau, vorgabe } from "./progression"
@@ -10,7 +12,7 @@ import { PHASEN, mitPhase, type PlanProfil } from "./jahresplan"
 import { rehaAktiv, rehaEinheit } from "./reha"
 import { REHA_PHASEN } from "../daten/reha"
 import { planWoche } from "./eigenerPlan"
-import type { Daten, Einheit, Geraet, Grund, Messung, Muster, Ort, Platz, Profil, Protokoll, Rolle, Trainingsart, Uebung } from "./typen"
+import type { Daten, Einheit, Gelenk, Geraet, Grund, Messung, Muster, Ort, Platz, Profil, Protokoll, Rolle, Trainingsart, Uebung } from "./typen"
 
 const TAG = 86400000
 export const AUFWAERMEN_MIN = 8
@@ -70,8 +72,11 @@ export function wochenaufteilung(profil: Profil): Tagesplan[] {
   }
 
   if (kraftTage.length) {
-    const sport = AUFTEILUNG[profil.sport] ? profil.sport : "allgemein"
-    const vorlagen = AUFTEILUNG[sport][Math.min(6, kraftTage.length)].slice()
+    // Mehrere Sportarten: Vorlagen reihum aus jeder Sportart (Reha plant eigene Einheiten)
+    const liste = sporte(profil).filter((s) => AUFTEILUNG[s])
+    const quellen = (liste.length ? liste : ["allgemein"]).map((s) => AUFTEILUNG[s][Math.min(6, Math.max(1, Math.ceil(kraftTage.length / Math.max(1, liste.length))))].slice())
+    const vorlagen: string[] = []
+    for (let k = 0; vorlagen.length < kraftTage.length && k < 12; k++) for (const q of quellen) if (q[k] && vorlagen.length < kraftTage.length) vorlagen.push(q[k])
     while (vorlagen.length < kraftTage.length) vorlagen.push(AUFTEILUNG.allgemein[3][vorlagen.length % 3])
     const beinlast = (id: string) => VORLAGEN[id].plaetze.filter((p) => BEIN_MUSTER.indexOf(p.muster) >= 0 && (p.rolle === "haupt" || p.rolle === "schnellkraft")).length
     // Eingeschränkte Tage bekommen die Vorlagen mit der wenigsten Beinarbeit, die anderen behalten die Reihenfolge
@@ -102,6 +107,12 @@ export function erlaubt(profil: Profil, u: Uebung): boolean {
   }
   if (profil.erfahrung === "einsteiger" && u.stufe >= 3) return false
   return true
+}
+
+/** Profil an einem Datum: vorgemerkte Änderungen gelten ab ihrem Startdatum. */
+export function profilAm(profil: Profil, datum: string): Profil {
+  const v = profil.vorgemerkt
+  return v && datum >= v.ab ? { ...profil, ...v.aenderung, vorgemerkt: undefined } : profil
 }
 
 /** Draußen und ein Stuhl sind immer verfügbar. */
@@ -169,8 +180,8 @@ export function waehle(profil: Profil, ort: Ort, rolle: Rolle, muster: Muster, b
   const punkte = (u: Uebung) => {
     let p = 0
     // Hauptübungen: die Grundübung zählt mehr als der Sportbezug
-    if (u.sport && u.sport.indexOf(profil.sport) >= 0) p += rolle === "haupt" ? 1 : 3
-    if (profil.sport === "golf" && u.golf) p += rolle === "haupt" ? u.golf * 0.5 : u.golf * 1.5
+    if (u.sport && u.sport.some((s) => hatSport(profil, s))) p += rolle === "haupt" ? 1 : 3
+    if (hatSport(profil, "golf") && u.golf) p += rolle === "haupt" ? u.golf * 0.5 : u.golf * 1.5
     // Abwechslung je Block: innerhalb eines Blocks bleiben die Übungen gleich, damit Fortschritt messbar ist
     p += streuung(u.id + "|" + blockNummer(profil, datum)) * 1.5
     const g = geraet(u)
@@ -206,8 +217,8 @@ export function warum(profil: PlanProfil, ort: Ort, einheit: string, rolle: Roll
   if (position) g.push({ art: "position", position })
   if (muster !== vorlage) g.push({ art: "ersatz", statt: vorlage })
   if (rolle === "mobil" && schwach.indexOf(muster) >= 0) g.push({ art: "schwachstelle", muster })
-  if (profil.sport === "golf" && u.golf) g.push({ art: "golf", stufe: u.golf })
-  else if (profil.sport !== "allgemein" && u.sport && u.sport.indexOf(profil.sport) >= 0) g.push({ art: "sport", sport: profil.sport })
+  if (hatSport(profil, "golf") && u.golf) g.push({ art: "golf", stufe: u.golf })
+  else if (u.sport && u.sport.some((s) => s !== "allgemein" && hatSport(profil, s))) g.push({ art: "sport", sport: u.sport.find((s) => hatSport(profil, s))! })
   const gr = passendeGruppe(u, mitAlltag(ort.geraete))
   if (u.belastung === "gewicht" && gr && gr.last && verfuegbar(gr.last, ort.gewichte).length) g.push({ art: "geraet", geraet: gr.last })
   if ((profil.erfahrung === "einsteiger" && u.stufe === 1) || (rolle === "haupt" && profil.erfahrung !== "einsteiger" && u.stufe >= 2)) g.push({ art: "stufe", stufe: u.stufe, erfahrung: profil.erfahrung })
@@ -262,10 +273,13 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
   const schwach = schwachstellen(daten)
   // Reha: reihum andere Übungsfamilien, auch über die Wochen hinweg
   let runde = Math.floor(Date.parse(montag + "T12:00:00Z") / (7 * TAG)) * 7
-  for (const t of wochenaufteilung(grundprofil)) {
+  let kraftNr = 0
+  // Blöcke beginnen montags: vorgemerkte Änderungen gelten für die ganze Woche
+  for (const t of wochenaufteilung(profilAm(grundprofil, montag))) {
     const datum = plusTage(montag, t.tag)
     // Phase aus dem Jahresplan: steuert Wiederholungen, Reserve, Pausen und Sätze
-    const profil = mitPhase(grundprofil, datum)
+    // Vorgemerkte Änderungen gelten ab dem nächsten Block auch schon in der Vorschau
+    let profil = mitPhase(profilAm(grundprofil, datum), datum)
     const phase = profil.phase
     const tag = profil.woche[t.tag]
     const ortIndex = Math.min(Math.max(0, tag.ort || 0), Math.max(0, profil.orte.length - 1))
@@ -275,12 +289,21 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
     const woche = blockWoche(profil, datum)
     const hinweise: string[] = []
     if (t.hinweis) hinweise.push(t.hinweis)
-    if (rehaAktiv(grundprofil)) {
+    // Reha zusammen mit einem Sport: Krafttage abwechselnd Reha und Sport, Sporttage schonen die Reha-Gelenke
+    const gemischt = rehaAktiv(profil) && sporte(profil).some((s) => s !== "reha")
+    const sporttag = gemischt && t.art === "kraft" && kraftNr++ % 2 === 1
+    if (rehaAktiv(profil) && !sporttag) {
       const ph = phase ? REHA_PHASEN[phase] : null
       if (ph && t.art !== "ausdauer") hinweise.push("Phase " + ph.name + ": " + ph.training)
       if (istEntlastung(woche)) hinweise.push("Leichtere Woche: höchstens 2 Sätze. Gute Gelegenheit für die Funktionstests.")
       ergebnis.push(rehaEinheit(profil, daten, { datum, art: t.art, ort, ortIndex, minuten, runde: t.art === "ausdauer" ? runde : runde++, hinweise, entlastung: istEntlastung(woche) }, passtAnOrt, lastenAn))
       continue
+    }
+    if (sporttag) {
+      const gelenke = Array.from(new Set(profil.reha!.bilder.map((b) => bildInfo(b.id).gelenk))) as Gelenk[]
+      const alt = profil.beschwerden
+      profil = { ...profil, beschwerden: [...alt, ...gelenke.filter((g) => !alt.some((b) => b.gelenk === g)).map((g) => ({ gelenk: g, grad: "schonen" as const }))] }
+      hinweise.push("Sporttag neben der Reha: Übungen mit hoher Last auf " + gelenke.map((g) => GELENK_NAME[g]).join(" und ") + " sind ausgelassen.")
     }
     if (phase && t.art === "kraft") hinweise.push("Phase " + PHASEN[phase].name + ": " + PHASEN[phase].training)
     if (istEntlastung(woche)) hinweise.push("Entlastungswoche: weniger Sätze, mehr Reserve. Danach beginnt ein neuer Block.")
@@ -288,13 +311,18 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
 
     let plaetze: PlatzVorlage[] = VORLAGEN[t.vorlage].plaetze.slice()
     // Football: die Position ergänzt Plätze und lässt Unpassendes weg
-    const pos = profil.sport === "football" ? positionVon(profil.position) : null
-    if (pos) plaetze = [...plaetze.filter((p) => pos.ohne.indexOf(p.muster) < 0), ...(pos.extra[t.vorlage] || [])]
+    // Mehrere Positionen: Extras aller Positionen, weggelassen wird nur, was keine Position braucht
+    const pos = hatSport(profil, "football") ? positionen(profil).map((id) => positionVon(id)).filter((x): x is Position => !!x) : []
+    if (pos.length) {
+      const extra: PlatzVorlage[] = []
+      for (const x of pos) for (const e of x.extra[t.vorlage] || []) if (!extra.some((y) => y.muster === e.muster && y.rolle === e.rolle)) extra.push(e)
+      plaetze = [...plaetze.filter((p) => !pos.every((x) => x.ohne.indexOf(p.muster) >= 0)), ...extra]
+    }
     if (t.einschraenkung > 0) plaetze = plaetze.filter((p) => BEIN_MUSTER.indexOf(p.muster) < 0 || (t.einschraenkung === 1 && p.rolle !== "haupt" && p.rolle !== "schnellkraft"))
     if (t.art === "regeneration" && profil.arten.indexOf("ausdauer") >= 0) plaetze.push({ rolle: "ausdauer", muster: "ausdauer_ruhig" })
     // Mobilität angewählt, aber kein eigener Tag: kurze Mobilität am Ende jeder Krafteinheit
     if (t.art === "kraft" && profil.arten.indexOf("mobilitaet") >= 0 && !profil.woche.some((w) => w.art === "training" && w.schwerpunkt === "mobilitaet") && !plaetze.some((p) => p.rolle === "mobil")) {
-      plaetze.push({ rolle: "mobil", muster: profil.sport === "golf" ? "mobilitaet_bws" : "mobilitaet_huefte" })
+      plaetze.push({ rolle: "mobil", muster: hatSport(profil, "golf") ? "mobilitaet_bws" : "mobilitaet_huefte" })
     }
     // Ohne gewählte Mobilität keine Mobilitätsplätze, außer die Vorlage besteht nur daraus (ganzer Mobilitätstag)
     if (t.art === "kraft" && profil.arten.indexOf("mobilitaet") < 0 && plaetze.some((p) => p.rolle !== "mobil")) plaetze = plaetze.filter((p) => p.rolle !== "mobil")
@@ -322,7 +350,7 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
       heuteBenutzt.add(u.id)
       benutzt.add(u.id)
       const titel = t.art === "regeneration" ? "Regeneration" : VORLAGEN[t.vorlage].titel
-      gewaehlt.push({ rolle: pv.rolle, muster, uebung: u, vorgabe: null as never, warum: warum(profil, ort, titel, pv.rolle, pv.muster, muster, u, daten.protokoll, datum, schwach, pv.position && pos ? pos.name : undefined) })
+      gewaehlt.push({ rolle: pv.rolle, muster, uebung: u, vorgabe: null as never, warum: warum(profil, ort, titel, pv.rolle, pv.muster, muster, u, daten.protokoll, datum, schwach, pv.position && pos.length ? pos.map((x) => x.name).join(", ") : undefined) })
     }
 
     // Sätze verteilen, bis die Zeit voll ist
@@ -407,7 +435,7 @@ export function alternativen(profil: Profil, ort: Ort, muster: Muster, ohne: str
 
 /** Platz mit neuer Übung, z. B. nach einem Tausch. */
 export function platzMit(grundprofil: Profil, daten: Daten, datum: string, ort: Ort, alt: Platz, u: Uebung): Platz {
-  const profil = mitPhase(grundprofil, datum)
+  const profil = mitPhase(profilAm(grundprofil, datum), datum)
   const g = passendeGruppe(u, mitAlltag(ort.geraete))
   const lasten = u.belastung === "gewicht" && g && g.last ? verfuegbar(g.last, ort.gewichte) : []
   const v = vorgabe(profil, alt.rolle, u, alt.vorgabe.saetze, verlaufVon(daten.protokoll, u.id, datum), lasten, blockWoche(profil, datum), daten.maxwerte?.[u.id]?.kg)

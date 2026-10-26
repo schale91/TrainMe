@@ -1,5 +1,6 @@
 // Fortschritt: Kraftkurven (geschätztes Maximum je Einheit), Beweglichkeitstests und die 1-%-Methode.
 
+import { hatSport } from "../logik/auswahl"
 import { useMemo, useState } from "react"
 import { uebung } from "../daten/uebungen/index"
 import { FAKTEN, faktDesTages, prozentMethode } from "../daten/fakten"
@@ -200,7 +201,7 @@ function wertText(t: BeweglichkeitsTest, w: number): string {
 
 export function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => void) => void }) {
   const { daten } = props
-  const golf = daten.profil?.sport === "golf"
+  const golf = (!!daten.profil && hatSport(daten.profil, "golf"))
   const [test, setTest] = useState<BeweglichkeitsTest | null>(null)
   const [links, setLinks] = useState<string>("")
   const [rechts, setRechts] = useState<string>("")
@@ -331,7 +332,7 @@ function EinProzent(props: { daten: Daten }) {
   const tag = heute()
   const montag = montagVon(tag)
   const kraftWoche = daten.erledigt.filter((e) => e.datum >= montag && (e.art === "kraft" || e.art === undefined)).length
-  const fakt = faktDesTages(tag, daten.profil?.sport === "golf" ? "golf" : undefined)
+  const fakt = faktDesTages(tag, (!!daten.profil && hatSport(daten.profil, "golf")) ? "golf" : undefined)
   const kurve = Array.from({ length: 21 }, (_, i) => {
     const x = Math.round((i / 20) * Math.max(n, 20) * 1.5)
     return { datum: "", wert: Math.pow(1.01, x) }

@@ -3,6 +3,7 @@
 // Satz über 5 lag. War es am Morgen nach dem Training schlechter, bleibt alles auf der Stufe und es gibt einen Satz
 // weniger. Die ersten sechs Wochen nach einer Operation gibt es nur sanfte Übungen.
 
+import { hatSport } from "./auswahl"
 import { BILDER, FAMILIEN, FRUEHPHASE, KREIS_NAME, bildInfo, familie, type Familie, type Kreis, type Stufe } from "../daten/reha"
 import { uebung } from "../daten/uebungen/index"
 import { abrunden, hoeher } from "./gewichte"
@@ -13,7 +14,7 @@ import type { Daten, Einheit, Grund, Ort, Phase, Platz, Profil, Protokoll, RehaB
 const TAG = 86400000
 
 export function rehaAktiv(profil: Profil | null | undefined): boolean {
-  return !!profil && profil.sport === "reha" && !!profil.reha
+  return !!profil && hatSport(profil, "reha") && !!profil.reha
 }
 
 /** Wochen seit der Operation, oder null ohne OP-Datum. */

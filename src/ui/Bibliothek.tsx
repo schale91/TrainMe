@@ -1,5 +1,6 @@
 // Übungsbibliothek: suchen, nach Bereich filtern, nur machbare zeigen, Golf-Fokus. Antippen öffnet die Info.
 
+import { hatSport } from "../logik/auswahl"
 import { useMemo, useState } from "react"
 import { UEBUNGEN } from "../daten/uebungen/index"
 import { erlaubt, passtAnOrt } from "../logik/plan"
@@ -18,7 +19,7 @@ export default function Bibliothek(props: { profil: Profil }) {
   const [suche, setSuche] = useState("")
   const [bereich, setBereich] = useState<string>("alle")
   const [nurMachbar, setNurMachbar] = useState(true)
-  const [nurGolf, setNurGolf] = useState(profil.sport === "golf")
+  const [nurGolf, setNurGolf] = useState(hatSport(profil, "golf"))
   const [offen, setOffen] = useState<Uebung | null>(null)
 
   const machbar = useMemo(() => {

@@ -2380,3 +2380,32 @@ select.ampel.rot {
 .figur.klein {
   max-width: 200px;
 }
+
+/* ---------- Plan umstellen ---------- */
+
+.umstellknoepfe {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.umstellen {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche2);
+  color: var(--text);
+  text-align: left;
+  font-size: 16px;
+}
+.umstellen small {
+  color: var(--leise);
+  font-size: 14px;
+}
+.umstellen:active {
+  border-color: var(--akzent);
+}

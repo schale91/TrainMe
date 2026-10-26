@@ -1,5 +1,6 @@
 // Eine Einheit durchführen: Vorgaben sehen, Sätze abhaken, Pause läuft automatisch, am Ende gibt es XP.
 
+import { hatSport } from "../logik/auswahl"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { alternativen, lastGeraet, lastenAn, platzMit, verlauf } from "../logik/plan"
 import { lastText } from "../logik/gewichte"
@@ -237,7 +238,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           <section key={i + u.id} className={"uebungskarte" + (alle ? " geschafft" : "")}>
             <div className="uebungskopf">
               <span className={"marke " + p.rolle}>{p.gruppe ? "Supersatz " + p.gruppe + (plaetze.slice(0, i + 1).filter((x) => x.gruppe === p.gruppe).length) : p.etikett || ROLLE[p.rolle]}</span>
-              {u.golf && profil.sport === "golf" ? (
+              {u.golf && hatSport(profil, "golf") ? (
                 <span className="marke golf mitsym">
                   <Sym name="golf" groesse={13} /> Golf
                 </span>
@@ -423,7 +424,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             <p className="infokurz">„Heute“ tauscht nur für diese Einheit. „Immer“ schließt {plaetze[tausch].uebung.name} künftig aus.</p>
             <Gruppe>
               {alternativen(profil, ort, plaetze[tausch].muster, plaetze[tausch].uebung.id)
-                .sort((a, b) => (profil.sport === "golf" ? (b.golf || 0) - (a.golf || 0) : 0) || a.name.localeCompare(b.name, "de"))
+                .sort((a, b) => (hatSport(profil, "golf") ? (b.golf || 0) - (a.golf || 0) : 0) || a.name.localeCompare(b.name, "de"))
                 .map((a) => (
                   <Zeile
                     key={a.id}

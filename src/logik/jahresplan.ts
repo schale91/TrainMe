@@ -3,6 +3,7 @@
 // in der Saison Kraft erhalten, danach ein lockerer Übergangsblock.
 
 import { REHA_PHASEN } from "../daten/reha"
+import { hatZiel, nurReha, sporte } from "./auswahl"
 import type { Jahresplan, Phase, Profil, Saison } from "./typen"
 
 const TAG = 86400000
@@ -121,14 +122,22 @@ export function phaseNachRegel(start: string, i: number, saison: Jahresplan["sai
 }
 
 /** Welche Reihe ohne Saison gilt: Sportler wie „sport“, Bodybuilding und Muskelaufbau wie „muskelaufbau“. */
-function reiheZiel(profil: Pick<Profil, "ziel" | "sport">): string {
-  if (profil.sport === "reha") return "reha"
-  if (profil.sport === "bodybuilding" || profil.ziel === "muskelaufbau") return "muskelaufbau"
-  return profil.sport !== "allgemein" ? "sport" : profil.ziel
+function reiheZiel(profil: Pick<Profil, "ziel" | "sport" | "sporte" | "ziele">): string {
+  if (nurReha(profil)) return "reha"
+  const sp = sporte(profil).filter((s) => s !== "reha" && s !== "allgemein")
+  if (sp.some((s) => s !== "bodybuilding")) return hatZiel(profil, "muskelaufbau") && !hatZiel(profil, "sport") && !hatZiel(profil, "kraft") ? "muskelaufbau" : "sport"
+  if (sp.length || hatZiel(profil, "muskelaufbau")) return "muskelaufbau"
+  return hatZiel(profil, "kraft") ? "kraft" : profil.ziel
+}
+
+/** Saison der ersten gewählten Sportart, die eine feste Saison hat. */
+export function saisonFuer(profil: Pick<Profil, "sport" | "sporte">): Jahresplan["saison"] {
+  for (const s of sporte(profil)) if (SAISON_VORSCHLAG[s]) return SAISON_VORSCHLAG[s]
+  return null
 }
 
 /** Vorschlag für ein Jahr ab einem Blockbeginn. */
-export function jahresplanVorschlag(profil: Pick<Profil, "ziel" | "sport">, start: string, saison: Jahresplan["saison"] = SAISON_VORSCHLAG[profil.sport] ?? null): Jahresplan {
+export function jahresplanVorschlag(profil: Pick<Profil, "ziel" | "sport" | "sporte" | "ziele">, start: string, saison: Jahresplan["saison"] = saisonFuer(profil)): Jahresplan {
   const ziel = reiheZiel(profil)
   return { start, saison, bloecke: Array.from({ length: BLOECKE_JAHR }, (_, i) => phaseNachRegel(start, i, saison, ziel)) }
 }

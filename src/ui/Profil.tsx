@@ -7,7 +7,7 @@ import { bildInfo } from "../daten/reha"
 import { heute, montagVon } from "../logik/plan"
 import { exportieren, importieren } from "../logik/speicher"
 import type { Daten, Profil as ProfilT } from "../logik/typen"
-import { Gruppe, Schalter, Seite, Zeile } from "./ios"
+import { Blatt, Gruppe, Schalter, Seite, Zeile } from "./ios"
 import { benachrichtigungErlauben, overlayErlauben, timerStatus } from "./pausenTimer"
 import { AusnahmenEditor, Grunddaten, KoerperEditor, OrteEditor, SportWahl, WocheEditor } from "./Profilteile"
 import { dateiTeilen } from "./teilen"
@@ -21,6 +21,10 @@ import type { UpdateInfo } from "../logik/update"
 import { RELEASES_SEITE } from "../logik/update"
 import { updateSuchen } from "./update"
 import { LebensweltSeite, PlanSeite } from "./PlanSeiten"
+import EntwurfSeite from "./Entwurf"
+import { aenderungsText, positionen, sporte, ziele } from "../logik/auswahl"
+import { vorgemerktAnwenden } from "../logik/umstellen"
+import { datumText } from "./texte"
 import { kopplung, modus } from "./lebenswelt"
 
 export type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback" | "jahresplan" | "update" | "plan" | "lebenswelt"
@@ -28,20 +32,21 @@ export type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" 
 export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT) => void; ersetzen: (d: Daten) => void; zuruecksetzen: () => void; aendern: (f: (d: Daten) => void) => void; einstufen: () => void; start?: Unterseite; update: UpdateInfo | null; updateGefunden: (u: UpdateInfo | null) => void }) {
   const profil = props.daten.profil!
   const [seite, setSeite] = useState<Unterseite>(props.start || null)
+  const [vorOffen, setVorOffen] = useState(false)
   const teil = { profil, aendern: props.profilAendern }
   const zurueck = { text: "Profil", onClick: () => setSeite(null) }
 
   if (seite === "ziel")
     return (
-      <Seite titel="Ziel und Erfahrung" zurueck={zurueck}>
-        <Grunddaten {...teil} />
-      </Seite>
+      <EntwurfSeite titel="Name und Erfahrung" profil={profil} speichern={props.profilAendern} schliessen={() => setSeite(null)}>
+        {(p, aendern) => <Grunddaten profil={p} aendern={aendern} />}
+      </EntwurfSeite>
     )
   if (seite === "sport")
     return (
-      <Seite titel="Training und Sport" zurueck={zurueck}>
-        <SportWahl {...teil} />
-      </Seite>
+      <EntwurfSeite titel="Training und Sport" profil={profil} speichern={props.profilAendern} schliessen={() => setSeite(null)}>
+        {(p, aendern) => <SportWahl profil={p} aendern={aendern} />}
+      </EntwurfSeite>
     )
   if (seite === "orte")
     return (
@@ -77,8 +82,9 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
   if (seite === "plan") return <PlanSeite daten={props.daten} aendern={props.aendern} zurueck={zurueck} />
   if (seite === "lebenswelt") return <LebensweltSeite zurueck={zurueck} />
 
-  const ziel = ZIELE.find((z) => z.id === profil.ziel)
-  const sport = SPORTARTEN.find((s) => s.id === profil.sport)
+  const zielText = ziele(profil).map((z) => ZIELE.find((x) => x.id === z)?.name).join(", ")
+  const sportText = sporte(profil).map((s) => (s === "reha" && profil.reha?.bilder.length ? profil.reha.bilder.map((b) => bildInfo(b.id).name).join(", ") : SPORTARTEN.find((x) => x.id === s)?.name) + (s === "football" && positionen(profil).length ? " (" + positionen(profil).map((id) => positionVon(id)?.kurz).join(", ") + ")" : "")).join(", ")
+  const vorgemerkt = profil.vorgemerkt
   const tage = profil.woche.filter((t) => t.art === "training").length
   const phase = phaseAm(profil, heute())
   const beschwerden = profil.beschwerden.map((b) => GELENKE.find((g) => g.id === b.gelenk)?.name).join(", ")
@@ -86,8 +92,8 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
   return (
     <Seite titel="Profil" untertitel={profil.name || undefined}>
       <Gruppe titel="Training">
-        <Zeile symbol={<SymKachel name="ziel" farbe="#e7792f" />} titel="Ziel und Erfahrung" wert={ziel?.name + ", " + ERFAHRUNG.find((e) => e.id === profil.erfahrung)?.name} onClick={() => setSeite("ziel")} />
-        <Zeile symbol={<SymKachel name="golf" farbe="#1f9e73" />} titel="Training und Sport" wert={profil.sport === "reha" && profil.reha?.bilder.length ? profil.reha.bilder.map((b) => bildInfo(b.id).name).join(", ") : (sport?.name || "") + (profil.sport === "football" && positionVon(profil.position) ? ", " + positionVon(profil.position)!.kurz : "")} onClick={() => setSeite("sport")} />
+        <Zeile symbol={<SymKachel name="golf" farbe="#1f9e73" />} titel="Training und Sport" untertitel={sportText + " · " + zielText} onClick={() => setSeite("sport")} />
+        <Zeile symbol={<SymKachel name="medaille" farbe="#e7792f" />} titel="Name und Erfahrung" wert={ERFAHRUNG.find((e) => e.id === profil.erfahrung)?.name} onClick={() => setSeite("ziel")} />
         <Zeile symbol={<SymKachel name="kalender" farbe="#d8506a" />} titel="Woche" wert={tage + " Trainingstage"} onClick={() => setSeite("woche")} />
         <Zeile symbol={<SymKachel name="haus" farbe="#4f68f0" />} titel="Orte und Geräte" wert={profil.orte.map((o) => o.name).join(", ")} onClick={() => setSeite("orte")} />
       </Gruppe>
@@ -98,6 +104,14 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
       <Gruppe titel="Plan" fuss={profil.planart === "eigen" ? "Mit eigenem Plan gibt der Plan Tage und Übungen vor. Kraftwerte zählen weiter für Prozentangaben." : "Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Die laufende Phase beginnt dann von vorn, der Jahresplan rückt nach hinten."}>
         <Zeile symbol={<SymKachel name="bausteine" farbe="#4f68f0" />} titel="Woher der Plan kommt" wert={profil.planart === "eigen" ? props.daten.eigenerPlan?.name || "Eigener Plan" : "TrainMe plant"} onClick={() => setSeite("plan")} />
         <Zeile symbol={<SymKachel name="kalender" farbe="#2aa58a" />} titel="Jahresplan" wert={phase ? phaseInfo(phase, profil.sport).name : "festlegen"} onClick={() => setSeite("jahresplan")} />
+        {vorgemerkt ? (
+          <Zeile
+            symbol={<SymKachel name="wiederholen" farbe="#c98a1e" />}
+            titel={"Vorgemerkt ab " + datumText(vorgemerkt.ab)}
+            untertitel={aenderungsText(profil, { ...profil, ...vorgemerkt.aenderung })}
+            onClick={() => setVorOffen(true)}
+          />
+        ) : null}
         <Zeile symbol={<SymKachel name="ziel" farbe="#c98a1e" />} titel="Kraftwerte und Mobilität neu einstufen" untertitel={props.daten.einstufung?.kraft ? "zuletzt " + props.daten.einstufung.kraft.split("-").reverse().join(".") : "noch nicht erledigt"} onClick={props.einstufen} />
         <Zeile symbol={<SymKachel name="wiederholen" farbe="#2b9cc2" />} titel="Neuen Block ab dieser Woche" onClick={() => props.profilAendern(blockNeuStarten(profil, montagVon(heute())))} pfeil={false} />
       </Gruppe>
@@ -110,6 +124,35 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
         <Zeile symbol={<SymKachel name="archiv" farbe="#7d7a99" />} titel="Sicherung" onClick={() => setSeite("sicherung")} />
         <Zeile symbol={<SymKachel name="info" farbe="#5d5891" />} titel="Über TrainMe und Quellen" onClick={() => setSeite("ueber")} />
       </Gruppe>
+      <Blatt offen={vorOffen} onClose={() => setVorOffen(false)} titel="Vorgemerkte Änderung">
+        {vorgemerkt ? (
+          <>
+            <p className="infokurz">
+              Ab {datumText(vorgemerkt.ab)} gilt: {aenderungsText(profil, { ...profil, ...vorgemerkt.aenderung })}. Bis dahin bleibt der Plan, wie er ist.
+            </p>
+            <button
+              type="button"
+              className="knopf voll"
+              onClick={() => {
+                props.profilAendern(vorgemerktAnwenden(profil, heute(), true))
+                setVorOffen(false)
+              }}
+            >
+              Schon ab jetzt übernehmen
+            </button>
+            <button
+              type="button"
+              className="knopf voll leise"
+              onClick={() => {
+                props.profilAendern({ ...profil, vorgemerkt: undefined })
+                setVorOffen(false)
+              }}
+            >
+              Verwerfen
+            </button>
+          </>
+        ) : null}
+      </Blatt>
     </Seite>
   )
 }

@@ -4,9 +4,10 @@
 // Grundlagen (siehe docs/KONZEPT.md): RIR-Skala nach Zourdos et al. 2016, geschätztes Maximum nach Epley,
 // Wochenvolumen nach Schoenfeld et al. 2017, Nähe zum Versagen eher für Muskelaufbau als für Kraft.
 
+import { hatZiel } from "./auswahl"
 import { abrunden, hoeher, niedriger } from "./gewichte"
 import type { PlanProfil } from "./jahresplan"
-import type { Phase, Profil, Progressionsmodell, Protokoll, Rolle, Satz, Uebung, Vorgabe } from "./typen"
+import type { Phase, Profil, Ziel, Progressionsmodell, Protokoll, Rolle, Satz, Uebung, Vorgabe } from "./typen"
 
 export const BLOCK_WOCHEN = 5 // 4 Aufbauwochen und eine Entlastungswoche
 
@@ -47,13 +48,15 @@ export function zielRir(profil: PlanProfil, rolle: Rolle, woche: number): number
   if (istEntlastung(woche)) return 4
   if (rolle === "schnellkraft") return 4
   let reihe = [3, 2, 2, 2]
-  if (profil.ziel === "muskelaufbau") reihe = [3, 2, 1, 1]
-  else if (profil.ziel === "kraft" || profil.ziel === "sport") reihe = [3, 3, 2, 2]
+  // Mehrere Ziele: Hauptübungen richten sich nach Kraft oder Sport, die übrigen nach Muskelaufbau
+  const aufbau = hatZiel(profil, "muskelaufbau") && (rolle !== "haupt" || !(hatZiel(profil, "kraft") || hatZiel(profil, "sport")))
+  if (aufbau) reihe = [3, 2, 1, 1]
+  else if (hatZiel(profil, "kraft") || hatZiel(profil, "sport")) reihe = [3, 3, 2, 2]
   if (profil.saison === "wettkampf") reihe = [3, 3, 3, 3]
   if (profil.phase) reihe = PHASEN_RIR[profil.phase]
   let r = reihe[Math.min(3, woche)]
   // Isolationsübungen dürfen beim Muskelaufbau näher ans Versagen
-  if (rolle === "isolation" && (profil.ziel === "muskelaufbau" || profil.phase === "grundlage") && profil.phase !== "uebergang") r -= 1
+  if (rolle === "isolation" && (hatZiel(profil, "muskelaufbau") || profil.phase === "grundlage") && profil.phase !== "uebergang") r -= 1
   if (profil.erfahrung === "einsteiger") r = Math.max(2, r + 1)
   return Math.max(0, r)
 }
@@ -73,14 +76,15 @@ export function bereich(profil: PlanProfil, rolle: Rolle, u: Uebung): [number, n
     return einsteiger ? [6, 8] : [4, 6]
   }
   if (ph === "uebergang") return [12, 15]
-  const z = profil.ziel
+  // Mehrere Ziele: das anspruchsvollste bestimmt die Hauptübungen (Kraft vor Sport vor Muskelaufbau)
+  const hat = (z: Ziel) => hatZiel(profil, z)
   if (rolle === "haupt") {
-    if (z === "kraft") return [4, 6]
-    if (z === "sport") return profil.saison === "vorbereitung" ? [6, 8] : [4, 6]
-    if (z === "muskelaufbau") return [6, 10]
+    if (hat("kraft")) return [4, 6]
+    if (hat("sport")) return profil.saison === "vorbereitung" ? [6, 8] : [4, 6]
+    if (hat("muskelaufbau")) return [6, 10]
     return [8, 12]
   }
-  if (rolle === "neben") return z === "kraft" || z === "sport" ? [6, 10] : [8, 12]
+  if (rolle === "neben") return (hat("kraft") || hat("sport")) && !hat("muskelaufbau") ? [6, 10] : [8, 12]
   if (rolle === "praevention") return [8, 12]
   return [10, 15]
 }
@@ -90,7 +94,7 @@ export function pause(profil: PlanProfil, rolle: Rolle): number {
   if (profil.phase === "uebergang" && rolle !== "mobil") return rolle === "haupt" || rolle === "neben" ? 90 : 60
   if (rolle === "haupt" && profil.phase === "grundlage") return 120
   if (rolle === "haupt" && profil.phase) return 180
-  if (rolle === "haupt") return profil.ziel === "kraft" || profil.ziel === "sport" ? 180 : 150
+  if (rolle === "haupt") return hatZiel(profil, "kraft") || hatZiel(profil, "sport") ? 180 : 150
   if (rolle === "neben") return 120
   if (rolle === "schnellkraft") return 90
   if (rolle === "mobil") return 15
@@ -103,7 +107,7 @@ export function modellFuer(profil: Profil, rolle: Rolle, u: Uebung, einheitenBis
   if (rolle === "schnellkraft" || u.belastung === "distanz") return "qualitaet"
   if (u.belastung === "wiederholungen") return "doppelt"
   if (profil.erfahrung === "einsteiger" && einheitenBisher < 8) return "linear"
-  if (rolle === "haupt" && profil.erfahrung !== "einsteiger" && (profil.ziel === "kraft" || profil.ziel === "sport" || profil.erfahrung === "erfahren")) return "rir"
+  if (rolle === "haupt" && profil.erfahrung !== "einsteiger" && (hatZiel(profil, "kraft") || hatZiel(profil, "sport") || profil.erfahrung === "erfahren")) return "rir"
   return "doppelt"
 }
 

@@ -115,6 +115,20 @@ Kniegelenk, Kreuzschmerz. Mehrfachauswahl, je Gelenk die Seite, bei Operationen 
   Sturzrisiko, CDC STEADI), Einbeinstand (unter 5 Sekunden erhöhtes Sturzrisiko, Vellas et al. 1997), 40 Meter zügig.
 - **Phasen:** Einstieg, zweimal Aufbau, Festigen, im Wechsel. **Wissen:** kurze Karten mit Quelle auf Heute.
 
+## 3b. Mehrfachauswahl und Planänderungen
+
+- **Mehrere Sportarten:** Die Krafttage wechseln reihum zwischen den Vorlagen der Sportarten (Golf und Football:
+  Golf-Unterkörper, Football-Unterkörper, Golf-Oberkörper, …). Golfbezug, Sportbezug und Saison gelten, sobald die
+  Sportart dabei ist; die Saison kommt von der ersten Sportart mit fester Saison. Reha zusammen mit einem Sport: Krafttage
+  abwechselnd Reha und Sport, an Sporttagen werden die Reha-Gelenke geschont (keine Übungen mit hoher Last darauf).
+- **Mehrere Ziele:** Hauptübungen nach dem anspruchsvollsten Ziel (Kraft vor Sport vor Muskelaufbau), Ergänzungen und
+  Isolation nach Muskelaufbau, wenn gewählt.
+- **Mehrere Positionen:** Extras aller Positionen; weggelassen wird nur, was keine der Positionen braucht.
+- **Rückfrage:** Änderungen an Sport, Zielen, Position, Trainingsarten, Erfahrung oder Reha-Angaben sind auf der
+  Profilseite zuerst ein Entwurf. Beim Verlassen: ab jetzt anpassen (Jahresplan ab dem laufenden Block neu), nach diesem
+  Block (vorgemerkt, die Wochenvorschau zeigt den neuen Plan schon, beim Blockwechsel übernommen) oder Plan nicht
+  verändern (verworfen). Name, Freigabe, Warnzeichen und Angaben für die Tests gelten immer sofort.
+
 ## 4. Spiel
 
 - XP je Einheit: 20 + 2 je Satz + 15 je neuem Bestwert, +10 für Mobilität oder Regeneration, +10 in der Entlastungswoche. Entlastung und Erholung werden also belohnt, nicht bestraft.

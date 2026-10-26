@@ -1,6 +1,6 @@
 // Jahresplan: Phasen je Block als Zeitstrahl, wo man gerade steht, was danach kommt, und jede Phase einzeln änderbar.
 
-import { BLOCK_TAGE, MONATE, SAISON_VORSCHLAG, blockIndex, neuPlanen, phaseAm, plusTage, phaseInfo } from "../logik/jahresplan"
+import { BLOCK_TAGE, MONATE, saisonFuer, blockIndex, neuPlanen, phaseAm, plusTage, phaseInfo } from "../logik/jahresplan"
 import { BLOCK_WOCHEN, blockWoche, istEntlastung } from "../logik/progression"
 import type { Jahresplan, Phase, Profil } from "../logik/typen"
 import { Gruppe, Seite, Zeile } from "./ios"
@@ -37,7 +37,7 @@ export function PhasenStreifen(props: { plan: Jahresplan; datum: string; beschri
 export default function JahresplanSeite(props: { profil: Profil; heute: string; aendern: (p: Profil) => void; zurueck: { text: string; onClick: () => void } }) {
   const { profil, heute } = props
   const plan = profil.jahresplan
-  const vorschlag = SAISON_VORSCHLAG[profil.sport] ?? null
+  const vorschlag = saisonFuer(profil)
 
   if (!plan) {
     return (
