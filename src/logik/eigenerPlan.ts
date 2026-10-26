@@ -123,7 +123,8 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
     const max = maximum(daten, basis, datum)
     const [lo, hi] = pu.prozent
     const anteil = (lo + hi) / 2
-    const pz = lo === hi ? Math.round(lo * 100) + " %" : Math.round(lo * 100) + " bis " + Math.round(hi * 100) + " %"
+    const pzt = (x: number) => String(Math.round(x * 1000) / 10).replace(".", ",")
+    const pz = lo === hi ? pzt(lo) + " %" : pzt(lo) + " bis " + pzt(hi) + " %"
     if (max) {
       v.last = runde(max.kg * anteil, lasten)
       v.begruendung = pz + " von " + kg(max.kg) + " kg (" + (max.quelle === "max" ? "dein Maximum vom " + max.datum.split("-").reverse().join(".") : "geschätzt aus deinen letzten Einheiten") + (basis !== idVon(pu) ? ", " + (planUebung(basis)?.name || basis) : "") + ")."
