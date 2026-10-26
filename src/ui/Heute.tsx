@@ -7,8 +7,11 @@ import { heute, montagVon, plusTage, wochenplan } from "../logik/plan"
 import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { tagesform } from "./gesundheit"
+import { offeneReaktion, rehaAktiv, rehaSperre } from "../logik/reha"
+import { wissenFuer } from "../daten/reha"
+import { Warnzeichen } from "./RehaTeile"
 import { wischen } from "./navigation"
-import { PHASEN, phaseAm } from "../logik/jahresplan"
+import { phaseInfo, phaseAm } from "../logik/jahresplan"
 import { BlockFortschritt } from "./Weg"
 import { aktuellerBlock, jahresAnteil, wegStand } from "../logik/weg"
 import { Sym } from "./symbole"
@@ -21,7 +24,7 @@ export function istErledigt(daten: Daten, e: Einheit): boolean {
 
 const ART_SYMBOL: Record<string, string> = { kraft: "hantel", mobilitaet: "dehnen", ausdauer: "puls", regeneration: "blatt" }
 
-export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; einstufen: () => void; zumWeg: () => void }) {
+export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => void; einstufen: () => void; zumWeg: () => void; aendern?: (f: (d: Daten) => void) => void }) {
   const { daten } = props
   const profil = daten.profil!
   const tag = heute()
@@ -34,6 +37,11 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const heutige = aktuell ? plan.find((e) => e.datum === tag) : undefined
   const naechste = aktuell ? plan.find((e) => e.datum >= tag && !istErledigt(daten, e)) : undefined
   const fakt = faktDesTages(tag, profil.sport === "golf" ? "golf" : undefined)
+  const reha = rehaAktiv(profil)
+  const sperre = reha ? rehaSperre(profil, tag) : null
+  const reaktion = reha ? offeneReaktion(daten, tag) : -1
+  const wissen = reha ? wissenFuer(profil.reha!.bilder.map((b) => b.id), tag) : null
+  const profilAendern = (p: typeof profil) => props.aendern?.((d) => void (d.profil = p))
   const stunde = new Date().getHours()
   const gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Hallo" : "Guten Abend"
   const termin = profil.woche[(new Date().getDay() + 6) % 7]
@@ -49,7 +57,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   )
 
   return (
-    <Seite titel={gruss + (profil.name ? ", " + profil.name : "")} untertitel={(phase ? PHASEN[phase].name + " · " : "") + (istEntlastung(w) ? "Entlastungswoche: locker bleiben" : "Block-Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1))}>
+    <Seite titel={gruss + (profil.name ? ", " + profil.name : "")} untertitel={(phase ? phaseInfo(phase, profil.sport).name + " · " : "") + (istEntlastung(w) ? "Entlastungswoche: locker bleiben" : "Block-Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1))}>
       <div className="statusreihe">
         <div className="statuskachel">
           <small>Stufe {s.stufe}</small>
@@ -101,7 +109,52 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
       {form ? <p className="hinweistext">{form}</p> : null}
 
 
-      {!daten.einstufung?.kraft || !daten.einstufung?.mobil ? (
+      {reaktion >= 0 ? (
+        <div className="reaktionskarte">
+          <b>Wie geht es dir heute früh?</b>
+          <small>Verglichen mit vor dem letzten Training ({daten.erledigt[reaktion].titel})</small>
+          <div className="reaktionsknoepfe">
+            {(
+              [
+                ["besser", "Besser"],
+                ["gleich", "Gleich"],
+                ["schlechter", "Schlechter"],
+              ] as const
+            ).map(([id, name]) => (
+              <button key={id} type="button" className={"knopf klein" + (id === "schlechter" ? " leise" : "")} onClick={() => props.aendern?.((d) => void (d.erledigt[reaktion].reaktion = id))}>
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {sperre === "warnzeichen" ? (
+        <Warnzeichen profil={profil} aendern={profilAendern} />
+      ) : sperre === "freigabe" ? (
+        <div className="heutekarte ruhig">
+          <span className="heutetitel">
+            <Sym name="pflaster" groesse={26} /> Erst absprechen
+          </span>
+          <span className="heutevorschau">Die Operation ist weniger als 12 Wochen her. Bitte den Plan mit Arzt oder Physiotherapie besprechen und dann unter Profil, Training und Sport „Mit Arzt oder Physiotherapie abgesprochen“ einschalten.</span>
+        </div>
+      ) : !daten.einstufung?.kraft || !daten.einstufung?.mobil ? (
+        reha ? (
+          <button type="button" className="heutekarte" onClick={props.einstufen}>
+            <span className="heutekopf">
+              <span className="marke">Vor dem ersten Training</span>
+              <span className="dauer">
+                <Icon name="timer" groesse={15} /> etwa 10 min
+              </span>
+            </span>
+            <span className="heutetitel">
+              <Sym name="ziel" groesse={26} /> Funktionstests
+            </span>
+            <span className="heutevorschau">Aufstehen in 30 Sekunden, Aufstehen und Gehen, Einbeinstand mit Halt. So siehst du später schwarz auf weiß, was das Training bringt.</span>
+            <span className="losknopf">Tests starten</span>
+          </button>
+        ) : (
+
         <button type="button" className="heutekarte" onClick={props.einstufen}>
           <span className="heutekopf">
             <span className="marke">Vor dem ersten Training</span>
@@ -118,6 +171,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           </span>
           <span className="losknopf">{daten.einstufung?.kraft ? "Mobilität messen" : "Einstufung starten"}</span>
         </button>
+        )
       ) : aktuell ? (
         fokus ? (
           <button type="button" className="heutekarte" onClick={() => props.oeffnen(fokus)}>
@@ -158,7 +212,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
               {Math.round(jahresAnteil(daten, tag) * 100)} % des Jahres <Icon name="weiter" groesse={12} />
             </small>
           </span>
-          <BlockFortschritt stand={weg} klein />
+          <BlockFortschritt stand={weg} klein sport={profil.sport} />
         </button>
       ) : null}
 
@@ -179,7 +233,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           const datum = plusTage(montag, i)
           const e = plan.find((x) => x.datum === datum)
           const fertig = e && istErledigt(daten, e)
-          const rollen = e ? Array.from(new Set(e.plaetze.map((p) => ROLLE[p.rolle]))).slice(0, 3).join(", ") : ""
+          const rollen = e ? Array.from(new Set(e.plaetze.map((p) => p.etikett || ROLLE[p.rolle]))).slice(0, 3).join(", ") : ""
           return (
             <Zeile
               key={i}
@@ -211,9 +265,15 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
       </Gruppe>
       </div>
 
-      <Gruppe titel="Wusstest du?" fuss={<a href={fakt.url} target="_blank" rel="noreferrer">{fakt.quelle}</a>}>
-        <Zeile titel={fakt.text} />
-      </Gruppe>
+      {wissen ? (
+        <Gruppe titel={"Gut zu wissen: " + wissen.titel} fuss={wissen.quelle}>
+          <Zeile titel={wissen.text} />
+        </Gruppe>
+      ) : (
+        <Gruppe titel="Wusstest du?" fuss={<a href={fakt.url} target="_blank" rel="noreferrer">{fakt.quelle}</a>}>
+          <Zeile titel={fakt.text} />
+        </Gruppe>
+      )}
     </Seite>
   )
 }

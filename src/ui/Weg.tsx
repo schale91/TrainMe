@@ -1,7 +1,7 @@
 // Dein Weg: Jahresplan als Zeitleiste. Geschafftes abgehakt, der aktuelle Block hervorgehoben, Kommendes mit dem,
 // was es aufbaut. So ist jederzeit sichtbar, wo man im Prozess steht.
 
-import { PHASEN } from "../logik/jahresplan"
+import { phaseInfo } from "../logik/jahresplan"
 import { heute, wochenplan, montagVon } from "../logik/plan"
 import { aktuellerBlock, jahresAnteil, wegStand, type Schritt } from "../logik/weg"
 import type { Daten, Einheit } from "../logik/typen"
@@ -16,9 +16,9 @@ type Block = Extract<Schritt, { art: "block" }>
 const WOCHEN = ["1", "2", "3", "4", "E"]
 
 /** Stand im laufenden Block: Wochenpunkte, Einheiten, Tage bis zur nächsten Phase. */
-export function BlockFortschritt(props: { stand: Block; klein?: boolean }) {
+export function BlockFortschritt(props: { stand: Block; klein?: boolean; sport?: string }) {
   const b = props.stand
-  const info = PHASEN[b.phase]
+  const info = phaseInfo(b.phase, props.sport)
   return (
     <div className={"blockstand" + (props.klein ? " klein" : "")} style={{ ["--phase" as string]: info.farbe }}>
       <div className="blockstandkopf">
@@ -45,7 +45,7 @@ export function BlockFortschritt(props: { stand: Block; klein?: boolean }) {
         ) : null}
       </div>
       <Fortschrittsbalken wert={b.einheiten} max={Math.max(1, b.geplant)} farbe={info.farbe} hoehe={6} />
-      {!props.klein ? <p className="leise">{b.naechste ? "Danach: " + PHASEN[b.naechste].name + ". " + PHASEN[b.naechste].aufbau : info.aufbau}</p> : null}
+      {!props.klein ? <p className="leise">{b.naechste ? "Danach: " + phaseInfo(b.naechste, props.sport).name + ". " + phaseInfo(b.naechste, props.sport).aufbau : info.aufbau}</p> : null}
     </div>
   )
 }
@@ -78,8 +78,8 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
 
   return (
     <Seite titel="Dein Weg" untertitel={"Block " + jetzt.nr + " von " + plan.bloecke.length + " · " + Math.round(anteil * 100) + " % des Jahres geschafft"}>
-      <PhasenStreifen plan={plan} datum={tag} beschriftung />
-      <BlockFortschritt stand={jetzt} />
+      <PhasenStreifen plan={plan} datum={tag} beschriftung sport={daten.profil?.sport} />
+      <BlockFortschritt stand={jetzt} sport={daten.profil?.sport} />
       {naechste ? (
         <button type="button" className="knopf voll" onClick={() => props.oeffnen(naechste)}>
           Nächster Schritt: {naechste.titel} {naechste.datum === tag ? "heute" : datumText(naechste.datum)}
@@ -130,9 +130,9 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
               <li key={i} className={s.status + (s.erledigt ? "" : " offen")}>
                 <span className="knoten">{knoten(s.status, s.erledigt)}</span>
                 <div>
-                  <b>Kontrolle</b>
+                  <b>{daten.profil?.sport === "reha" ? "Funktionstests" : "Kontrolle"}</b>
                   <small>
-                    {datumText(s.datum)} · {s.erledigt ? "Erledigt" : s.status === "vorbei" ? "Ausgelassen" : "In der Entlastungswoche Kraft und Mobilität neu messen"}
+                    {datumText(s.datum)} · {s.erledigt ? "Erledigt" : s.status === "vorbei" ? "Ausgelassen" : daten.profil?.sport === "reha" ? "Aufstehen, Aufstehen und Gehen, Einbeinstand: Was hat der Block gebracht?" : "In der Entlastungswoche Kraft und Mobilität neu messen"}
                   </small>
                   {s.status === "jetzt" && !s.erledigt ? (
                     <button type="button" className="knopf klein" onClick={props.einstufen}>
@@ -142,7 +142,7 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
                 </div>
               </li>
             )
-          const info = PHASEN[s.phase]
+          const info = phaseInfo(s.phase, daten.profil?.sport)
           return (
             <li key={i} className={s.status} style={{ ["--phase" as string]: info.farbe }}>
               <span className="knoten phase">{knoten(s.status)}</span>

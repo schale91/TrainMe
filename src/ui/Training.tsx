@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { alternativen, lastGeraet, lastenAn, platzMit, verlauf } from "../logik/plan"
 import { lastText } from "../logik/gewichte"
 import { satzAnpassung, type Anpassung } from "../logik/progression"
+import { rehaAktiv, rehaAnpassung } from "../logik/reha"
+
+/** Farbe der Schmerz-Ampel: 0 bis 2 grün, 3 bis 5 gelb, darüber rot. */
+const ampel = (n: number) => (n > 5 ? "ampel rot" : n >= 3 ? "ampel gelb" : "ampel gruen")
 import type { Daten, Einheit, Platz, Protokoll, Satz, Uebung } from "../logik/typen"
 import { Blatt, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
@@ -53,9 +57,12 @@ function piep() {
   }
 }
 
-export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean) => void; ausschliessen: (id: string) => void }) {
+export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void }) {
   const { daten, einheit } = props
   const profil = daten.profil!
+  // Reha: Schmerz je Satz statt Reserve, Schmerz vor dem Training
+  const reha = rehaAktiv(profil)
+  const [schmerzVor, setSchmerzVor] = useState<number | null>(null)
   const ort = profil.orte[einheit.ort] || profil.orte[0]
   const schluessel = einheit.datum + "|" + einheit.titel
   const gespeichert = useMemo(() => ladeEntwurf(schluessel), [schluessel])
@@ -107,7 +114,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     const s = saetze[i][k]
     const u = plaetze[i].uebung
     // Nach dem Haken: Vorschlag für die restlichen Sätze dieser Übung
-    const a = !s.fertig ? satzAnpassung(s, plaetze[i].vorgabe, u.belastung, lastenAn(u, ort)) : null
+    const a = s.fertig ? null : reha ? rehaAnpassung(s, plaetze[i].vorgabe, u.belastung) : satzAnpassung(s, plaetze[i].vorgabe, u.belastung, lastenAn(u, ort))
     setSaetze(
       saetze.map((ss, x) =>
         x !== i
@@ -140,7 +147,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       /* egal */
     }
     void pauseStoppen()
-    props.abschliessen({ ...einheit, plaetze }, protokolle, vollstaendig)
+    props.abschliessen({ ...einheit, plaetze }, protokolle, vollstaendig, schmerzVor ?? undefined)
   }
 
   const tauschen = (i: number, id: string, nieWieder: boolean) => {
@@ -174,7 +181,24 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           {h}
         </p>
       ))}
-      {einheit.art !== "ausdauer" ? <p className="hinweistext">Aufwärmen (etwa 8 min): locker bewegen, dann für die erste Übung zwei leichte Sätze.</p> : null}
+      {reha ? (
+        <div className="schmerzvorher">
+          <span>
+            <b>Schmerz gerade</b>
+            <small>0 keiner, 10 der stärkste vorstellbare</small>
+          </span>
+          <select aria-label="Schmerz vor dem Training" className={schmerzVor === null ? "" : ampel(schmerzVor)} value={schmerzVor ?? ""} onChange={(e) => setSchmerzVor(e.target.value === "" ? null : Number(e.target.value))}>
+            <option value="">wählen</option>
+            {Array.from({ length: 11 }, (_, k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+      {reha && schmerzVor !== null && schmerzVor >= 7 ? <p className="hinweistext warnung">Heute sind die Schmerzen stark. Mach nur die Beweglichkeit und kurzes Gehen, oder leg einen Ruhetag ein. Bleibt es mehrere Tage so, bitte ärztlich abklären.</p> : null}
+      {einheit.art !== "ausdauer" ? <p className="hinweistext">{reha ? "Aufwärmen (5 bis 10 min): in der Wohnung gehen oder locker Rad fahren, bis du dich warm fühlst." : "Aufwärmen (etwa 8 min): locker bewegen, dann für die erste Übung zwei leichte Sätze."}</p> : null}
 
       {plaetze.map((p, i) => {
         const u = p.uebung
@@ -182,11 +206,12 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         const geraet = lastGeraet(u, ort)
         const lasten = lastenAn(u, ort)
         const alle = saetze[i].every((s) => s.fertig)
-        const zeigeRir = p.rolle !== "mobil" && p.rolle !== "ausdauer" && u.belastung !== "zeit" && u.belastung !== "distanz"
+        const zeigeRir = !reha && p.rolle !== "mobil" && p.rolle !== "ausdauer" && u.belastung !== "zeit" && u.belastung !== "distanz"
+        const zeigeSchmerz = reha && p.rolle !== "ausdauer"
         return (
           <section key={i + u.id} className={"uebungskarte" + (alle ? " geschafft" : "")}>
             <div className="uebungskopf">
-              <span className={"marke " + p.rolle}>{ROLLE[p.rolle]}</span>
+              <span className={"marke " + p.rolle}>{p.etikett || ROLLE[p.rolle]}</span>
               {u.golf && profil.sport === "golf" ? (
                 <span className="marke golf mitsym">
                   <Sym name="golf" groesse={13} /> Golf
@@ -244,6 +269,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 {u.belastung === "zeit" ? <span>{p.rolle === "ausdauer" && v.saetze === 1 ? "Minuten" : "Sekunden"}</span> : null}
                 {u.belastung === "gewicht" || u.belastung === "wiederholungen" ? <span>Wdh</span> : null}
                 {zeigeRir ? <span>im Tank</span> : null}
+                {zeigeSchmerz ? <span>Schmerz</span> : null}
                 {u.belastung === "distanz" ? <span className="breit">Lauf</span> : null}
                 <span className="hakenplatz" />
               </div>
@@ -281,6 +307,17 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                         {[0, 1, 2, 3, 4, 5].map((r) => (
                           <option key={r} value={r}>
                             {r === 5 ? "5+" : r}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  {zeigeSchmerz ? (
+                    <label className="mini">
+                      <select aria-label="Schmerz 0 bis 10" className={ampel(s.schmerz ?? 0)} value={s.schmerz ?? 0} onChange={(e) => setSatz(i, k, { schmerz: Number(e.target.value) })}>
+                        {Array.from({ length: 11 }, (_, n) => (
+                          <option key={n} value={n}>
+                            {n}
                           </option>
                         ))}
                       </select>

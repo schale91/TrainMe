@@ -1,7 +1,7 @@
 // Einrichtung in sechs Schritten. Am Ende steht der erste Plan.
 
 import { useState } from "react"
-import { beispielGolf, neuesProfil } from "../logik/speicher"
+import { beispielGolf, beispielReha, neuesProfil } from "../logik/speicher"
 import type { Profil } from "../logik/typen"
 import { Sym } from "./symbole"
 import { AusnahmenEditor, Grunddaten, KoerperEditor, OrteEditor, SportWahl, WocheEditor } from "./Profilteile"
@@ -41,6 +41,13 @@ export default function Einrichtung(props: { fertig: (p: Profil) => void; start?
               <span>
                 <b>Schnellstart Golf</b>
                 <small>5 × 60 min Studio, Samstag Mobilität im Keller, kein Ausdauertraining. Alles lässt sich danach anpassen.</small>
+              </span>
+            </button>
+            <button type="button" className="schnellstart" onClick={() => setProfil({ ...beispielReha(new Date().toISOString().slice(0, 10)), name: profil.name })}>
+              <Sym name="pflaster" groesse={34} farbe="var(--rot)" />
+              <span>
+                <b>Schnellstart Hüfte (Reha)</b>
+                <small>Hüftarthrose, zu Hause mit Stuhl und Treppe, 3 × 30 min Gelenktraining und 2 × Gehen. Beschwerden und Sicherheit lassen sich im nächsten Schritt anpassen.</small>
               </span>
             </button>
             <Grunddaten {...teil} />

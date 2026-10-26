@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { UEBUNGEN } from "../daten/uebungen/index"
 import { SPORTARTEN, positionVon } from "../daten/vorlagen"
+import { bildInfo } from "../daten/reha"
 import { heute, montagVon } from "../logik/plan"
 import { exportieren, importieren } from "../logik/speicher"
 import type { Daten, Profil as ProfilT } from "../logik/typen"
@@ -15,7 +16,7 @@ import { SymKachel } from "./symbole"
 import { gesundheitEinstellungen, gesundheitLesen, gesundheitVerbinden, gesundheitVerfuegbar } from "./gesundheit"
 import { ERFAHRUNG, GELENKE, ZIELE } from "./texte"
 import JahresplanSeite from "./Jahresplan"
-import { PHASEN, blockNeuStarten, phaseAm } from "../logik/jahresplan"
+import { phaseInfo, blockNeuStarten, phaseAm } from "../logik/jahresplan"
 import type { UpdateInfo } from "../logik/update"
 import { RELEASES_SEITE } from "../logik/update"
 import { updateSuchen } from "./update"
@@ -82,7 +83,7 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
     <Seite titel="Profil" untertitel={profil.name || undefined}>
       <Gruppe titel="Training">
         <Zeile symbol={<SymKachel name="ziel" farbe="#e7792f" />} titel="Ziel und Erfahrung" wert={ziel?.name + ", " + ERFAHRUNG.find((e) => e.id === profil.erfahrung)?.name} onClick={() => setSeite("ziel")} />
-        <Zeile symbol={<SymKachel name="golf" farbe="#1f9e73" />} titel="Training und Sport" wert={(sport?.name || "") + (profil.sport === "football" && positionVon(profil.position) ? ", " + positionVon(profil.position)!.kurz : "")} onClick={() => setSeite("sport")} />
+        <Zeile symbol={<SymKachel name="golf" farbe="#1f9e73" />} titel="Training und Sport" wert={profil.sport === "reha" && profil.reha?.bilder.length ? profil.reha.bilder.map((b) => bildInfo(b.id).name).join(", ") : (sport?.name || "") + (profil.sport === "football" && positionVon(profil.position) ? ", " + positionVon(profil.position)!.kurz : "")} onClick={() => setSeite("sport")} />
         <Zeile symbol={<SymKachel name="kalender" farbe="#d8506a" />} titel="Woche" wert={tage + " Trainingstage"} onClick={() => setSeite("woche")} />
         <Zeile symbol={<SymKachel name="haus" farbe="#4f68f0" />} titel="Orte und Geräte" wert={profil.orte.map((o) => o.name).join(", ")} onClick={() => setSeite("orte")} />
       </Gruppe>
@@ -91,7 +92,7 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
         <Zeile symbol={<SymKachel name="verbot" farbe="#6b6593" />} titel="Ausnahmen" wert={profil.ausgeschlossen.length ? profil.ausgeschlossen.length + " Übungen" : "keine"} onClick={() => setSeite("ausnahmen")} />
       </Gruppe>
       <Gruppe titel="Plan" fuss="Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Die laufende Phase beginnt dann von vorn, der Jahresplan rückt nach hinten.">
-        <Zeile symbol={<SymKachel name="kalender" farbe="#2aa58a" />} titel="Jahresplan" wert={phase ? PHASEN[phase].name : "festlegen"} onClick={() => setSeite("jahresplan")} />
+        <Zeile symbol={<SymKachel name="kalender" farbe="#2aa58a" />} titel="Jahresplan" wert={phase ? phaseInfo(phase, profil.sport).name : "festlegen"} onClick={() => setSeite("jahresplan")} />
         <Zeile symbol={<SymKachel name="ziel" farbe="#c98a1e" />} titel="Kraftwerte und Mobilität neu einstufen" untertitel={props.daten.einstufung?.kraft ? "zuletzt " + props.daten.einstufung.kraft.split("-").reverse().join(".") : "noch nicht erledigt"} onClick={props.einstufen} />
         <Zeile symbol={<SymKachel name="wiederholen" farbe="#2b9cc2" />} titel="Neuen Block ab dieser Woche" onClick={() => props.profilAendern(blockNeuStarten(profil, montagVon(heute())))} pfeil={false} />
       </Gruppe>

@@ -106,6 +106,9 @@ export const GERAETE_IDS = [
   "golfschlaeger",
   "faszienrolle",
   "gleitscheiben",
+  // Alltag und Reha (ein Stuhl gilt überall als vorhanden)
+  "stuhl",
+  "stufe",
   // Ausdauer und Raum
   "laufband",
   "fahrrad",
@@ -285,10 +288,30 @@ export interface Profil {
   koerpergewicht_kg?: number
   /** Position im Football (qb, rb, wr, te, ol, dl, lb, db, k) */
   position?: string
+  /** Reha: Beschwerdebilder und Sicherheitsangaben */
+  reha?: RehaProfil
   /** Startdatum des aktuellen Blocks (JJJJ-MM-TT) */
   block_start: string
   /** Grober Plan für das Jahr, Phase je Block */
   jahresplan?: Jahresplan
+}
+
+export type RehaBild = "huefte_arthrose" | "huefte_tep" | "huefte_seitlich" | "huefte_leiste" | "knie_arthrose" | "knie_tep" | "ruecken"
+
+export interface RehaProfil {
+  bilder: { id: RehaBild; seite?: "links" | "rechts" | "beide"; op_datum?: string }[]
+  /** kommt sicher auf den Boden und wieder hoch */
+  boden: boolean
+  /** braucht beim Gleichgewicht Halt (Gehhilfe, Unsicherheit, Sturz im letzten Jahr) */
+  halt: boolean
+  /** Training mit Arzt oder Physiotherapie abgesprochen */
+  freigabe: boolean
+  /** Bewegungsgrenzen nach Hüft-OP vom Operateur (tiefe Beugung, Bein über die Mitte, Innendrehung) */
+  tep_grenzen: boolean
+  /** Datum, an dem die Warnzeichen zuletzt verneint wurden */
+  warnzeichen?: string
+  geburtsjahr?: number
+  geschlecht?: "m" | "w"
 }
 
 /** Ein Platz in einer Einheit, bevor eine Übung gewählt ist. */
@@ -316,6 +339,8 @@ export interface Platz {
   vorgabe: Vorgabe
   /** Warum genau diese Übung auf diesem Platz steht */
   warum?: Grund[]
+  /** Eigene Beschriftung statt der Rolle (z. B. Reha-Kreis „Gleichgewicht“) */
+  etikett?: string
 }
 
 /** Ein Grund für die Auswahl einer Übung, als Text aufbereitet in der Oberfläche. */
@@ -335,6 +360,8 @@ export type Grund =
   | { art: "phase"; phase: Phase }
   | { art: "getauscht" }
   | { art: "position"; position: string }
+  | { art: "reha"; familie: string; stufe: number; stufen: number; bild: string }
+  | { art: "reha_schmerz"; text: string }
 
 export interface Einheit {
   datum: string
@@ -351,6 +378,8 @@ export interface Satz {
   wdh: number
   rir: number
   sekunden?: number
+  /** Reha: Schmerz während des Satzes, 0 bis 10 */
+  schmerz?: number
 }
 
 export interface Protokoll {
@@ -370,6 +399,10 @@ export interface Erledigt {
   /** geplanter Tag, falls vor- oder nachgeholt */
   geplant?: string
   entlastung?: boolean
+  /** Reha: Schmerz vor dem Training, 0 bis 10 */
+  schmerz_vor?: number
+  /** Reha: wie es am Morgen danach war, verglichen mit vor dem Training */
+  reaktion?: "besser" | "gleich" | "schlechter"
 }
 
 export interface Spielstand {

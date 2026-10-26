@@ -1,6 +1,6 @@
 // Jahresplan: Phasen je Block als Zeitstrahl, wo man gerade steht, was danach kommt, und jede Phase einzeln änderbar.
 
-import { BLOCK_TAGE, MONATE, PHASEN, SAISON_VORSCHLAG, blockIndex, neuPlanen, phaseAm, plusTage } from "../logik/jahresplan"
+import { BLOCK_TAGE, MONATE, SAISON_VORSCHLAG, blockIndex, neuPlanen, phaseAm, plusTage, phaseInfo } from "../logik/jahresplan"
 import { BLOCK_WOCHEN, blockWoche, istEntlastung } from "../logik/progression"
 import type { Jahresplan, Phase, Profil } from "../logik/typen"
 import { Gruppe, Seite, Zeile } from "./ios"
@@ -10,7 +10,7 @@ const MON = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Ok
 const REIHENFOLGE: Phase[] = ["grundlage", "kraft", "schnellkraft", "erhalt", "uebergang"]
 
 /** Schmaler Zeitstrahl mit Markierung für heute. */
-export function PhasenStreifen(props: { plan: Jahresplan; datum: string; beschriftung?: boolean }) {
+export function PhasenStreifen(props: { plan: Jahresplan; datum: string; beschriftung?: boolean; sport?: string }) {
   const { plan, datum } = props
   const jetzt = blockIndex(plan, datum)
   const anteil = Math.min(1, Math.max(0, (Date.parse(datum + "T12:00:00Z") - Date.parse(plusTage(plan.start, jetzt * BLOCK_TAGE) + "T12:00:00Z")) / (BLOCK_TAGE * 86400000)))
@@ -18,7 +18,7 @@ export function PhasenStreifen(props: { plan: Jahresplan; datum: string; beschri
     <div className="phasenstreifen">
       <div className="phasenbalken">
         {plan.bloecke.map((ph, i) => (
-          <span key={i} className={i === jetzt ? "jetzt" : i < jetzt ? "vorbei" : ""} style={{ background: PHASEN[ph].farbe }} title={PHASEN[ph].name}>
+          <span key={i} className={i === jetzt ? "jetzt" : i < jetzt ? "vorbei" : ""} style={{ background: phaseInfo(ph, props.sport).farbe }} title={phaseInfo(ph, props.sport).name}>
             {i === jetzt ? <i className="hier" style={{ left: anteil * 100 + "%" }} /> : null}
           </span>
         ))}
@@ -52,7 +52,7 @@ export default function JahresplanSeite(props: { profil: Profil; heute: string; 
 
   const jetzt = blockIndex(plan, heute)
   const phase = phaseAm(profil, heute) || "grundlage"
-  const info = PHASEN[phase]
+  const info = phaseInfo(phase, profil.sport)
   const w = blockWoche(profil, heute)
   const naechste = plan.bloecke.slice(Math.max(0, jetzt + 1)).find((p) => p !== phase)
   const setzePlan = (p: Jahresplan) => props.aendern({ ...profil, jahresplan: p })
@@ -60,7 +60,7 @@ export default function JahresplanSeite(props: { profil: Profil; heute: string; 
 
   return (
     <Seite titel="Jahresplan" untertitel={"Block " + (Math.min(jetzt, plan.bloecke.length - 1) + 1) + " von " + plan.bloecke.length + " · " + info.name} zurueck={props.zurueck}>
-      <PhasenStreifen plan={plan} datum={heute} beschriftung />
+      <PhasenStreifen plan={plan} datum={heute} beschriftung sport={profil.sport} />
 
       <div className="phasenkarte" style={{ borderColor: info.farbe }}>
         <span className="marke" style={{ background: info.farbe }}>
@@ -71,7 +71,7 @@ export default function JahresplanSeite(props: { profil: Profil; heute: string; 
         </p>
         <p className="leise">{info.aufbau}</p>
         <p className="leise">{istEntlastung(w) ? "Diese Woche: Entlastung, danach beginnt der nächste Block." : "Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1) + " im Block, dann eine Entlastungswoche."}</p>
-        {naechste ? <p className="leise">Danach: {PHASEN[naechste].name}. {PHASEN[naechste].aufbau}</p> : null}
+        {naechste ? <p className="leise">Danach: {phaseInfo(naechste, profil.sport).name}. {phaseInfo(naechste, profil.sport).aufbau}</p> : null}
       </div>
 
       <Gruppe titel="Saison" fuss="In der Saison hält der Plan die Kraft. Davor kommen Kraft und Schnellkraft, danach ein Übergangsblock. Nach einer Änderung „Ab jetzt neu planen“ antippen.">
@@ -123,7 +123,7 @@ export default function JahresplanSeite(props: { profil: Profil; heute: string; 
           return (
             <Zeile
               key={i}
-              symbol={<span className="phasenpunkt" style={{ background: PHASEN[ph].farbe }} />}
+              symbol={<span className="phasenpunkt" style={{ background: phaseInfo(ph, profil.sport).farbe }} />}
               titel={
                 <span>
                   Block {i + 1}
@@ -133,9 +133,9 @@ export default function JahresplanSeite(props: { profil: Profil; heute: string; 
               untertitel={datumText(von) + " bis " + datumText(bis)}
               rechts={
                 <select aria-label={"Phase Block " + (i + 1)} value={ph} disabled={i < jetzt} onChange={(e) => setzePlan({ ...plan, bloecke: plan.bloecke.map((x, k) => (k === i ? (e.target.value as Phase) : x)) })}>
-                  {REIHENFOLGE.map((x) => (
+                  {REIHENFOLGE.filter((x) => profil.sport !== "reha" || x !== "schnellkraft").map((x) => (
                     <option key={x} value={x}>
-                      {PHASEN[x].name}
+                      {phaseInfo(x, profil.sport).name}
                     </option>
                   ))}
                 </select>
@@ -146,8 +146,8 @@ export default function JahresplanSeite(props: { profil: Profil; heute: string; 
       </Gruppe>
 
       <Gruppe titel="Phasen">
-        {REIHENFOLGE.map((x) => (
-          <Zeile key={x} symbol={<span className="phasenpunkt" style={{ background: PHASEN[x].farbe }} />} titel={PHASEN[x].name} untertitel={PHASEN[x].ziel} />
+        {REIHENFOLGE.filter((x) => profil.sport !== "reha" || x !== "schnellkraft").map((x) => (
+          <Zeile key={x} symbol={<span className="phasenpunkt" style={{ background: phaseInfo(x, profil.sport).farbe }} />} titel={phaseInfo(x, profil.sport).name} untertitel={phaseInfo(x, profil.sport).ziel} />
         ))}
       </Gruppe>
       <p className="hinweistext klein">Grundlage: Blockperiodisierung (Issurin 2010, Sports Medicine) und Krafterhalt in der Saison (Rønnestad et al. 2011, Journal of Strength and Conditioning Research).</p>

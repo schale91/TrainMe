@@ -1,7 +1,7 @@
 {
   "name": "trainme",
   "private": true,
-  "version": "0.5.1",
+  "version": "0.6.0",
   "type": "module",
   "description": "Trainingsplaner für Kraft, Mobilität und Ausdauer, komplett auf dem Handy",
   "scripts": {

@@ -28,7 +28,8 @@ it("rendert Startseite und jede Einheit für 300 zufällige Profile ohne Fehler 
     const p: Profil = neuesProfil("2026-10-19")
     p.ziel = w<Ziel>(["muskelaufbau", "kraft", "fitness", "abnehmen", "sport"])
     p.erfahrung = w<Erfahrung>(["einsteiger", "fortgeschritten", "erfahren"])
-    p.sport = w(["allgemein", "golf", "fussball", "laufen", "football", "bodybuilding"])
+    p.sport = w(["allgemein", "golf", "fussball", "laufen", "football", "bodybuilding", "reha"])
+    if (p.sport === "reha") p.reha = { bilder: [{ id: w(["huefte_arthrose", "huefte_tep", "huefte_seitlich", "huefte_leiste", "knie_arthrose", "knie_tep", "ruecken"] as const), op_datum: w([undefined, "2026-10-01", "2026-08-01", "2025-01-01"]) }], boden: r() < 0.5, halt: r() < 0.5, freigabe: r() < 0.5, tep_grenzen: r() < 0.5, warnzeichen: r() < 0.7 ? "2026-10-19" : undefined }
     if (p.sport === "football") p.position = w(["qb", "rb", "wr", "te", "ol", "dl", "lb", "db", "k"])
     p.saison = w(["vorbereitung", "wettkampf", "pause"])
     p.arten = (["kraft", "mobilitaet", "ausdauer"] as Trainingsart[]).filter(() => r() < 0.6)

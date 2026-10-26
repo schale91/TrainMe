@@ -89,6 +89,32 @@ Aufstieg zur schwereren Variante, bisheriger Verlauf, gleiche Übung im ganzen B
 
 Beispiel Golfer: Mo bis Fr je 60 min Studio (Unterkörper, Oberkörper und Rotation, Schnellkraft, Einbeinig und Hüfte, Zug und Schulter), Samstag 40 min Mobilität im Keller (2,05 m, nur Matte und Band), kein Ausdauertraining. Beispiel Fußballer: Di und Do Mannschaftstraining, Sa Spiel, Mo/Mi/Fr je 60 min zusätzlich. Freitag nur Oberkörper und locker. Beide Beispiele sind als Tests hinterlegt (`test/plan.test.ts`).
 
+## 3a. Reha und Gelenke
+
+Für Hüfte, Knie und Rücken: Hüftarthrose, neues Hüftgelenk, seitlicher Hüftschmerz, Leistenschmerz, Kniearthrose, neues
+Kniegelenk, Kreuzschmerz. Mehrfachauswahl, je Gelenk die Seite, bei Operationen das Datum.
+
+- **Vorbild:** neuromuskuläres Programm NEMEX-TJR (Ageberg et al. 2010), Grundlage von GLA:D: Kreise Rumpf und Becken,
+  Haltung und Gleichgewicht, Kraft der Beine, Alltagsbewegungen; je Übung mehrere Stufen; 2 bis 3 Sätze mit 10 bis 15
+  Wiederholungen. Wie bei Reha-Apps (Vivira, Joint Academy) passt sich der Plan an Rückmeldungen an.
+- **Übungsfamilien mit Stufen** (`src/daten/reha.ts`), z. B. Aufstehen: mit Armen, ohne Arme, langsam hinsetzen, mit
+  Gewicht. Eine Einheit nimmt aus jedem Kreis eine Familie (reihum) und füllt nach Wichtigkeit auf, Beweglichkeit am
+  Ende. Übungen am Boden nur, wenn man sicher hoch und runter kommt; freies Gleichgewicht nur ohne Bedarf an Halt;
+  tiefe Beugung und Bein über die Mitte nicht bei Bewegungsgrenzen nach Hüft-OP. Bei seitlichem Hüftschmerz nur
+  druckarme Abspreizer (LEAP, Mellor et al. 2018).
+- **Schmerz-Ampel je Satz** (Thomeé 1997): 0 bis 2 grün, 3 bis 5 gelb (in Ordnung, wenn es bis zum Morgen abklingt),
+  über 5 rot: nächster Satz kleiner, sonst auslassen. Stufe steigt nach zweimal vollständig (15 Wiederholungen oder
+  30 Sekunden) mit höchstens 2, sinkt nach einem Satz über 5.
+- **Morgen danach:** Heute fragt „besser, gleich, schlechter“. Schlechter: nächste Einheit ein Satz weniger, keine neue Stufe.
+- **Operation:** bis Woche 6 nur die sanften Übungen der Frühphase, bis Woche 12 höchstens Stufe 2 und Training nur
+  mit Freigabe von Arzt oder Physiotherapie.
+- **Warnzeichen** (Fieber, rotes heißes Gelenk, Sturz, Wunde, Wade, Luxationszeichen, Taubheit, Blase und Darm,
+  Nachtschmerz): alle 30 Tage bestätigen, sonst kein Training.
+- **Funktionstests** (OARSI-Kernset, Dobson et al. 2013) vor dem Start und am Ende jedes Blocks: Aufstehen in 30
+  Sekunden mit Normen nach Alter und Geschlecht (Rikli und Jones), Timed Up and Go (ab 12 Sekunden erhöhtes
+  Sturzrisiko, CDC STEADI), Einbeinstand (unter 5 Sekunden erhöhtes Sturzrisiko, Vellas et al. 1997), 40 Meter zügig.
+- **Phasen:** Einstieg, zweimal Aufbau, Festigen, im Wechsel. **Wissen:** kurze Karten mit Quelle auf Heute.
+
 ## 4. Spiel
 
 - XP je Einheit: 20 + 2 je Satz + 15 je neuem Bestwert, +10 für Mobilität oder Regeneration, +10 in der Entlastungswoche. Entlastung und Erholung werden also belohnt, nicht bestraft.
@@ -130,6 +156,16 @@ Nach jedem abgehakten Satz läuft die Pause. In der Android-App übernimmt ein V
 - Robinson ZP et al. (2024): Exploring the Dose–Response Relationship Between Estimated Resistance Training Proximity to Failure, Strength Gain, and Muscle Hypertrophy: A Series of Meta-Regressions. *Sports Medicine* 54, 2209–2231. Kernaussage: Muskelaufbau profitiert von Sätzen nah am Versagen, Kraft eher von der Last.
 - Schoenfeld BJ, Ogborn D, Krieger JW (2017): Dose-response relationship between weekly resistance training volume and increases in muscle mass. *Journal of Sports Sciences* 35(11), 1073–1082.
 - Bell L et al. (2023): Integrating Deloading into Strength and Physique Sports Training Programmes: An International Delphi Consensus Approach. *Sports Medicine – Open* 9, 87.
+- Ageberg E, Link A, Roos EM (2010): Feasibility of neuromuscular training in patients with severe hip or knee OA: the individualized goal-based NEMEX-TJR training program. *BMC Musculoskeletal Disorders* 11, 126.
+- Dobson F et al. (2013): OARSI recommended performance-based tests to assess physical function in people diagnosed with hip or knee osteoarthritis. *Osteoarthritis and Cartilage* 21(8), 1042–1052.
+- NICE (2022): Osteoarthritis in over 16s: diagnosis and management (NG226).
+- AWMF S2k-Leitlinie Koxarthrose (2019, Registernummer 033-001, in Überarbeitung).
+- Mellor R et al. (2018): Education plus exercise versus corticosteroid injection use versus a wait and see approach on global outcome and pain from gluteal tendinopathy. *BMJ* 361, k1662.
+- Crompton J et al. (2020) und Korfitsen CB et al. (2023): Hüft-Vorsichtsmaßnahmen nach Hüft-TEP mit hinterem Zugang. *Acta Orthopaedica*.
+- Sherrington C et al. (2019): Exercise for preventing falls in older people living in the community. *Cochrane Database of Systematic Reviews*.
+- Vellas BJ et al. (1997): One-leg balance is an important predictor of injurious falls in older persons. *Journal of the American Geriatrics Society* 45(6), 735–738.
+- Rikli RE, Jones CJ (2013): Senior Fitness Test Manual, 2. Auflage. Human Kinetics.
+- CDC STEADI: Timed Up and Go (TUG).
 - Issurin VB (2010): New horizons for the methodology and physiology of training periodization. *Sports Medicine* 40(3), 189–206.
 - Rønnestad BR, Nymark BS, Raastad T (2011): Effects of in-season strength maintenance training frequency in professional soccer players. *Journal of Strength and Conditioning Research* 25(10), 2653–2660.
 - Epley B (1985): Poundage Chart. Boyd Epley Workout, Lincoln (Nebraska). Formel für das geschätzte Maximum.

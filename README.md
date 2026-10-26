@@ -17,7 +17,8 @@ Auf dem Android-Handy öffnen und installieren. Beim ersten Mal fragt Android, o
 
 - **Individuell:** Trainingstage und Minuten je Tag, mehrere Orte mit eigenen Geräten, echten Gewichtsstufen (Kurzhanteln, Scheibenpaare, Kettlebells, Maschinen) und Deckenhöhe, Ziel, Erfahrung, Beschwerden je Gelenk, ausgeschlossene Übungen.
 - **Kraft, Mobilität, Ausdauer:** einzeln anwählbar.
-- **Sportspezifisch:** Golf, Football (mit Position), Fußball, Laufen, Bodybuilding oder allgemein, mit Saisonphase. Keine schweren Beine vor dem Spiel, Regeneration danach.
+- **Sportspezifisch:** Golf, Football (mit Position), Fußball, Laufen, Bodybuilding oder allgemein, mit Saisonphase.
+- **Reha und Gelenke:** Hüft- und Kniearthrose, nach Gelenk-OP, seitlicher Hüftschmerz, Leistenschmerz, Kreuzschmerz. Übungsfamilien mit Stufen nach dem GLA:D-Vorbild, Schmerz-Ampel nach jedem Satz, Rückfrage am Morgen danach, Warnzeichen, Funktionstests alle fünf Wochen. Ersetzt keine ärztliche oder physiotherapeutische Behandlung. Keine schweren Beine vor dem Spiel, Regeneration danach.
 - **Steigerung wie bei evidenzbasierten Coaches:** Blöcke mit Entlastungswoche, Reserve-Wiederholungen (RIR) je Woche, doppelte Progression, RIR-Steuerung über das geschätzte Maximum, Plateau-Erkennung. Jede Vorgabe sagt, warum.
 - **Spielerisch:** XP, Stufen, Wochenserie, Abzeichen, Bestwerte.
 - **Sicherung:** Export und Import als Datei.

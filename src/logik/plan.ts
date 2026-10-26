@@ -7,6 +7,8 @@ import { passendeGruppe, verfuegbar } from "./gewichte"
 import { BLOCK_WOCHEN, ausdauerVorgabe, blockWoche, istEntlastung, plateau, vorgabe } from "./progression"
 import { bewerte, testNach } from "../daten/tests"
 import { PHASEN, mitPhase, type PlanProfil } from "./jahresplan"
+import { rehaAktiv, rehaEinheit } from "./reha"
+import { REHA_PHASEN } from "../daten/reha"
 import type { Daten, Einheit, Geraet, Grund, Messung, Muster, Ort, Platz, Profil, Protokoll, Rolle, Trainingsart, Uebung } from "./typen"
 
 const TAG = 86400000
@@ -101,11 +103,16 @@ export function erlaubt(profil: Profil, u: Uebung): boolean {
   return true
 }
 
+/** Draußen und ein Stuhl sind immer verfügbar. */
+export function mitAlltag(g: Geraet[]): Geraet[] {
+  return [...g, ...(["draussen", "stuhl"] as Geraet[]).filter((x) => g.indexOf(x) < 0)]
+}
+
 /** Passt die Übung an den Ort (Geräte und Raumhöhe)? */
 export function passtAnOrt(u: Uebung, ort: Ort): boolean {
   if (u.hoehe_cm > ort.deckenhoehe_cm && u.geraete.every((g) => g.indexOf("draussen") < 0)) return false
   // Nach draußen kann man von überall: Gehen, Laufen und Sprints gehen auch ohne eingetragenen Platz
-  return passendeGruppe(u, ort.geraete.indexOf("draussen") >= 0 ? ort.geraete : [...ort.geraete, "draussen"]) !== null
+  return passendeGruppe(u, mitAlltag(ort.geraete)) !== null
 }
 
 function verlaufVon(protokoll: Protokoll[], id: string, vor: string): Protokoll[] {
@@ -157,7 +164,7 @@ export function schwachstellen(daten: Daten): Muster[] {
 export function waehle(profil: Profil, ort: Ort, rolle: Rolle, muster: Muster, benutzt: Set<string>, schonBeiHeute: Set<string>, protokoll: Protokoll[], datum: string): Uebung | null {
   const kandidaten = UEBUNGEN.filter((u) => u.muster === muster && erlaubt(profil, u) && passtAnOrt(u, ort) && !schonBeiHeute.has(u.id))
   if (!kandidaten.length) return null
-  const geraet = (u: Uebung) => passendeGruppe(u, ort.geraete)
+  const geraet = (u: Uebung) => passendeGruppe(u, mitAlltag(ort.geraete))
   const punkte = (u: Uebung) => {
     let p = 0
     // Hauptübungen: die Grundübung zählt mehr als der Sportbezug
@@ -200,7 +207,7 @@ export function warum(profil: PlanProfil, ort: Ort, einheit: string, rolle: Roll
   if (rolle === "mobil" && schwach.indexOf(muster) >= 0) g.push({ art: "schwachstelle", muster })
   if (profil.sport === "golf" && u.golf) g.push({ art: "golf", stufe: u.golf })
   else if (profil.sport !== "allgemein" && u.sport && u.sport.indexOf(profil.sport) >= 0) g.push({ art: "sport", sport: profil.sport })
-  const gr = passendeGruppe(u, ort.geraete)
+  const gr = passendeGruppe(u, mitAlltag(ort.geraete))
   if (u.belastung === "gewicht" && gr && gr.last && verfuegbar(gr.last, ort.gewichte).length) g.push({ art: "geraet", geraet: gr.last })
   if ((profil.erfahrung === "einsteiger" && u.stufe === 1) || (rolle === "haupt" && profil.erfahrung !== "einsteiger" && u.stufe >= 2)) g.push({ art: "stufe", stufe: u.stufe, erfahrung: profil.erfahrung })
   const geschont = profil.beschwerden.filter((b) => !u.gelenke[b.gelenk]).map((b) => b.gelenk)
@@ -237,6 +244,8 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
   const benutzt = new Set<string>()
   const ergebnis: Einheit[] = []
   const schwach = schwachstellen(daten)
+  // Reha: reihum andere Übungsfamilien, auch über die Wochen hinweg
+  let runde = Math.floor(Date.parse(montag + "T12:00:00Z") / (7 * TAG)) * 7
   for (const t of wochenaufteilung(grundprofil)) {
     const datum = plusTage(montag, t.tag)
     // Phase aus dem Jahresplan: steuert Wiederholungen, Reserve, Pausen und Sätze
@@ -250,6 +259,13 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
     const woche = blockWoche(profil, datum)
     const hinweise: string[] = []
     if (t.hinweis) hinweise.push(t.hinweis)
+    if (rehaAktiv(grundprofil)) {
+      const ph = phase ? REHA_PHASEN[phase] : null
+      if (ph && t.art !== "ausdauer") hinweise.push("Phase " + ph.name + ": " + ph.training)
+      if (istEntlastung(woche)) hinweise.push("Leichtere Woche: höchstens 2 Sätze. Gute Gelegenheit für die Funktionstests.")
+      ergebnis.push(rehaEinheit(profil, daten, { datum, art: t.art, ort, ortIndex, minuten, runde: t.art === "ausdauer" ? runde : runde++, hinweise, entlastung: istEntlastung(woche) }, passtAnOrt, lastenAn))
+      continue
+    }
     if (phase && t.art === "kraft") hinweise.push("Phase " + PHASEN[phase].name + ": " + PHASEN[phase].training)
     if (istEntlastung(woche)) hinweise.push("Entlastungswoche: weniger Sätze, mehr Reserve. Danach beginnt ein neuer Block.")
     if (profil.beschwerden.length) hinweise.push("Schonung bei Beschwerden: Übungen mit Belastung auf " + profil.beschwerden.map((b) => GELENK_NAME[b.gelenk]).join(", ") + " sind angepasst. Das ersetzt keine ärztliche oder physiotherapeutische Behandlung. Bei Schmerz aufhören.")
@@ -303,7 +319,7 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
       return Math.max(1, n)
     })
     const lastenVon = (p: Platz) => {
-      const g = passendeGruppe(p.uebung, ort.geraete)
+      const g = passendeGruppe(p.uebung, mitAlltag(ort.geraete))
       return p.uebung.belastung === "gewicht" && g && g.last ? verfuegbar(g.last, ort.gewichte) : []
     }
     const baue = () =>
@@ -376,7 +392,7 @@ export function alternativen(profil: Profil, ort: Ort, muster: Muster, ohne: str
 /** Platz mit neuer Übung, z. B. nach einem Tausch. */
 export function platzMit(grundprofil: Profil, daten: Daten, datum: string, ort: Ort, alt: Platz, u: Uebung): Platz {
   const profil = mitPhase(grundprofil, datum)
-  const g = passendeGruppe(u, ort.geraete)
+  const g = passendeGruppe(u, mitAlltag(ort.geraete))
   const lasten = u.belastung === "gewicht" && g && g.last ? verfuegbar(g.last, ort.gewichte) : []
   const v = vorgabe(profil, alt.rolle, u, alt.vorgabe.saetze, verlaufVon(daten.protokoll, u.id, datum), lasten, blockWoche(profil, datum), daten.maxwerte?.[u.id]?.kg)
   if (istEntlastung(blockWoche(profil, datum))) v.saetze = alt.vorgabe.saetze
@@ -385,7 +401,7 @@ export function platzMit(grundprofil: Profil, daten: Daten, datum: string, ort: 
 
 /** Lastgerät einer Übung an einem Ort (für die Anzeige der Einheit). */
 export function lastGeraet(u: Uebung, ort: Ort): Geraet | null {
-  const g = passendeGruppe(u, ort.geraete)
+  const g = passendeGruppe(u, mitAlltag(ort.geraete))
   return g ? g.last : null
 }
 

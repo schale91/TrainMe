@@ -11,6 +11,8 @@ import { Beweglichkeit } from "./Fortschritt"
 import { Gruppe, Seite, Segment } from "./ios"
 import { zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
+import { rehaAktiv } from "../logik/reha"
+import RehaTests from "./RehaTests"
 
 type Eintrag = { last: string; wdh: string; rir: string }
 
@@ -69,6 +71,8 @@ export default function Einstufung(props: { daten: Daten; aendern: (f: (d: Daten
     })
     props.fertig()
   }
+
+  if (rehaAktiv(profil)) return <RehaTests daten={daten} aendern={props.aendern} fertig={props.fertig} zurueck={props.zurueck} />
 
   return (
     <Seite titel="Einstufung" untertitel="Einmal vor dem ersten Training. Danach passen Startgewichte und Mobilität zu dir." zurueck={props.zurueck ? { text: "Zurück", onClick: props.zurueck } : undefined}>

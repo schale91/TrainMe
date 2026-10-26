@@ -2172,3 +2172,147 @@ a.knopf.aus {
 .belohnung .blockstand {
   margin: 4px 0 6px;
 }
+
+/* ---------- Reha ---------- */
+
+.warnliste {
+  padding: 12px 16px 14px;
+  font-size: 15px;
+}
+.warnliste p {
+  margin: 0 0 8px;
+}
+.warnliste ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+.warnliste li + li {
+  margin-top: 4px;
+}
+.warnliste .leise,
+.rehatest .leise {
+  color: var(--leise);
+  font-size: 14px;
+}
+.rehabild {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.rehabild p {
+  margin: 0;
+  color: var(--leise);
+  font-size: 14px;
+}
+.rehaop,
+.rehazeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rehaop input {
+  width: auto;
+}
+.rehazeile {
+  margin-bottom: 10px;
+}
+.schmerzvorher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+}
+.schmerzvorher span {
+  display: flex;
+  flex-direction: column;
+}
+.schmerzvorher small {
+  color: var(--leise);
+}
+.schmerzvorher select {
+  width: 110px;
+  flex: 0 0 auto;
+}
+select.ampel.gruen {
+  border-color: var(--gruen);
+}
+select.ampel.gelb {
+  border-color: var(--gold);
+  background-color: rgba(255, 190, 85, 0.16);
+}
+select.ampel.rot {
+  border-color: var(--rot);
+  background-color: rgba(255, 107, 129, 0.2);
+}
+.hinweistext.warnung {
+  border: 1px solid var(--rot);
+}
+.reaktionskarte {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 14px 0 6px;
+  padding: 14px 16px;
+  border-radius: var(--gross);
+  background: var(--flaeche);
+  border: 1px solid var(--akzent);
+}
+.reaktionskarte small {
+  color: var(--leise);
+}
+.reaktionsknoepfe {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.reaktionsknoepfe .knopf {
+  flex: 1;
+}
+.rehatest {
+  padding: 12px 16px 14px;
+  font-size: 15px;
+}
+.rehatest ol {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+.rehatest li + li {
+  margin-top: 3px;
+}
+.rehatestwerte {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0 6px;
+}
+.rehatestwerte label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--leise);
+}
+.einordnung {
+  margin: 8px 0 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.einordnung.gut {
+  background: rgba(67, 211, 158, 0.15);
+}
+.einordnung.mittel {
+  background: rgba(255, 190, 85, 0.15);
+}
+.einordnung.schwach {
+  background: rgba(255, 107, 129, 0.18);
+}

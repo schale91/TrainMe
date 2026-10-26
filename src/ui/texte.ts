@@ -109,6 +109,8 @@ export const GERAETE: { id: Geraet; name: string; gruppe: string; text?: string;
   { id: "matte", name: "Matte", gruppe: "klein" },
   { id: "faszienrolle", name: "Faszienrolle", gruppe: "klein" },
   { id: "gleitscheiben", name: "Gleitscheiben oder Handtuch", gruppe: "klein" },
+  { id: "stuhl", name: "Stabiler Stuhl mit Lehne", gruppe: "klein", text: "Gilt immer als vorhanden" },
+  { id: "stufe", name: "Treppe oder Stufe mit Geländer", gruppe: "klein" },
   { id: "stab", name: "Stab", gruppe: "klein" },
   { id: "golfschlaeger", name: "Golfschläger", gruppe: "klein" },
   { id: "laufband", name: "Laufband", gruppe: "ausdauer" },
@@ -266,5 +268,9 @@ export function grundText(g: Grund): string {
       return "Von dir getauscht."
     case "position":
       return "Extra für deine Position (" + g.position + ")."
+    case "reha":
+      return g.familie + (g.stufen > 1 ? ", Stufe " + g.stufe + " von " + g.stufen : "") + ": ausgewählt für " + g.bild + "."
+    case "reha_schmerz":
+      return g.text
   }
 }

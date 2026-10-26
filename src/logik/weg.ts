@@ -52,8 +52,8 @@ export function wegStand(daten: Daten, heute: string): Schritt[] {
       woche: status === "jetzt" ? Math.min(4, Math.floor(tageRein / 7)) : status === "vorbei" ? 5 : 0,
       tageRest: status === "jetzt" ? BLOCK_TAGE - tageRein : status === "kommt" ? Math.round((Date.parse(von + "T12:00:00Z") - Date.parse(heute + "T12:00:00Z")) / 86400000) : 0,
     })
-    // Kontrolltest in der Entlastungswoche, bevor eine neue Phase beginnt
-    if (naechste !== ph) {
+    // Kontrolltest in der Entlastungswoche, bevor eine neue Phase beginnt (Reha: nach jedem Block)
+    if (naechste !== ph || profil.sport === "reha") {
       const test = plusTage(von, 4 * 7)
       const fertig = (daten.messungen || []).some((m) => zwischen(m.datum, test, plusTage(bis, 7))) || [daten.einstufung?.kraft, daten.einstufung?.mobil].some((d) => !!d && zwischen(d, test, plusTage(bis, 7)))
       schritte.push({ art: "test", datum: test, erledigt: fertig, status: heute > bis ? "vorbei" : heute >= test ? "jetzt" : "kommt" })

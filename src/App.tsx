@@ -11,6 +11,7 @@ import type { Daten, Einheit, Profil, Protokoll } from "./logik/typen"
 import Bibliothek from "./ui/Bibliothek"
 import Weg, { BlockFortschritt } from "./ui/Weg"
 import { aktuellerBlock, wegStand } from "./logik/weg"
+import { rehaAktiv, rehaSperre } from "./logik/reha"
 import Einrichtung from "./ui/Einrichtung"
 import Fortschritt from "./ui/Fortschritt"
 import Heute from "./ui/Heute"
@@ -123,7 +124,7 @@ export default function App() {
   if (!daten.profil) return <Einrichtung fertig={(p) => aendern((d) => void (d.profil = { ...p, jahresplan: p.jahresplan || jahresplanVorschlag(p, p.block_start) }))} />
   const profil = daten.profil
 
-  const fertig = (e: Einheit, protokolle: Protokoll[]) => {
+  const fertig = (e: Einheit, protokolle: Protokoll[], _vollstaendig?: boolean, schmerzVor?: number) => {
     const tag = heute()
     const w = blockWoche(profil, e.datum)
     const vorher = stufe(aktuell.current.spiel.xp).stufe
@@ -138,6 +139,7 @@ export default function App() {
         w,
       )
       if (e.datum !== tag) d.erledigt[d.erledigt.length - 1].geplant = e.datum
+      if (schmerzVor !== undefined) d.erledigt[d.erledigt.length - 1].schmerz_vor = schmerzVor
       einheiten = d.erledigt.length
     })
     setOffen(null)
@@ -155,7 +157,11 @@ export default function App() {
   // Vor dem ersten Training erst Kraftwerte und Mobilität erfassen
   const eingestuft = !!daten.einstufung?.kraft && !!daten.einstufung?.mobil
   const oeffnen = (e: Einheit) => {
-    if (!eingestuft) setEinstufen(true)
+    // Reha: erst Warnzeichen und Freigabe, die Karte dazu steht auf „Heute“
+    if (rehaAktiv(profil) && rehaSperre(profil, heute())) {
+      setTab("heute")
+      window.scrollTo(0, 0)
+    } else if (!eingestuft) setEinstufen(true)
     else setOffen(e)
   }
 
@@ -197,7 +203,7 @@ export default function App() {
         ) : offen ? (
           <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id) => aendern((d) => void (d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen, id]))} />
         ) : tab === "heute" ? (
-          <Heute daten={daten} oeffnen={oeffnen} einstufen={() => setEinstufen(true)} zumWeg={() => setTab("weg")} />
+          <Heute daten={daten} aendern={aendern} oeffnen={oeffnen} einstufen={() => setEinstufen(true)} zumWeg={() => setTab("weg")} />
         ) : tab === "weg" ? (
           <Weg daten={daten} einstufen={() => setEinstufen(true)} zumJahresplan={() => zeigeProfil("jahresplan")} oeffnen={oeffnen} />
         ) : tab === "uebungen" ? (
@@ -247,7 +253,7 @@ export default function App() {
             <h1>Geschafft!</h1>
             <p className="xp">+{belohnung.xp} XP</p>
             {belohnung.stufeNachher > belohnung.stufeVorher ? <p className="stufeauf">Stufe {belohnung.stufeNachher} erreicht!</p> : null}
-            {weg ? <BlockFortschritt stand={weg} /> : null}
+            {weg ? <BlockFortschritt stand={weg} sport={daten.profil?.sport} /> : null}
             {pm ? (
               <p className="prozentzeile">
                 1-%-Methode: {belohnung.einheiten} {belohnung.einheiten === 1 ? "Einheit" : "Einheiten"}, also ×{String(Math.round(pm.faktor * 100) / 100).replace(".", ",")}

@@ -145,6 +145,23 @@ export function beispielGolf(start: string): Profil {
   }
 }
 
+/** Beispiel Reha: Hüftarthrose, zu Hause mit Stuhl, Treppe und Band, dreimal Gelenktraining und zweimal Gehen. */
+export function beispielReha(start: string): Profil {
+  const p = neuesProfil(start)
+  const kraft: Wochentag = { art: "training", ort: 0, minuten: 30, schwerpunkt: "kraft" }
+  const gehen: Wochentag = { art: "training", ort: 0, minuten: 25, schwerpunkt: "ausdauer" }
+  return {
+    ...p,
+    ziel: "fitness",
+    erfahrung: "einsteiger",
+    sport: "reha",
+    arten: ["kraft", "mobilitaet", "ausdauer"],
+    woche: [kraft, gehen, kraft, gehen, kraft, frei(), frei()],
+    orte: [{ name: "Zuhause", geraete: ["stuhl", "stufe", "band", "mini_band", "matte", "wand"], gewichte: { ...LEER, baender: 2 }, deckenhoehe_cm: 240 }],
+    reha: { bilder: [{ id: "huefte_arthrose", seite: "beide" }], boden: false, halt: true, freigabe: false, tep_grenzen: false },
+  }
+}
+
 /** Beispiel: Fußballer mit 2 × Mannschaftstraining, Spiel am Samstag und 3 zusätzlichen Einheiten. */
 export function beispielFussball(start: string): Profil {
   const p = neuesProfil(start)

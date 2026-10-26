@@ -2,6 +2,7 @@
 // Issurin 2010): erst Grundlage mit mehr Wiederholungen, dann Maximalkraft, dann Schnellkraft kurz vor der Saison,
 // in der Saison Kraft erhalten, danach ein lockerer Übergangsblock.
 
+import { REHA_PHASEN } from "../daten/reha"
 import type { Jahresplan, Phase, Profil, Saison } from "./typen"
 
 const TAG = 86400000
@@ -58,6 +59,11 @@ export const PHASEN: Record<Phase, PhasenInfo> = {
   },
 }
 
+/** Name und Texte einer Phase; in der Reha heißen die Phasen Einstieg, Aufbau, Festigen und Erholung. */
+export function phaseInfo(phase: Phase, sport?: string): PhasenInfo {
+  return sport === "reha" ? { ...PHASEN[phase], ...REHA_PHASEN[phase] } : PHASEN[phase]
+}
+
 /** Übliche Saison je Sport als Monate (Golf in Deutschland etwa April bis Oktober). */
 export const SAISON_VORSCHLAG: Record<string, { von: number; bis: number } | null> = {
   golf: { von: 4, bis: 10 },
@@ -66,6 +72,7 @@ export const SAISON_VORSCHLAG: Record<string, { von: number; bis: number } | nul
   // Football in Deutschland (GFL und Ligen darunter): Saison etwa Mai bis September
   football: { von: 5, bis: 9 },
   bodybuilding: null,
+  reha: null,
   allgemein: null,
 }
 
@@ -98,6 +105,8 @@ function blockMonat(start: string, i: number): number {
 /** Phase eines Blocks nach der Regel: Saison bestimmt, was davor und danach kommt. */
 export function phaseNachRegel(start: string, i: number, saison: Jahresplan["saison"], ziel: string): Phase {
   if (!saison) {
+    // Reha: einmal Einstieg, dann im Wechsel zwei Blöcke Aufbau und einer Festigen
+    if (ziel === "reha") return i <= 0 ? "grundlage" : (i - 1) % 3 < 2 ? "kraft" : "erhalt"
     const r = REIHE[ziel] || REIHE.fitness
     return r[((i % r.length) + r.length) % r.length]
   }
@@ -113,6 +122,7 @@ export function phaseNachRegel(start: string, i: number, saison: Jahresplan["sai
 
 /** Welche Reihe ohne Saison gilt: Sportler wie „sport“, Bodybuilding und Muskelaufbau wie „muskelaufbau“. */
 function reiheZiel(profil: Pick<Profil, "ziel" | "sport">): string {
+  if (profil.sport === "reha") return "reha"
   if (profil.sport === "bodybuilding" || profil.ziel === "muskelaufbau") return "muskelaufbau"
   return profil.sport !== "allgemein" ? "sport" : profil.ziel
 }

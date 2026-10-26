@@ -154,6 +154,7 @@ export const SPORTARTEN: { id: string; name: string; termine: { id: string; name
   { id: "fussball", name: "Fußball", termine: [{ id: "mannschaftstraining", name: "Mannschaftstraining" }, { id: "spiel", name: "Spiel" }], text: "Kraft, Schnelligkeit und Vorbeugung (Beinbeuger, Adduktoren). Schwere Beine nie direkt vor dem Spiel." },
   { id: "football", name: "Football", termine: [{ id: "mannschaftstraining", name: "Teamtraining" }, { id: "spiel", name: "Spiel" }], text: "American Football: Maximalkraft, Antritt und Schnellkraft, dazu Nacken, Beinbeuger und Adduktoren. Die Position bestimmt die Schwerpunkte." },
   { id: "laufen", name: "Laufen", termine: [{ id: "lauf", name: "Lauf" }, { id: "turnier", name: "Wettkampf" }], text: "Einbeinige Kraft, Waden und Beinbeuger für Laufökonomie und Belastbarkeit." },
+  { id: "reha", name: "Reha und Gelenke", termine: [], text: "Für Hüfte, Knie oder Rücken: Arthrose, nach Gelenk-OP, seitlicher Hüftschmerz oder Kreuzschmerz. Sanfte Stufen, Schmerz-Ampel nach jedem Satz, Funktionstests alle fünf Wochen." },
   { id: "bodybuilding", name: "Bodybuilding", termine: [], text: "Muskelaufbau für jeden Bereich: viel Volumen, Isolationsübungen, Sätze nah ans Muskelversagen. Splits wie Drücken, Ziehen, Beine." },
 ]
 

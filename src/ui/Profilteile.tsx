@@ -12,6 +12,7 @@ import { Chips, Feld, Karten, Zahl, Zahlenliste } from "./teile"
 import { ARTEN, ERFAHRUNG, GELENKE, GERAETE, GERAETE_GRUPPEN, SAISON, SCHWERPUNKT, TERMINE, WOCHENTAGE, ZIELE } from "./texte"
 import { MASCHINEN } from "../logik/typen"
 import { Sym } from "./symbole"
+import { RehaEditor, leeresReha } from "./RehaTeile"
 
 type Teil = { profil: Profil; aendern: (p: Profil) => void }
 
@@ -44,19 +45,20 @@ export function SportWahl({ profil, aendern }: Teil) {
           werte={SPORTARTEN.map((s) => ({ id: s.id, name: s.name }))}
           gewaehlt={[profil.sport]}
           onChange={([s]) => {
-            const ziel = s === "bodybuilding" ? "muskelaufbau" : s !== "allgemein" && profil.ziel === "fitness" ? "sport" : profil.ziel
-            const neu = { ...profil, sport: s, ziel, position: s === "football" ? profil.position || "lb" : profil.position }
+            const ziel = s === "bodybuilding" ? "muskelaufbau" : s === "reha" ? "fitness" : s !== "allgemein" && profil.ziel === "fitness" ? "sport" : profil.ziel
+            const neu = { ...profil, sport: s, ziel, position: s === "football" ? profil.position || "lb" : profil.position, reha: s === "reha" ? profil.reha || leeresReha() : profil.reha, erfahrung: s === "reha" ? "einsteiger" as const : profil.erfahrung }
             // Anderer Sport, andere Saison: Jahresplan ab dem laufenden Block neu vorschlagen
             aendern(neu.jahresplan && s !== profil.sport ? { ...neu, jahresplan: neuPlanen(neu, heute(), SAISON_VORSCHLAG[s] ?? null) } : neu)
           }}
         />
       </Feld>
+      {profil.sport === "reha" ? <RehaEditor profil={profil} aendern={aendern} /> : null}
       {profil.sport === "football" ? (
         <Feld titel="Position" text={positionVon(profil.position)?.text || "Wähle deine Position, danach richten sich die Schwerpunkte."}>
           <Chips einzeln werte={POSITIONEN.map((p) => ({ id: p.id, name: p.name }))} gewaehlt={profil.position ? [profil.position] : []} onChange={([p]) => aendern({ ...profil, position: p })} />
         </Feld>
       ) : null}
-      {profil.sport !== "allgemein" && !profil.jahresplan ? (
+      {profil.sport !== "allgemein" && profil.sport !== "reha" && !profil.jahresplan ? (
         <Feld titel="Phase">
           <Karten werte={SAISON} gewaehlt={profil.saison} onChange={(saison) => aendern({ ...profil, saison })} />
         </Feld>
