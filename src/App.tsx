@@ -7,7 +7,7 @@ import { heute } from "./logik/plan"
 import { blockWoche, istEntlastung } from "./logik/progression"
 import { laden, leer, speichern } from "./logik/speicher"
 import { ABZEICHEN, abschliessen, stufe, type Ergebnis } from "./logik/spiel"
-import type { Daten, Einheit, Profil, Protokoll } from "./logik/typen"
+import type { Daten, Einheit, Profil, Protokoll, Tageswerte } from "./logik/typen"
 import Bibliothek from "./ui/Bibliothek"
 import Weg, { BlockFortschritt } from "./ui/Weg"
 import { aktuellerBlock, wegStand } from "./logik/weg"
@@ -25,6 +25,9 @@ import Training from "./ui/Training"
 import Einstufung from "./ui/Einstufung"
 import Fehlergrenze from "./ui/Fehlergrenze"
 import { gesundheitLesen } from "./ui/gesundheit"
+import { anfrage, aufLinkHoeren, bruecke, koppeln, modus, speicherSchluessel } from "./ui/lebenswelt"
+import { abgleichen, neuerStand, type Abgleichstand } from "./logik/abgleich"
+import { einspielen, uebernehmen, type KbDok } from "./logik/kraftbuch"
 
 type Tab = "heute" | "weg" | "uebungen" | "fortschritt" | "profil"
 
@@ -38,21 +41,40 @@ const TABS: { id: Tab; name: string; icon: string }[] = [
 
 type Belohnung = Ergebnis & { stufeVorher: number; stufeNachher: number; einheiten: number }
 
+/** Stand des Abgleichs mit der Lebenswelt auf diesem Gerät. */
+function ladeStand(schluessel: string): Abgleichstand {
+  try {
+    return { ...neuerStand(), ...JSON.parse(localStorage.getItem(schluessel + ".abgleich") || "{}") }
+  } catch {
+    return neuerStand()
+  }
+}
+
 export default function App() {
-  const [daten, setDatenRoh] = useState<Daten>(() => laden())
+  // Lokal, eingebettet in die Lebenswelt oder als gekoppelte APK; Daten der Lebenswelt liegen getrennt von lokalen
+  const [art] = useState(modus)
+  const lw = art !== "lokal"
+  const [schluessel] = useState(speicherSchluessel)
+  const [daten, setDatenRoh] = useState<Daten>(() => laden(typeof localStorage !== "undefined" ? localStorage : null, schluessel))
   const aktuell = useRef(daten)
   const [tab, setTab] = useState<Tab>("heute")
   const [offen, setOffen] = useState<Einheit | null>(null)
   const [belohnung, setBelohnung] = useState<Belohnung | null>(null)
   const [einstufen, setEinstufen] = useState(false)
   const [profilStart, setProfilStart] = useState<Unterseite>(null)
-  const [update, setUpdate] = useState<UpdateInfo | null>(() => updateBekannt())
+  const [update, setUpdate] = useState<UpdateInfo | null>(() => (art === "eingebettet" ? null : updateBekannt()))
+  // Lebenswelt: erster Abgleich gelaufen, Verbindung, Hinweis nach der Übernahme aus dem Kraftbuch
+  const [bereit, setBereit] = useState(!lw)
+  const [offline, setOffline] = useState(false)
+  const [uebernommen, setUebernommen] = useState<string | null>(null)
+  const [koppelHinweis, setKoppelHinweis] = useState<string | null>(null)
   const [updateZu, setUpdateZu] = useState(false)
   // Zurückgeste auf einem anderen Tab führt erst zu „Heute“, dann aus der App
   useEbene(tab !== "heute" && !!daten.profil, () => setTab("heute"))
 
-  // Beim Start still nach einer neueren APK suchen (ohne Netz passiert nichts)
+  // Beim Start still nach einer neueren APK suchen (ohne Netz passiert nichts); eingebettet kommt das Update mit der Lebenswelt
   useEffect(() => {
+    if (art === "eingebettet") return
     updateSuchen()
       .then(setUpdate)
       .catch(() => undefined)
@@ -61,8 +83,96 @@ export default function App() {
   // Effekte geben bewusst nichts zurück: Manche Android-WebViews liefern bei scrollTo einen Wert, den React sonst als
   // Aufräumfunktion aufrufen würde
   useEffect(() => {
-    speichern(daten)
+    speichern(daten, typeof localStorage !== "undefined" ? localStorage : null, schluessel)
+  }, [daten, schluessel])
+
+  // Abgleich mit der Lebenswelt: beim Start, kurz nach jeder Änderung, jede Minute und beim Zurückkehren in die App
+  const laeuft = useRef(false)
+  const nochmal = useRef(false)
+  const abgleich = async () => {
+    if (!lw) return
+    if (laeuft.current) {
+      nochmal.current = true
+      return
+    }
+    laeuft.current = true
+    try {
+      const vorher = aktuell.current
+      const r = await abgleichen(anfrage, vorher, ladeStand(schluessel), Date.now())
+      setOffline(r.offline)
+      // Hat sich inzwischen hier etwas geändert, gilt dieser Durchgang nicht; der nächste nimmt alles mit
+      if (aktuell.current !== vorher) nochmal.current = true
+      else {
+        try {
+          localStorage.setItem(schluessel + ".abgleich", JSON.stringify(r.stand))
+        } catch {
+          /* voll */
+        }
+        if (r.neu) setDaten(r.daten)
+        if (!r.offline) bruecke()?.gespeichert?.()
+        // Einmal das Kraftbuch übernehmen, wenn die Lebenswelt eins hat und es noch niemand übernommen hat
+        if (r.kraftbuch && !r.daten.uebernahmen?.kraftbuch) {
+          const kb = await anfrage("GET", "/api/lebenswelt/trainme/kraftbuch")
+          const doks = ((kb.daten || {}) as { dokumente?: KbDok[] }).dokumente || []
+          if (kb.status === 200 && doks.length && aktuell.current === (r.neu ? r.daten : vorher)) {
+            const u = uebernehmen(doks, heute(), bruecke()?.startwerte)
+            aendern((d) => einspielen(d, u, heute(), bruecke()?.name || ""))
+            setUebernommen(
+              "Aus dem Kraftbuch übernommen: Plan mit " + (u.plan?.tage.length || 0) + " Tagen, " + u.erledigt.filter((e) => e.quelle === "kraftbuch").length + " trainierte Tage, " + Object.keys(u.maxwerte).length + " Maxima" + (u.beschwerden.length ? ", " + u.beschwerden.length + " Beschwerde(n)" : "") + ". Bitte unter Profil, Orte und Geräte den Kraftraum prüfen" + (u.frei.length ? "; ohne Anleitung bleiben: " + u.frei.join(", ") : "") + ".",
+            )
+            nochmal.current = true
+          }
+        }
+      }
+    } finally {
+      laeuft.current = false
+      setBereit(true)
+      if (nochmal.current) {
+        nochmal.current = false
+        setTimeout(() => void abgleich(), 500)
+      }
+    }
+  }
+  useEffect(() => {
+    if (!lw) return
+    void abgleich()
+    const takt = setInterval(() => document.visibilityState === "visible" && void abgleich(), 60000)
+    const sichtbar = () => document.visibilityState === "visible" && void abgleich()
+    document.addEventListener("visibilitychange", sichtbar)
+    // Garmin-Werte und Körpergewicht aus der Lebenswelt
+    void anfrage("GET", "/api/lebenswelt/trainme/gesundheit").then((r) => {
+      const g = r.status === 200 ? (r.daten as { stand?: string; tage?: Record<string, Tageswerte>; gewicht?: { kg: number } | null }) : null
+      if (!g) return
+      aendern((d) => {
+        d.gesundheit = { verbunden: d.gesundheit?.verbunden ?? false, tage: d.gesundheit?.tage || {}, garmin: { stand: g.stand || "", tage: g.tage || {} } }
+        if (g.gewicht?.kg && d.profil && d.profil.koerpergewicht_kg !== g.gewicht.kg) d.profil.koerpergewicht_kg = g.gewicht.kg
+      })
+    })
+    return () => {
+      clearInterval(takt)
+      document.removeEventListener("visibilitychange", sichtbar)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    if (!lw || !bereit) return
+    const t = setTimeout(() => void abgleich(), 2500)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daten])
+
+  // Koppeln über den Link aus dem QR-Code der Lebenswelt (nur in der APK)
+  useEffect(
+    () =>
+      aufLinkHoeren((l) => {
+        if (art === "eingebettet") return
+        setKoppelHinweis("Kopple mit der Lebenswelt …")
+        koppeln(l.adresse, l.code)
+          .then(() => location.reload())
+          .catch((e: Error) => setKoppelHinweis(e.message))
+      }),
+    [art],
+  )
 
   // Lebenszeichen: Wurde eine Seite geöffnet, aber nie fertig angezeigt, hing die App beim letzten Mal dort
   const [haenger] = useState<{ ziel: string; zeit: string } | null>(() => {
@@ -121,6 +231,14 @@ export default function App() {
     setDaten(neu)
   }
 
+  if (lw && !bereit && !daten.profil)
+    return (
+      <div className="app">
+        <main>
+          <p className="hinweistext mitte">Lade deine Daten aus der Lebenswelt …</p>
+        </main>
+      </div>
+    )
   if (!daten.profil) return <Einrichtung fertig={(p) => aendern((d) => void (d.profil = { ...p, jahresplan: p.jahresplan || jahresplanVorschlag(p, p.block_start) }))} />
   const profil = daten.profil
 
@@ -135,7 +253,7 @@ export default function App() {
         d,
         { ...e, datum: tag },
         protokolle.map((p) => ({ ...p, datum: tag })),
-        istEntlastung(w),
+        profil.planart !== "eigen" && istEntlastung(w),
         w,
       )
       if (e.datum !== tag) d.erledigt[d.erledigt.length - 1].geplant = e.datum
@@ -176,6 +294,29 @@ export default function App() {
             </button>
           </div>
         ) : null}
+        {koppelHinweis ? (
+          <div className="hinweistext">
+            {koppelHinweis}{" "}
+            <button type="button" className="textknopf" onClick={() => setKoppelHinweis(null)}>
+              Ausblenden
+            </button>
+          </div>
+        ) : null}
+        {uebernommen && !offen ? (
+          <div className="hinweistext">
+            <b>{uebernommen}</b>{" "}
+            <button type="button" className="textknopf" onClick={() => {
+              setUebernommen(null)
+              zeigeProfil("orte")
+            }}>
+              Geräte prüfen
+            </button>{" "}
+            <button type="button" className="textknopf" onClick={() => setUebernommen(null)}>
+              Später
+            </button>
+          </div>
+        ) : null}
+        {lw && offline && !offen && tab === "heute" ? <p className="hinweistext klein">Gerade keine Verbindung zur Lebenswelt. Alles bleibt hier gespeichert und geht beim nächsten Mal mit.</p> : null}
         <Fehlergrenze key={(offen ? "t" : "") + tab} bereich={offen ? "Training" : tab} zurueck={() => {
           setOffen(null)
           setTab("heute")
@@ -201,9 +342,14 @@ export default function App() {
         {einstufen ? (
           <Einstufung daten={daten} aendern={aendern} fertig={() => setEinstufen(false)} zurueck={() => setEinstufen(false)} />
         ) : offen ? (
-          <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id) => aendern((d) => void (d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen, id]))} />
+          <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id) => aendern((d) => void (d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen, id]))} bandfarbe={(id, f) => aendern((d) => {
+            const b = { ...(d.bandfarben || {}) }
+            if (f) b[id] = f
+            else delete b[id]
+            d.bandfarben = b
+          })} />
         ) : tab === "heute" ? (
-          <Heute daten={daten} aendern={aendern} oeffnen={oeffnen} einstufen={() => setEinstufen(true)} zumWeg={() => setTab("weg")} />
+          <Heute daten={daten} aendern={aendern} oeffnen={oeffnen} einstufen={() => setEinstufen(true)} zumWeg={() => setTab("weg")} lebenswelt={lw} />
         ) : tab === "weg" ? (
           <Weg daten={daten} einstufen={() => setEinstufen(true)} zumJahresplan={() => zeigeProfil("jahresplan")} oeffnen={oeffnen} />
         ) : tab === "uebungen" ? (
@@ -251,8 +397,8 @@ export default function App() {
               ))}
             </div>
             <h1>Geschafft!</h1>
-            <p className="xp">+{belohnung.xp} XP</p>
-            {belohnung.stufeNachher > belohnung.stufeVorher ? <p className="stufeauf">Stufe {belohnung.stufeNachher} erreicht!</p> : null}
+            {lw ? <p className="prozentzeile">Deine XP holst du in der Lebenswelt ab.</p> : <p className="xp">+{belohnung.xp} XP</p>}
+            {!lw && belohnung.stufeNachher > belohnung.stufeVorher ? <p className="stufeauf">Stufe {belohnung.stufeNachher} erreicht!</p> : null}
             {weg ? <BlockFortschritt stand={weg} sport={daten.profil?.sport} /> : null}
             {pm ? (
               <p className="prozentzeile">
@@ -269,7 +415,7 @@ export default function App() {
                 ))}
               </div>
             ) : null}
-            {belohnung.neueAbzeichen.map((id) => {
+            {(lw ? [] : belohnung.neueAbzeichen).map((id) => {
               const a = ABZEICHEN.find((x) => x.id === id)
               return a ? (
                 <p key={id} className="neuabz">

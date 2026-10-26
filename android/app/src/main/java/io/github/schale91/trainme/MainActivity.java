@@ -8,6 +8,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // Eigene Erweiterung: Pausentimer, der auch im Hintergrund und über anderen Apps läuft
         registerPlugin(PausenTimerPlugin.class);
+        // Koppeln mit der Lebenswelt über den Link trainme://koppeln
+        registerPlugin(KopplungPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

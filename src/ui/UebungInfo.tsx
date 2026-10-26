@@ -3,6 +3,7 @@
 import { MUSTER_NAME, MUSKEL_NAME, GERAET_NAME, GELENK_NAME } from "./texte"
 import type { Uebung } from "../logik/typen"
 import { Blatt, Plakette } from "./ios"
+import Figur from "./Figur"
 
 export function UebungInfoBlatt(props: { uebung: Uebung | null; onClose: () => void }) {
   const u = props.uebung
@@ -29,10 +30,11 @@ export function UebungInfoInhalt({ u }: { u: Uebung }) {
         {u.einseitig ? <Plakette farbe="var(--flaeche3)">je Seite</Plakette> : null}
         {u.golf ? <Plakette farbe="#1f7a5a">{u.golf === 3 ? "Golf-spezifisch" : u.golf === 2 ? "Wichtig für Golf" : "Gut für Golf"}</Plakette> : null}
       </div>
+      <Figur uebung={u} />
       <p className="infokurz">{i.kurz}</p>
       {u.auch && u.auch.length ? <p className="infoauch">Auch bekannt als: {u.auch.join(", ")}</p> : null}
 
-      <h4>So geht's</h4>
+      {i.ausfuehrung.length ? <h4>So geht's</h4> : null}
       <ol className="schritte">
         {i.ausfuehrung.map((s, k) => (
           <li key={k}>{s}</li>

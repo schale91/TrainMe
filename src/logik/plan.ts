@@ -9,6 +9,7 @@ import { bewerte, testNach } from "../daten/tests"
 import { PHASEN, mitPhase, type PlanProfil } from "./jahresplan"
 import { rehaAktiv, rehaEinheit } from "./reha"
 import { REHA_PHASEN } from "../daten/reha"
+import { planWoche } from "./eigenerPlan"
 import type { Daten, Einheit, Geraet, Grund, Messung, Muster, Ort, Platz, Profil, Protokoll, Rolle, Trainingsart, Uebung } from "./typen"
 
 const TAG = 86400000
@@ -241,6 +242,21 @@ export function einheitFuer(profil: Profil, daten: Daten, datum: string): Einhei
 
 /** Alle Einheiten der Woche ab Montag. */
 export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): Einheit[] {
+  // Eigener Plan statt der Planung von TrainMe
+  if (grundprofil.planart === "eigen" && daten.eigenerPlan) {
+    return planWoche(
+      grundprofil,
+      daten,
+      montag,
+      heute(),
+      plusTage,
+      (u, i) => {
+        const ort = grundprofil.orte[i] || grundprofil.orte[0]
+        return ort ? lastenAn(u, ort) : []
+      },
+      (nur) => wochenplan(nur, daten, montag),
+    )
+  }
   const benutzt = new Set<string>()
   const ergebnis: Einheit[] = []
   const schwach = schwachstellen(daten)

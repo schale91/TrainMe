@@ -2,6 +2,7 @@
 // und, wenn erlaubt, schwebend über anderen Apps. Im Browser passiert hier nichts, dort zählt die App selbst.
 
 import { Capacitor, registerPlugin } from "@capacitor/core"
+import { bruecke } from "./lebenswelt"
 
 interface PausenTimerPlugin {
   start(o: { ende: number; titel: string; text: string }): Promise<void>
@@ -16,6 +17,9 @@ const Timer = registerPlugin<PausenTimerPlugin>("PausenTimer")
 let gefragt = false
 
 export async function pauseStarten(ende: number, titel: string, text: string): Promise<void> {
+  // In der Lebenswelt stellt sie den Wecker und zeigt die Pause, auch wenn TrainMe zu ist
+  const b = bruecke()
+  if (b?.pause) return b.pause(ende, text || titel)
   if (!nativ) return
   try {
     if (!gefragt) {
@@ -30,6 +34,8 @@ export async function pauseStarten(ende: number, titel: string, text: string): P
 }
 
 export async function pauseStoppen(): Promise<void> {
+  const b = bruecke()
+  if (b?.pause) return b.pause(null, "")
   if (!nativ) return
   try {
     await Timer.stop()

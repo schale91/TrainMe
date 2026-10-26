@@ -14,6 +14,8 @@ import { pauseStarten, pauseStoppen } from "./pausenTimer"
 import { ROLLE, datumText, grundText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
+import { FREI } from "../daten/uebungen/index"
+import Figur from "./Figur"
 
 type Eingabe = Satz & { fertig: boolean }
 type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][] }
@@ -57,7 +59,17 @@ function piep() {
   }
 }
 
-export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void }) {
+/** Übliche Kennfarben von Widerstandsbändern, leicht bis schwer (wie im Kraftbuch). */
+const BANDFARBEN = [
+  { id: "gelb", name: "Gelb", farbe: "#f2c94c" },
+  { id: "rot", name: "Rot", farbe: "#e05252" },
+  { id: "schwarz", name: "Schwarz", farbe: "#2b2b2b" },
+  { id: "lila", name: "Lila", farbe: "#8e5bd6" },
+  { id: "grün", name: "Grün", farbe: "#3fa65a" },
+  { id: "blau", name: "Blau", farbe: "#3b7be0" },
+]
+
+export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void }) {
   const { daten, einheit } = props
   const profil = daten.profil!
   // Reha: Schmerz je Satz statt Reserve, Schmerz vor dem Training
@@ -128,9 +140,21 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     )
     setAnpassungen({ ...anpassungen, [i]: a ? { ...a, satz: k + 1 } : undefined })
     if (!s.fertig && plaetze[i].vorgabe.pause_s > 0) {
-      const letzterSatz = saetze[i].every((x, b) => b === k || x.fertig)
-      const naechste = letzterSatz ? plaetze[i + 1]?.uebung.name : plaetze[i].uebung.name + ", Satz " + (k + 2)
-      pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, naechste)
+      const g = plaetze[i].gruppe
+      const gruppe = g ? plaetze.map((p, x) => (p.gruppe === g ? x : -1)).filter((x) => x >= 0) : []
+      if (gruppe.length > 1 && gruppe.indexOf(i) < gruppe.length - 1) {
+        // Supersatz: ohne Pause weiter zur nächsten Übung der Gruppe
+        pauseSetzen(null)
+      } else if (gruppe.length > 1) {
+        // Letzte Übung der Gruppe: Pause, danach wieder die erste
+        const erste = gruppe[0]
+        const offen = saetze[erste].some((x) => !x.fertig)
+        pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, offen ? plaetze[erste].uebung.name + ", Satz " + (k + 2) : plaetze[i + 1]?.uebung.name)
+      } else {
+        const letzterSatz = saetze[i].every((x, b) => b === k || x.fertig)
+        const naechste = letzterSatz ? plaetze[i + 1]?.uebung.name : plaetze[i].uebung.name + ", Satz " + (k + 2)
+        pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, naechste)
+      }
     }
   }
   const erledigt = saetze.reduce((n, ss) => n + ss.filter((s) => s.fertig).length, 0)
@@ -139,7 +163,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
 
   const fertig = () => {
     const protokolle: Protokoll[] = plaetze
-      .map((p, i) => ({ datum: einheit.datum, uebung: p.uebung.id, saetze: saetze[i].filter((s) => s.fertig).map(({ fertig: _f, ...s }) => s) }))
+      .map((p, i) => ({ datum: einheit.datum, uebung: p.uebung.id, saetze: saetze[i].filter((s) => s.fertig).map(({ fertig: _f, ...s }) => s), ...(p.uebung.id.startsWith(FREI) ? { name: p.uebung.name } : {}) }))
       .filter((p) => p.saetze.length > 0)
     try {
       localStorage.removeItem(ENTWURF)
@@ -163,6 +187,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const vorgabeText = (p: Platz) => {
     const u = p.uebung
     const v = p.vorgabe
+    if (p.plantext) return p.plantext
     if (p.rolle === "ausdauer") return v.saetze > 1 ? v.saetze + " Runden" : Math.round((v.last || 0) / 60) + " Minuten"
     if (u.belastung === "zeit") return v.saetze + " × " + v.last + " s" + (u.einseitig ? " je Seite" : "")
     if (u.belastung === "distanz") return v.saetze + " × " + v.last + " m"
@@ -211,7 +236,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         return (
           <section key={i + u.id} className={"uebungskarte" + (alle ? " geschafft" : "")}>
             <div className="uebungskopf">
-              <span className={"marke " + p.rolle}>{p.etikett || ROLLE[p.rolle]}</span>
+              <span className={"marke " + p.rolle}>{p.gruppe ? "Supersatz " + p.gruppe + (plaetze.slice(0, i + 1).filter((x) => x.gruppe === p.gruppe).length) : p.etikett || ROLLE[p.rolle]}</span>
               {u.golf && profil.sport === "golf" ? (
                 <span className="marke golf mitsym">
                   <Sym name="golf" groesse={13} /> Golf
@@ -230,6 +255,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             <h2 className="uebungsname" onClick={() => setInfo(u)}>
               {u.name}
             </h2>
+            <Figur uebung={u} geraet={geraet} klein />
             <div className="vorgabezeile">
               <span className="vorgabe">{vorgabeText(p)}</span>
               {v.last !== null && u.belastung === "gewicht" ? <span className="vorgabe gewicht">{lastText(v.last, geraet)}</span> : null}
@@ -241,6 +267,14 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               {v.pause_s > 0 && p.rolle !== "ausdauer" ? <span className="vorgabe leise">Pause {v.pause_s >= 120 ? zahl(v.pause_s / 60) + " min" : v.pause_s + " s"}</span> : null}
             </div>
             <p className="begruendung">{v.begruendung}</p>
+            {geraet === "band" || daten.bandfarben?.[u.id] ? (
+              <div className="bandwahl" role="group" aria-label="Bandfarbe">
+                <small>Band</small>
+                {BANDFARBEN.map((f) => (
+                  <button key={f.id} type="button" className={"bandfarbe" + (daten.bandfarben?.[u.id] === f.id ? " an" : "")} style={{ background: f.farbe }} aria-label={f.name} aria-pressed={daten.bandfarben?.[u.id] === f.id} onClick={() => props.bandfarbe?.(u.id, daten.bandfarben?.[u.id] === f.id ? null : f.id)} />
+                ))}
+              </div>
+            ) : null}
             {p.warum?.length ? (
               <>
                 <button type="button" className="textknopf warumknopf" aria-expanded={warumOffen === i} onClick={() => setWarumOffen(warumOffen === i ? null : i)}>
@@ -277,7 +311,14 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 <div key={k} className={"satz" + (s.fertig ? " fertig" : "")}>
                   <span className="nr">{k + 1}</span>
                   {u.belastung === "distanz" ? <span className="breit leise">{v.last} m</span> : null}
-                  {u.belastung === "gewicht" ? (
+                  {u.belastung === "gewicht" && !lasten.length ? (
+                    <label className="mini breit">
+                      <input aria-label="Gewicht in kg" inputMode="decimal" placeholder="kg" value={s.last ?? ""} onChange={(e) => {
+                        const n = parseFloat(e.target.value.replace(",", "."))
+                        setSatz(i, k, { last: e.target.value === "" || !isFinite(n) ? null : n })
+                      }} />
+                    </label>
+                  ) : u.belastung === "gewicht" ? (
                     <select aria-label="Gewicht" value={s.last ?? ""} onChange={(e) => setSatz(i, k, { last: e.target.value === "" ? null : Number(e.target.value) })}>
                       <option value="">{lasten.length ? "Gewicht" : "frei"}</option>
                       {lasten.map((x) => (

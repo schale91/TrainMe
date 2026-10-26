@@ -214,6 +214,12 @@ export function WocheEditor({ profil, aendern }: Teil) {
                   </option>
                 ))}
               </select>
+              {profil.planart === "eigen" ? (
+                <select value={t.quelle || "plan"} aria-label="Woher die Einheit kommt" onChange={(e) => setTag(i, { ...t, quelle: e.target.value as Wochentag["quelle"] })}>
+                  <option value="plan">Plan</option>
+                  <option value="trainme">TrainMe zusätzlich</option>
+                </select>
+              ) : null}
               <select value={t.schwerpunkt || "automatisch"} onChange={(e) => setTag(i, { ...t, schwerpunkt: e.target.value as Wochentag["schwerpunkt"] })}>
                 {SCHWERPUNKT.filter((s) => s.id === "automatisch" || profil.arten.indexOf(s.id as never) >= 0).map((s) => (
                   <option key={s.id} value={s.id}>

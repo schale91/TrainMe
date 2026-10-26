@@ -19,7 +19,8 @@ const zwischen = (d: string, von: string, bis: string) => d >= von && d <= bis
 export function wegStand(daten: Daten, heute: string): Schritt[] {
   const profil = daten.profil
   const plan = profil?.jahresplan
-  if (!profil || !plan) return []
+  // Mit eigenem Plan gibt es keinen Jahresplan von TrainMe; den Weg zeigt dann der Plan selbst (planWeg)
+  if (!profil || !plan || (profil.planart === "eigen" && daten.eigenerPlan)) return []
   const tage = profil.woche.filter((t) => t.art === "training").length
   const jetzt = blockIndex(plan, heute)
   const anzahl = Math.max(plan.bloecke.length, jetzt + 3)
@@ -72,4 +73,25 @@ export function jahresAnteil(daten: Daten, heute: string): number {
   if (!plan) return 0
   const tage = (Date.parse(heute + "T12:00:00Z") - Date.parse(plan.start + "T12:00:00Z")) / 86400000
   return Math.min(1, Math.max(0, tage / (plan.bloecke.length * BLOCK_TAGE)))
+}
+
+/** Abschnitte eines eigenen Plans (z. B. Phasen) mit geschafften und offenen Tagen. */
+export function planWeg(daten: Daten): { name: string; tage: number; erledigt: number; status: Status }[] {
+  const plan = daten.eigenerPlan
+  if (!plan) return []
+  const fertig = new Set(daten.erledigt.filter((e) => typeof e.plan_nr === "number").map((e) => e.plan_nr))
+  const abschnitte: { name: string; tage: number; erledigt: number; status: Status }[] = []
+  for (const t of [...plan.tage].sort((a, b) => a.nr - b.nr)) {
+    const name = t.abschnitt || plan.name
+    let a = abschnitte[abschnitte.length - 1]
+    if (!a || a.name !== name) abschnitte.push((a = { name, tage: 0, erledigt: 0, status: "kommt" }))
+    a.tage++
+    if (fertig.has(t.nr)) a.erledigt++
+  }
+  let jetzt = false
+  for (const a of abschnitte) {
+    a.status = a.erledigt >= a.tage ? "vorbei" : jetzt ? "kommt" : "jetzt"
+    if (a.status === "jetzt") jetzt = true
+  }
+  return abschnitte
 }

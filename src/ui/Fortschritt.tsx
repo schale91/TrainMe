@@ -122,7 +122,8 @@ function Kraft(props: { daten: Daten }) {
     )
   }
   const sel = offen ? uebung(offen) : null
-  const selPunkte = offen ? verlaufVon(daten.protokoll, offen) : []
+  // Ältere Werte (z. B. Phase 1 aus dem Kraftbuch) stehen davor in der Kurve
+  const selPunkte = offen ? [...(daten.archiv?.[offen] || []).map((x) => ({ datum: x.datum, wert: x.kg })), ...verlaufVon(daten.protokoll, offen)].sort((a, b) => (a.datum < b.datum ? -1 : 1)) : []
   const mitLast = offen ? daten.protokoll.some((p) => p.uebung === offen && p.saetze.some((s) => s.last)) : false
   const einheit = (id: string) => (daten.protokoll.some((p) => p.uebung === id && p.saetze.some((s) => s.last)) ? "kg" : uebung(id)?.belastung === "zeit" ? "s" : "Wdh")
 
