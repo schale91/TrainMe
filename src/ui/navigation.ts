@@ -4,7 +4,8 @@
 // Capacitor beendet die App erst, wenn kein Platzhalter mehr da ist. Ein Eintrag je Ebene wäre fehleranfällig, weil
 // history.back() verzögert wirkt und sich mit neuen Einträgen überholt.
 
-type Ebene = { id: number; zurueck: () => void }
+/** art: was beim Zurückwischen mitgeht (Blatt oder Seite); text: Ziel, das beim Wischen links erscheint */
+type Ebene = { id: number; zurueck: () => void; art: "seite" | "blatt"; text?: string }
 
 const stapel: Ebene[] = []
 let zaehler = 0
@@ -30,38 +31,127 @@ function einrichten() {
     platzhalter = false
     stapel.pop()?.zurueck()
     if (stapel.length) platzhalterSetzen()
+    verschiebungLoesen()
   })
-  // Wischen vom linken Rand nach rechts wie auf dem iPhone
-  let start: { x: number; y: number; zeit: number } | null = null
-  window.addEventListener(
-    "touchstart",
-    (e) => {
-      const t = e.touches[0]
-      start = e.touches.length === 1 && t.clientX < 32 ? { x: t.clientX, y: t.clientY, zeit: Date.now() } : null
-    },
-    { passive: true },
-  )
-  window.addEventListener("touchcancel", () => (start = null), { passive: true })
-  window.addEventListener(
-    "touchend",
-    (e) => {
-      if (!start) return
-      const t = e.changedTouches[0]
-      const dx = t.clientX - start.x
-      const dy = Math.abs(t.clientY - start.y)
-      if (dx > 70 && dy < dx / 2 && Date.now() - start.zeit < 800) zurueck()
-      start = null
-    },
-    { passive: true },
-  )
+  // Wischen vom linken Rand nach rechts wie auf dem iPhone: Die Seite folgt dem Finger. Beim Loslassen entscheiden
+  // Strecke und Schwung, ob es zurückgeht oder die Seite an ihren Platz zurückfedert.
+  window.addEventListener("touchstart", wischStart, { passive: true })
+  window.addEventListener("touchmove", wischBewegen, { passive: true })
+  window.addEventListener("touchend", wischEnde, { passive: true })
+  window.addEventListener("touchcancel", () => wischEnde(null), { passive: true })
+}
+
+// ---------- Fließendes Zurückwischen ----------
+
+type Zug = { x: number; y: number; zeit: number; ziel: HTMLElement | null; aktiv: boolean; dx: number; letzte: { x: number; zeit: number }[] }
+let zug: Zug | null = null
+let hinweis: HTMLDivElement | null = null
+const RAND = 28
+const ruhig = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
+
+/** Was beim Wischen mitgeht: ein offenes Blatt oder die Seite. */
+function zielElement(): HTMLElement | null {
+  const oben = stapel[stapel.length - 1]
+  if (oben?.art === "blatt") {
+    const b = document.querySelectorAll<HTMLElement>(".blatthintergrund.offen .blatt")
+    return b[b.length - 1] || null
+  }
+  return document.querySelector<HTMLElement>(".app main") || document.querySelector<HTMLElement>("main")
+}
+
+function hinweisZeigen(dx: number) {
+  const oben = stapel[stapel.length - 1]
+  if (!hinweis) {
+    hinweis = document.createElement("div")
+    hinweis.className = "wischhinweis"
+    document.body.appendChild(hinweis)
+  }
+  hinweis.textContent = "‹ " + (oben?.text || "Zurück")
+  // mittig im frei werdenden Streifen links
+  hinweis.style.left = Math.max(8, dx / 2) + "px"
+  hinweis.style.opacity = String(Math.min(1, dx / 120))
+}
+
+function setzen(el: HTMLElement, dx: number, dauer: number) {
+  el.style.transition = dauer && !ruhig() ? "transform " + dauer + "ms cubic-bezier(0.2, 0.8, 0.2, 1)" : "none"
+  el.style.transform = dx ? "translateX(" + dx + "px)" : ""
+  el.style.boxShadow = dx ? "-10px 0 28px rgba(0, 0, 0, 0.45)" : ""
+  el.style.background = dx ? "var(--bg)" : ""
+  if (hinweis && !dx) hinweis.style.opacity = "0"
+}
+
+function aufraeumen(el: HTMLElement | null) {
+  if (!el) return
+  el.style.transition = "none"
+  el.style.transform = ""
+  el.style.boxShadow = ""
+  el.style.background = ""
+  if (hinweis) hinweis.style.opacity = "0"
+}
+
+function wischStart(e: TouchEvent) {
+  const t = e.touches[0]
+  zug = e.touches.length === 1 && t.clientX < RAND && stapel.length && platzhalter ? { x: t.clientX, y: t.clientY, zeit: Date.now(), ziel: null, aktiv: false, dx: 0, letzte: [] } : null
+}
+
+function wischBewegen(e: TouchEvent) {
+  if (!zug) return
+  const t = e.touches[0]
+  const dx = t.clientX - zug.x
+  const dy = t.clientY - zug.y
+  if (!zug.aktiv) {
+    // erst entscheiden: waagerecht zurück oder doch senkrecht scrollen
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
+      zug = null
+      return
+    }
+    if (dx < 10) return
+    zug.aktiv = true
+    zug.ziel = zielElement()
+  }
+  zug.dx = Math.max(0, dx)
+  zug.letzte = [...zug.letzte.filter((p) => Date.now() - p.zeit < 120), { x: t.clientX, zeit: Date.now() }]
+  if (zug.ziel) setzen(zug.ziel, zug.dx, 0)
+  hinweisZeigen(zug.dx)
+}
+
+function wischEnde(e: TouchEvent | null) {
+  const z = zug
+  zug = null
+  if (!z || !z.aktiv || !z.ziel) return
+  const el = z.ziel
+  const breite = window.innerWidth
+  const erst = z.letzte[0]
+  const zuletzt = z.letzte[z.letzte.length - 1]
+  const tempo = erst && zuletzt && zuletzt.zeit > erst.zeit ? (zuletzt.x - erst.x) / (zuletzt.zeit - erst.zeit) : 0
+  // Abgebrochen (z. B. von der Systemgeste übernommen) oder zu kurz und zu langsam: zurückfedern
+  const weiter = e !== null && (z.dx > breite * 0.35 || (tempo > 0.5 && z.dx > 40))
+  if (!weiter) {
+    setzen(el, 0, 220)
+    setTimeout(() => aufraeumen(el), 240)
+    return
+  }
+  setzen(el, breite, 180)
+  setTimeout(() => {
+    nachZurueck = el
+    zurueck()
+  }, ruhig() ? 0 : 170)
+}
+
+/** Nach dem Zurückwischen die Verschiebung lösen, sobald die vorige Seite gezeichnet ist. */
+let nachZurueck: HTMLElement | null = null
+function verschiebungLoesen() {
+  const el = nachZurueck
+  nachZurueck = null
+  if (el) requestAnimationFrame(() => requestAnimationFrame(() => aufraeumen(el)))
 }
 
 /** Eine Ebene öffnen. Rückgabe: zum Schließen über die eigene Schaltfläche (räumt den Verlaufseintrag auf). */
-export function ebeneOeffnen(zurueck: () => void): () => void {
+export function ebeneOeffnen(zurueck: () => void, art: "seite" | "blatt" = "seite", text?: string): () => void {
   if (typeof window === "undefined") return () => undefined
   einrichten()
   const id = ++zaehler
-  stapel.push({ id, zurueck })
+  stapel.push({ id, zurueck, art, text })
   platzhalterSetzen()
   return () => {
     const i = stapel.findIndex((x) => x.id === id)

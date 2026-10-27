@@ -71,7 +71,7 @@ export default function App() {
   const [koppelHinweis, setKoppelHinweis] = useState<string | null>(null)
   const [updateZu, setUpdateZu] = useState(false)
   // Zurückgeste auf einem anderen Tab führt erst zu „Heute“, dann aus der App
-  useEbene(tab !== "heute" && !!daten.profil, () => setTab("heute"))
+  useEbene(tab !== "heute" && !!daten.profil, () => setTab("heute"), "seite", "Heute")
 
   // Vorgemerkte Planänderung übernehmen, sobald der neue Block begonnen hat
   useEffect(() => {

@@ -2414,3 +2414,20 @@ select.ampel.rot {
 .zurlebenswelt {
   position: static;
 }
+
+/* ---------- Zurückwischen ---------- */
+
+.wischhinweis {
+  position: fixed;
+  left: 8px;
+  top: 50%;
+  z-index: 0;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  color: var(--akzent);
+  font-size: 17px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
