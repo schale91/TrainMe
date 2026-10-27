@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head><meta charset="utf-8" /><title>Dehnfigur prüfen</title>
+<style>body{margin:0;background:#1e1b3a;color:#fff;font:14px system-ui} .k{display:inline-block;margin:6px;text-align:center} canvas{background:#2a2650;border-radius:10px}</style></head>
+<body>
+<div id="raster"></div>
+<script type="module">
+  // Werkzeug zur Prüfung: ?ids=a,b&t=0,5,10 zeigt Standbilder der Dehnungen zu den Zeiten
+  import { standbild } from "../src/ui/dehnfigur.ts"
+  import { DEHNUNGEN, TEST_DEHNUNGEN } from "../src/daten/dehnungen/index.ts"
+  const q = new URLSearchParams(location.search)
+  const alle = { ...DEHNUNGEN, ...TEST_DEHNUNGEN }
+  const ids = (q.get("ids") || Object.keys(alle).join(",")).split(",")
+  // t=z: Zielhaltung (bei Abfolgen der mittlere Schritt)
+  const zeiten = (q.get("t") || "0,6").split(",").map((x) => (x === "z" ? x : Number(x)))
+  const w = Number(q.get("w") || 300), h = Number(q.get("h") || 225)
+  const raster = document.getElementById("raster")
+  for (const id of ids) for (const t of zeiten) {
+    const d = alle[id]
+    const div = document.createElement("div"); div.className = "k"
+    const c = document.createElement("canvas"); c.width = w; c.height = h
+    div.appendChild(c)
+    const cap = document.createElement("div")
+    try {
+      const ziel = d.ziel || (d.schritte && d.schritte[Math.floor(d.schritte.length / 2)].h) || d.start
+      const dd = t === "z" ? { ...d, art: "halten", start: ziel, ziel, seiten: false } : d
+      const st = standbild(c, dd, t === "z" ? 0 : t, 8)
+      cap.textContent = id + (t === "z" ? "" : " t=" + t + " " + st.text)
+    } catch (e) { cap.textContent = id + " FEHLER " + e.message }
+    div.appendChild(cap); raster.appendChild(div)
+  }
+  window.fertig = true
+</script>
+</body></html>
