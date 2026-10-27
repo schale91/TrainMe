@@ -478,6 +478,7 @@ class Buehne {
     const st = standZu(this.d, t, this.haltenS)
     this.koerper.stelle(st.haltung, st.atem)
     this.modell?.uebernehmen(st.haltung.boden !== false)
+    this.modell?.gesicht(t)
     for (const o of this.beweglich) this.szene.remove(o)
     this.beweglich = beweglicheHilfsmittel(this.koerper, this.d.hilfsmittel || [])
     for (const o of this.beweglich) this.szene.add(o)

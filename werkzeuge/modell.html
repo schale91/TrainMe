@@ -19,6 +19,7 @@
     const zeilen = ["Größe: " + gr.toArray().map((x) => x.toFixed(2)).join(" "), "Mitte: " + mi.toArray().map((x) => x.toFixed(2)).join(" ")]
     obj.traverse((o) => {
       if (o.isBone) zeilen.push("BONE " + o.name + " parent=" + (o.parent && o.parent.name))
+      if (o.isMesh && o.morphTargetDictionary) zeilen.push("MORPH " + o.name + ": " + Object.keys(o.morphTargetDictionary).join(", "))
       if (o.isMesh) zeilen.push("MESH " + o.name + " skinned=" + !!o.isSkinnedMesh + " verts=" + o.geometry.attributes.position.count + " mat=" + [].concat(o.material).map((m) => m.name + (m.map ? "(tex)" : "")).join(","))
     })
     zeilen.push("Animationen: " + obj.animations.length)

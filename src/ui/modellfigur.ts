@@ -118,8 +118,8 @@ function augen(mesh: THREE.Mesh): THREE.Material {
       `#include <color_fragment>
       vec3 c = vRuhe.x > 0.0 ? uL : uR;
       vec3 d = normalize(vRuhe - c);
-      // Blick nach vorn (im Modell -y), leicht zur Mitte
-      vec3 blick = normalize(vec3(-sign(vRuhe.x) * 0.08, -1.0, 0.02));
+      // Blick geradeaus nach vorn (im Modell -y)
+      vec3 blick = normalize(vec3(sign(vRuhe.x) * 0.03, -1.0, 0.03));
       float w = dot(d, blick);
       vec3 farbe = vec3(0.95, 0.94, 0.92);
       if (w > 0.80) farbe = mix(vec3(0.42, 0.25, 0.12), vec3(0.24, 0.13, 0.06), smoothstep(0.80, 0.97, w));
@@ -137,6 +137,8 @@ function augen(mesh: THREE.Mesh): THREE.Material {
 export class Modellfigur {
   eintraege: Eintrag[] = []
   hueftknochen: THREE.Bone
+  /** Netze mit Gesichtsausdrücken (Lächeln, Blinzeln) */
+  gesichter: THREE.Mesh[] = []
   proben: { mesh: THREE.SkinnedMesh; index: number[] }[] = []
 
   constructor(
@@ -238,6 +240,21 @@ export class Modellfigur {
     }
   }
 
+  /** Freundlicher Ausdruck mit leichtem Lächeln, Blinzeln etwa alle 4 Sekunden. */
+  gesicht(t: number) {
+    const phase = t % 4.2
+    const blinzeln = phase < 0.08 ? phase / 0.08 : phase < 0.16 ? 1 - (phase - 0.08) / 0.08 : 0
+    const werte: Record<string, number> = { Mouth_Smile: 0.5, Cheek_Raise_L: 0.3, Cheek_Raise_R: 0.3, Eye_Squint_L: 0.1, Eye_Squint_R: 0.1, Brow_Raise_Inner_Left: 0.15, Brow_Raise_Inner_Right: 0.15, Eyes_Blink: blinzeln }
+    for (const m of this.gesichter) {
+      const dict = m.morphTargetDictionary!
+      const inf = m.morphTargetInfluences!
+      for (const [schluessel, i] of Object.entries(dict)) {
+        const name = schluessel.slice(schluessel.lastIndexOf(".") + 1)
+        if (name in werte) inf[i] = werte[name]
+      }
+    }
+  }
+
   tiefster(): number {
     let min = Infinity
     const v = new THREE.Vector3()
@@ -261,6 +278,9 @@ export class Modellfigur {
     this.modell.traverse((o) => {
       const m = o as THREE.Mesh
       if (m.isMesh && /HAIR/i.test(m.name)) haareVerlaengern(m.geometry)
+      // Slip unter den Shorts ausblenden, sonst zeichnet er sich ab
+      if (m.isMesh && /Underwear/.test(m.name)) m.visible = false
+      if (m.isMesh && m.morphTargetDictionary) this.gesichter.push(m)
     })
     const haut = "#d9a07a"
     const stoff = new THREE.Color("#4e2e24")
@@ -278,15 +298,18 @@ export class Modellfigur {
             // Ruhehaltung: z ist hier die Höhe (Z-oben im Modell)
             float h = vRuhe.z;
             float seite = abs(vRuhe.x);
+            bool stoffig = false;
             // Scrunch-Shorts: hoher Bund bis knapp über den Nabel, Bein bis Mitte Oberschenkel
-            if (h > 71.0 && h < 101.5 && seite < 19.0) diffuseColor.rgb = uStoff;
+            if (h > 71.0 && h < 101.5 && seite < 19.0) { diffuseColor.rgb = uStoff; stoffig = true; }
             // Bustier-Unterbrustband
-            if (h > 111.5 && h < 117.5 && seite < 15.0) diffuseColor.rgb = uStoff;
+            if (h > 111.5 && h < 117.5 && seite < 15.0) { diffuseColor.rgb = uStoff; stoffig = true; }
             // Söckchen
             if (h < 11.0) diffuseColor.rgb = uSocke;
             // Raffnaht hinten über dem Gesäß
             if (h > 84.0 && h < 96.0 && vRuhe.y > 6.0 && abs(abs(vRuhe.x) - (96.0 - h) * 0.28) < 0.35) diffuseColor.rgb *= 0.7;`,
           )
+          // Stoff matt wie das Bustier, Haut seidig
+          .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n if (stoffig) roughnessFactor = 0.85;")
       }
       m.customProgramCacheKey = () => "kleidung"
     }
