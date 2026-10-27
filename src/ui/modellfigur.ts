@@ -334,7 +334,7 @@ export class Modellfigur {
           return m
         }
         if (/Skin_Head/.test(n)) {
-          // Kopfhaut unter den Haarsträhnen in Haarfarbe (Haaransatz über der Stirn, an den Seiten über den Ohren)
+          // Kopfhaut unter den Haarsträhnen in Haarfarbe (Scheitel und Hinterkopf)
           const m = std(haut, 0.55)
           m.onBeforeCompile = (sh) => {
             sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;")
@@ -342,8 +342,10 @@ export class Modellfigur {
               "#include <color_fragment>",
               `#include <color_fragment>
               float h = vRuhe.z;
-              bool hinten = vRuhe.y > -2.0;
-              if (h > 155.5 || (h > 151.5 && vRuhe.y > -6.5) || (hinten && h > 141.0) || (abs(vRuhe.x) > 6.8 && h > 148.0)) diffuseColor.rgb = vec3(0.16, 0.09, 0.06);`,
+              // weiche Übergänge, Ohren und Schläfen bleiben Haut
+              float k = max(smoothstep(154.5, 156.5, h), smoothstep(150.5, 152.5, h) * smoothstep(-7.5, -5.5, vRuhe.y));
+              k = max(k, smoothstep(147.0, 150.0, h) * smoothstep(2.0, 4.0, vRuhe.y));
+              diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.16, 0.09, 0.06), k);`,
             )
           }
           m.customProgramCacheKey = () => "kopfhaut"
