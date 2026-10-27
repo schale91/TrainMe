@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import type { Dehnung } from "../logik/dehnbewegung"
+import { entwickler, entwicklerBeobachten } from "./entwickler"
 
 const SCHLUESSEL = "trainme.dehnfigur.gelenke"
 function gelenkeGespeichert(): boolean {
@@ -19,9 +20,18 @@ export default function Dehnfigur(props: { dehnung: Dehnung; haltenS?: number; k
   const ref = useRef<HTMLCanvasElement>(null)
   const [phase, setPhase] = useState("")
   const [gelenke, setGelenke] = useState(gelenkeGespeichert)
+  // Der Schalter „Gelenke“ ist ein Prüfwerkzeug und erscheint nur im Entwicklermodus
+  const [dev, setDev] = useState(entwickler)
   useEffect(() => {
     hoerer.add(setGelenke)
-    return () => void hoerer.delete(setGelenke)
+    const ab = entwicklerBeobachten((an) => {
+      setDev(an)
+      void import("./dehnfigur").then((f) => f.gelenkeZeigen(an && gelenkeGespeichert()))
+    })
+    return () => {
+      hoerer.delete(setGelenke)
+      ab()
+    }
   }, [])
   const umschalten = () => {
     const an = !gelenke
@@ -41,7 +51,7 @@ export default function Dehnfigur(props: { dehnung: Dehnung; haltenS?: number; k
       .then(([f, modell]) => {
         if (aus || !ref.current) return
         f.modellSetzen(modell)
-        f.anzeige.gelenke = gelenkeGespeichert()
+        f.anzeige.gelenke = entwickler() && gelenkeGespeichert()
         stopp = f.zeigeDehnung(ref.current, dehnung, haltenS, (st) => setPhase(st.text + (st.rest !== null ? " · " + Math.max(1, Math.ceil(st.rest)) + " s" : "")))
       })
       .catch(() => setPhase(""))
@@ -54,9 +64,11 @@ export default function Dehnfigur(props: { dehnung: Dehnung; haltenS?: number; k
     <div className={"dehnfigur" + (props.klein ? " klein" : "")}>
       <div className="dehnbuehne">
         <canvas ref={ref} className={"figur" + (props.klein ? " klein" : "")} width={props.klein ? 300 : 480} height={props.klein ? 300 : 420} aria-hidden="true" title="Wischen dreht die Ansicht, doppelt tippen stellt sie zurück" />
-        <button type="button" className={"gelenkknopf" + (gelenke ? " an" : "")} aria-pressed={gelenke} onClick={umschalten}>
-          Gelenke
-        </button>
+        {dev ? (
+          <button type="button" className={"gelenkknopf" + (gelenke ? " an" : "")} aria-pressed={gelenke} onClick={umschalten}>
+            Gelenke
+          </button>
+        ) : null}
       </div>
       {phase ? (
         <p className="dehnphase" aria-live="off">

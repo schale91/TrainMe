@@ -26,6 +26,7 @@ import { aenderungsText, positionen, sporte, ziele } from "../logik/auswahl"
 import { vorgemerktAnwenden } from "../logik/umstellen"
 import { datumText } from "./texte"
 import { kopplung, modus } from "./lebenswelt"
+import { entwickler, entwicklerSetzen } from "./entwickler"
 
 export type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback" | "jahresplan" | "update" | "plan" | "lebenswelt"
 
@@ -332,6 +333,18 @@ function GesundheitSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void)
 }
 
 function UpdateSeite(props: { update: UpdateInfo | null; gefunden: (u: UpdateInfo | null) => void; zurueck: { text: string; onClick: () => void } }) {
+  // Siebenmal auf „Installiert“ tippen schaltet den Entwicklermodus frei (wie bei Android)
+  const [dev, setDev] = useState(entwickler)
+  const tipps = useRef<number[]>([])
+  const tippen = () => {
+    const jetzt = Date.now()
+    tipps.current = [...tipps.current.filter((t) => jetzt - t < 3000), jetzt]
+    if (tipps.current.length >= 7 && !dev) {
+      tipps.current = []
+      entwicklerSetzen(true)
+      setDev(true)
+    }
+  }
   const [laeuft, setLaeuft] = useState(false)
   const [meldung, setMeldung] = useState("")
   const u = props.update
@@ -349,11 +362,16 @@ function UpdateSeite(props: { update: UpdateInfo | null; gefunden: (u: UpdateInf
   return (
     <Seite titel="App-Update" zurueck={props.zurueck}>
       <Gruppe>
-        <Zeile titel="Installiert" wert={__VERSION__ + (__KANAL__ === "vorschau" ? " (Vorschau)" : "")} />
+        <Zeile titel="Installiert" wert={__VERSION__ + (__KANAL__ === "vorschau" ? " (Vorschau)" : "")} onClick={tippen} pfeil={false} />
         <Zeile titel="Neueste" wert={u ? u.version + (u.vorschau ? " (Vorschau)" : "") : "keine neuere"} />
         <Zeile titel={laeuft ? "Suche …" : "Nach Updates suchen"} onClick={laeuft ? undefined : suchen} pfeil={false} />
       </Gruppe>
       {meldung ? <p className="hinweistext">{meldung}</p> : null}
+      {dev ? (
+        <Gruppe titel="Entwicklermodus" fuss="Nur auf diesem Gerät. Zeigt Prüfwerkzeuge, z. B. den Schalter „Gelenke“ an der Dehnfigur.">
+          <Zeile titel="Entwicklermodus" rechts={<Schalter an={dev} onChange={(an) => { entwicklerSetzen(an); setDev(an) }} label="Entwicklermodus" />} />
+        </Gruppe>
+      ) : null}
       {u ? (
         <>
           <a className="knopf voll gross" href={u.apk} target="_blank" rel="noreferrer">
