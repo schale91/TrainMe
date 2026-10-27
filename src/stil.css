@@ -2337,8 +2337,10 @@ select.ampel.rot {
   margin-right: 2px;
 }
 .bandfarbe {
-  width: 26px;
-  height: 26px;
+  /* mindestens 32 px, damit der Finger trifft, auch auf schmalen Handys nicht schrumpfen */
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 2px solid transparent;
   padding: 0;
