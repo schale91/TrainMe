@@ -16,3 +16,4 @@ dist-lebenswelt
 # Früheres, lizenziertes Modell: nie einchecken
 werkzeuge/privat/
 public/modell/
+__pycache__/
