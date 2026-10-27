@@ -1,5 +1,5 @@
 // Animierte Dehnfigur mit Phase und Mitzählen darunter. Three.js und das Modell werden erst geladen, wenn sie gebraucht werden;
-// fehlt das Modell (z. B. Build ohne Zugang zum privaten Modell), zeichnet sie die einfache Figur.
+// lässt sich das Modell nicht laden, zeichnet sie die einfache Figur.
 
 import { useEffect, useRef, useState } from "react"
 import type { Dehnung } from "../logik/dehnbewegung"

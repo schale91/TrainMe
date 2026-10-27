@@ -3,12 +3,12 @@
 <body><pre id="info">läuft …</pre>
 <script type="module">
   // Werkzeug: sucht in allen Dehnfiguren Stellen, an denen der Körper in Boden oder Hilfsmittel eintaucht.
-  // ?modell=1 prüft mit dem lokalen Modell aus werkzeuge/privat (liegt nicht im Repository), ?ids=a,b nur diese.
+  // ?modell=1 prüft mit dem 3D-Modell (src/figur/figur.glb), ?ids=a,b nur diese.
   import { _durchdringungen, modellSetzen } from "../src/ui/dehnfigur.ts"
   import { modellLaden } from "../src/ui/modellladen.ts"
   import { DEHNUNGEN, TEST_DEHNUNGEN } from "../src/daten/dehnungen/index.ts"
   const q = new URLSearchParams(location.search)
-  if (q.get("modell")) modellSetzen(await modellLaden("./privat/figur.bin"))
+  if (q.get("modell")) modellSetzen(await modellLaden())
   const alle = { ...DEHNUNGEN, ...TEST_DEHNUNGEN }
   const ids = q.get("ids") ? q.get("ids").split(",") : Object.keys(alle)
   const ergebnis = {}

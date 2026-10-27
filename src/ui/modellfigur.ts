@@ -1,6 +1,7 @@
-// Steuert ein geriggtes 3D-Modell (Skelett nach dem Schema EM3D_Base_…) mit den Gelenkwinkeln der Dehnfigur. Die
-// Dehnfigur rechnet die Haltung, das Modell übernimmt die Ausrichtung jedes Knochens im Raum. Kleidung wird per
-// Shader auf die Haut gefärbt: Sport-Bustier, kurze Scrunch-Shorts (Saum etwa 5 cm unter dem Po), weiße Söckchen.
+// Steuert die MakeHuman-Figur (Grundnetz, Skelett und Gewichte von MakeHuman, CC0; gebaut mit
+// werkzeuge/makehuman/figur_bauen.py) mit den Gelenkwinkeln der Dehnfigur. Die Dehnfigur rechnet die Haltung, das
+// Modell übernimmt die Ausrichtung jedes Knochens im Raum. Kleidung, Augenbrauen und Kopfhaut liegen als vorberechnete
+// Masken im Netz und werden per Shader gefärbt; die lockere Kleidung bringt ihren Versatz und ihre Normalen mit.
 
 import * as THREE from "three"
 
@@ -10,44 +11,43 @@ export interface Gelenkquelle {
   wurzel: THREE.Object3D
 }
 
-const P = "EM3D_Base_"
 /** Gelenk der Dehnfigur → Knochen im Modell, mit dem Knochen bzw. Gelenk, auf das er zeigt */
 const ZUORDNUNG: [string, string, string | null, string | null][] = [
-  ["lws", "Waist", "bws", "Spine01"],
-  ["bws", "Spine01", "hals", "NeckTwist01"],
-  ["hals", "NeckTwist01", "kopf", "Head"],
-  ["kopf", "Head", null, null],
+  ["lws", "spine04", "bws", "spine02"],
+  ["bws", "spine02", "hals", "neck01"],
+  ["hals", "neck01", "kopf", "head"],
+  ["kopf", "head", null, null],
   ...(["l", "r"] as const).flatMap((s): [string, string, string | null, string | null][] => {
-    const S = s.toUpperCase()
+    const S = "_" + s.toUpperCase()
     return [
-      ["schulterblatt_" + s, S + "_Clavicle", "schulter_" + s, S + "_Upperarm"],
-      ["schulter_" + s, S + "_Upperarm", "ellbogen_" + s, S + "_Forearm"],
-      ["ellbogen_" + s, S + "_Forearm", "hand_" + s, S + "_Hand"],
-      ["hand_" + s, S + "_Hand", "finger_" + s, S + "_Mid1"],
-      ["huefte_" + s, S + "_Thigh", "knie_" + s, S + "_Calf"],
-      ["knie_" + s, S + "_Calf", "fuss_" + s, S + "_Foot"],
-      ["fuss_" + s, S + "_Foot", "zehen_" + s, S + "_ToeBase"],
+      ["schulterblatt_" + s, "clavicle" + S, "schulter_" + s, "upperarm01" + S],
+      ["schulter_" + s, "upperarm01" + S, "ellbogen_" + s, "lowerarm01" + S],
+      ["ellbogen_" + s, "lowerarm01" + S, "hand_" + s, "wrist" + S],
+      ["hand_" + s, "wrist" + S, "finger_" + s, "finger3-1" + S],
+      ["huefte_" + s, "upperleg01" + S, "knie_" + s, "lowerleg01" + S],
+      ["knie_" + s, "lowerleg01" + S, "fuss_" + s, "foot" + S],
+      ["fuss_" + s, "foot" + S, "zehen_" + s, "toe3-1" + S],
     ]
   }),
 ]
-const FINGER = ["Index", "Mid", "Ring", "Pinky"]
-
 /**
- * Oberster Knoten mit diesem Namen. Nach dem Umwandeln in glb gibt es gleichnamige Knoten ineinander (Suffix „_1“
- * bis „_4“), an denen verschiedene Netze hängen (Gesicht an Head_1, Haare an Head_4). Nur der oberste bewegt alle mit.
+ * Knochen zwischen zwei Gelenken der Dehnfigur: Sie drehen anteilig mit, damit sich Wirbelsäule und Hals rund
+ * biegen statt an einer Stelle zu knicken. [Knochen, von Gelenk, zu Gelenk, Anteil]
  */
+const ZWISCHEN: [string, string, string, number][] = [
+  ["spine05", "becken", "lws", 0.5],
+  ["spine03", "lws", "bws", 0.5],
+  ["spine01", "bws", "hals", 0.35],
+  ["neck02", "hals", "kopf", 0.33],
+  ["neck03", "hals", "kopf", 0.67],
+]
+/** Zeige-, Mittel-, Ring- und kleiner Finger; der Daumen folgt der Hand */
+const FINGER = ["finger2", "finger3", "finger4", "finger5"]
+
 function knochen(modell: THREE.Object3D, name: string): THREE.Bone | null {
   let best: THREE.Bone | null = null
-  let tiefe = Infinity
-  const muster = new RegExp("^" + name + "(_\\d+)?$")
   modell.traverse((o) => {
-    if (!muster.test(o.name) || (o as THREE.Mesh).isMesh) return
-    let t = 0
-    for (let p = o.parent; p; p = p.parent) t++
-    if (t < tiefe) {
-      tiefe = t
-      best = o as THREE.Bone
-    }
+    if (!best && o.name === name && (o as THREE.Bone).isBone) best = o as THREE.Bone
   })
   return best
 }
@@ -70,41 +70,9 @@ interface Eintrag {
   /** Korrektur: Ruhelage der Dehnfigur → Ruhelage des Modells, mal Ruhe-Ausrichtung des Knochens */
   korrektur: THREE.Quaternion
   tiefe: number
-  /** Finger: Anteil der Fingerbeugung (Glied 1 bis 3) */
+  /** Zwischenknochen und Finger: Ausrichtung zwischen Gelenk „von“ und „gelenk“ zum Anteil */
+  von?: string
   anteil?: number
-}
-
-/**
- * Haare bis über die Schultern verlängern: Strähnen unterhalb des Scheitels an Seiten und Hinterkopf strecken und
- * leicht nach außen fallen lassen; der Pony bleibt. Einmal je Geometrie.
- */
-function haareVerlaengern(geo: THREE.BufferGeometry) {
-  if (geo.userData.verlaengert) return
-  geo.userData.verlaengert = true
-  const pos = geo.getAttribute("position") as THREE.BufferAttribute
-  const oben = 151
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i)
-    let y = pos.getY(i), z = pos.getZ(i)
-    // vorn (Gesicht, y < -6) nicht verlängern, ab den Seiten voll
-    const f = THREE.MathUtils.smoothstep(y, -6, -2)
-    if (f < 1 && z < 154) {
-      // Pony kürzer und näher an der Stirn, sonst rutscht er bei gedrehtem Kopf vors Auge
-      const v = 1 - f
-      y += v * Math.min(2.5, (154 - z) * 0.35)
-      z = 154 - (154 - z) * (1 - 0.55 * v)
-      pos.setXYZ(i, x, y, z)
-    }
-    if (z >= oben) continue
-    const d = oben - z
-    const zNeu = oben - d * (1 + 1.25 * f)
-    const weit = 1 + d * 0.012 * f
-    pos.setXYZ(i, x * weit, y + (y + 1) * (weit - 1) * 0.6, zNeu)
-  }
-  pos.needsUpdate = true
-  // Normalen bleiben die originalen (weich); neu berechnet würden die Strähnen kantig
-  geo.computeBoundingBox()
-  geo.computeBoundingSphere()
 }
 
 /** Augen: weißer Augapfel, braune Iris mit Pupille und Lichtreflex, aus der Lage im Auge berechnet. */
@@ -156,30 +124,41 @@ export interface Haarwerte {
 }
 
 function haarMaterial(name: string, w: Haarwerte): THREE.Material {
-  const m = new THREE.MeshStandardMaterial({ name, color: "#4a2b1b", roughness: 0.42, metalness: 0.05, side: THREE.DoubleSide })
+  const m = new THREE.MeshStandardMaterial({ name, color: "#4a2b1b", roughness: 0.45, metalness: 0.05, side: THREE.DoubleSide })
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, w)
     const kopf = `uniform vec4 uQ;
 uniform vec3 uDreh;
 uniform vec3 uBodenP;
 uniform vec3 uBodenN;
-// Anteil frei hängender Strähne: 0 am Scheitel, 1 an den Spitzen (Ruhehaltung, z = Höhe in cm)
-// Pony und Strähnen vor dem Gesicht (vorn ist -y) bleiben am Kopf, nahe am Schädel kaum Bewegung
-float haarFrei(vec3 p) { return smoothstep(147.0, 128.0, p.z) * smoothstep(-7.0, -2.0, p.y); }
-vec3 haarDrehe(vec3 v, vec3 p) {
-  vec4 q = normalize(mix(vec4(0.0, 0.0, 0.0, 1.0), uQ, haarFrei(p)));
+// Anteil frei hängender Strähne (im Netz vorberechnet): 0 am Kopf, 1 an der Spitze des Pferdeschwanzes
+attribute float _frei;
+attribute vec2 _strang;
+varying float vFrei;
+varying vec2 vStrang;
+vec3 haarDrehe(vec3 v) {
+  vec4 q = normalize(mix(vec4(0.0, 0.0, 0.0, 1.0), uQ, _frei));
   return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }`
     sh.vertexShader = sh.vertexShader
       .replace("#include <common>", "#include <common>\n" + kopf)
-      .replace("#include <skinnormal_vertex>", "#include <skinnormal_vertex>\n objectNormal = haarDrehe(objectNormal, position);")
+      .replace("#include <skinnormal_vertex>", "#include <skinnormal_vertex>\n objectNormal = haarDrehe(objectNormal);\n vFrei = _frei;\n vStrang = _strang;")
       .replace(
         "#include <skinning_vertex>",
         `#include <skinning_vertex>
-        transformed = uDreh + haarDrehe(transformed - uDreh, position);
+        transformed = uDreh + haarDrehe(transformed - uDreh);
         float hb = dot(transformed - uBodenP, uBodenN);
         if (hb < 0.4) transformed += uBodenN * (0.4 - hb);`,
       )
+    // Strähnen: feine helle und dunkle Linien entlang des Haars; Haargummi am Ansatz des Pferdeschwanzes
+    sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying float vFrei;\nvarying vec2 vStrang;").replace(
+      "#include <color_fragment>",
+      `#include <color_fragment>
+      float u = vStrang.x + 0.35 * sin(vStrang.y * 0.45);
+      float l = 0.5 + 0.5 * sin(u * 7.0) * sin(u * 2.3 + 1.7);
+      diffuseColor.rgb *= 0.78 + 0.34 * l;
+      if (vFrei > 0.0 && vFrei < 0.012) diffuseColor.rgb = vec3(0.1, 0.09, 0.1);`,
+    )
   }
   m.customProgramCacheKey = () => "haar"
   return m
@@ -195,62 +174,18 @@ export const NACKT = { value: 0 }
  */
 export const LOCKER = { value: 1 }
 
-/**
- * Lockere Kleidung als Versatz der Haut in der Ruhehaltung (cm, z = Höhe, vorn = -y): Stoff steht etwas ab, das
- * Shirt fällt vorn gerade von der Brust und hinten von den Schulterblättern. Am Hals und an den Netzgrenzen kein
- * Versatz, damit keine Spalten entstehen. uTeil: 0 Rumpf und Beine, 1 Arme.
- */
-const KLEID_VERTEX = `
-float maskeShirt(vec3 p) {
-  float h = p.z, s = abs(p.x);
-  float oben = 1.0 - smoothstep(125.0, 130.0, h);
-  // An der Naht Rumpf/Arm (Schulter, Achsel) liegt der Stoff an, sonst klafft dort ein Spalt zwischen den Netzen
-  if (uTeil < 0.5) return smoothstep(83.0, 85.0, h) * (1.0 - smoothstep(16.5, 18.5, s)) * oben * (1.0 - smoothstep(10.0, 12.0, s) * smoothstep(106.0, 111.0, h));
-  return smoothstep(117.0, 119.0, h) * (1.0 - smoothstep(26.0, 28.0, s)) * oben * smoothstep(16.0, 19.0, s);
-}
-float maskeHose(vec3 p) {
-  return uTeil < 0.5 ? smoothstep(51.0, 53.0, p.z) * (1.0 - smoothstep(100.5, 102.5, p.z)) : 0.0;
-}
-// Stoff glättet: Normale zur Rumpf- bzw. Beinachse hin, damit Bauchmuskeln und Brust nicht durchzeichnen
-vec3 kleidNormale(vec3 p, vec3 n) {
-  if (uTeil > 0.5) return n;
-  float w = max(maskeShirt(p), maskeHose(p)) * 0.75;
-  if (w <= 0.0) return n;
-  vec3 r = p.z < 80.0 ? vec3(p.x - sign(p.x) * 8.5, p.y - 1.0, 0.0) : vec3(p.x, p.y - 1.0, 0.0);
-  return normalize(mix(n, normalize(r + vec3(0.0, 0.0, 1e-4)), w));
-}
-vec3 kleidVersatz(vec3 p, vec3 n) {
-  float h = p.z, s = abs(p.x);
-  float sh = maskeShirt(p), ho = maskeHose(p);
-  vec3 d = n * max(sh * 1.3, ho * 2.0);
-  if (uTeil < 0.5) {
-    // Shirt fällt vorn gerade von der Brust, hinten von den Schulterblättern, seitlich von der Brustbreite
-    float unten = 1.0 - smoothstep(116.0, 119.0, h);
-    float rumpf = sh * unten * (1.0 - smoothstep(12.0, 14.5, s));
-    // nur zur Hälfte: größere Versätze verformen sich beim Beugen des Rumpfs
-    d.y += 0.5 * min(0.0, -12.6 + (117.0 - h) * 0.04 - (p.y + d.y)) * smoothstep(0.2, 0.7, -n.y) * rumpf;
-    d.y += 0.5 * max(0.0, 10.8 - (p.y + d.y)) * smoothstep(0.2, 0.7, n.y) * rumpf * smoothstep(94.0, 98.0, h);
-    // zwischen der Brust gespannt statt anliegend
-    float mitte = (1.0 - smoothstep(3.0, 6.5, s)) * smoothstep(112.0, 115.0, h) * (1.0 - smoothstep(123.0, 126.0, h));
-    d.y += 0.6 * min(0.0, -11.6 - (p.y + d.y)) * smoothstep(0.2, 0.7, -n.y) * sh * mitte;
-    float seitlich = smoothstep(0.3, 0.8, abs(n.x)) * sh * unten * smoothstep(84.0, 87.0, h);
-    d.x += 0.5 * sign(p.x) * max(0.0, 14.2 - (s + d.x * sign(p.x))) * seitlich;
-  }
-  return d;
-}`
-
-/** Farbe und Stoff der lockeren Kleidung (gleiche Bereiche wie KLEID_VERTEX) */
+/** Farbe der Kleidung aus den Abstandsfeldern im Netz (cm, positiv bedeckt; vKleid: Shirt, Shorts locker; Top, Shorts eng) */
 const KLEID_FARBE = `
-bool lockerShirt = uTeil < 0.5 ? (h >= 84.0 && h < 131.0 && seite < 17.5) : (h > 118.0 && seite < 27.0);
-// Rundhals vorn, bis zum Hals offen
-if (h > 126.0 + seite * 0.25 && vRuhe.y < 2.0 && seite < 7.0) lockerShirt = false;
-bool lockerHose = uTeil < 0.5 && h >= 52.0 && h < 84.0;
-if (lockerShirt) { diffuseColor.rgb = vec3(0.07, 0.17, 0.23); stoffig = true; }
-else if (lockerHose) { diffuseColor.rgb = vec3(0.03, 0.035, 0.05); stoffig = true; }
-// Saum etwas dunkler
-if (lockerShirt && uTeil < 0.5 && h < 85.2) diffuseColor.rgb *= 0.8;
-if (lockerHose && h < 53.2) diffuseColor.rgb *= 0.8;
-if (h < 11.0) diffuseColor.rgb = uSocke;`
+if (uLocker > 0.5) {
+  if (vKleid.x > 0.0) { diffuseColor.rgb = vec3(0.07, 0.17, 0.23); stoffig = true; }
+  else if (vKleid.y > 0.0) { diffuseColor.rgb = vec3(0.03, 0.035, 0.05); stoffig = true; }
+  // Saum und Bündchen etwas dunkler
+  if (stoffig && (vKleid.x > 0.0 ? vKleid.x : vKleid.y) < 0.7) diffuseColor.rgb *= 0.78;
+} else {
+  if (vKleid.z > 0.0 || vKleid.w > 0.0) { diffuseColor.rgb = uStoff; stoffig = true; }
+}
+// Söckchen
+if (h < 10.5) diffuseColor.rgb = uSocke;`
 const RASTER_GLSL = `
 if (uRaster > 0.5) {
   // Linien alle 3 cm in der Ruhehaltung: waagerechte Ringe weiß, senkrechte Ebenen hellblau, Körpermitte rot
@@ -264,24 +199,10 @@ if (uRaster > 0.5) {
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.25, 0.25), mitte);
 }`
 
-/** Gitter auch auf Netzen ohne Kleidungs-Shader (Arme, Bustier) */
-function mitRaster(m: THREE.MeshStandardMaterial, schluessel: string): THREE.MeshStandardMaterial {
-  m.onBeforeCompile = (sh) => {
-    sh.uniforms.uRaster = RASTER
-    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;")
-    sh.fragmentShader = sh.fragmentShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform float uRaster;")
-      .replace("#include <color_fragment>", "#include <color_fragment>\n" + RASTER_GLSL)
-  }
-  m.customProgramCacheKey = () => schluessel
-  return m
-}
-
 export class Modellfigur {
   /** Werte für den Haar-Shader, je Bild neu gesetzt */
   haar: Haarwerte = { uQ: { value: new THREE.Vector4(0, 0, 0, 1) }, uDreh: { value: new THREE.Vector3() }, uBodenP: { value: new THREE.Vector3(0, 0, -1e4) }, uBodenN: { value: new THREE.Vector3(0, 0, 1) } }
   haarNetz: THREE.SkinnedMesh | null = null
-  bustier: THREE.Mesh[] = []
   kopf: THREE.Bone | null = null
   eintraege: Eintrag[] = []
   hueftknochen: THREE.Bone
@@ -294,7 +215,7 @@ export class Modellfigur {
     readonly quelle: Gelenkquelle,
   ) {
     this.kleiden()
-    const hip = knochen(modell, P + "Hip")
+    const hip = knochen(modell, "root")
     if (!hip) throw new Error("Modell ohne Hüftknochen")
     this.hueftknochen = hip
     modell.updateMatrixWorld(true)
@@ -310,10 +231,10 @@ export class Modellfigur {
       for (let p = o.parent; p; p = p.parent) t++
       return t
     }
+    const figur = (gelenk: string) => (gelenk === "becken" ? quelle.becken : quelle.k[gelenk])
     const korrekturen = new Map<string, THREE.Quaternion>()
-    const eintrag = (gelenk: string, bone: THREE.Bone, kind: THREE.Bone | null, gelenkKind: string | null, anteil?: number) => {
+    const eintrag = (gelenk: string, bone: THREE.Bone, kind: THREE.Bone | null, gelenkKind: string | null) => {
       const r0 = weltQ(bone)
-      const qFigur = weltQ(gelenk === "becken" ? quelle.becken : quelle.k[gelenk])
       let korr = new THREE.Quaternion()
       if (kind && gelenkKind && quelle.k[gelenkKind]) {
         const dModell = weltP(kind).sub(weltP(bone))
@@ -322,53 +243,57 @@ export class Modellfigur {
       }
       korrekturen.set(gelenk, korr)
       // Zielausrichtung in Ruhe: Figur-Ruhe (meist Einheit) mal Korrektur mal Modell-Ruhe
-      const k = qFigur.clone().invert().multiply(korr).multiply(r0)
-      this.eintraege.push({ gelenk, bone, korrektur: k, tiefe: tiefe(bone), anteil })
+      const k = weltQ(figur(gelenk)).invert().multiply(korr).multiply(r0)
+      this.eintraege.push({ gelenk, bone, korrektur: k, tiefe: tiefe(bone) })
+    }
+    /**
+     * Knochen, der anteilig zwischen zwei Gelenken dreht; er übernimmt die Korrektur des ersten. „ruhe“ dreht die
+     * Ruhelage des Knochens vorher (im Raum, z. B. Finger zusammen).
+     */
+    const zwischen = (bone: THREE.Bone, von: string, gelenk: string, anteil: number, ruhe = new THREE.Quaternion()) => {
+      const c = korrekturen.get(von) ?? new THREE.Quaternion()
+      this.eintraege.push({ gelenk, von, bone, korrektur: weltQ(figur(von)).invert().multiply(c).multiply(ruhe).multiply(weltQ(bone)), tiefe: tiefe(bone), anteil })
     }
     eintrag("becken", hip, null, null)
     for (const [gelenk, name, gKind, nKind] of ZUORDNUNG) {
-      const b = knochen(modell, P + name)
+      const b = knochen(modell, name)
       if (!b) continue
-      eintrag(gelenk, b, nKind ? knochen(modell, P + nKind) : null, gKind)
+      eintrag(gelenk, b, nKind ? knochen(modell, nKind) : null, gKind)
     }
-    // Finger: Glieder 1 bis 3 teilen sich die Beugung
-    for (const s of ["L", "R"]) {
-      const hand = this.eintraege.find((e) => e.gelenk === "hand_" + s.toLowerCase())
-      if (!hand) continue
-      for (const f of FINGER)
+    for (const [name, von, gelenk, anteil] of ZWISCHEN) {
+      const b = knochen(modell, name)
+      if (b && figur(von) && figur(gelenk)) zwischen(b, von, gelenk, anteil)
+    }
+    // Finger: Glieder 1 bis 3 teilen sich die Beugung. In der Ruhehaltung des Netzes sind sie weit gespreizt; sie
+    // rücken zum Mittelfinger hin zusammen, der Daumen an die Hand.
+    for (const s of ["l", "r"]) {
+      if (!quelle.k["hand_" + s] || !quelle.k["finger_" + s]) continue
+      const S = "_" + s.toUpperCase()
+      const richtung = (f: string) => {
+        const a = knochen(modell, f + "-1" + S), b = knochen(modell, f + "-2" + S)
+        return a && b ? weltP(b).sub(weltP(a)).normalize() : null
+      }
+      const mitte = richtung("finger3")
+      for (const f of ["finger1", ...FINGER]) {
+        const d = richtung(f)
+        const zu = d && mitte ? new THREE.Quaternion().setFromUnitVectors(d, d.clone().lerp(mitte, f === "finger1" ? 0.4 : 0.65).normalize()) : new THREE.Quaternion()
         for (let i = 1; i <= 3; i++) {
-          const b = knochen(modell, P + s + "_" + f + i)
-          // Finger übernehmen die Korrektur der Hand
-          const c = korrekturen.get("hand_" + s.toLowerCase()) ?? new THREE.Quaternion()
-          if (b) this.eintraege.push({ gelenk: "finger_" + s.toLowerCase(), bone: b, korrektur: weltQ(quelle.k["hand_" + s.toLowerCase()]).invert().multiply(c).multiply(weltQ(b)), tiefe: tiefe(b), anteil: i / 3 })
+          const b = knochen(modell, f + "-" + i + S)
+          if (!b) continue
+          if (f === "finger1") zwischen(b, "hand_" + s, "hand_" + s, 0, zu)
+          else zwischen(b, "hand_" + s, "finger_" + s, i / 3, zu)
         }
+      }
     }
     this.eintraege.sort((a, b) => a.tiefe - b.tiefe)
-    this.kopf = knochen(modell, P + "Head")
-    // Haare hängen im Modell teils an Hals und Wirbelsäule: dreht der Kopf, wischen sie übers Gesicht.
-    // Fest an den Kopf binden, das Fallen übernimmt der Haar-Shader.
-    const netz = this.haarNetz
-    const ki = netz && this.kopf ? netz.skeleton.bones.indexOf(this.kopf) : -1
-    if (netz && ki >= 0 && !netz.geometry.userData.kopfFest) {
-      netz.geometry.userData.kopfFest = true
-      const idx = netz.geometry.getAttribute("skinIndex") as THREE.BufferAttribute
-      const gew = netz.geometry.getAttribute("skinWeight") as THREE.BufferAttribute
-      for (let i = 0; i < idx.count; i++) {
-        idx.setXYZW(i, ki, 0, 0, 0)
-        gew.setXYZW(i, 1, 0, 0, 0)
-      }
-      idx.needsUpdate = true
-      gew.needsUpdate = true
-    }
+    this.kopf = knochen(modell, "head")
 
     // Stichproben der Haut für den tiefsten Punkt
     modell.traverse((o) => {
       const m = o as THREE.SkinnedMesh
-      // Haut und Bustier, erkannt am Material (Netznamen ändern sich beim Umwandeln)
-      const mat = !m.isMesh ? "" : [].concat(m.material as never).map((x: THREE.Material) => x.name).join(",")
-      if (!m.isSkinnedMesh || !m.visible || !/Skin|Bra/.test(mat)) return
+      if (!m.isSkinnedMesh || !m.visible || !/Haut/.test((m.material as THREE.Material).name)) return
       const n = m.geometry.getAttribute("position").count
-      const schritt = Math.max(1, Math.floor(n / (/Skin_(Body|Leg|Arm)/.test(mat) ? 500 : 150)))
+      const schritt = Math.max(1, Math.floor(n / 900))
       const index: number[] = []
       for (let i = 0; i < n; i += schritt) index.push(i)
       this.proben.push({ mesh: m, index })
@@ -377,21 +302,13 @@ export class Modellfigur {
 
   /** Haltung der Dehnfigur übernehmen (die Dehnfigur ist schon gestellt). */
   uebernehmen(boden: boolean, matte = 0.006) {
-    // Bustier nur bei der engen Sportkleidung (unter dem lockeren Shirt würde es durchstechen)
-    for (const b of this.bustier) b.visible = NACKT.value < 0.5 && LOCKER.value < 0.5
     const m = this.modell
     m.position.set(0, 0, 0)
     m.updateMatrixWorld(true)
-    const zuletzt = new Map<string, THREE.Quaternion>()
+    const figur = (gelenk: string) => (gelenk === "becken" ? this.quelle.becken : this.quelle.k[gelenk])
     for (const e of this.eintraege) {
-      const quelle = e.gelenk === "becken" ? this.quelle.becken : this.quelle.k[e.gelenk]
-      let ziel = weltQ(quelle)
-      if (e.anteil !== undefined) {
-        // Finger: zwischen Hand und Fingergelenk der Figur verteilen
-        const hand = zuletzt.get("hand_" + e.gelenk.slice(-1)) ?? weltQ(this.quelle.k["hand_" + e.gelenk.slice(-1)])
-        ziel = hand.clone().slerp(ziel, e.anteil)
-      }
-      zuletzt.set(e.gelenk, weltQ(quelle))
+      let ziel = weltQ(figur(e.gelenk))
+      if (e.von && e.anteil !== undefined) ziel = weltQ(figur(e.von)).slerp(ziel, e.anteil)
       ziel.multiply(e.korrektur)
       if (e.gelenk.startsWith("schulterblatt_")) ziel.premultiply(this.schulterRhythmus(e.gelenk.slice(-1)))
       const eltern = e.bone.parent ? weltQ(e.bone.parent) : new THREE.Quaternion()
@@ -460,7 +377,7 @@ export class Modellfigur {
   gesicht(t: number) {
     const phase = t % 4.2
     const blinzeln = phase < 0.08 ? phase / 0.08 : phase < 0.16 ? 1 - (phase - 0.08) / 0.08 : 0
-    const werte: Record<string, number> = { Mouth_Smile: 0.5, Cheek_Raise_L: 0.3, Cheek_Raise_R: 0.3, Eye_Squint_L: 0.1, Eye_Squint_R: 0.1, Brow_Raise_Inner_Left: 0.15, Brow_Raise_Inner_Right: 0.15, Eyes_Blink: blinzeln }
+    const werte: Record<string, number> = { Mouth_Smile: 0.35, Eyes_Blink: blinzeln }
     for (const m of this.gesichter) {
       const dict = m.morphTargetDictionary!
       const inf = m.morphTargetInfluences!
@@ -513,62 +430,59 @@ export class Modellfigur {
     for (const p of this.proben) for (const i of p.index) box.expandByPoint(p.mesh.localToWorld(p.mesh.getVertexPosition(i, v)))
   }
 
-  /** Farben und Kleidung. Grenzen in Modell-Einheiten (Zentimeter in der Ruhehaltung). */
+  /** Farben und Kleidung. Masken, Versatz und Stoffnormalen kommen aus dem Netz (siehe figur_bauen.py). */
   private kleiden() {
     this.modell.traverse((o) => {
       const m = o as THREE.Mesh
-      const mat = m.isMesh ? [].concat(m.material as never).map((x: THREE.Material) => x.name).join(",") : ""
-      if (m.isMesh && /HAIR/i.test(m.name + mat)) {
-        haareVerlaengern(m.geometry)
-        if ((m as THREE.SkinnedMesh).isSkinnedMesh) this.haarNetz = m as THREE.SkinnedMesh
-      }
-      // Slip unter den Shorts ausblenden, sonst zeichnet er sich ab
-      if (m.isMesh && /Underwear/.test(m.name + mat)) m.visible = false
-      if (m.isMesh && m.morphTargetDictionary) this.gesichter.push(m)
-      if (m.isMesh && /Bra/.test(mat)) this.bustier.push(m)
+      if (!m.isMesh) return
+      if (m.morphTargetDictionary) this.gesichter.push(m)
+      if ((m as THREE.SkinnedMesh).isSkinnedMesh && (m.material as THREE.Material).name === "Hair") this.haarNetz = m as THREE.SkinnedMesh
     })
     const haut = "#d9a07a"
     const stoff = new THREE.Color("#4e2e24")
     const socke = new THREE.Color("#f2f2f0")
-    const kleid = (m: THREE.MeshStandardMaterial, teil = 0) => {
+    const hautMaterial = () => {
+      const m = new THREE.MeshStandardMaterial({ name: "Haut", color: haut, roughness: 0.55 })
       m.onBeforeCompile = (sh) => {
         sh.uniforms.uStoff = { value: stoff }
         sh.uniforms.uSocke = { value: socke }
         sh.uniforms.uRaster = RASTER
         sh.uniforms.uNackt = NACKT
         sh.uniforms.uLocker = LOCKER
-        sh.uniforms.uTeil = { value: teil }
+        const an = "(uLocker > 0.5 && uNackt < 0.5)"
         sh.vertexShader = sh.vertexShader
-          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform float uLocker;\nuniform float uNackt;\nuniform float uTeil;\n" + KLEID_VERTEX)
-          .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\nif (uLocker > 0.5 && uNackt < 0.5) objectNormal = kleidNormale(position, objectNormal);")
-          .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;\nif (uLocker > 0.5 && uNackt < 0.5) transformed += kleidVersatz(position, objectNormal);")
+          .replace(
+            "#include <common>",
+            "#include <common>\nattribute vec4 _kleid;\nattribute vec3 _tuch;\nattribute vec3 _tuchn;\nattribute vec3 _gesicht;\nvarying vec3 vRuhe;\nvarying vec4 vKleid;\nvarying vec3 vGesicht;\nuniform float uLocker;\nuniform float uNackt;",
+          )
+          // Lockere Kleidung: Stoff steht ab, fällt von Brust und Schulterblättern, Normalen glatt wie Stoff
+          .replace("#include <beginnormal_vertex>", `#include <beginnormal_vertex>\nif ${an} objectNormal = normalize(mix(objectNormal, _tuchn, smoothstep(-1.0, 0.5, max(_kleid.x, _kleid.y))));`)
+          .replace("#include <begin_vertex>", `#include <begin_vertex>\nvRuhe = position;\nvKleid = _kleid;\nvGesicht = _gesicht;\nif ${an} transformed += _tuch;`)
         sh.fragmentShader = sh.fragmentShader
-          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform vec3 uStoff;\nuniform vec3 uSocke;\nuniform float uRaster;\nuniform float uNackt;\nuniform float uLocker;\nuniform float uTeil;")
+          .replace(
+            "#include <common>",
+            "#include <common>\nvarying vec3 vRuhe;\nvarying vec4 vKleid;\nvarying vec3 vGesicht;\nuniform vec3 uStoff;\nuniform vec3 uSocke;\nuniform float uRaster;\nuniform float uNackt;\nuniform float uLocker;",
+          )
           .replace(
             "#include <color_fragment>",
             `#include <color_fragment>
-            // Ruhehaltung: z ist hier die Höhe (Z-oben im Modell)
+            // Ruhehaltung: z ist die Höhe in cm
             float h = vRuhe.z;
-            float seite = abs(vRuhe.x);
             bool stoffig = false;
-            if (uNackt < 0.5 && uLocker > 0.5) {
+            // Kopfhaut unter den Haaren, Augenbrauen, Lippen (Farben linear)
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.06, 0.03, 0.016), smoothstep(-0.6, 0.1, vGesicht.z));
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.05, 0.03, 0.02), smoothstep(0.25, 0.75, vGesicht.x) * 0.85);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.42, 0.13, 0.12), smoothstep(0.3, 0.8, vGesicht.y) * 0.45);
+            if (uNackt < 0.5) {
             ${KLEID_FARBE}
-            } else if (uNackt < 0.5 && uTeil < 0.5) {
-            // Scrunch-Shorts: hoher Bund bis knapp über den Nabel, Bein endet etwa 5 cm unter der Gesäßfalte (bei 79 cm)
-            if (h > 74.0 && h < 101.5 && seite < 19.0) { diffuseColor.rgb = uStoff; stoffig = true; }
-            // Bustier-Unterbrustband
-            if (h > 111.5 && h < 117.5 && seite < 15.0) { diffuseColor.rgb = uStoff; stoffig = true; }
-            // Söckchen
-            if (h < 11.0) diffuseColor.rgb = uSocke;
-            // Raffnaht hinten über dem Gesäß
-            if (h > 84.0 && h < 96.0 && vRuhe.y > 6.0 && abs(abs(vRuhe.x) - (96.0 - h) * 0.28) < 0.35) diffuseColor.rgb *= 0.7;
             }
             ${RASTER_GLSL}`,
           )
-          // Stoff matt wie das Bustier, Haut seidig
+          // Stoff matt, Haut seidig
           .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n if (stoffig) roughnessFactor = 0.85;")
       }
-      m.customProgramCacheKey = () => "kleidung" + teil
+      m.customProgramCacheKey = () => "haut"
+      return m
     }
     this.modell.traverse((o) => {
       const mesh = o as THREE.Mesh
@@ -577,46 +491,10 @@ export class Modellfigur {
       mesh.frustumCulled = false
       const ersetze = (alt: THREE.Material): THREE.Material => {
         const n = alt.name || ""
-        const std = (farbe: string, rau = 0.6) => new THREE.MeshStandardMaterial({ name: n, color: farbe, roughness: rau })
-        if (/Skin_(Body|Leg)/.test(n)) {
-          const m = std(haut, 0.55)
-          kleid(m)
-          return m
-        }
-        if (/Skin_Head/.test(n)) {
-          // Kopfhaut unter den Haarsträhnen in Haarfarbe (Scheitel und Hinterkopf)
-          const m = std(haut, 0.55)
-          m.onBeforeCompile = (sh) => {
-            sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;")
-            sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace(
-              "#include <color_fragment>",
-              `#include <color_fragment>
-              float h = vRuhe.z;
-              // weiche Übergänge, Ohren und Schläfen bleiben Haut
-              float k = max(smoothstep(154.5, 156.5, h), smoothstep(150.5, 152.5, h) * smoothstep(-7.5, -5.5, vRuhe.y));
-              k = max(k, smoothstep(147.0, 150.0, h) * smoothstep(2.0, 4.0, vRuhe.y));
-              diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.16, 0.09, 0.06), k);`,
-            )
-          }
-          m.customProgramCacheKey = () => "kopfhaut"
-          return m
-        }
-        if (/Skin_Arm/.test(n)) {
-          // Arme: Ärmel des lockeren Shirts
-          const m = std(haut, 0.55)
-          kleid(m, 1)
-          return m
-        }
-        if (/Skin|Arm/.test(n)) return mitRaster(std(haut, 0.55), "haut-raster")
-        if (/Nails/.test(n)) return std("#c98f7c", 0.4)
-        if (/Eyelash|Eyebrow/.test(n)) return new THREE.MeshStandardMaterial({ name: n, color: "#2a1a14", roughness: 0.8 })
-        if (/Hair/.test(n)) return haarMaterial(n, this.haar)
-        if (/Cornea/.test(n)) return new THREE.MeshStandardMaterial({ name: n, color: "#ffffff", roughness: 0.05, transparent: true, opacity: 0.08, depthWrite: false })
-        if (/Eye_[LR]/.test(n)) return augen(mesh as THREE.Mesh)
-        if (/Bra|Underwear/.test(n)) return mitRaster(std("#4e2e24", 0.8), "stoff-raster")
-        if (/Teeth/.test(n)) return std("#f1ece4", 0.4)
-        if (/Tongue/.test(n)) return std("#b0605a", 0.5)
-        if (/Occlusion|OEM3Dlusion|Tearline/.test(n)) return new THREE.MeshBasicMaterial({ visible: false })
+        if (n === "Haut") return hautMaterial()
+        if (n === "Hair") return haarMaterial(n, this.haar)
+        if (n === "Eye_L") return augen(mesh)
+        if (n === "Eyelash") return new THREE.MeshStandardMaterial({ name: n, color: "#2a1a14", roughness: 0.8, side: THREE.DoubleSide })
         return alt
       }
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(ersetze) : ersetze(mesh.material)
