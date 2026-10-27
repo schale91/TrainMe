@@ -14,7 +14,7 @@ Vorberechnet und als eigene Attribute im Netz:
   _TUCHN   Normale der lockeren Kleidung (geglättet, Stoff statt Muskeln)
   _GESICHT (Augenbrauen, Lippen, Abstand über dem Haaransatz in cm)
   _STRANG  Haare: Lage quer zu den Strähnen und entlang (cm)
-  _FREI    Haare: 0 fest am Kopf, 1 frei hängend (Pferdeschwanz)
+  _FREI    Haare: 0 fest am Kopf, 1 frei hängend (Spitzen)
 Gesichtsausdrücke als Morph-Ziele: Mouth_Smile, Eyes_Blink.
 
 Nur numpy wird gebraucht.
@@ -42,8 +42,32 @@ FIGUR = {
     "gewicht": 0.42,
     "groesse": 0.5,
     "proportionen": 0.85,
-    "brust": 0.5,
+    "brust": 0.68,
     "herkunft": {"caucasian": 0.6, "african": 0.15, "asian": 0.25},
+}
+# Körperform wie die frühere Figur: sportlich, schlanke Taille, betonte Hüfte. Werte aus einem Abgleich der
+# Breiten und Tiefen von Rumpf und Beinen je Höhe (positiv: „-incr“/„-up“, negativ: „-decr“/„-down“)
+FORM = {
+    "measure/measure-bust-circ": -0.34,
+    "measure/measure-underbust-circ": -0.78,
+    "measure/measure-waist-circ": -1.0,
+    "measure/measure-hips-circ": 0.18,
+    "measure/measure-thigh-circ": -0.4,
+    "measure/measure-calf-circ": 0.04,
+    "measure/measure-knee-circ": -1.0,
+    "measure/measure-napetowaist-dist": -0.69,
+    "measure/measure-waisttohip-dist": -0.95,
+    "measure/measure-upperleg-height": -0.06,
+    "measure/measure-lowerleg-height": 0.71,
+    "buttocks/buttocks-volume": -0.95,
+    "torso/torso-scale-depth": 0.55,
+    "torso/torso-scale-horiz": -0.39,
+    "hip/hip-scale-depth": 0.1,
+    "hip/hip-scale-horiz": -1.0,
+    "hip/hip-scale-vert": 1.0,
+    "measure/measure-frontchest-dist": -0.75,
+    "stomach/stomach-tone": -0.6,
+    "hip/hip-waist": 0.26,
 }
 # Weicheres, freundliches Gesicht und schlanker Hals (Formziele von MakeHuman, Anteil 0..1)
 GESICHT = {
@@ -137,6 +161,9 @@ class Formziele:
                     for fe, wf in drei(0.5).items():
                         teile.append(("breast/female-young-%s-%scup-%sfirmness" % (mg, c, fe), wm * wg * wc * wf))
         teile += list(GESICHT.items())
+        for name, w in FORM.items():
+            plus, minus = ("-incr", "-decr") if self.da(name + "-incr") else ("-up", "-down")
+            teile.append((name + (plus if w > 0 else minus), abs(w)))
         for name, w in teile:
             if w > 1e-6 and self.da(name):
                 summe += w * self.delta(name, n)
@@ -238,36 +265,44 @@ def bauen(zw, ziel):
                 gew[i, ki[b]] += w
 
     def vier(rows):
-        g = gew[rows]
-        idx = np.argsort(-g, axis=1)[:, :4]
-        w = np.take_along_axis(g, idx, axis=1)
-        leer = w.sum(1) <= 0
-        idx[leer, 0] = ki["head"]
-        w[leer, 0] = 1
-        w = w / w.sum(1, keepdims=True)
-        return idx.astype(np.uint8), w.astype(np.float32)
-
-    def summe(rows, muster):
-        sp = [ki[b] for b in namen if any(b.startswith(m) for m in muster)]
-        return gew[rows][:, sp].sum(1)
+        return vier_aus(gew[rows], ki["head"])
 
     netze = []
 
     # ---------- Körper
+    # Feiner: einmal Catmull-Clark (jedes Viereck wird zu vier), Gewichte und Ausdrücke werden mit unterteilt
     ecken = np.unique(koerper_q)
     neu = -np.ones(n, dtype=np.int64)
     neu[ecken] = np.arange(len(ecken))
-    tri = neu[dreiecke(koerper_q)]
-    p = pos[ecken]
+    zeilen, spalten, werte, quads, anzahl = unterteilen(neu[koerper_q], len(ecken))
+
+    def fein(x):
+        out = np.zeros((anzahl,) + x.shape[1:])
+        np.add.at(out, zeilen, werte.reshape((-1,) + (1,) * (x.ndim - 1)) * x[spalten])
+        return out
+
+    p = fein(pos[ecken])
+    gew_f = fein(gew[ecken])
+    tri = dreiecke(quads)
     kanten = nachbarn(len(p), tri)
-    p = puppe(p, kanten, kopf, lambda m: summe(ecken, m))
     nrm = normalen(p, tri)
-    kleid, tuch, tuchn, gesicht = kleidung(p, nrm, tri, kanten, ecken, kopf, lambda m: summe(ecken, m))
-    j, w = vier(ecken)
+
+    def summe_f(muster):
+        sp = [ki[b] for b in namen if any(b.startswith(m) for m in muster)]
+        return gew_f[:, sp].sum(1)
+
+    kleid, tuch, tuchn, gesicht = kleidung(p, nrm, tri, kanten, None, kopf, summe_f)
+    j, w = vier_aus(gew_f, ki["head"])
     netze.append({
         "name": "Koerper", "material": "Haut", "pos": p, "nrm": nrm, "tri": tri, "j": j, "w": w,
-        "attr": {"_KLEID": kleid, "_TUCH": tuch, "_TUCHN": tuchn, "_GESICHT": gesicht},
-        "morph": {"Mouth_Smile": laecheln[ecken], "Eyes_Blink": blinzeln[ecken]},
+        # kompakt als normierte Ganzzahlen: Abstände /6 cm, Versatz /10 cm (im Shader zurückgerechnet)
+        "attr": {
+            "_KLEID": (kleid / 6, "BYTE"),
+            "_TUCH": (np.c_[tuch / 10, np.zeros(len(tuch))], "SHORT"),
+            "_TUCHN": (np.c_[tuchn, np.zeros(len(tuchn))], "BYTE"),
+            "_GESICHT": (np.c_[gesicht[:, :2], gesicht[:, 2:] / 6, np.zeros(len(gesicht))], "BYTE"),
+        },
+        "morph": {"Mouth_Smile": fein(laecheln[ecken]), "Eyes_Blink": fein(blinzeln[ecken])},
     })
 
     # ---------- Augen: runde Kugeln an der Stelle der Augen-Hilfsnetze
@@ -295,8 +330,8 @@ def bauen(zw, ziel):
     j, w = vier(we)
     netze.append({"name": "Wimpern", "material": "Eyelash", "pos": pos[we], "nrm": normalen(pos[we], wt), "tri": wt, "j": j, "w": w, "attr": {}, "morph": {"Eyes_Blink": blinzeln[we]}})
 
-    # ---------- Haare: Kappe über der Kopfhaut und Pferdeschwanz
-    hp, ht, frei, strang = haare(p, nrm, tri, gesicht[:, 2], kopf)
+    # ---------- Haare: Kappe, langer Vorhang und Pony
+    hp, ht, frei, strang = haare(p, nrm, tri, gesicht[:, 2], kopf, summe_f(["upperarm", "lowerarm", "wrist", "finger", "metacarpal"]))
     netze.append({
         "name": "Haare", "material": "Hair", "pos": hp, "nrm": normalen(hp, ht), "tri": ht,
         "j": np.tile(np.array([[ki["head"], 0, 0, 0]], np.uint8), (len(hp), 1)), "w": np.tile(np.array([[1, 0, 0, 0]], np.float32), (len(hp), 1)),
@@ -328,7 +363,7 @@ def kugel(mitte, r, seg, ringe):
 # ---------------------------------------------------------------- Kleidung
 
 
-def kleidung(p, nrm, tri, kanten, ecken, kopf, gewicht):
+def kleidung(p, nrm, tri, kanten, _ecken, kopf, gewicht):
     x, y, z = p[:, 0], p[:, 1], p[:, 2]
     s = np.abs(x)
     arm = gewicht(["upperarm", "lowerarm", "wrist", "finger", "metacarpal"])
@@ -373,16 +408,16 @@ def kleidung(p, nrm, tri, kanten, ecken, kopf, gewicht):
     shorts_d = np.minimum(np.minimum(z - (knie + 7), (taille - 2) - z), achsel)
     # Eng (Entwicklermodus): Sport-Top bis unter die Brust, runder Ausschnitt zu breiten Trägern, hinten höher;
     # Shorts bis 5 cm unter die Gesäßfalte
-    kante = spitze[2] + 2.5 + 0.08 * s * s + 5 * hinten
-    traeger = np.maximum(10.5 - s, spitze[2] + 6 - z)
-    top_d = np.minimum(np.minimum(np.minimum(np.minimum(z - unterbrust, kante - z), hals_d), achsel), traeger)
+    kante = spitze[2] + 3 + 0.04 * s * s + 5 * hinten
+    traeger = np.minimum(s - 4.5, 9.5 - s)
+    top_d = np.minimum(np.minimum(np.minimum(z - unterbrust, np.maximum(kante - z, traeger)), hals_d), achsel)
     eng_d = np.minimum(np.minimum(z - (schritt - 5), (taille - 1.5) - z), achsel)
     kleid = np.clip(np.stack([shirt_d, shorts_d, top_d, eng_d], 1), -6, 6).astype(np.float32)
     shirt = stufe(-1.0, 0.5, shirt_d)
     shorts = stufe(-1.0, 0.5, shorts_d)
 
     # Versatz der lockeren Kleidung: Stoff steht ab und fällt vorn von der Brust, hinten von den Schulterblättern
-    versatz = nrm * (np.maximum(shirt * 1.5, shorts * 2.0))[:, None]
+    versatz = nrm * (np.maximum(shirt * 1.4, shorts * 1.5))[:, None]
     # Rumpf in Zylinderkoordinaten um die Körperachse
     mitte_y = kopf["spine02"][1]
     w = np.arctan2(y - mitte_y, x)
@@ -395,23 +430,29 @@ def kleidung(p, nrm, tri, kanten, ecken, kopf, gewicht):
     for i in np.where(rumpf_shirt & (z < schulter[2] - 3))[0]:
         k = (wb[i], zb[i])
         rmax[k] = max(rmax.get(k, 0), r[i])
+    # Stoff spannt waagerecht über Mulden (zwischen den Brüsten, über der Wirbelsäule): Sehnen statt Haut
+    huelle = {}
+    for (a, zz), v in rmax.items():
+        for d in range(-5, 6):
+            k = ((a + d) % nw, zz)
+            huelle[k] = max(huelle.get(k, 0), v * math.cos(d * 2 * math.pi / nw))
     fall = np.zeros(len(p))
     for i in np.where(rumpf_shirt)[0]:
         best = r[i]
         for dz in range(0, 40):
-            v = rmax.get((wb[i], zb[i] + dz))
+            v = huelle.get((wb[i], zb[i] + dz))
             if v is not None:
                 best = max(best, v - dz * nz * 0.035)
         fall[i] = best - r[i]
     radial = np.stack([np.cos(w), np.sin(w), np.zeros_like(w)], 1)
     versatz += radial * (0.85 * fall * shirt)[:, None]
     # Shorts leicht ausgestellt
-    versatz += nrm * (shorts * np.clip((huefte - z) * 0.06, 0, 1.5))[:, None]
-    versatz = glaetten(versatz, kanten, len(p), 4, (shirt + shorts) > 0)
+    versatz += nrm * (shorts * np.clip((huefte - z) * 0.03, 0, 0.6))[:, None]
+    versatz = glaetten(versatz, kanten, len(p), 12, (shirt + shorts) > 0)
     tuch = (versatz * np.maximum(shirt, shorts)[:, None] / np.maximum(np.maximum(shirt, shorts), 1e-6)[:, None]).astype(np.float32)
     tuch[(shirt + shorts) <= 0] = 0
     tn = normalen(p + tuch, tri)
-    tn = glaetten(tn, kanten, len(p), 10, (shirt + shorts) > 0)
+    tn = glaetten(tn, kanten, len(p), 40, (shirt + shorts) > 0)
     tn = tn / np.maximum(np.linalg.norm(tn, axis=1, keepdims=True), 1e-9)
 
     # Gesicht: Augenbrauen als Bogen über den Augen, Lippen über die Lippenknochen, Kopfhaut unter den Haaren
@@ -426,24 +467,83 @@ def kleidung(p, nrm, tri, kanten, ecken, kopf, gewicht):
     return kleid, tuch, tn.astype(np.float32), gesicht
 
 
-def puppe(p, kanten, kopf, gewicht):
+def vier_aus(g, ersatz):
+    """Die vier stärksten Knochen je Punkt, normiert"""
+    idx = np.argsort(-g, axis=1)[:, :4]
+    w = np.take_along_axis(g, idx, axis=1)
+    leer = w.sum(1) <= 0
+    idx[leer, 0] = ersatz
+    w[leer, 0] = 1
+    w = w / w.sum(1, keepdims=True)
+    return idx.astype(np.uint8), w.astype(np.float32)
+
+
+def unterteilen(quads, n):
     """
-    Glatt wie eine Schaufensterpuppe: Brustwarzen und Schritt des Grundnetzes werden weich ausgeglichen, damit
-    sie sich weder unter enger Kleidung noch in der Prüfansicht abzeichnen.
+    Catmull-Clark, einmal, als lineare Abbildung (Zeile, Spalte, Wert): neue Punkte aus alten. Ränder (Augen,
+    Mund) bleiben fest, damit nichts zu den Augen hin aufklafft. Gibt auch die neuen Vierecke zurück.
     """
-    x, y, z = p[:, 0], p[:, 1], p[:, 2]
-    s = np.abs(x)
-    rumpf = (gewicht(["upperarm", "lowerarm", "wrist", "finger", "upperleg", "lowerleg", "neck", "head"]) < 0.3)
-    zone = rumpf & (z > kopf["spine03"][2]) & (z < kopf["upperarm01.L"][2]) & (s > 3) & (s < 13)
-    spitze = p[zone][np.argmin(y[zone])]
-    huefte = kopf["upperleg01.L"][2]
-    schritt = z[(s < 1.0) & (z < huefte) & (z > kopf["lowerleg01.L"][2])].min()
-    brust = 1 - stufe(1.6, 3.2, np.hypot(s - abs(spitze[0]), z - spitze[2]))
-    brust *= (y < spitze[1] + 3)
-    mitte = (1 - stufe(3.0, 5.0, s)) * stufe(schritt - 4, schritt - 2, z) * (1 - stufe(schritt + 7, schritt + 10, z))
-    maske = np.maximum(brust, mitte)
-    glatt = glaetten(p, kanten, len(p), 25, maske > 0)
-    return p + (glatt - p) * maske[:, None]
+    nf = len(quads)
+    kanten = {}
+    flaechen_je_kante = {}
+    for f, q in enumerate(quads):
+        for k in range(4):
+            a, b = int(q[k]), int(q[(k + 1) % 4])
+            key = (min(a, b), max(a, b))
+            flaechen_je_kante.setdefault(key, []).append(f)
+    for i, key in enumerate(flaechen_je_kante):
+        kanten[key] = n + nf + i
+    anzahl = n + nf + len(kanten)
+    zeilen, spalten, werte = [], [], []
+
+    def setze(z, cols, w):
+        zeilen.extend([z] * len(cols))
+        spalten.extend(cols)
+        werte.extend([w] * len(cols) if np.isscalar(w) else w)
+
+    # Flächenpunkte
+    for f, q in enumerate(quads):
+        setze(n + f, [int(v) for v in q], 0.25)
+    # Kantenpunkte
+    rand = np.zeros(n, bool)
+    for key, fl in flaechen_je_kante.items():
+        z = kanten[key]
+        if len(fl) == 2:
+            setze(z, list(key), 0.25)
+            for f in fl:
+                setze(z, [int(v) for v in quads[f]], 1 / 16)
+        else:
+            setze(z, list(key), 0.5)
+            rand[list(key)] = True
+    # Eckpunkte
+    nf_je = [[] for _ in range(n)]
+    for f, q in enumerate(quads):
+        for v in q:
+            nf_je[int(v)].append(f)
+    nb_je = [[] for _ in range(n)]
+    for a, b in flaechen_je_kante:
+        nb_je[a].append(b)
+        nb_je[b].append(a)
+    for v in range(n):
+        val = len(nb_je[v])
+        if rand[v] or val < 3:
+            setze(v, [v], 1.0)
+            continue
+        # (Q + 2R + (n-3)P) / n mit Q = Mittel der Flächenpunkte, R = Mittel der Kantenmitten
+        fl = nf_je[v]
+        for f in fl:
+            setze(v, [int(x) for x in quads[f]], 1 / (len(fl) * 4 * val))
+        for b in nb_je[v]:
+            setze(v, [v, b], 2 / (val * 2 * val))
+        setze(v, [v], (val - 3) / val)
+    neu = []
+    for f, q in enumerate(quads):
+        q = [int(x) for x in q]
+        e = [kanten[(min(q[k], q[(k + 1) % 4]), max(q[k], q[(k + 1) % 4]))] for k in range(4)]
+        c = n + f
+        for k in range(4):
+            neu.append([q[k], e[k], c, e[k - 1]])
+    return np.array(zeilen), np.array(spalten), np.array(werte), np.array(neu), anzahl
 
 
 def haaransatz(p, kopf):
@@ -497,81 +597,163 @@ def kappe_schneiden(p, nrm, tri, f):
     return np.array(pts), np.array(nn), np.array(ff), np.array(neu)
 
 
-def haare(p, nrm, tri, feld, kopf):
+def gitter(spalten, zeilen, versatz=0, zu=False):
+    """Dreiecke eines Gitters (Spalten nebeneinander, Zeilen untereinander)"""
+    t = []
+    for i in range(zeilen - 1):
+        for k in range(spalten - (0 if zu else 1)):
+            a = versatz + i * spalten + k
+            b = versatz + i * spalten + (k + 1) % spalten
+            t += [[a, b, a + spalten], [b, b + spalten, a + spalten]]
+    return t
+
+
+def haare(p, nrm, tri, feld, kopf, arm):
+    """
+    Lange, glatte Haare bis über die Schulterblätter mit seitlich gelegtem Pony:
+    - Kappe über der Kopfhaut (exakt am Haaransatz geschnitten),
+    - Vorhang in zwei Lagen, fällt vom Kopf und legt sich über Schultern und Rücken,
+    - Pony, von links nach rechts über die Stirn gelegt, endet über den Augenbrauen.
+    """
     kh = kopf["head"]
-    # Kappe: Kopfhaut über dem Ansatz, nach außen versetzt (oben mehr Volumen, am Ansatz hauchdünn)
+    auge = kopf["eye.L"]
     nah = (feld > -1.5)[tri].any(1)
     kp, kn, kf, kt = kappe_schneiden(p, nrm, tri[nah], feld)
     benutzt = np.unique(kt)
     um = -np.ones(len(kp), dtype=np.int64)
     um[benutzt] = np.arange(len(benutzt))
     kp, kn, kf, kt = kp[benutzt], kn[benutzt], kf[benutzt], um[kt]
-    dicke = 0.1 + 1.25 * stufe(0, 4.5, kf)
-    kp = kp + kn * dicke[:, None]
+    kp = kp + kn * (0.1 + 0.6 * stufe(0, 4.5, kf))[:, None]
 
-    # Gekämmt zum Zopfgummi: Strähnen laufen sternförmig zum Anker am Hinterkopf
-    hinten = p[feld > 0][:, 1].max()
-    anker = np.array([0, hinten - 1.2, kh[2] + 5.0])
-    mitte = np.array([0, kh[1] - 1.5, kh[2] + 7])
-    achse = (mitte - anker) / np.linalg.norm(mitte - anker)
-    e1 = np.array([1.0, 0, 0])
-    e2 = np.cross(achse, e1)
-    d = kp - anker
-    phi = np.arctan2(d @ e2, d @ e1)
-    laenge = np.linalg.norm(d, axis=1)
-    strang = [np.stack([phi * 6.0, laenge], 1)]
-    frei = [np.zeros(len(kp))]
+    # Körper in Zylinderkoordinaten um die senkrechte Achse durch die Kopfmitte (ohne Arme)
+    kopfpunkte = p[(p[:, 2] > kh[2] + 2)]
+    mitte = np.array([0.0, kopfpunkte[:, 1].mean(), 0.0])
+    koerper = p[(arm < 0.3) & (p[:, 2] > 95)]
+    nwin = 120
+    wi = lambda x, y: (((np.arctan2(x, -(y - mitte[1])) + 2 * math.pi) % (2 * math.pi)) / (2 * math.pi) * nwin).astype(int) % nwin
+    radius = np.zeros((nwin, 200))
+    kw, kz = wi(koerper[:, 0], koerper[:, 1]), np.clip(koerper[:, 2].astype(int), 0, 199)
+    np.maximum.at(radius, (kw, kz), np.hypot(koerper[:, 0], koerper[:, 1] - mitte[1]))
+    # Lücken füllen (Nachbarwinkel)
+    for _ in range(2):
+        radius = np.maximum(radius, np.maximum(np.roll(radius, 1, 0), np.roll(radius, -1, 0)) * 0.985)
 
-    # Pferdeschwanz: ovales Rohr, beginnt im Kopf, Gummi am Austritt, fällt hinten über den Nacken
-    weg = np.array([anker - [0, 1.5, 0], anker + [0, 1.2, -0.4], anker + [0, 3.2, -4.5], anker + [0, 4.2, -11], anker + [0, 4.0, -19], anker + [0, 3.2, -26], anker + [0, 2.6, -31]])
-    stufen, seg = 52, 20
-    pts, tris, fr, st = [], [], [], []
-    vorher = None
-    lauf = 0.0
-    for i in range(stufen + 1):
-        t = i / stufen
-        a = t * (len(weg) - 1)
-        k = min(int(a), len(weg) - 2)
-        u = a - k
-        p0, p1, p2, p3 = weg[max(k - 1, 0)], weg[k], weg[k + 1], weg[min(k + 2, len(weg) - 1)]
-        c = 0.5 * ((2 * p1) + (-p0 + p2) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u * u + (-p0 + 3 * p1 - 3 * p2 + p3) * u ** 3)
-        if vorher is not None:
-            lauf += np.linalg.norm(c - vorher)
-        vorher = c
-        r = np.interp(t, [0, 0.05, 0.075, 0.1, 0.25, 0.6, 0.88, 1.0], [1.4, 1.4, 1.25, 1.9, 2.8, 2.4, 1.3, 0.2])
-        for kk in range(seg):
-            ph = 2 * math.pi * kk / seg
-            pts.append(c + [r * math.cos(ph), r * 0.72 * math.sin(ph), 0])
-            fr.append(max(1e-3, stufe(0.06, 0.35, t)))
-            st.append([ph * 6.0, lauf])
-    basis = len(kp)
-    for i in range(stufen):
-        for kk in range(seg):
-            a, b = basis + i * seg + kk, basis + i * seg + (kk + 1) % seg
-            tris += [[a, b, a + seg], [b, b + seg, a + seg]]
-    for ende, ring, fe in ((weg[0], 0, 1e-3), (weg[-1] + [0, 0, -0.3], stufen, 1.0)):
-        pts.append(ende)
-        fr.append(fe)
-        st.append([0, lauf if ring else 0])
-        mi = basis + len(pts) - 1
-        for kk in range(seg):
-            a, b = basis + ring * seg + kk, basis + ring * seg + (kk + 1) % seg
-            tris.append([a, mi, b] if ring else [b, mi, a])
-    hp = np.concatenate([kp, np.array(pts)])
-    ht = np.concatenate([kt, np.array(tris)])
-    frei = np.concatenate([frei[0], np.array(fr)]).astype(np.float32)
-    strang = np.concatenate([strang[0], np.array(st)]).astype(np.float32)
+    # weich in der Höhe, damit die Haare keine Stufen je Zentimeter bekommen
+    for _ in range(4):
+        radius[:, 1:-1] = np.maximum(radius[:, 1:-1], (radius[:, :-2] + 2 * radius[:, 1:-1] + radius[:, 2:]) / 4 * 0.0) * 0 + (radius[:, :-2] + 2 * radius[:, 1:-1] + radius[:, 2:]) / 4
+
+    def r_koerper(w, z):
+        z = float(np.clip(z, 0, 198.999))
+        i, f = int(z), z - int(z)
+        a, b = int(math.floor(w)) % nwin, (int(math.floor(w)) + 1) % nwin
+        g = w - math.floor(w)
+        za = radius[a, i] * (1 - f) + radius[a, i + 1] * f
+        zb = radius[b, i] * (1 - f) + radius[b, i + 1] * f
+        return za * (1 - g) + zb * g
+
+    def stelle(winkel, r, z):
+        return np.array([math.sin(winkel) * r, mitte[1] - math.cos(winkel) * r, z])
+
+    pts, tris, fr, st = [list(kp)], [list(kt)], [list(np.zeros(len(kp)))], [list(np.zeros((len(kp), 2)))]
+    anzahl = len(kp)
+
+    def flaeche(punkte, frei, strang, spalten, zeilen, zu=False):
+        nonlocal anzahl
+        pts.append(punkte)
+        fr.append(frei)
+        st.append(strang)
+        tris.append(gitter(spalten, zeilen, anzahl, zu))
+        anzahl += len(punkte)
+
+    # Eine Schale vom Scheitel rundum: vorn als Pony bis über die Augenbrauen (von links nach rechts gelegt),
+    # sonst lang bis über die Schulterblätter. Zwei Lagen für Volumen, Spitzen verbunden.
+    hals = kopf["neck01"][2]
+    scheitel = kopfpunkte[:, 2].max() - 0.3
+    winkel = np.radians(np.arange(0, 360, 2.0))
+    zeilen, spalten = 80, len(winkel)
+    t_lauf = np.linspace(0, 1, zeilen)
+    enden, pony = [], []
+    for wk in winkel:
+        v = (math.degrees(wk) + 180) % 360 - 180  # -180..180, 0 vorn
+        if abs(v) < 64:
+            u = (v + 64) / 128
+            enden.append(auge[2] + 2.2 + 1.7 * (1 - u) + 0.3 * math.sin(wk * 9))
+            pony.append(True)
+        else:
+            # vorn an den Seiten kürzer (bis zum Schlüsselbein), nach hinten lang über die Schulterblätter
+            hinten = stufe(95, 140, abs(v))
+            enden.append(hals - 10 - 14 * hinten + 1.2 * math.sin(wk * 7.0))
+            pony.append(False)
+    for abstand_kopf, abstand_koerper in ((1.5, 4.2), (0.95, 3.4)):
+        r = np.zeros((zeilen, spalten))
+        z = np.zeros((zeilen, spalten))
+        for k, wk in enumerate(winkel):
+            zs = scheitel + (enden[k] - scheitel) * t_lauf
+            z[:, k] = zs
+            wbin = (wk / (2 * math.pi)) * nwin
+            for i, zz in enumerate(zs):
+                gap = abstand_kopf if zz > hals else abstand_koerper
+                r[i, k] = max(r_koerper(wbin + d, zz) for d in (-1, 0, 1)) + gap
+        # glätten (quer und längs), dann Fall: nach unten nie enger als darüber, nur langsam einwärts
+        for _ in range(8):
+            r = (np.roll(r, 1, 1) + 2 * r + np.roll(r, -1, 1)) / 4
+            r[1:-1] = (r[:-2] + 2 * r[1:-1] + r[2:]) / 4
+        for i in range(1, zeilen):
+            r[i] = np.maximum(r[i], r[i - 1] - 0.15)
+        punkte = np.stack([np.sin(winkel)[None] * r, mitte[1] - np.cos(winkel)[None] * r, z], -1).reshape(-1, 3)
+        frei = np.where(np.array(pony)[None], 0.0, np.clip((t_lauf[:, None] - 0.3) / 0.35, 0, 1) ** 1.5).reshape(-1)
+        laenge = (scheitel - np.array(enden))[None] * t_lauf[:, None]
+        strang = np.stack([np.tile(winkel * 9.0, zeilen), laenge.reshape(-1)], 1)
+        flaeche(punkte, frei, strang, spalten, zeilen, zu=True)
+    a0 = anzahl - 2 * spalten * zeilen + (zeilen - 1) * spalten
+    b0 = anzahl - spalten * zeilen + (zeilen - 1) * spalten
+    spitzen = []
+    for k in range(spalten):
+        k2 = (k + 1) % spalten
+        spitzen += [[a0 + k, b0 + k, a0 + k2], [a0 + k2, b0 + k, b0 + k2]]
+    tris.append(spitzen)
+
+    hp = np.concatenate([np.asarray(x, dtype=np.float64).reshape(-1, 3) for x in pts])
+    ht = np.concatenate([np.asarray(t, dtype=np.int64).reshape(-1, 3) for t in tris if len(t)])
+    frei = np.concatenate([np.asarray(x, dtype=np.float32).reshape(-1) for x in fr])
+    strang = np.concatenate([np.asarray(x, dtype=np.float32).reshape(-1, 2) for x in st])
     return hp, ht, frei, strang
 
 
 # ---------------------------------------------------------------- glb schreiben
 
 
+def gewichte_byte(w):
+    """Gewichte als Bytes (0..255), Summe genau 255"""
+    b = np.round(w * 255).astype(np.int32)
+    groesst = np.argmax(b, 1)
+    b[np.arange(len(b)), groesst] += 255 - b.sum(1)
+    return b.astype(np.uint8)
+
+
 def schreiben(ziel, netze, namen, eltern, kopf):
     puffer = bytearray()
     views, accessors = [], []
 
-    def ablegen(arr, typ, komp, ziel_art=None, minmax=False):
+    def roh(arr):
+        arr = np.ascontiguousarray(arr)
+        while len(puffer) % 4:
+            puffer.append(0)
+        views.append({"buffer": 0, "byteOffset": len(puffer), "byteLength": arr.nbytes})
+        puffer.extend(arr.tobytes())
+        return len(views) - 1
+
+    def duenn(d):
+        """Morph-Ziel nur mit den Punkten, die sich bewegen (sparse)"""
+        idx = np.where(np.abs(d).max(1) > 1e-5)[0].astype(np.uint32)
+        accessors.append({
+            "componentType": FLOAT, "count": int(len(d)), "type": "VEC3",
+            "min": [float(v) for v in d.min(0)], "max": [float(v) for v in d.max(0)],
+            "sparse": {"count": int(len(idx)), "indices": {"bufferView": roh(idx), "componentType": UINT}, "values": {"bufferView": roh(d[idx])}},
+        })
+        return len(accessors) - 1
+
+    def ablegen(arr, typ, komp, ziel_art=None, minmax=False, normiert=False):
         arr = np.ascontiguousarray(arr)
         while len(puffer) % 4:
             puffer.append(0)
@@ -582,6 +764,8 @@ def schreiben(ziel, netze, namen, eltern, kopf):
             view["target"] = ziel_art
         views.append(view)
         acc = {"bufferView": len(views) - 1, "componentType": komp, "count": int(arr.shape[0]), "type": typ}
+        if normiert:
+            acc["normalized"] = True
         if minmax:
             acc["min"] = [float(v) for v in arr.min(0)]
             acc["max"] = [float(v) for v in arr.max(0)]
@@ -623,19 +807,27 @@ def schreiben(ziel, netze, namen, eltern, kopf):
             "POSITION": ablegen(nz["pos"].astype(np.float32), "VEC3", FLOAT, 34962, True),
             "NORMAL": ablegen(nz["nrm"].astype(np.float32), "VEC3", FLOAT, 34962),
             "JOINTS_0": ablegen(nz["j"].astype(np.uint8), "VEC4", UBYTE, 34962),
-            "WEIGHTS_0": ablegen(nz["w"].astype(np.float32), "VEC4", FLOAT, 34962),
+            "WEIGHTS_0": ablegen(gewichte_byte(nz["w"]), "VEC4", UBYTE, 34962, normiert=True),
         }
         for k, v in nz["attr"].items():
-            v = np.asarray(v, dtype=np.float32)
+            art = "FLOAT"
+            if isinstance(v, tuple):
+                v, art = v
+            v = np.asarray(v, dtype=np.float64)
             if v.ndim == 1:
                 v = v[:, None]
-            attr[k] = ablegen(v, typen[v.shape[1]], FLOAT, 34962)
+            if art == "BYTE":
+                attr[k] = ablegen(np.round(np.clip(v, -1, 1) * 127).astype(np.int8), typen[v.shape[1]], 5120, 34962, normiert=True)
+            elif art == "SHORT":
+                attr[k] = ablegen(np.round(np.clip(v, -1, 1) * 32767).astype(np.int16), typen[v.shape[1]], 5122, 34962, normiert=True)
+            else:
+                attr[k] = ablegen(v.astype(np.float32), typen[v.shape[1]], FLOAT, 34962)
         tri = nz["tri"].reshape(-1)
         idx = ablegen(tri.astype(np.uint16 if tri.max() < 65535 else np.uint32), "SCALAR", USHORT if tri.max() < 65535 else UINT, 34963)
         prim = {"attributes": attr, "indices": idx, "material": len(materials) - 1}
         mesh = {"name": nz["name"], "primitives": [prim]}
         if nz["morph"]:
-            prim["targets"] = [{"POSITION": ablegen(d.astype(np.float32), "VEC3", FLOAT, 34962, True)} for d in nz["morph"].values()]
+            prim["targets"] = [{"POSITION": duenn(d.astype(np.float32))} for d in nz["morph"].values()]
             mesh["weights"] = [0.0] * len(nz["morph"])
             mesh["extras"] = {"targetNames": list(nz["morph"].keys())}
         meshes.append(mesh)

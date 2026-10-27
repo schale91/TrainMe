@@ -131,7 +131,7 @@ function haarMaterial(name: string, w: Haarwerte): THREE.Material {
 uniform vec3 uDreh;
 uniform vec3 uBodenP;
 uniform vec3 uBodenN;
-// Anteil frei hängender Strähne (im Netz vorberechnet): 0 am Kopf, 1 an der Spitze des Pferdeschwanzes
+// Anteil frei hängender Strähne (im Netz vorberechnet): 0 am Kopf, 1 an den Spitzen
 attribute float _frei;
 attribute vec2 _strang;
 varying float vFrei;
@@ -150,14 +150,13 @@ vec3 haarDrehe(vec3 v) {
         float hb = dot(transformed - uBodenP, uBodenN);
         if (hb < 0.4) transformed += uBodenN * (0.4 - hb);`,
       )
-    // Strähnen: feine helle und dunkle Linien entlang des Haars; Haargummi am Ansatz des Pferdeschwanzes
+    // Strähnen: feine helle und dunkle Linien entlang des Haars
     sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying float vFrei;\nvarying vec2 vStrang;").replace(
       "#include <color_fragment>",
       `#include <color_fragment>
       float u = vStrang.x + 0.35 * sin(vStrang.y * 0.45);
       float l = 0.5 + 0.5 * sin(u * 7.0) * sin(u * 2.3 + 1.7);
-      diffuseColor.rgb *= 0.78 + 0.34 * l;
-      if (vFrei > 0.0 && vFrei < 0.012) diffuseColor.rgb = vec3(0.1, 0.09, 0.1);`,
+      diffuseColor.rgb *= 0.78 + 0.34 * l;`,
     )
   }
   m.customProgramCacheKey = () => "haar"
@@ -453,11 +452,11 @@ export class Modellfigur {
         sh.vertexShader = sh.vertexShader
           .replace(
             "#include <common>",
-            "#include <common>\nattribute vec4 _kleid;\nattribute vec3 _tuch;\nattribute vec3 _tuchn;\nattribute vec3 _gesicht;\nvarying vec3 vRuhe;\nvarying vec4 vKleid;\nvarying vec3 vGesicht;\nuniform float uLocker;\nuniform float uNackt;",
+            "#include <common>\nattribute vec4 _kleid;\nattribute vec4 _tuch;\nattribute vec4 _tuchn;\nattribute vec4 _gesicht;\nvarying vec3 vRuhe;\nvarying vec4 vKleid;\nvarying vec3 vGesicht;\nuniform float uLocker;\nuniform float uNackt;",
           )
           // Lockere Kleidung: Stoff steht ab, fällt von Brust und Schulterblättern, Normalen glatt wie Stoff
-          .replace("#include <beginnormal_vertex>", `#include <beginnormal_vertex>\nif ${an} objectNormal = normalize(mix(objectNormal, _tuchn, smoothstep(-1.0, 0.5, max(_kleid.x, _kleid.y))));`)
-          .replace("#include <begin_vertex>", `#include <begin_vertex>\nvRuhe = position;\nvKleid = _kleid;\nvGesicht = _gesicht;\nif ${an} transformed += _tuch;`)
+          .replace("#include <beginnormal_vertex>", `#include <beginnormal_vertex>\nif ${an} objectNormal = normalize(mix(objectNormal, normalize(_tuchn.xyz), smoothstep(-1.0, 0.5, 6.0 * max(_kleid.x, _kleid.y))));`)
+          .replace("#include <begin_vertex>", `#include <begin_vertex>\nvRuhe = position;\nvKleid = _kleid * 6.0;\nvGesicht = vec3(_gesicht.xy, _gesicht.z * 6.0);\nif ${an} transformed += _tuch.xyz * 10.0;`)
         sh.fragmentShader = sh.fragmentShader
           .replace(
             "#include <common>",
