@@ -312,7 +312,8 @@ export default function App() {
     if (rehaAktiv(profil) && rehaSperre(profil, heute())) {
       setTab("heute")
       window.scrollTo(0, 0)
-    } else if (!eingestuft) setEinstufen(true)
+    } else if (!eingestuft && e.art !== "mobilitaet") setEinstufen(true)
+    // Reine Mobility braucht keine Kraftwerte
     else setOffen(e)
   }
 

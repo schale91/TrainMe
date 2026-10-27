@@ -472,7 +472,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         </div>
       ) : null}
       {reha && schmerzVor !== null && schmerzVor >= 7 ? <p className="hinweistext warnung">Heute sind die Schmerzen stark. Mach nur die Beweglichkeit und kurzes Gehen, oder leg einen Ruhetag ein. Bleibt es mehrere Tage so, bitte ärztlich abklären.</p> : null}
-      {einheit.art !== "ausdauer" ? <p className="hinweistext">{reha ? "Aufwärmen (5 bis 10 min): in der Wohnung gehen oder locker Rad fahren, bis du dich warm fühlst." : "Aufwärmen (etwa 5 min): locker bewegen. Die Aufwärmsätze mit Gewicht stehen bei den Hauptübungen."}</p> : null}
+      {einheit.art !== "ausdauer" && einheit.art !== "mobilitaet" ? <p className="hinweistext">{reha ? "Aufwärmen (5 bis 10 min): in der Wohnung gehen oder locker Rad fahren, bis du dich warm fühlst." : "Aufwärmen (etwa 5 min): locker bewegen. Die Aufwärmsätze mit Gewicht stehen bei den Hauptübungen."}</p> : null}
 
       {plaetze.map((p, i) => {
         const u = p.uebung

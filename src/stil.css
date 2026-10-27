@@ -2049,6 +2049,33 @@ a.knopf.aus {
   color: var(--text);
   font-size: 16px;
 }
+/* Zusätzliche Mobility-Einheit auf „Heute“ */
+.mobilkarte {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: var(--gross);
+  background: var(--flaeche);
+  color: var(--text);
+  text-align: left;
+}
+.mobilkarte > span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mobilkarte small {
+  color: var(--leise);
+  font-size: 13px;
+}
+.mobilvorschau small {
+  color: var(--leise);
+}
 .wegkarte {
   display: block;
   width: 100%;

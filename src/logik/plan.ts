@@ -435,6 +435,79 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
   return ergebnis
 }
 
+/** Schwerpunkt einer zusätzlichen Mobility-Einheit */
+export type MobilSchwerpunkt = "ganz" | "huefte" | "ruecken" | "schulter" | "beine" | "schwach"
+export const MOBIL_SCHWERPUNKTE: { id: MobilSchwerpunkt; name: string }[] = [
+  { id: "ganz", name: "Ganzkörper" },
+  { id: "huefte", name: "Hüfte" },
+  { id: "ruecken", name: "Rücken" },
+  { id: "schulter", name: "Schulter und Nacken" },
+  { id: "beine", name: "Beine und Füße" },
+  { id: "schwach", name: "Meine Schwachstellen" },
+]
+const MOBIL_FOLGE: Record<Exclude<MobilSchwerpunkt, "schwach">, Muster[]> = {
+  ganz: ["mobilitaet_ganzkoerper", "mobilitaet_bws", "mobilitaet_huefte", "mobilitaet_schulter", "mobilitaet_beine", "mobilitaet_sprunggelenk", "mobilitaet_huefte", "mobilitaet_bws", "mobilitaet_nacken", "mobilitaet_handgelenk"],
+  huefte: ["mobilitaet_huefte", "mobilitaet_beine", "mobilitaet_huefte", "mobilitaet_ganzkoerper", "mobilitaet_huefte", "mobilitaet_beine", "mobilitaet_sprunggelenk", "mobilitaet_huefte"],
+  ruecken: ["mobilitaet_bws", "mobilitaet_ganzkoerper", "mobilitaet_bws", "mobilitaet_nacken", "mobilitaet_huefte", "mobilitaet_bws", "mobilitaet_schulter"],
+  schulter: ["mobilitaet_schulter", "mobilitaet_bws", "mobilitaet_schulter", "mobilitaet_nacken", "mobilitaet_handgelenk", "mobilitaet_schulter", "mobilitaet_bws"],
+  beine: ["mobilitaet_beine", "mobilitaet_huefte", "mobilitaet_sprunggelenk", "mobilitaet_beine", "mobilitaet_huefte", "mobilitaet_beine", "mobilitaet_sprunggelenk"],
+}
+
+/**
+ * Zusätzliche Mobility-Einheit nach Wunsch (Dauer und Schwerpunkt), unabhängig vom Wochenplan. Übungen reihum aus
+ * den Mustern des Schwerpunkts, so viele, wie in die Zeit passen; übrige Zeit bekommen sie als weitere Sätze.
+ * Kein eigenes Aufwärmen: die Mobility ist selbst das Aufwärmen.
+ */
+export function mobilitaetsEinheit(grundprofil: Profil, daten: Daten, datum: string, minuten: number, schwerpunkt: MobilSchwerpunkt, ortIndex = 0): Einheit {
+  const profil = mitPhase(profilAm(grundprofil, datum), datum)
+  const oi = Math.min(Math.max(0, ortIndex), Math.max(0, profil.orte.length - 1))
+  const ort = profil.orte[oi]
+  const woche = blockWoche(profil, datum)
+  const schwach = schwachstellen(daten).filter((m) => m.startsWith("mobilitaet"))
+  const folge = schwerpunkt === "schwach" ? [...schwach, ...schwach, ...MOBIL_FOLGE.ganz] : MOBIL_FOLGE[schwerpunkt]
+  const titel = "Mobility · " + (MOBIL_SCHWERPUNKTE.find((x) => x.id === schwerpunkt)?.name ?? "Ganzkörper")
+  const benutzt = new Set<string>()
+  const plaetze: Platz[] = []
+  const saetze: number[] = []
+  const baue = (u: Uebung, n: number) => vorgabe(profil, "mobil", u, n, verlaufVon(daten.protokoll, u.id, datum), [], woche)
+  const dauer = () => plaetze.reduce((s, p) => s + platzMinuten(p), 0)
+  if (ort)
+    for (let i = 0; i < folge.length * 2 && plaetze.length < 14; i++) {
+      const muster = folge[i % folge.length]
+      let u: Uebung | null = null
+      let m = muster
+      for (const x of [muster, ...(ERSATZ[muster] || [])]) {
+        u = waehle(profil, ort, "mobil", x, benutzt, benutzt, daten.protokoll, datum)
+        if (u) {
+          m = x
+          break
+        }
+      }
+      if (!u) continue
+      const platz: Platz = { rolle: "mobil", muster: m, uebung: u, vorgabe: baue(u, 2), warum: warum(profil, ort, titel, "mobil", muster, m, u, daten.protokoll, datum, schwach) }
+      // mindestens zwei Übungen, sonst nur, was noch in die Zeit passt
+      if (plaetze.length >= 2 && dauer() + platzMinuten(platz) > minuten) continue
+      benutzt.add(u.id)
+      plaetze.push(platz)
+      saetze.push(2)
+    }
+  // übrige Zeit: weitere Sätze reihum (höchstens 3 je Übung)
+  let mehr = true
+  while (mehr) {
+    mehr = false
+    for (let i = 0; i < plaetze.length; i++) {
+      if (saetze[i] >= 3) continue
+      const neu = { ...plaetze[i], vorgabe: baue(plaetze[i].uebung, saetze[i] + 1) }
+      if (dauer() - platzMinuten(plaetze[i]) + platzMinuten(neu) <= minuten) {
+        plaetze[i] = neu
+        saetze[i]++
+        mehr = true
+      }
+    }
+  }
+  return { datum, titel, art: "mobilitaet", ort: oi, minuten: Math.max(1, Math.round(dauer())), plaetze, hinweise: ["Zusätzliche Mobility-Einheit, etwa " + minuten + " Minuten. Ruhig atmen, nicht in den Schmerz."] }
+}
+
 /** Andere Übungen für denselben Platz (zum Tauschen während der Einheit). */
 export function alternativen(profil: Profil, ort: Ort, muster: Muster, ohne: string): Uebung[] {
   return UEBUNGEN.filter((u) => u.muster === muster && u.id !== ohne && erlaubt(profil, u) && passtAnOrt(u, ort))

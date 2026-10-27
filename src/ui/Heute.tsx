@@ -4,7 +4,7 @@ import { hatSport } from "../logik/auswahl"
 import { useMemo, useState } from "react"
 import { faktDesTages } from "../daten/fakten"
 import { BLOCK_WOCHEN, blockWoche, istEntlastung } from "../logik/progression"
-import { heute, montagVon, plusTage, wochenplan } from "../logik/plan"
+import { MOBIL_SCHWERPUNKTE, heute, mobilitaetsEinheit, montagVon, plusTage, schwachstellen, wochenplan, type MobilSchwerpunkt } from "../logik/plan"
 import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { tagesform } from "./gesundheit"
@@ -20,7 +20,8 @@ import { phaseInfo, phaseAm } from "../logik/jahresplan"
 import { BlockFortschritt } from "./Weg"
 import { aktuellerBlock, jahresAnteil, wegStand } from "../logik/weg"
 import { Sym } from "./symbole"
-import { Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
+import { Blatt, Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
+import { Chips, WertWahl } from "./teile"
 import { ROLLE, TERMINE, WT, datumText } from "./texte"
 
 export function istErledigt(daten: Daten, e: Einheit): boolean {
@@ -35,6 +36,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const profil = daten.profil!
   const tag = heute()
   const [montag, setMontag] = useState(montagVon(tag))
+  const [mobil, setMobil] = useState(false)
   const plan = useMemo(() => wochenplan(profil, daten, montag), [profil, daten, montag])
   const w = blockWoche(profil, montag)
   const s = stufe(daten.spiel.xp)
@@ -252,6 +254,16 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         )
       ) : null}
 
+      <button type="button" className="mobilkarte" onClick={() => setMobil(true)}>
+        <Sym name="dehnen" groesse={22} />
+        <span>
+          <b>Mobility-Einheit starten</b>
+          <small>Dauer und Schwerpunkt wählst du selbst</small>
+        </span>
+        <Icon name="weiter" groesse={16} />
+      </button>
+      <MobilBlatt offen={mobil} schliessen={() => setMobil(false)} daten={daten} datum={tag} ortVorschlag={termin.ort || 0} starten={(e) => { setMobil(false); props.oeffnen(e) }} />
+
       {weg ? (
         <button type="button" className="wegkarte" onClick={props.zumWeg}>
           <span className="wegkopf">
@@ -323,5 +335,48 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         </Gruppe>
       )}
     </Seite>
+  )
+}
+
+/** Zusätzliche Mobility-Einheit: erst fragen, wie lange und mit welchem Schwerpunkt, dann starten. */
+function MobilBlatt(props: { offen: boolean; schliessen: () => void; daten: Daten; datum: string; ortVorschlag: number; starten: (e: Einheit) => void }) {
+  const profil = props.daten.profil!
+  const [minuten, setMinuten] = useState(20)
+  const [schwerpunkt, setSchwerpunkt] = useState<MobilSchwerpunkt>("ganz")
+  const [ort, setOrt] = useState(Math.min(props.ortVorschlag, Math.max(0, profil.orte.length - 1)))
+  const schwach = useMemo(() => schwachstellen(props.daten).some((m) => m.startsWith("mobilitaet")), [props.daten])
+  const auswahl = MOBIL_SCHWERPUNKTE.filter((x) => x.id !== "schwach" || schwach)
+  const einheit = useMemo(() => (props.offen ? mobilitaetsEinheit(profil, props.daten, props.datum, minuten, schwerpunkt, ort) : null), [props.offen, profil, props.daten, props.datum, minuten, schwerpunkt, ort])
+  return (
+    <Blatt offen={props.offen} onClose={props.schliessen} titel="Mobility-Einheit" hoch>
+      <h4>Wie lange möchtest du heute Mobility machen?</h4>
+      <WertWahl werte={[10, 15, 20, 30, 45]} wert={minuten} onChange={setMinuten} einheit="min" min={5} max={90} />
+      <h4>Schwerpunkt</h4>
+      <Chips werte={auswahl} gewaehlt={[schwerpunkt]} onChange={(x) => x[0] && setSchwerpunkt(x[0])} einzeln />
+      {profil.orte.length > 1 ? (
+        <>
+          <h4>Wo?</h4>
+          <Chips werte={profil.orte.map((o, i) => ({ id: String(i), name: o.name || "Ort " + (i + 1) }))} gewaehlt={[String(ort)]} onChange={(x) => x[0] && setOrt(Number(x[0]))} einzeln />
+        </>
+      ) : null}
+      {einheit ? (
+        <>
+          <h4>
+            {einheit.plaetze.length} Übungen · etwa {einheit.minuten} min
+          </h4>
+          <ol className="schritte mobilvorschau">
+            {einheit.plaetze.map((p, i) => (
+              <li key={i}>
+                {p.uebung.name}
+                <small> · {p.vorgabe.saetze} × {p.uebung.belastung === "zeit" ? (p.vorgabe.last || 30) + " s" : p.vorgabe.wdh_von + (p.vorgabe.wdh_bis > p.vorgabe.wdh_von ? " bis " + p.vorgabe.wdh_bis : "")}</small>
+              </li>
+            ))}
+          </ol>
+          <button type="button" className="knopf voll gross" disabled={!einheit.plaetze.length} onClick={() => props.starten(einheit)}>
+            Mobility starten
+          </button>
+        </>
+      ) : null}
+    </Blatt>
   )
 }
