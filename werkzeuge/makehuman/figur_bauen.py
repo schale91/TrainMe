@@ -9,7 +9,7 @@ Konventionen wie bisher in der App: Netz in Zentimetern, z ist oben, vorn ist -y
 dreht das nach three.js (y oben) und skaliert auf Meter.
 
 Vorberechnet und als eigene Attribute im Netz:
-  _KLEID   (Shirt locker, Shorts locker, Sport-Top eng, Sport-Shorts eng), Masken 0..1
+  _KLEID   (Shirt weit, Leggings, Sport-Top eng, Sport-Shorts eng), Abstandsfelder in cm
   _TUCH    Versatz der lockeren Kleidung in der Ruhehaltung (cm)
   _TUCHN   Normale der lockeren Kleidung (geglättet, Stoff statt Muskeln)
   _GESICHT (Augenbrauen, Lippen, Abstand über dem Haaransatz in cm)
@@ -402,10 +402,10 @@ def kleidung(p, nrm, tri, kanten, _ecken, kopf, gewicht):
     # Rundhals, vorn etwas tiefer
     hals_d = (nacken[2] - 1.5 - 3.5 * (1 - hinten) + 0.15 * s) - z
     l_arm = np.linalg.norm(achse, axis=1)
-    # Lockeres T-Shirt: Rumpf bis zu den Hüftgelenken, Ärmel bis zur Mitte des Oberarms
-    shirt_d = (1 - a) * np.minimum(z - (huefte - 1), hals_d) + a * (0.45 - t_arm) * l_arm
-    # Lockere Shorts: knielang, vom Bund unter der Taille
-    shorts_d = np.minimum(np.minimum(z - (knie + 7), (taille - 2) - z), achsel)
+    # Weites, kurzes T-Shirt: Saum knapp unter der Taille, Ärmel weit bis kurz über den Ellbogen
+    shirt_d = (1 - a) * np.minimum(z - (taille - 1), hals_d) + a * (0.62 - t_arm) * l_arm
+    # Leggings: hoher Bund über der Taille, bis zum Knöchel
+    shorts_d = np.minimum(np.minimum(z - (knoechel + 2.5), (taille + 1) - z), achsel)
     # Eng (Entwicklermodus): Sport-Top bis unter die Brust, runder Ausschnitt zu breiten Trägern, hinten höher;
     # Shorts bis 5 cm unter die Gesäßfalte
     kante = spitze[2] + 3 + 0.04 * s * s + 5 * hinten
@@ -417,7 +417,8 @@ def kleidung(p, nrm, tri, kanten, _ecken, kopf, gewicht):
     shorts = stufe(-1.0, 0.5, shorts_d)
 
     # Versatz der lockeren Kleidung: Stoff steht ab und fällt vorn von der Brust, hinten von den Schulterblättern
-    versatz = nrm * (np.maximum(shirt * 1.4, shorts * 1.5))[:, None]
+    # Shirt steht ab (Ärmel weit), Leggings liegen an
+    versatz = nrm * (shirt * (1.4 + 1.3 * a) + shorts * 0.1)[:, None]
     # Rumpf in Zylinderkoordinaten um die Körperachse
     mitte_y = kopf["spine02"][1]
     w = np.arctan2(y - mitte_y, x)
@@ -447,12 +448,11 @@ def kleidung(p, nrm, tri, kanten, _ecken, kopf, gewicht):
     radial = np.stack([np.cos(w), np.sin(w), np.zeros_like(w)], 1)
     versatz += radial * (0.85 * fall * shirt)[:, None]
     # Shorts leicht ausgestellt
-    versatz += nrm * (shorts * np.clip((huefte - z) * 0.03, 0, 0.6))[:, None]
     versatz = glaetten(versatz, kanten, len(p), 12, (shirt + shorts) > 0)
     tuch = (versatz * np.maximum(shirt, shorts)[:, None] / np.maximum(np.maximum(shirt, shorts), 1e-6)[:, None]).astype(np.float32)
     tuch[(shirt + shorts) <= 0] = 0
     tn = normalen(p + tuch, tri)
-    tn = glaetten(tn, kanten, len(p), 40, (shirt + shorts) > 0)
+    tn = glaetten(tn, kanten, len(p), 40, shirt > 0)
     tn = tn / np.maximum(np.linalg.norm(tn, axis=1, keepdims=True), 1e-9)
 
     # Gesicht: Augenbrauen als Bogen über den Augen, Lippen über die Lippenknochen, Kopfhaut unter den Haaren
