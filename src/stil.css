@@ -2382,14 +2382,39 @@ select.ampel.rot {
 .figur.klein {
   max-width: 200px;
 }
-/* Dehnfigur: quadratisch, Phase und Sekunden darunter */
+/* Dehnfigur: quadratisch, Phase und Sekunden darunter, Schalter für die Gelenke oben rechts im Bild */
+.dehnbuehne {
+  position: relative;
+  max-width: 320px;
+  margin: 4px auto 2px;
+}
+.dehnfigur.klein .dehnbuehne {
+  max-width: 220px;
+}
 .dehnfigur .figur {
   aspect-ratio: 8 / 7;
-  margin-bottom: 2px;
+  margin: 0;
+  max-width: 100%;
 }
 .dehnfigur.klein .figur {
   aspect-ratio: 1;
-  max-width: 220px;
+}
+.gelenkknopf {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: inherit;
+  font-size: 0.75rem;
+}
+.gelenkknopf.an {
+  background: #45d6ff;
+  border-color: #45d6ff;
+  color: #0b1c24;
 }
 .dehnhinweis {
   margin: -4px 0 8px;

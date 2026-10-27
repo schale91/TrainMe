@@ -114,7 +114,8 @@ export const RUECKEN: Record<string, Dehnung> = {
   roll_down: wdh("seite", STAND, VORBEUGE, 5, { halten: 2, aus: 5, hinweis: "Langsam abrollen, Wirbel für Wirbel wieder aufrollen." }),
   bruecke_rad: halte("seite", mit(RUECKENLAGE_AUF, { g: { ...B("schulter", [175, 25, 0]), ...B("ellbogen", [140, 90]) } }), H({ ...B("huefte", [-25, 8, 0]), ...B("knie", [80]), ...B("fuss", [10, 0]), ...B("schulter", [200, 15, 0]), ...B("ellbogen", [0, 90]), ...B("hand", [80, 0]), lws: [-45, 0, 0], bws: [-45, 0, 0], hals: [-25, 0, 0] }, [-60, 0, 0])),
   kamel: halte("seite", KNIESTAND, mit(KNIESTAND, { dreh: [-10, 0, 0], g: { ...B("huefte", [-15, 5, 0]), ...B("schulter", [-85, 15, 0]), ...B("ellbogen", [0, 0]), lws: [-35, 0, 0], bws: [-30, 0, 0], hals: [-30, 0, 0] } })),
-  fisch: halte("seite", RUECKENLAGE, mit(RUECKENLAGE, { g: { ...B("schulter", [-25, 15, 0]), ...B("ellbogen", [90, 0]), bws: [-35, 0, 0], hals: [-40, 0, 0] } })),
+  // Becken und Beine bleiben liegen, die Unterarme stützen, die Brust hebt sich, der Scheitel berührt den Boden leicht
+  fisch: halte("seite", mit(RUECKENLAGE, { g: { ...B("schulter", [-5, 10, 0]), ...B("ellbogen", [0, 0]) } }), mit(RUECKENLAGE, { g: { lws: [38, 0, 0], bws: [-14, 0, 0], hals: [-48, 0, 0], kopf: [-12], ...B("schulter", [-62, 12, 0]), ...B("ellbogen", [92, 0]), ...B("hand", [0, 0]) } })),
   ball_seitdehnung: halte("vorn", mit(SEITLAGE, { g: { ...B("huefte", [10, 0, 0]), ...B("knie", [10]) } }), mit(SEITLAGE, { g: { ...B("huefte", [10, 0, 0]), ...B("knie", [10]), schulter_r: [175, 0, 0], schulter_l: [175, 0, 0], lws: [0, -15, 0], bws: [0, -18, 0] } }), { hilfsmittel: [{ art: "ball", unter: "ruecken" }] }),
   skin_the_cat: folge("seite", [
     [H({ ...B("schulter", [178, 15, 0]), ...B("ellbogen", [0, 0]) }, undefined, { pos: [0, 0.8, 0], boden: false }), 1.5, "Hängen", true],

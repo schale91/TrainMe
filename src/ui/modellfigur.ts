@@ -374,6 +374,13 @@ export class Modellfigur {
     return weltP(bone).add(marke.position.clone().applyQuaternion(weltQ(eltern)))
   }
 
+  /** Gelenkmitte am Modell (für die Gelenk-Einblendung) */
+  gelenkPunkt(gelenk: string): THREE.Vector3 | null {
+    if (gelenk === "becken") return weltP(this.hueftknochen)
+    const e = this.eintraege.find((x) => x.gelenk === gelenk && x.anteil === undefined)
+    return e ? weltP(e.bone) : null
+  }
+
   tiefster(): number {
     let min = Infinity
     const v = new THREE.Vector3()

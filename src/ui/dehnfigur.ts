@@ -457,6 +457,65 @@ function herausschieben(h: Hindernis, p: THREE.Vector3, koerper: THREE.Vector3):
 /** Gehaltene Gegenstände (Stange zum Hängen) berühren die Hände absichtlich */
 const GEHALTEN = new Set(["stange"])
 
+// ---------------------------------------------------------------- Gelenk-Einblendung
+/** Knochenlinien: Gelenk zu Gelenk; „@…“ ist eine Marke am Ende (Scheitel, Hand, Fußspitze) */
+const KETTE: [string, string][] = [
+  ["becken", "lws"],
+  ["lws", "bws"],
+  ["bws", "hals"],
+  ["hals", "kopf"],
+  ["kopf", "@kopf"],
+  ...(["l", "r"] as const).flatMap((s): [string, string][] => [
+    ["hals", "schulter_" + s],
+    ["schulter_" + s, "ellbogen_" + s],
+    ["ellbogen_" + s, "hand_" + s],
+    ["hand_" + s, "@hand_" + s],
+    ["becken", "huefte_" + s],
+    ["huefte_" + s, "knie_" + s],
+    ["knie_" + s, "fuss_" + s],
+    ["fuss_" + s, "@fuss_" + s],
+  ]),
+]
+/** Einstellung für alle Figuren: Gelenke und Knochenlinien durch Körper und Kleidung hindurch zeigen */
+export const anzeige = { gelenke: false }
+
+const LINIE = new THREE.MeshBasicMaterial({ color: "#45d6ff", depthTest: false, transparent: true, opacity: 0.9 })
+const PUNKT = new THREE.MeshBasicMaterial({ color: "#ffffff", depthTest: false, transparent: true, opacity: 0.95 })
+const LINIE_GEO = new THREE.CylinderGeometry(1, 1, 1, 8)
+const PUNKT_GEO = new THREE.SphereGeometry(1, 12, 8)
+
+class Skelett {
+  gruppe = new THREE.Group()
+  linien: THREE.Mesh[] = []
+  punkte: THREE.Mesh[] = []
+  constructor() {
+    for (let i = 0; i < KETTE.length; i++) {
+      const l = new THREE.Mesh(LINIE_GEO, LINIE)
+      l.renderOrder = 998
+      this.linien.push(l)
+      this.gruppe.add(l)
+      const p = new THREE.Mesh(PUNKT_GEO, PUNKT)
+      p.renderOrder = 999
+      p.scale.setScalar(0.018)
+      this.punkte.push(p)
+      this.gruppe.add(p)
+    }
+  }
+  stelle(ort: (name: string) => THREE.Vector3) {
+    const y = new THREE.Vector3(0, 1, 0)
+    KETTE.forEach(([a, b], i) => {
+      const pa = ort(a), pb = ort(b)
+      const d = pb.clone().sub(pa)
+      const l = this.linien[i]
+      l.position.copy(pa).add(pb).multiplyScalar(0.5)
+      l.quaternion.setFromUnitVectors(y, d.clone().normalize())
+      l.scale.set(0.006, Math.max(0.001, d.length()), 0.006)
+      // Punkt am Gelenk (Anfang der Linie); Endmarken bekommen keinen
+      this.punkte[i].position.copy(pa)
+    })
+  }
+}
+
 // ---------------------------------------------------------------- Szene und Kamera
 const BLICK: Record<string, [number, number, number]> = {
   vorn: [0, 0.25, 1],
@@ -553,6 +612,15 @@ class Buehne {
   }
 
   festBasis = new Map<THREE.Object3D, THREE.Vector3>()
+  skelett: Skelett | null = null
+
+  /** Ort eines Gelenks bzw. einer Endmarke an der gezeigten Figur */
+  private gelenkOrt(name: string): THREE.Vector3 {
+    if (name.startsWith("@")) return this.koerper.punkt(name.slice(1) as Punkt)
+    const m = this.modell?.gelenkPunkt(name)
+    if (m) return m
+    return (name === "becken" ? this.koerper.becken : this.koerper.k[name]).getWorldPosition(new THREE.Vector3())
+  }
 
   /** Sichtbare Haut als Punkte in Weltkoordinaten */
   punkte(): THREE.Vector3[] {
@@ -652,6 +720,14 @@ class Buehne {
       for (const o of this.fest) if (GEHALTEN.has(o.name)) o.position.copy(this.festBasis.get(o)!).add(c)
     }
     this.modell?.gesicht(t)
+    if (anzeige.gelenke) {
+      if (!this.skelett) {
+        this.skelett = new Skelett()
+        this.szene.add(this.skelett.gruppe)
+      }
+      this.skelett.gruppe.visible = true
+      this.skelett.stelle((n) => this.gelenkOrt(n))
+    } else if (this.skelett) this.skelett.gruppe.visible = false
     for (const o of this.beweglich) this.szene.remove(o)
     this.beweglich = beweglicheHilfsmittel(this.koerper, this.d.hilfsmittel || [])
     for (const o of this.beweglich) this.szene.add(o)
@@ -828,6 +904,12 @@ function wischenDreht(e: Eintrag): () => void {
     c.removeEventListener("pointerup", hoch)
     c.removeEventListener("pointercancel", hoch)
   }
+}
+
+/** Gelenk-Einblendung für alle Figuren an- oder ausschalten und sofort neu zeichnen */
+export function gelenkeZeigen(an: boolean) {
+  anzeige.gelenke = an
+  for (const e of eintraege) zeichne(e, e.still ? 0 : performance.now() / 1000)
 }
 
 /** Standbild zu einer Zeit t (für Prüfungen und Vorschaubilder). */
