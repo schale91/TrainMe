@@ -124,7 +124,7 @@ export interface Haarwerte {
 }
 
 function haarMaterial(name: string, w: Haarwerte): THREE.Material {
-  const m = new THREE.MeshStandardMaterial({ name, color: "#3a2216", roughness: 0.45, metalness: 0.05, side: THREE.DoubleSide })
+  const m = new THREE.MeshStandardMaterial({ name, color: "#4a2b1b", roughness: 0.45, metalness: 0.05, side: THREE.DoubleSide })
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, w)
     const kopf = `uniform vec4 uQ;
@@ -165,20 +165,19 @@ vec3 haarDrehe(vec3 v) {
 
 /** Messgitter auf Körper und Kleidung (Entwicklermodus): macht Rundungen und Verdrehungen sichtbar */
 export const RASTER = { value: 0 }
-/** Ohne Kleidung (Entwicklermodus): Kleidung und Socken weg, nur Haut */
+/** Ohne Kleidung (Entwicklermodus): Shorts, Bustier und Socken weg, nur Haut */
 export const NACKT = { value: 0 }
 /**
- * Alltagskleidung für alle: weites, kurzes T-Shirt in Terrakotta und schwarze Leggings. Nur im
+ * Alltagskleidung für alle: locker fallendes T-Shirt mit kurzen Ärmeln und knielange, weite Shorts. Nur im
  * Entwicklermodus (0) die enge Sportkleidung zum genauen Prüfen.
  */
 export const LOCKER = { value: 1 }
 
-/** Farbe der Kleidung aus den Abstandsfeldern im Netz (cm, positiv bedeckt; vKleid: Shirt, Leggings; Top, Shorts eng) */
+/** Farbe der Kleidung aus den Abstandsfeldern im Netz (cm, positiv bedeckt; vKleid: Shirt, Shorts locker; Top, Shorts eng) */
 const KLEID_FARBE = `
 if (uLocker > 0.5) {
-  // weites Shirt in Terrakotta über schwarzen Leggings (Farben linear)
-  if (vKleid.x > 0.0) { diffuseColor.rgb = vec3(0.42, 0.085, 0.045); stoffig = true; }
-  else if (vKleid.y > 0.0) { diffuseColor.rgb = vec3(0.012, 0.012, 0.015); stoffig = true; }
+  if (vKleid.x > 0.0) { diffuseColor.rgb = vec3(0.07, 0.17, 0.23); stoffig = true; }
+  else if (vKleid.y > 0.0) { diffuseColor.rgb = vec3(0.03, 0.035, 0.05); stoffig = true; }
   // Saum und Bündchen etwas dunkler
   if (stoffig && (vKleid.x > 0.0 ? vKleid.x : vKleid.y) < 0.7) diffuseColor.rgb *= 0.78;
 } else {
@@ -440,7 +439,7 @@ export class Modellfigur {
     })
     const haut = "#d9a07a"
     const stoff = new THREE.Color("#4e2e24")
-    const socke = new THREE.Color("#3b3d42")
+    const socke = new THREE.Color("#f2f2f0")
     const hautMaterial = () => {
       const m = new THREE.MeshStandardMaterial({ name: "Haut", color: haut, roughness: 0.55 })
       m.onBeforeCompile = (sh) => {
@@ -456,7 +455,7 @@ export class Modellfigur {
             "#include <common>\nattribute vec4 _kleid;\nattribute vec4 _tuch;\nattribute vec4 _tuchn;\nattribute vec4 _gesicht;\nvarying vec3 vRuhe;\nvarying vec4 vKleid;\nvarying vec3 vGesicht;\nuniform float uLocker;\nuniform float uNackt;",
           )
           // Lockere Kleidung: Stoff steht ab, fällt von Brust und Schulterblättern, Normalen glatt wie Stoff
-          .replace("#include <beginnormal_vertex>", `#include <beginnormal_vertex>\nif ${an} objectNormal = normalize(mix(objectNormal, normalize(_tuchn.xyz), smoothstep(-1.0, 0.5, 6.0 * _kleid.x)));`)
+          .replace("#include <beginnormal_vertex>", `#include <beginnormal_vertex>\nif ${an} objectNormal = normalize(mix(objectNormal, normalize(_tuchn.xyz), smoothstep(-1.0, 0.5, 6.0 * max(_kleid.x, _kleid.y))));`)
           .replace("#include <begin_vertex>", `#include <begin_vertex>\nvRuhe = position;\nvKleid = _kleid * 6.0;\nvGesicht = vec3(_gesicht.xy, _gesicht.z * 6.0);\nif ${an} transformed += _tuch.xyz * 10.0;`)
         sh.fragmentShader = sh.fragmentShader
           .replace(
