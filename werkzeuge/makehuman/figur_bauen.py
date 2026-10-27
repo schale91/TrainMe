@@ -66,7 +66,7 @@ FORM = {
     "hip/hip-scale-horiz": -1.0,
     "hip/hip-scale-vert": 1.0,
     "measure/measure-frontchest-dist": -0.75,
-    "stomach/stomach-tone": -0.6,
+    "stomach/stomach-tone": 0.4,
     "hip/hip-waist": 0.26,
     # schmalere, weichere Schultern
     "measure/measure-shoulder-dist": -0.6,
@@ -76,14 +76,25 @@ FORM = {
     "armslegs/l-upperarm-muscle": -0.3,
     "armslegs/r-upperarm-muscle": -0.3,
 }
+# Augen größer (Anteil), wie bei der früheren, leicht stilisierten Figur
+AUGEN = 0.16
 # Weicheres, freundliches Gesicht und schlanker Hals (Formziele von MakeHuman, Anteil 0..1)
 GESICHT = {
     "head/head-oval": 0.5,
+    # Kopf wie bei der früheren Figur: größer, runder, jünger
+    "head/head-scale-vert-incr": 1.0,
+    "head/head-scale-horiz-incr": 0.7,
+    "head/head-scale-depth-incr": 0.7,
+    "head/head-age-decr": 0.5,
+    "head/head-round": 0.3,
+    "nose/nose-scale-vert-decr": 0.25,
+    "cheek/l-cheek-volume-incr": 0.3,
+    "cheek/r-cheek-volume-incr": 0.3,
     "chin/chin-width-decr": 0.4,
     "chin/chin-prominent-decr": 0.3,
     "forehead/forehead-nubian-decr": 0.3,
-    "eyes/l-eye-scale-incr": 0.25,
-    "eyes/r-eye-scale-incr": 0.25,
+    "eyes/l-eye-scale-incr": 0.5,
+    "eyes/r-eye-scale-incr": 0.5,
     "nose/nose-scale-horiz-decr": 0.25,
     "nose/nose-point-width-decr": 0.3,
     "mouth/mouth-upperlip-volume-incr": 0.2,
@@ -243,6 +254,14 @@ def bauen(zw, ziel):
     koerper_q = gruppen["body"]
     boden = pos[np.unique(koerper_q)][:, 2].min()
     pos[:, 2] -= boden
+    # Größere Augen wie bei der früheren Figur: Augen und Lider um die Augenmitte vergrößern, nach außen auslaufend
+    for g in ("helper-l-eye", "helper-r-eye"):
+        ae = np.unique(gruppen[g])
+        mitte = pos[ae].mean(0)
+        r = np.linalg.norm(pos[ae] - mitte, axis=1).mean()
+        d = np.linalg.norm(pos - mitte, axis=1)
+        w = 1 - stufe(r * 1.4, r * 3.4, d)
+        pos = mitte + (pos - mitte) * (1 + AUGEN * w)[:, None]
 
     # Skelett: Gelenke sind Mittelpunkte von Punktgruppen des Grundnetzes
     skel = json.load(open(q["default.mhskel"]))
@@ -425,7 +444,7 @@ def kleidung(p, nrm, tri, kanten, _ecken, kopf, gewicht):
     shorts = stufe(-1.0, 0.5, shorts_d)
 
     # Versatz der lockeren Kleidung: Stoff steht ab und fällt vorn von der Brust, hinten von den Schulterblättern
-    versatz = nrm * (np.maximum(shirt * 1.4, shorts * 1.5))[:, None]
+    versatz = nrm * (np.maximum(shirt * 0.9, shorts * 1.0))[:, None]
     # Rumpf in Zylinderkoordinaten um die Körperachse
     mitte_y = kopf["spine02"][1]
     w = np.arctan2(y - mitte_y, x)
@@ -447,15 +466,14 @@ def kleidung(p, nrm, tri, kanten, _ecken, kopf, gewicht):
     fall = np.zeros(len(p))
     for i in np.where(rumpf_shirt)[0]:
         best = r[i]
-        for dz in range(0, 40):
+        for dz in range(0, 6):
             v = huelle.get((wb[i], zb[i] + dz))
             if v is not None:
                 best = max(best, v - dz * nz * 0.035)
         fall[i] = best - r[i]
     radial = np.stack([np.cos(w), np.sin(w), np.zeros_like(w)], 1)
-    versatz += radial * (0.85 * fall * shirt)[:, None]
+    versatz += radial * (0.3 * fall * shirt)[:, None]
     # Shorts leicht ausgestellt
-    versatz += nrm * (shorts * np.clip((huefte - z) * 0.03, 0, 0.6))[:, None]
     versatz = glaetten(versatz, kanten, len(p), 12, (shirt + shorts) > 0)
     tuch = (versatz * np.maximum(shirt, shorts)[:, None] / np.maximum(np.maximum(shirt, shorts), 1e-6)[:, None]).astype(np.float32)
     tuch[(shirt + shorts) <= 0] = 0
@@ -618,7 +636,7 @@ def gitter(spalten, zeilen, versatz=0, zu=False):
 
 def haare(p, nrm, tri, feld, kopf, arm):
     """
-    Lange, glatte Haare bis über die Schulterblätter mit seitlich gelegtem Pony:
+    Glatte Haare bis knapp über die Schultern mit seitlich gelegtem Pony:
     - Kappe über der Kopfhaut (exakt am Haaransatz geschnitten),
     - Vorhang in zwei Lagen, fällt vom Kopf und legt sich über Schultern und Rücken,
     - Pony, von links nach rechts über die Stirn gelegt, endet über den Augenbrauen.
@@ -631,7 +649,7 @@ def haare(p, nrm, tri, feld, kopf, arm):
     um = -np.ones(len(kp), dtype=np.int64)
     um[benutzt] = np.arange(len(benutzt))
     kp, kn, kf, kt = kp[benutzt], kn[benutzt], kf[benutzt], um[kt]
-    kp = kp + kn * (0.1 + 0.6 * stufe(0, 4.5, kf))[:, None]
+    kp = kp + kn * (0.1 + 0.35 * stufe(0, 4.5, kf))[:, None]
 
     # Körper in Zylinderkoordinaten um die senkrechte Achse durch die Kopfmitte (ohne Arme)
     kopfpunkte = p[(p[:, 2] > kh[2] + 2)]
@@ -685,14 +703,15 @@ def haare(p, nrm, tri, feld, kopf, arm):
         v = (math.degrees(wk) + 180) % 360 - 180  # -180..180, 0 vorn
         if abs(v) < 64:
             u = (v + 64) / 128
-            enden.append(auge[2] + 2.2 + 1.7 * (1 - u) + 0.3 * math.sin(wk * 9))
+            # seitlich gelegt: am Scheitel kaum Pony, zur anderen Seite bis knapp über die Augenbraue
+            enden.append(auge[2] + 2.3 + 4.5 * (1 - u) ** 2 + 0.3 * math.sin(wk * 9))
             pony.append(True)
         else:
             # vorn an den Seiten kürzer (bis zum Schlüsselbein), nach hinten lang über die Schulterblätter
             hinten = stufe(95, 140, abs(v))
-            enden.append(hals - 10 - 14 * hinten + 1.2 * math.sin(wk * 7.0))
+            enden.append(hals - 6 - 7 * hinten + 1.2 * math.sin(wk * 7.0))
             pony.append(False)
-    for abstand_kopf, abstand_koerper in ((1.5, 4.2), (0.95, 3.4)):
+    for abstand_kopf, abstand_koerper in ((1.1, 3.0), (0.6, 2.3)):
         r = np.zeros((zeilen, spalten))
         z = np.zeros((zeilen, spalten))
         for k, wk in enumerate(winkel):
