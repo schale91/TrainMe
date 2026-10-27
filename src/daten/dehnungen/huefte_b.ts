@@ -2,7 +2,7 @@
 // Tempo: dynamische Übungen 1 bis 3 s je Richtung, Dehnungen langsam hinein und mit der Haltezeit aus dem Plan.
 
 import type { Dehnung, Haltung } from "../../logik/dehnbewegung"
-import { AUSFALL, B, BAUCHLAGE, H, HOCKE, PLANK, RUECKENLAGE, RUECKENLAGE_AUF, STAND, VIERFUESSLER, VORBEUGE, folge, halte, mit, pnf, wdh } from "./basis"
+import { B, BAUCHLAGE, H, HOCKE, PLANK, RUECKENLAGE, RUECKENLAGE_AUF, STAND, VIERFUESSLER, VORBEUGE, folge, halte, mit, pnf, wdh } from "./basis"
 
 const STAND_W = mit(STAND, { g: B("huefte", [0, 7, 0]) })
 /** Auf den Zehenspitzen des linken Standbeins */
