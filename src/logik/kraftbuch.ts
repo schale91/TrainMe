@@ -406,7 +406,14 @@ export function einspielen(d: Daten, u: Uebernahme, heute: string, name = ""): v
     p.woche = p.woche.map((_, i) => (u.trainingstage.indexOf(i) >= 0 ? { art: "training" as const, ort: 0, minuten: 75, schwerpunkt: "kraft" as const } : { art: "frei" as const }))
     d.profil = p
     d.einstufung = { kraft: heute, mobil: heute }
-  } else if (u.ort && !d.profil.orte.some((o) => o.name === u.ort!.name)) d.profil.orte = [...d.profil.orte, u.ort]
+  } else {
+    // Vorhandenes Profil (z. B. vor der Übernahme schon eingerichtet): Kraftraum dazu und als Ort der Trainingstage,
+    // Einstufung gilt mit den Maxima aus dem Kraftbuch als erledigt
+    if (u.ort && !d.profil.orte.some((o) => o.name === u.ort!.name)) d.profil.orte = [...d.profil.orte, u.ort]
+    const k = u.ort ? d.profil.orte.findIndex((o) => o.name === u.ort!.name) : -1
+    if (k >= 0) d.profil.woche = d.profil.woche.map((t) => (t.art === "training" ? { ...t, ort: k } : t))
+    d.einstufung = { kraft: d.einstufung?.kraft || heute, mobil: d.einstufung?.mobil || heute }
+  }
   if (u.plan) {
     d.eigenerPlan = u.plan
     d.profil.planart = "eigen"

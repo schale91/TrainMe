@@ -21,6 +21,8 @@ export interface Bruecke {
   gespeichert?(): void
   /** Maximum je Hauptübung, mit dem das Kraftbuch ohne eigenen Eintrag gerechnet hat */
   startwerte?: Record<string, number>
+  /** TrainMe schließen und zurück in die Lebenswelt (die Lebenswelt zeigt dafür keine eigene Leiste) */
+  schliessen?(): void
   /** Zeichnet die Übungsfigur in eine Canvas (sonst zeichnet TrainMe selbst) */
   figur?(canvas: HTMLCanvasElement, uebung: string, geraet: string): void
 }

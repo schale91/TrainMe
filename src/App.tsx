@@ -307,6 +307,14 @@ export default function App() {
             </button>
           </div>
         ) : null}
+        {art === "eingebettet" && bruecke()?.schliessen && !offen && !einstufen ? (
+          <div className="navleiste zurlebenswelt">
+            <button type="button" className="navzurueck" onClick={() => bruecke()?.schliessen?.()}>
+              <Icon name="zurueck" groesse={24} dick={2.4} />
+              <span>Lebenswelt</span>
+            </button>
+          </div>
+        ) : null}
         {koppelHinweis ? (
           <div className="hinweistext">
             {koppelHinweis}{" "}
