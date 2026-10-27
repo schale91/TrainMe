@@ -35,10 +35,15 @@ jobs:
         run: |
           # Lizenziertes Modell aus dem privaten Repo TrainMe-Modell; ohne Zugang zeigt die App die einfache Figur
           if [ -n "$MODELL_TOKEN" ]; then
-            git clone --quiet --depth 1 "https://x-access-token:${MODELL_TOKEN}@github.com/${{ github.repository_owner }}/TrainMe-Modell.git" "$RUNNER_TEMP/modell"
-            mkdir -p public/modell
-            cp "$RUNNER_TEMP/modell/figur.bin" public/modell/figur.bin
-            rm -rf "$RUNNER_TEMP/modell"
+            # Ein falsch eingerichteter Token soll den Build nicht stoppen, nur das Modell fehlt dann
+            if git clone --quiet --depth 1 "https://x-access-token:${MODELL_TOKEN}@github.com/${{ github.repository_owner }}/TrainMe-Modell.git" "$RUNNER_TEMP/modell"; then
+              mkdir -p public/modell
+              cp "$RUNNER_TEMP/modell/figur.bin" public/modell/figur.bin
+              rm -rf "$RUNNER_TEMP/modell"
+              echo "Modell übernommen: $(stat -c %s public/modell/figur.bin) Bytes"
+            else
+              echo "::warning::MODELL_TOKEN hat keinen Lesezugriff auf TrainMe-Modell (Contents: Read-only): die Dehnfigur nutzt die einfache gezeichnete Figur."
+            fi
           else
             echo "::warning::Secret MODELL_TOKEN fehlt: die Dehnfigur nutzt die einfache gezeichnete Figur."
           fi
