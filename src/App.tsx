@@ -177,6 +177,15 @@ export default function App() {
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daten])
+  // Noch nie abgeglichen und die Lebenswelt antwortet (noch) nicht, etwa weil sie gerade selbst erst startet: bald
+  // wieder versuchen statt erst nach einer Minute, und so lange keine Einrichtung zeigen
+  const nieAbgeglichen = lw && !daten.profil && !ladeStand(schluessel).seit
+  useEffect(() => {
+    if (!nieAbgeglichen || !offline) return
+    const t = setInterval(() => void abgleich(), 3000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nieAbgeglichen, offline])
 
   // Koppeln über den Link aus dem QR-Code der Lebenswelt (nur in der APK)
   useEffect(
@@ -248,11 +257,12 @@ export default function App() {
     setDaten(neu)
   }
 
-  if (lw && !bereit && !daten.profil)
+  if (lw && !daten.profil && (!bereit || (offline && nieAbgeglichen)))
     return (
       <div className="app">
         <main>
           <p className="hinweistext mitte">Lade deine Daten aus der Lebenswelt …</p>
+          {offline ? <p className="hinweistext mitte klein">Die Lebenswelt antwortet noch nicht. TrainMe versucht es alle paar Sekunden wieder.</p> : null}
         </main>
       </div>
     )
