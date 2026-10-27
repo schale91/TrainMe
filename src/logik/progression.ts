@@ -30,18 +30,17 @@ export function e1rm(s: Satz): number {
 }
 
 /**
- * Belastbares Maximum aus den Sätzen einer Einheit. Einzelne Sätze, deren Schätzung mehr als 10 % über dem Median
- * liegt, zählen nicht: Sie sind fast immer falsch eingetragen (etwa vorausgefüllte Werte nur abgehakt), denn nach
- * 2 bis 3 Minuten Pause fällt die Leistung nicht von 8 auf 2 Wiederholungen. Sonst gilt der beste Satz.
+ * Belastbares Maximum aus den Sätzen einer Einheit: Mittel der beiden besten Schätzungen. Ein einzelner frischer Satz
+ * überschätzt, was über mehrere Sätze mit kurzer Pause geht (z. B. 80 kg × 8, danach nur noch × 2); so zählt er nur
+ * zur Hälfte. Mit nur einem Satz gilt dieser.
  */
 export function belastbaresE1rm(saetze: Satz[]): number {
   const w = saetze
     .map(e1rm)
     .filter((x) => x > 0)
-    .sort((a, b) => a - b)
+    .sort((a, b) => b - a)
   if (!w.length) return 0
-  const median = w[Math.floor((w.length - 1) / 2)]
-  return Math.max(...w.filter((x) => x <= median * 1.1))
+  return w.length === 1 ? w[0] : (w[0] + w[1]) / 2
 }
 
 /**
@@ -298,7 +297,8 @@ export function satzAnpassung(satz: Satz, v: Vorgabe, belastung: Uebung["belastu
   const lo = v.wdh_von
   const hi = v.wdh_bis
   const zuLeicht = satz.rir >= v.rir + 2 || satz.wdh > hi + 1
-  const zuSchwer = satz.rir < v.rir - 1 || satz.wdh < lo
+  // Schon eine Wiederholung weniger im Tank als geplant: bei kurzer Pause fallen die nächsten Sätze sonst stark ab
+  const zuSchwer = satz.rir < v.rir || satz.wdh < lo
   if (belastung === "gewicht" && satz.last && lasten.length) {
     const max = e1rm(satz)
     const zielWdh = Math.round((lo + hi) / 2)
