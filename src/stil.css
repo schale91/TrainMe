@@ -2449,6 +2449,60 @@ select.ampel.rot {
   border-color: #45d6ff;
   color: #0b1c24;
 }
+/* Vollbild: Knopf unten links in der kleinen Figur, Figur über den ganzen Bildschirm */
+.dehnvollknopf {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.dehnvoll {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: radial-gradient(ellipse at 50% 35%, #34305e, #15132b 75%);
+  color: #fff;
+  overscroll-behavior: contain;
+}
+.figurvoll {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+}
+.dehnvollzu {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  left: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 1.2rem;
+}
+.dehnvoll .dehnpruef {
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: 12px;
+}
+.dehnvollunten {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+.dehnvollunten .dehnphase {
+  color: #fff;
+}
 .dehnhinweis {
   margin: -4px 0 8px;
   text-align: center;

@@ -1,5 +1,5 @@
 // Feinere, rundere Haut für das Modell: Loop-Unterteilung (jedes Dreieck wird zu vier, Ecken und Kanten werden
-// geglättet) für Rumpf und Beine, die im Spielmodell am gröbsten sind. Arme, Kopf und Haare bleiben, wie sie sind.
+// geglättet). Welche Hautnetze geteilt werden, sagt das Muster; mehrere Durchgänge ergeben je das Vierfache.
 // Nähte zu nicht unterteilten Netzen bleiben fest, damit keine Spalten entstehen.
 
 import * as THREE from "three"
@@ -32,20 +32,26 @@ function gewichte(i1: number[], w1: number[], i2: number[], w2: number[]): [numb
   return [liste.map((x) => x[0]), liste.map((x) => x[1] / ges)]
 }
 
-export function verfeinern(modell: THREE.Object3D) {
+/**
+ * Unterteilt die Hautnetze, deren Material zum Muster passt. durchgang zählt die Durchgänge (1, 2, …): Ein Netz wird
+ * in einem Durchgang nur einmal geteilt, auch wenn verfeinern mehrfach aufgerufen wird.
+ */
+export function verfeinern(modell: THREE.Object3D, teilen: RegExp = TEILEN, durchgang = 1) {
   const netze: Netz[] = []
   modell.traverse((o) => {
     const m = o as THREE.Mesh
-    if (!m.isMesh || !HAUT.test(matName(m)) || m.geometry.userData.verfeinert) return
+    if (!m.isMesh || !HAUT.test(matName(m))) return
     const geo = m.geometry
+    const soll = teilen.test(matName(m))
+    if (soll && (geo.userData.verfeinert ?? 0) >= durchgang) return
     const pos = geo.getAttribute("position")
     const ecken = geo.index ? geo.index.array : Array.from({ length: pos.count }, (_, i) => i)
-    netze.push({ mesh: m, geo, teilen: TEILEN.test(matName(m)), ecken, punkt: new Int32Array(pos.count).fill(-1) })
+    netze.push({ mesh: m, geo, teilen: soll, ecken, punkt: new Int32Array(pos.count).fill(-1) })
   })
   if (!netze.some((n) => n.teilen)) return
 
   // Verschweißen über die Lage (das Modell hat je Ecke eigene Eckpunkte)
-  const schluessel = new Map<string, number>()
+  const schluessel = new Map<number, number>()
   const lage: THREE.Vector3[] = []
   const v = new THREE.Vector3()
   for (const n of netze) {
@@ -54,7 +60,8 @@ export function verfeinern(modell: THREE.Object3D) {
       const i = n.ecken[e]
       if (n.punkt[i] >= 0) continue
       v.fromBufferAttribute(pos, i)
-      const k = `${Math.round(v.x * 1000)},${Math.round(v.y * 1000)},${Math.round(v.z * 1000)}`
+      // Lage auf 0,1 mm gerundet als eine Zahl (je Achse 16 Bit um den Ursprung, bis ±3 m), exakt in 48 Bit
+      const k = (Math.round(v.x * 100) + 32768) * 4294967296 + (Math.round(v.y * 100) + 32768) * 65536 + (Math.round(v.z * 100) + 32768)
       let id = schluessel.get(k)
       if (id === undefined) {
         id = lage.length
@@ -66,10 +73,11 @@ export function verfeinern(modell: THREE.Object3D) {
   }
 
   // Kanten mit ihren gegenüberliegenden Punkten, Nachbarn je Punkt, feste Punkte (Rand oder Naht)
-  const kanten = new Map<string, { gegen: number[]; naht: boolean; geteilt: boolean }>()
+  const kanten = new Map<number, { gegen: number[]; naht: boolean; geteilt: boolean }>()
   const nachbarn: Set<number>[] = lage.map(() => new Set())
   const fest = new Uint8Array(lage.length)
-  const kante = (a: number, b: number) => (a < b ? a + "_" + b : b + "_" + a)
+  const N = lage.length
+  const kante = (a: number, b: number) => (a < b ? a * N + b : b * N + a)
   for (const n of netze)
     for (let e = 0; e < n.ecken.length; e += 3) {
       const p = [n.punkt[n.ecken[e]], n.punkt[n.ecken[e + 1]], n.punkt[n.ecken[e + 2]]]
@@ -87,8 +95,7 @@ export function verfeinern(modell: THREE.Object3D) {
     }
   for (const [k, x] of kanten)
     if (x.gegen.length !== 2) {
-      const [a, b] = k.split("_").map(Number)
-      fest[a] = fest[b] = 1
+      fest[Math.floor(k / N)] = fest[k % N] = 1
     }
 
   // Neue Lage der alten Punkte (Loop-Regel), feste bleiben
@@ -102,9 +109,9 @@ export function verfeinern(modell: THREE.Object3D) {
     return p.clone().multiplyScalar(1 - z * beta).addScaledVector(s, beta)
   })
   // Kantenpunkte: innen 3/8 + 3/8 + 1/8 + 1/8, an Nähten und Rändern genau die Mitte (sonst Spalten)
-  const kantenpunkt = new Map<string, THREE.Vector3>()
+  const kantenpunkt = new Map<number, THREE.Vector3>()
   for (const [k, x] of kanten) {
-    const [a, b] = k.split("_").map(Number)
+    const a = Math.floor(k / N), b = k % N
     const m = lage[a].clone().add(lage[b]).multiplyScalar(0.5)
     if (!x.naht && x.gegen.length === 2) m.multiplyScalar(0.75).addScaledVector(lage[x.gegen[0]].clone().add(lage[x.gegen[1]]), 0.125)
     kantenpunkt.set(k, m)
@@ -194,7 +201,7 @@ function ausgeben(g: THREE.BufferGeometry, ecken: [number, number, THREE.Vector3
     fein.morphAttributes.position = morphZiel.map((z) => new THREE.BufferAttribute(z, 3))
     fein.morphTargetsRelative = g.morphTargetsRelative
   }
-  fein.userData = { ...g.userData, verfeinert: true }
+  fein.userData = { ...g.userData, verfeinert: (g.userData.verfeinert ?? 0) + 1 }
   fein.computeBoundingBox()
   fein.computeBoundingSphere()
   return fein

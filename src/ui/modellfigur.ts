@@ -264,6 +264,27 @@ if (uRaster > 0.5) {
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.25, 0.25), mitte);
 }`
 
+/**
+ * Feine Hautstruktur für die Nahansicht: Poren und leichte Unebenheiten als Relief (aus der Lage in der Ruhehaltung,
+ * cm), ohne Textur. Braucht vRuhe und vViewPosition.
+ */
+const HAUT_GLSL = `
+float hautHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float hautRauschen(vec3 x) {
+  vec3 i = floor(x), f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hautHash(i), hautHash(i + vec3(1, 0, 0)), f.x), mix(hautHash(i + vec3(0, 1, 0)), hautHash(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(hautHash(i + vec3(0, 0, 1)), hautHash(i + vec3(1, 0, 1)), f.x), mix(hautHash(i + vec3(0, 1, 1)), hautHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+vec3 hautRelief(vec3 n, float staerke) {
+  float h = 0.55 * hautRauschen(vRuhe * 1.7) + 0.3 * hautRauschen(vRuhe * 6.5) + 0.15 * hautRauschen(vRuhe * 19.0);
+  vec3 dpx = dFdx(-vViewPosition), dpy = dFdy(-vViewPosition);
+  vec3 r1 = cross(dpy, n), r2 = cross(n, dpx);
+  float det = dot(dpx, r1);
+  vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
+  return normalize(abs(det) * n - staerke * grad);
+}`
+
 /** Gitter auch auf Netzen ohne Kleidungs-Shader (Arme, Bustier) */
 function mitRaster(m: THREE.MeshStandardMaterial, schluessel: string): THREE.MeshStandardMaterial {
   m.onBeforeCompile = (sh) => {
@@ -543,7 +564,7 @@ export class Modellfigur {
           .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\nif (uLocker > 0.5 && uNackt < 0.5) objectNormal = kleidNormale(position, objectNormal);")
           .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;\nif (uLocker > 0.5 && uNackt < 0.5) transformed += kleidVersatz(position, objectNormal);")
         sh.fragmentShader = sh.fragmentShader
-          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform vec3 uStoff;\nuniform vec3 uSocke;\nuniform float uRaster;\nuniform float uNackt;\nuniform float uLocker;\nuniform float uTeil;")
+          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform vec3 uStoff;\nuniform vec3 uSocke;\nuniform float uRaster;\nuniform float uNackt;\nuniform float uLocker;\nuniform float uTeil;\n" + HAUT_GLSL)
           .replace(
             "#include <color_fragment>",
             `#include <color_fragment>
@@ -567,6 +588,7 @@ export class Modellfigur {
           )
           // Stoff matt wie das Bustier, Haut seidig
           .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n if (stoffig) roughnessFactor = 0.85;")
+          .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n normal = hautRelief(normal, stoffig ? 0.6e-4 : 1.2e-4);")
       }
       m.customProgramCacheKey = () => "kleidung" + teil
     }
@@ -578,17 +600,22 @@ export class Modellfigur {
       const ersetze = (alt: THREE.Material): THREE.Material => {
         const n = alt.name || ""
         const std = (farbe: string, rau = 0.6) => new THREE.MeshStandardMaterial({ name: n, color: farbe, roughness: rau })
+        // Haut: leichter, warmer Schimmer an den Rändern, wie bei durchscheinender Haut
+        const hautMat = () => new THREE.MeshPhysicalMaterial({ name: n, color: haut, roughness: 0.5, sheen: 0.4, sheenColor: new THREE.Color("#ff9a7a"), sheenRoughness: 0.55 })
         if (/Skin_(Body|Leg)/.test(n)) {
-          const m = std(haut, 0.55)
+          const m = hautMat()
           kleid(m)
           return m
         }
         if (/Skin_Head/.test(n)) {
           // Kopfhaut unter den Haarsträhnen in Haarfarbe (Scheitel und Hinterkopf)
-          const m = std(haut, 0.55)
+          const m = hautMat()
           m.onBeforeCompile = (sh) => {
             sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;")
-            sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace(
+            sh.fragmentShader = sh.fragmentShader
+              .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\n" + HAUT_GLSL)
+              .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n normal = hautRelief(normal, 1.0e-4);")
+              .replace(
               "#include <color_fragment>",
               `#include <color_fragment>
               float h = vRuhe.z;
@@ -603,7 +630,7 @@ export class Modellfigur {
         }
         if (/Skin_Arm/.test(n)) {
           // Arme: Ärmel des lockeren Shirts
-          const m = std(haut, 0.55)
+          const m = hautMat()
           kleid(m, 1)
           return m
         }

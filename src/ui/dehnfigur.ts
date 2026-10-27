@@ -7,6 +7,7 @@
 // Wird erst geladen, wenn eine Dehnfigur sichtbar wird (eigener Teil des Bundles).
 
 import * as THREE from "three"
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { clone as skelettKlon } from "three/examples/jsm/utils/SkeletonUtils.js"
 import { POS_GRUND, standZu, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand } from "../logik/dehnbewegung"
 import { LOCKER, Modellfigur, NACKT, RASTER } from "./modellfigur"
@@ -529,7 +530,7 @@ const BLICK: Record<string, [number, number, number]> = {
 class Buehne {
   szene = new THREE.Scene()
   koerper = new Koerper()
-  kamera = new THREE.PerspectiveCamera(28, 4 / 3, 0.05, 30)
+  kamera = new THREE.PerspectiveCamera(28, 4 / 3, 0.01, 30)
   fest: THREE.Object3D[] = []
   beweglich: THREE.Object3D[] = []
   modell: Modellfigur | null = null
@@ -541,11 +542,12 @@ class Buehne {
     readonly haltenS?: number,
   ) {
     const s = this.szene
-    s.add(new THREE.HemisphereLight("#ffffff", "#9b8a7a", 1.25))
+    s.add(new THREE.HemisphereLight("#ffffff", "#9b8a7a", 0.95))
     const sonne = new THREE.DirectionalLight("#fff6ea", 2.1)
     sonne.position.set(2.2, 4.5, 3)
     sonne.castShadow = true
-    sonne.shadow.mapSize.set(1024, 1024)
+    sonne.shadow.mapSize.set(2048, 2048)
+    sonne.shadow.radius = 3
     const sc = sonne.shadow.camera
     sc.left = -2
     sc.right = 2
@@ -734,8 +736,8 @@ class Buehne {
     return st
   }
 
-  /** Vom Nutzer gewischte Drehung (Bogenmaß) und Zoom, zusätzlich zur Ansicht der Übung */
-  blick = { azi: 0, hoehe: 0, nah: 1 }
+  /** Vom Nutzer gewischte Drehung (Bogenmaß), Zoom und Verschiebung des Blickpunkts (m), zusätzlich zur Ansicht der Übung */
+  blick = { azi: 0, hoehe: 0, nah: 1, x: 0, y: 0 }
 
   rahme(seiten: number) {
     const r = new THREE.Vector3(...(BLICK[this.d.ansicht] || BLICK.schraeg)).normalize()
@@ -745,14 +747,28 @@ class Buehne {
     const fov = rad(this.kamera.fov)
     const noetig = (this.radius * 1.12) / Math.sin(fov / 2) / Math.min(1, seiten)
     this.kamera.aspect = seiten
-    this.kamera.position.copy(this.mitte).addScaledVector(dir, Math.max(1.6, noetig) / this.blick.nah)
-    this.kamera.lookAt(this.mitte)
+    // Verschiebung quer zur Blickrichtung (rechts und oben im Bild)
+    const rechts = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize()
+    const oben = new THREE.Vector3().crossVectors(dir, rechts).normalize()
+    const ziel = this.mitte.clone().addScaledVector(rechts, this.blick.x).addScaledVector(oben, this.blick.y)
+    this.kamera.position.copy(ziel).addScaledVector(dir, Math.max(1.6, noetig) / this.blick.nah)
+    this.kamera.lookAt(ziel)
     this.kamera.updateProjectionMatrix()
   }
 }
 
 // ---------------------------------------------------------------- Ein Renderer für alle Canvas
 let renderer: THREE.WebGLRenderer | null = null
+let umgebungsLicht: THREE.Texture | null = null
+/** Weiches Raumlicht für Spiegelungen und Schatten-Aufhellung (einmal je Renderer) */
+function umgebung(r: THREE.WebGLRenderer) {
+  if (!umgebungsLicht) {
+    const pm = new THREE.PMREMGenerator(r)
+    umgebungsLicht = pm.fromScene(new RoomEnvironment(), 0.04).texture
+    pm.dispose()
+  }
+  return umgebungsLicht
+}
 function studio() {
   if (renderer) return renderer
   renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true })
@@ -774,6 +790,8 @@ interface Eintrag {
   still: boolean
   melden?: (st: Stand) => void
   io?: IntersectionObserver
+  /** Kurzer Tipp ohne Wischen (z. B. Vollbild öffnen); ohne diesen setzt ein Doppeltipp die Ansicht zurück */
+  antippen?: () => void
 }
 const eintraege: Eintrag[] = []
 let laeuft = false
@@ -784,6 +802,10 @@ function zeichne(e: Eintrag, t: number) {
   const { width, height } = e.canvas
   const g = r.getSize(new THREE.Vector2())
   if (g.x !== width || g.y !== height) r.setSize(width, height, false)
+  if (!e.buehne.szene.environment) {
+    e.buehne.szene.environment = umgebung(r)
+    e.buehne.szene.environmentIntensity = 0.45
+  }
   const st = e.buehne.stelle(e.still ? e.buehne.laenge() * 0.3 : t - e.start)
   e.buehne.rahme(width / height)
   r.render(e.buehne.szene, e.buehne.kamera)
@@ -817,10 +839,10 @@ function schleife(ms: number) {
  * Zeigt eine Dehnung in der Canvas, solange sie sichtbar ist. haltenS: Haltezeit aus der Vorgabe. melden bekommt
  * Phase und Restzeit für die Anzeige unter der Figur. Bei „Bewegung reduzieren“ ein Standbild in der Dehnung.
  */
-export function zeigeDehnung(canvas: HTMLCanvasElement, d: Dehnung, haltenS?: number, melden?: (st: Stand) => void): () => void {
+export function zeigeDehnung(canvas: HTMLCanvasElement, d: Dehnung, haltenS?: number, melden?: (st: Stand) => void, antippen?: () => void): () => void {
   const fenster = canvas.ownerDocument.defaultView ?? window
   const still = !!fenster.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-  const e: Eintrag = { canvas, buehne: new Buehne(d, haltenS), start: performance.now() / 1000, sichtbar: true, still, melden }
+  const e: Eintrag = { canvas, buehne: new Buehne(d, haltenS), start: performance.now() / 1000, sichtbar: true, still, melden, antippen }
   eintraege.push(e)
   zeichne(e, performance.now() / 1000)
   if ("IntersectionObserver" in fenster) {
@@ -844,35 +866,52 @@ export function zeigeDehnung(canvas: HTMLCanvasElement, d: Dehnung, haltenS?: nu
 
 /**
  * Wischen auf der Figur dreht die Ansicht frei (waagerecht um die Figur, senkrecht von unten bis oben), zwei Finger
- * zoomen, doppelt tippen stellt die Ansicht der Übung wieder her.
+ * zoomen (bis zehnfach) und verschieben, das Mausrad zoomt. Ein kurzer Tipp ruft antippen (Vollbild), sonst stellt ein
+ * Doppeltipp die Ansicht der Übung wieder her.
  */
 function wischenDreht(e: Eintrag): () => void {
   const c = e.canvas
   const finger = new Map<number, { x: number; y: number }>()
   let abstand = 0
+  let mitteAlt: { x: number; y: number } | null = null
   let letzterTipp = 0
+  let start = { x: 0, y: 0, t: 0 }
+  let gewischt = false
   const neu = () => {
     if (e.still || !e.sichtbar) zeichne(e, performance.now() / 1000)
   }
   const zurueck = () => {
-    e.buehne.blick = { azi: 0, hoehe: 0, nah: 1 }
+    e.buehne.blick = { azi: 0, hoehe: 0, nah: 1, x: 0, y: 0 }
     neu()
   }
+  /** Bildschirm-Pixel in Meter am Blickpunkt (für das Verschieben) */
+  const meterJePixel = () => {
+    const k = e.buehne.kamera
+    const weite = k.position.distanceTo(e.buehne.mitte) * 2 * Math.tan(rad(k.fov) / 2)
+    return weite / (c.clientHeight || 300)
+  }
   const ab = (ev: PointerEvent) => {
-    // Doppeltipp (auch ohne dblclick, das nicht jede WebView meldet)
     const jetzt = performance.now()
-    if (finger.size === 0 && jetzt - letzterTipp < 320) zurueck()
+    // Doppeltipp (auch ohne dblclick, das nicht jede WebView meldet)
+    if (!e.antippen && finger.size === 0 && jetzt - letzterTipp < 320) zurueck()
     letzterTipp = jetzt
+    if (finger.size === 0) {
+      start = { x: ev.clientX, y: ev.clientY, t: jetzt }
+      gewischt = false
+    }
     finger.set(ev.pointerId, { x: ev.clientX, y: ev.clientY })
     c.setPointerCapture?.(ev.pointerId)
     if (finger.size === 2) {
       const [a, b] = [...finger.values()]
       abstand = Math.hypot(a.x - b.x, a.y - b.y)
+      mitteAlt = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+      gewischt = true
     }
   }
   const zug = (ev: PointerEvent) => {
     const alt = finger.get(ev.pointerId)
     if (!alt) return
+    if (Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > 8) gewischt = true
     const b = e.buehne.blick
     if (finger.size === 1) {
       const breite = c.clientWidth || 300
@@ -883,26 +922,43 @@ function wischenDreht(e: Eintrag): () => void {
     if (finger.size === 2) {
       const [p, q] = [...finger.values()]
       const d = Math.hypot(p.x - q.x, p.y - q.y)
-      if (abstand > 0) b.nah = THREE.MathUtils.clamp((b.nah * d) / abstand, 0.7, 2.5)
+      if (abstand > 0) b.nah = THREE.MathUtils.clamp((b.nah * d) / abstand, 0.7, 10)
       abstand = d
+      const m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }
+      if (mitteAlt) {
+        const s = meterJePixel()
+        b.x -= (m.x - mitteAlt.x) * s
+        b.y += (m.y - mitteAlt.y) * s
+      }
+      mitteAlt = m
     }
     neu()
   }
   const hoch = (ev: PointerEvent) => {
     finger.delete(ev.pointerId)
     abstand = 0
+    mitteAlt = null
+    if (finger.size === 0 && !gewischt && e.antippen && performance.now() - start.t < 300) e.antippen()
+  }
+  const rad_ = (ev: WheelEvent) => {
+    ev.preventDefault()
+    const b = e.buehne.blick
+    b.nah = THREE.MathUtils.clamp(b.nah * Math.exp(-ev.deltaY * 0.0015), 0.7, 10)
+    neu()
   }
   c.style.touchAction = "none"
-  c.style.cursor = "grab"
+  c.style.cursor = e.antippen ? "zoom-in" : "grab"
   c.addEventListener("pointerdown", ab)
   c.addEventListener("pointermove", zug)
   c.addEventListener("pointerup", hoch)
   c.addEventListener("pointercancel", hoch)
+  c.addEventListener("wheel", rad_, { passive: false })
   return () => {
     c.removeEventListener("pointerdown", ab)
     c.removeEventListener("pointermove", zug)
     c.removeEventListener("pointerup", hoch)
     c.removeEventListener("pointercancel", hoch)
+    c.removeEventListener("wheel", rad_)
   }
 }
 

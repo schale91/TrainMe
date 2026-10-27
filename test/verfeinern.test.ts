@@ -40,4 +40,17 @@ describe("Haut verfeinern", () => {
     expect(arm.geometry).toBe(a)
     expect(haar.geometry).toBe(h)
   })
+
+  it("teilt im zweiten Durchgang nur die gewählten Netze noch einmal", () => {
+    const wurzel = new THREE.Group()
+    const kopf = netz("EM3D_Skin_Head", new THREE.IcosahedronGeometry(10, 1))
+    const arm = netz("EM3D_Skin_Arm", new THREE.IcosahedronGeometry(5, 1))
+    wurzel.add(kopf, arm)
+    const k0 = kopf.geometry.getAttribute("position").count, a0 = arm.geometry.getAttribute("position").count
+    verfeinern(wurzel, /Skin_(Head|Arm)/, 1)
+    verfeinern(wurzel, /Skin_Head/, 2)
+    verfeinern(wurzel, /Skin_Head/, 2)
+    expect(kopf.geometry.getAttribute("position").count).toBe(k0 * 16)
+    expect(arm.geometry.getAttribute("position").count).toBe(a0 * 4)
+  })
 })
