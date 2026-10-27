@@ -39,7 +39,7 @@ export const PHASEN: Record<Phase, PhasenInfo> = {
   },
   schnellkraft: {
     name: "Schnellkraft",
-    ziel: "Kraft schnell machen, zum Beispiel für Schlägerkopfgeschwindigkeit.",
+    ziel: "Kraft schnell machen, zum Beispiel für Sprints, Sprünge und Würfe.",
     training: "Wenige, schwere Wiederholungen (3 bis 5) mit viel Reserve, explosive Übungen bekommen mehr Sätze.",
     aufbau: "Setzt die Maximalkraft in Tempo um. Steht direkt vor der Saison, damit die Form dann da ist.",
     farbe: "#e7792f",
@@ -62,6 +62,7 @@ export const PHASEN: Record<Phase, PhasenInfo> = {
 
 /** Name und Texte einer Phase; in der Reha heißen die Phasen Einstieg, Aufbau, Festigen und Erholung. */
 export function phaseInfo(phase: Phase, sport?: string): PhasenInfo {
+  if (sport === "golf" && phase === "schnellkraft") return { ...PHASEN[phase], ziel: "Kraft schnell machen, zum Beispiel für Schlägerkopfgeschwindigkeit." }
   return sport === "reha" ? { ...PHASEN[phase], ...REHA_PHASEN[phase] } : PHASEN[phase]
 }
 

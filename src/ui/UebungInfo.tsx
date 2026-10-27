@@ -4,6 +4,7 @@ import { MUSTER_NAME, MUSKEL_NAME, GERAET_NAME, GELENK_NAME } from "./texte"
 import type { Uebung } from "../logik/typen"
 import { Blatt, Plakette } from "./ios"
 import Figur from "./Figur"
+import { golfSichtbar, listeOhneGolf, ohneGolf } from "./golf"
 
 export function UebungInfoBlatt(props: { uebung: Uebung | null; onClose: () => void }) {
   const u = props.uebung
@@ -28,37 +29,37 @@ export function UebungInfoInhalt({ u }: { u: Uebung }) {
         <Plakette>{MUSTER_NAME[u.muster]}</Plakette>
         <Plakette farbe="var(--flaeche3)">{STUFE[u.stufe]}</Plakette>
         {u.einseitig ? <Plakette farbe="var(--flaeche3)">je Seite</Plakette> : null}
-        {u.golf ? <Plakette farbe="#1f7a5a">{u.golf === 3 ? "Golf-spezifisch" : u.golf === 2 ? "Wichtig für Golf" : "Gut für Golf"}</Plakette> : null}
+        {u.golf && golfSichtbar() ? <Plakette farbe="#1f7a5a">{u.golf === 3 ? "Golf-spezifisch" : u.golf === 2 ? "Wichtig für Golf" : "Gut für Golf"}</Plakette> : null}
       </div>
       <Figur uebung={u} />
-      <p className="infokurz">{i.kurz}</p>
+      <p className="infokurz">{ohneGolf(i.kurz)}</p>
       {u.auch && u.auch.length ? <p className="infoauch">Auch bekannt als: {u.auch.join(", ")}</p> : null}
 
       {i.ausfuehrung.length ? <h4>So geht's</h4> : null}
       <ol className="schritte">
-        {i.ausfuehrung.map((s, k) => (
+        {listeOhneGolf(i.ausfuehrung).map((s, k) => (
           <li key={k}>{s}</li>
         ))}
       </ol>
 
       <h4>Atmung</h4>
-      <p>{i.atmung}</p>
+      <p>{ohneGolf(i.atmung)}</p>
 
       <h4>Typische Fehler</h4>
       <ul className="punkte fehler">
-        {i.fehler.map((s, k) => (
+        {listeOhneGolf(i.fehler).map((s, k) => (
           <li key={k}>{s}</li>
         ))}
       </ul>
 
       <h4>Das bringt's</h4>
       <ul className="punkte vorteile">
-        {i.vorteile.map((s, k) => (
+        {listeOhneGolf(i.vorteile).map((s, k) => (
           <li key={k}>{s}</li>
         ))}
       </ul>
 
-      {i.golf ? (
+      {i.golf && golfSichtbar() ? (
         <>
           <h4>Für deinen Golfschwung</h4>
           <p className="golftext">{i.golf}</p>
@@ -67,7 +68,7 @@ export function UebungInfoInhalt({ u }: { u: Uebung }) {
 
       <h4>Profi-Tipps</h4>
       <ul className="punkte tipps">
-        {i.tipps.map((s, k) => (
+        {listeOhneGolf(i.tipps).map((s, k) => (
           <li key={k}>{s}</li>
         ))}
       </ul>
@@ -75,7 +76,7 @@ export function UebungInfoInhalt({ u }: { u: Uebung }) {
       {i.varianten ? (
         <>
           <h4>Leichter und schwerer</h4>
-          <p>{i.varianten}</p>
+          <p>{ohneGolf(i.varianten)}</p>
         </>
       ) : null}
 

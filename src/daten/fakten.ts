@@ -29,8 +29,9 @@ export function prozentMethode(einheiten: number): { faktor: number; prozent: nu
 }
 
 /** Fakt passend zum Tag, wechselt täglich. */
-export function faktDesTages(datum: string, thema?: Fakt["thema"]): Fakt {
-  const liste = thema ? FAKTEN.filter((f) => f.thema === thema || f.thema === "allgemein") : FAKTEN
+export function faktDesTages(datum: string, thema?: Fakt["thema"], golf = false): Fakt {
+  // Golffakten nur für Golfer
+  const liste = (thema ? FAKTEN.filter((f) => f.thema === thema || f.thema === "allgemein") : FAKTEN).filter((f) => golf || f.thema !== "golf")
   let h = 0
   for (const c of datum) h = (h * 31 + c.charCodeAt(0)) >>> 0
   return liste[h % liste.length]

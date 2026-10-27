@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import { uebung } from "./daten/uebungen/index"
 import { prozentMethode } from "./daten/fakten"
 import { heute } from "./logik/plan"
+import { hatSport } from "./logik/auswahl"
+import { golfSetzen } from "./ui/golf"
 import { blockWoche, istEntlastung } from "./logik/progression"
 import { laden, leer, speichern } from "./logik/speicher"
 import { ABZEICHEN, abschliessen, stufe, type Ergebnis } from "./logik/spiel"
@@ -258,6 +260,8 @@ export default function App() {
     )
   if (!daten.profil) return <Einrichtung fertig={(p) => aendern((d) => void (d.profil = { ...p, jahresplan: p.jahresplan || jahresplanVorschlag(p, p.block_start) }))} />
   const profil = daten.profil
+  // Golfhinweise nur, wenn Golf gewählt ist (auch in Teilen ohne Profil, etwa dem Info-Fenster)
+  golfSetzen(hatSport(profil, "golf"))
 
   const fertig = (e: Einheit, protokolle: Protokoll[], _vollstaendig?: boolean, schmerzVor?: number) => {
     const tag = heute()

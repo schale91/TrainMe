@@ -9,6 +9,7 @@ import { neuerOrt, studio } from "../logik/speicher"
 import type { Beschwerde, Geraet, Gelenk, Gewichte, Ort, Profil, Wochentag } from "../logik/typen"
 import { Chips, Feld, Karten, MehrKarten, WertWahl, Zahl, ZahlChips } from "./teile"
 import { Segment } from "./ios"
+import { golfSichtbar } from "./golf"
 import { ARTEN, ERFAHRUNG, GELENKE, GERAETE, GERAETE_GRUPPEN, SAISON, SCHWERPUNKT, TERMINE, WOCHENTAGE, ZIELE } from "./texte"
 import { MASCHINEN } from "../logik/typen"
 import { Sym } from "./symbole"
@@ -440,7 +441,8 @@ export function GeraeteListe(props: { gewaehlt: Geraet[]; aendern: (g: Geraet[])
   return (
     <>
       {GERAETE_GRUPPEN.map((gr) => {
-        const liste = GERAETE.filter((g) => g.gruppe === gr.id)
+        // Golfschläger nur für Golfer oder wenn er schon gewählt ist
+        const liste = GERAETE.filter((g) => g.gruppe === gr.id && (g.id !== "golfschlaeger" || golfSichtbar() || hat(g.id)))
         const alle = liste.every((g) => hat(g.id))
         return (
           <div key={gr.id} className="geraetegruppe">

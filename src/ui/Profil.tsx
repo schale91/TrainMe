@@ -74,7 +74,7 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
     )
   if (seite === "timer") return <TimerSeite zurueck={zurueck} />
   if (seite === "sicherung") return <Sicherung daten={props.daten} ersetzen={props.ersetzen} zuruecksetzen={props.zuruecksetzen} zurueck={zurueck} />
-  if (seite === "ueber") return <Ueber zurueck={zurueck} />
+  if (seite === "ueber") return <Ueber zurueck={zurueck} profil={profil} />
   if (seite === "feedback") return <Feedback zurueck={zurueck} />
   if (seite === "jahresplan") return <JahresplanSeite profil={profil} heute={heute()} aendern={props.profilAendern} zurueck={zurueck} />
   if (seite === "update") return <UpdateSeite update={props.update} gefunden={props.updateGefunden} zurueck={zurueck} />
@@ -92,7 +92,7 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
   return (
     <Seite titel="Profil" untertitel={profil.name || undefined}>
       <Gruppe titel="Training">
-        <Zeile symbol={<SymKachel name="golf" farbe="#1f9e73" />} titel="Training und Sport" untertitel={sportText + " · " + zielText} onClick={() => setSeite("sport")} />
+        <Zeile symbol={<SymKachel name={sporte(profil).indexOf("golf") >= 0 ? "golf" : sporte(profil).indexOf("reha") >= 0 ? "herz" : "hantel"} farbe="#1f9e73" />} titel="Training und Sport" untertitel={sportText + " · " + zielText} onClick={() => setSeite("sport")} />
         <Zeile symbol={<SymKachel name="medaille" farbe="#e7792f" />} titel="Name und Erfahrung" wert={ERFAHRUNG.find((e) => e.id === profil.erfahrung)?.name} onClick={() => setSeite("ziel")} />
         <Zeile symbol={<SymKachel name="kalender" farbe="#d8506a" />} titel="Woche" wert={tage + " Trainingstage"} onClick={() => setSeite("woche")} />
         <Zeile symbol={<SymKachel name="haus" farbe="#4f68f0" />} titel="Orte und Geräte" wert={profil.orte.map((o) => o.name).join(", ")} onClick={() => setSeite("orte")} />
@@ -230,18 +230,26 @@ function Sicherung(props: { daten: Daten; ersetzen: (d: Daten) => void; zuruecks
   )
 }
 
-function Ueber(props: { zurueck: { text: string; onClick: () => void } }) {
+function Ueber(props: { zurueck: { text: string; onClick: () => void }; profil: ProfilT }) {
+  const sp = sporte(props.profil)
+  const golf = sp.indexOf("golf") >= 0
+  // Je gewählter Sportart ein Satz, was der Plan dafür tut
+  const SPORT_SATZ: Record<string, string> = {
+    golf: "Golf: Rotation, Schnellkraft, Hüfte und Brustwirbelsäule.",
+    fussball: "Fußball: keine schweren Beine vor dem Spiel, Vorbeugung für Beinbeuger und Adduktoren.",
+  }
+  const sportSaetze = sp.map((s) => SPORT_SATZ[s]).filter(Boolean)
   return (
     <Seite titel="Über TrainMe" zurueck={props.zurueck}>
       <Gruppe fuss={"Version " + __VERSION__ + " · offline, ohne Konto, ohne Werbung"}>
         <Zeile titel="Übungen in der Datenbank" wert={String(UEBUNGEN.length)} />
-        <Zeile titel="Golf-Übungen" wert={String(UEBUNGEN.filter((u) => u.golf).length)} />
+        {golf ? <Zeile titel="Golf-Übungen" wert={String(UEBUNGEN.filter((u) => u.golf).length)} /> : null}
       </Gruppe>
       <Gruppe titel="Wie TrainMe plant">
         <Zeile titel="Jahresplan" untertitel="Jeder Block hat eine Phase: Grundlage, Kraft, Schnellkraft vor der Saison, Erhalt in der Saison, danach Übergang." />
         <Zeile titel="Blöcke mit Entlastung" untertitel="4 Aufbauwochen, dann eine leichtere Woche. Die Reserve (RIR) sinkt im Block, wie in evidenzbasierten Programmen, etwa von Jeff Nippard." />
         <Zeile titel="Steigerung" untertitel="Doppelte Progression, RIR-Steuerung über das geschätzte Maximum (Epley-Formel), Gewichte immer auf deine echten Stufen gerundet." />
-        <Zeile titel="Sport" untertitel="Golf: Rotation, Schnellkraft, Hüfte und Brustwirbelsäule. Fußball: keine schweren Beine vor dem Spiel, Vorbeugung für Beinbeuger und Adduktoren." />
+        {sportSaetze.length ? <Zeile titel="Sport" untertitel={sportSaetze.join(" ")} /> : null}
       </Gruppe>
       <Gruppe titel="Quellen">
         <Zeile titel="Zourdos et al. 2016" untertitel="RIR-Skala, Journal of Strength and Conditioning Research" />
@@ -253,9 +261,9 @@ function Ueber(props: { zurueck: { text: string; onClick: () => void } }) {
         <Zeile titel="Grgic et al. 2018" untertitel="Pausenlänge und Kraftzuwachs, Sports Medicine" />
         <Zeile titel="Issurin 2010" untertitel="Blockperiodisierung, Sports Medicine" />
         <Zeile titel="Rønnestad et al. 2011" untertitel="Krafterhalt in der Saison, Journal of Strength and Conditioning Research" />
-        <Zeile titel="Ehlert 2020" untertitel="Krafttraining und Golfleistung, Journal of Sports Sciences" />
-        <Zeile titel="van der Horst et al. 2015, Harøy et al. 2019" untertitel="Verletzungsvorbeugung im Fußball" />
-        <Zeile titel="Titleist Performance Institute" untertitel="Golf-Screening, mytpi.com" />
+        {golf ? <Zeile titel="Ehlert 2020" untertitel="Krafttraining und Golfleistung, Journal of Sports Sciences" /> : null}
+        {sp.indexOf("fussball") >= 0 ? <Zeile titel="van der Horst et al. 2015, Harøy et al. 2019" untertitel="Verletzungsvorbeugung im Fußball" /> : null}
+        <Zeile titel="Titleist Performance Institute" untertitel={golf ? "Golf-Screening, mytpi.com" : "Orientierungswerte für einige Beweglichkeitstests, mytpi.com"} />
       </Gruppe>
       <p className="hinweistext">TrainMe nimmt bei Beschwerden Rücksicht, ersetzt aber keine ärztliche oder physiotherapeutische Behandlung.</p>
     </Seite>

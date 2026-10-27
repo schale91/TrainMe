@@ -31,6 +31,8 @@ export interface BeweglichkeitsTest {
   stufen?: Stufe[]
   /** Was die Bewertung bedeutet */
   bedeutung: string
+  /** Dasselbe ohne Golfbezug, für alle, die kein Golf gewählt haben */
+  allgemein?: string
   /** Welche Mobilitätsmuster helfen */
   muster: Muster[]
   quelle: string
@@ -162,6 +164,7 @@ export const TESTS: BeweglichkeitsTest[] = [
     schwach: 20,
     hoeherBesser: true,
     bedeutung: "Lehrbuchwerte liegen bei etwa 30 bis 40 Grad. Beim Golf braucht vor allem die vordere Hüfte Innenrotation im Durchschwung.",
+    allgemein: "Lehrbuchwerte liegen bei etwa 30 bis 40 Grad. Deutliche Unterschiede zwischen links und rechts sind ein Grund, die schwächere Seite gezielt zu dehnen.",
     muster: ["mobilitaet_huefte"],
     quelle: "Gelenkmessung nach Lehrbuchwerten (Physiotutors Assessment Book); Golfbezug: TPI",
   },
@@ -244,6 +247,7 @@ export const TESTS: BeweglichkeitsTest[] = [
     schwach: 10,
     hoeherBesser: true,
     bedeutung: "TPI setzt mehr als 25 Sekunden je Bein als Ziel. Gleichgewicht hilft, im Schwung stabil über dem Ball zu bleiben.",
+    allgemein: "TPI setzt mehr als 25 Sekunden je Bein als Ziel. Gleichgewicht hilft bei allem, was auf einem Bein passiert, etwa beim Laufen und Treppensteigen.",
     muster: ["balance"],
     quelle: "TPI Single Leg Balance Test (mytpi.com)",
   },
@@ -290,6 +294,7 @@ export const TESTS: BeweglichkeitsTest[] = [
       { wert: 2, text: "Kinn erreicht die Mitte des Schlüsselbeins" },
     ],
     bedeutung: "Im Golfschwung muss der Kopf ruhig bleiben, während die Schultern drehen. Dafür braucht es Rotation im Nacken.",
+    allgemein: "Rotation im Nacken braucht es etwa für den Schulterblick beim Autofahren und um den Kopf ruhig zu halten, während die Schultern drehen.",
     muster: ["mobilitaet_nacken"],
     quelle: "TPI Cervical Rotation Test (mytpi.com)",
   },
@@ -341,6 +346,7 @@ export const TESTS: BeweglichkeitsTest[] = [
       { wert: 2, text: "Unterarm erreicht die Neigung des Oberkörpers oder geht darüber hinaus" },
     ],
     bedeutung: "Der rechte Arm (bei Rechtshändern) braucht diese Außenrotation oben im Rückschwung, sonst wird der Schwung flach oder kurz.",
+    allgemein: "Diese Außenrotation braucht die Schulter für alles über Kopf, etwa Drücken über Kopf, Werfen oder Schwimmen.",
     muster: ["mobilitaet_schulter"],
     quelle: "TPI 90/90 Test (mytpi.com)",
   },
@@ -366,6 +372,7 @@ export const TESTS: BeweglichkeitsTest[] = [
       { wert: 2, text: "Beide Richtungen fließend und kontrolliert" },
     ],
     bedeutung: "Beckenkontrolle hilft, die Haltung im Schwung zu halten und den unteren Rücken zu entlasten.",
+    allgemein: "Beckenkontrolle hilft, die Haltung zu halten und den unteren Rücken zu entlasten.",
     muster: ["mobilitaet_huefte", "rumpf"],
     quelle: "TPI Pelvic Tilt Test (mytpi.com)",
   },
@@ -377,3 +384,9 @@ export function bewerte(t: BeweglichkeitsTest, wert: number): Bewertung {
 }
 
 export const testNach = (id: string) => TESTS.find((t) => t.id === id)
+
+/** Texte eines Tests passend zum Profil: ohne Golf keine Golfhinweise. */
+export function testTexte(t: BeweglichkeitsTest, golf: boolean): { bedeutung: string; hilfsmittel: string; quelle: string } {
+  if (golf) return { bedeutung: t.bedeutung, hilfsmittel: t.hilfsmittel, quelle: t.quelle }
+  return { bedeutung: t.allgemein || t.bedeutung, hilfsmittel: t.hilfsmittel.replace("Stab oder Golfschläger", "Stab, zum Beispiel ein Besenstiel"), quelle: t.quelle.replace("; Golfbezug: TPI", "") }
+}

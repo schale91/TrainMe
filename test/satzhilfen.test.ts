@@ -191,3 +191,32 @@ describe("Scheiben: von jeder Sorte genug", () => {
     expect(scheibenProSeite(181, 20, [5, 10, 20], true)).toBeNull()
   })
 })
+
+import { erlaubt, golfUebung } from "../src/logik/plan"
+import { UEBUNGEN } from "../src/daten/uebungen/index"
+
+describe("Ohne Golf nichts Golfspezifisches", () => {
+  it("Golfübungen sind nur mit Golf erlaubt, allgemeine Übungen mit Golfbezug bleiben", () => {
+    const ohne = { ...neuesProfil(), sport: "allgemein" as const, sporte: ["allgemein" as const] }
+    const mit = { ...neuesProfil(), sport: "golf" as const, sporte: ["golf" as const] }
+    const golfrunde = UEBUNGEN.find((u) => u.id === "golfrunde_zu_fuss")!
+    expect(golfUebung(golfrunde)).toBe(true)
+    expect(erlaubt(ohne, golfrunde)).toBe(false)
+    expect(erlaubt(mit, golfrunde)).toBe(true)
+    const radial = UEBUNGEN.find((u) => u.id === "radialduktion")!
+    expect(golfUebung(radial)).toBe(false)
+  })
+})
+
+import { golfSetzen, ohneGolf } from "../src/ui/golf"
+
+describe("Texte ohne Golf", () => {
+  it("Zusätze und Sätze mit Golfbezug fallen weg", () => {
+    golfSetzen(false)
+    expect(ohneGolf("Mit einem Tennisball oder Golfball. Belebt die Füße vor dem Training oder Golfen.")).toBe("Mit einem Tennisball. Belebt die Füße vor dem Training.")
+    expect(ohneGolf("Dehnt die Hüfte. Wichtig im Golfschwung.")).toBe("Dehnt die Hüfte.")
+    golfSetzen(true)
+    expect(ohneGolf("Wichtig im Golfschwung.")).toBe("Wichtig im Golfschwung.")
+    golfSetzen(false)
+  })
+})

@@ -45,7 +45,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const naechste = aktuell ? plan.find((e) => (profil.folge === "fortlaufend" || e.datum >= tag) && !istErledigt(daten, e)) : undefined
   const eigen = profil.planart === "eigen" && !!daten.eigenerPlan
   const planTag = eigen ? naechsterPlanTag(daten) : null
-  const fakt = faktDesTages(tag, hatSport(profil, "golf") ? "golf" : undefined)
+  const fakt = faktDesTages(tag, hatSport(profil, "golf") ? "golf" : undefined, hatSport(profil, "golf"))
   const reha = rehaAktiv(profil)
   const sperre = reha ? rehaSperre(profil, tag) : null
   const reaktion = reha ? offeneReaktion(daten, tag) : -1
@@ -244,7 +244,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         ) : (
           <div className="heutekarte ruhig">
             <span className="heutetitel">
-              <Sym name={heutige ? "haken" : termin.art === "sporttermin" ? "golf" : "mond"} groesse={26} />
+              <Sym name={heutige ? "haken" : termin.art === "sporttermin" ? (hatSport(profil, "golf") ? "golf" : "ziel") : "mond"} groesse={26} />
               {heutige ? "Heute erledigt" : termin.art === "sporttermin" ? TERMINE.find((x) => x.id === termin.termin)?.name || "Sporttermin" : "Ruhetag"}
             </span>
             <span className="heutevorschau">Erholung gehört zum Training. Diese Woche ist alles geschafft.</span>
@@ -298,7 +298,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                   </span>
                 ) : t.art === "sporttermin" ? (
                   <span className="mitsym">
-                    <Sym name="golf" groesse={18} farbe="var(--gold)" /> {TERMINE.find((x) => x.id === t.termin)?.name || "Termin"}
+                    <Sym name={hatSport(profil, "golf") ? "golf" : "ziel"} groesse={18} farbe="var(--gold)" /> {TERMINE.find((x) => x.id === t.termin)?.name || "Termin"}
                   </span>
                 ) : (
                   <span className="leise">frei</span>

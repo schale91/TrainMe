@@ -98,8 +98,15 @@ export function wochenaufteilung(profil: Profil): Tagesplan[] {
 }
 
 /** Darf die Übung bei den Beschwerden und Ausnahmen gemacht werden? */
+/** Reine Golfübung: aus dem Golfbereich, Golf im Namen oder nur mit Golfschläger machbar. */
+export function golfUebung(u: Uebung): boolean {
+  return u.id.startsWith("golf_") || /golf/i.test(u.name) || (u.geraete.length > 0 && u.geraete.every((g) => g.indexOf("golfschlaeger") >= 0))
+}
+
 export function erlaubt(profil: Profil, u: Uebung): boolean {
   if (profil.ausgeschlossen.indexOf(u.id) >= 0) return false
+  // Ohne Golf keine reinen Golfübungen
+  if (golfUebung(u) && !hatSport(profil, "golf")) return false
   for (const b of profil.beschwerden) {
     const last = u.gelenke[b.gelenk]
     if (!last) continue

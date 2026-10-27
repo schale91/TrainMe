@@ -4,7 +4,7 @@ import { hatSport } from "../logik/auswahl"
 import { useMemo, useState } from "react"
 import { uebung } from "../daten/uebungen/index"
 import { FAKTEN, faktDesTages, prozentMethode } from "../daten/fakten"
-import { TESTS, bewerte, type BeweglichkeitsTest } from "../daten/tests"
+import { TESTS, bewerte, testTexte, type BeweglichkeitsTest } from "../daten/tests"
 import { heute, montagVon, plusTage, schwachstellen } from "../logik/plan"
 import { ABZEICHEN, bestwert } from "../logik/spiel"
 import type { Daten, Messung, Protokoll } from "../logik/typen"
@@ -245,7 +245,7 @@ export function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => 
       ) : (
         <p className="hinweistext">Miss deine Beweglichkeit einmal im Monat. Schwache Bereiche bekommen dann automatisch mehr Mobilität im Plan.</p>
       )}
-      <Gruppe titel={golf ? "Tests (Golf-Screening zuerst)" : "Tests"} fuss="Orientierungswerte aus Fachliteratur und dem öffentlich beschriebenen TPI-Screening. Keine Diagnose: bei Schmerzen bitte ärztlich oder physiotherapeutisch abklären lassen.">
+      <Gruppe titel={golf ? "Tests (Golf-Screening zuerst)" : "Tests"} fuss={"Orientierungswerte aus Fachliteratur" + (golf ? " und dem öffentlich beschriebenen TPI-Screening" : "") + ". Keine Diagnose: bei Schmerzen bitte ärztlich oder physiotherapeutisch abklären lassen."}>
         {sortiert.map((t) => {
           const m = letzte(t.id)
           const b = m ? [bewerte(t, m.wert), ...(m.rechts !== undefined ? [bewerte(t, m.rechts)] : [])] : []
@@ -254,7 +254,7 @@ export function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => 
             <Zeile
               key={t.id}
               titel={t.name}
-              untertitel={m ? (t.seiten ? "L " + wertText(t, m.wert) + (m.rechts !== undefined ? " · R " + wertText(t, m.rechts) : "") : wertText(t, m.wert)) + " · " + datumText(m.datum) : t.bereich + (t.golf ? " · Golf-Screening" : "")}
+              untertitel={m ? (t.seiten ? "L " + wertText(t, m.wert) + (m.rechts !== undefined ? " · R " + wertText(t, m.rechts) : "") : wertText(t, m.wert)) + " · " + datumText(m.datum) : t.bereich + (golf && t.golf ? " · Golf-Screening" : "")}
               symbol={<span className="punkt" style={{ background: schlecht ? FARBE[schlecht] : "var(--linie)" }} />}
               wert={schlecht ? WORT[schlecht] : "messen"}
               onClick={() => oeffne(t)}
@@ -265,14 +265,14 @@ export function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => 
       <Blatt offen={!!test} onClose={() => setTest(null)} titel={test ? test.name : ""} hoch>
         {test ? (
           <div className="testblatt">
-            <p className="infokurz">{test.bedeutung}</p>
+            <p className="infokurz">{testTexte(test, golf).bedeutung}</p>
             <h4>So misst du</h4>
             <ol className="schritte">
               {test.anleitung.map((s, i) => (
                 <li key={i}>{s}</li>
               ))}
             </ol>
-            <p className="infoauch">Hilfsmittel: {test.hilfsmittel}</p>
+            <p className="infoauch">Hilfsmittel: {testTexte(test, golf).hilfsmittel}</p>
             <h4>Dein Ergebnis</h4>
             {test.einheit === "stufe" ? (
               (test.seiten ? (["links", "rechts"] as const) : (["links"] as const)).map((seite) => (
@@ -323,7 +323,7 @@ export function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => 
                 />
               </>
             ) : null}
-            <p className="quelle">Quelle: {test.quelle}</p>
+            <p className="quelle">Quelle: {testTexte(test, golf).quelle}</p>
           </div>
         ) : null}
       </Blatt>
@@ -339,7 +339,8 @@ function EinProzent(props: { daten: Daten }) {
   const tag = heute()
   const montag = montagVon(tag)
   const kraftWoche = daten.erledigt.filter((e) => e.datum >= montag && (e.art === "kraft" || e.art === undefined)).length
-  const fakt = faktDesTages(tag, (!!daten.profil && hatSport(daten.profil, "golf")) ? "golf" : undefined)
+  const golf = !!daten.profil && hatSport(daten.profil, "golf")
+  const fakt = faktDesTages(tag, golf ? "golf" : undefined, golf)
   const kurve = Array.from({ length: 21 }, (_, i) => {
     const x = Math.round((i / 20) * Math.max(n, 20) * 1.5)
     return { datum: "", wert: Math.pow(1.01, x) }
@@ -386,7 +387,7 @@ function EinProzent(props: { daten: Daten }) {
         })}
       </Gruppe>
       <Gruppe titel="Alle Fakten">
-        {FAKTEN.map((f, i) => (
+        {FAKTEN.filter((f) => golf || f.thema !== "golf").map((f, i) => (
           <Zeile key={i} titel={f.text} untertitel={f.quelle} />
         ))}
       </Gruppe>

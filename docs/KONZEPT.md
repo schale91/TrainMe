@@ -175,6 +175,14 @@ Kniegelenk, Kreuzschmerz. Mehrfachauswahl, je Gelenk die Seite, bei Operationen 
   Block (vorgemerkt, die Wochenvorschau zeigt den neuen Plan schon, beim Blockwechsel übernommen) oder Plan nicht
   verändern (verworfen). Name, Freigabe, Warnzeichen und Angaben für die Tests gelten immer sofort.
 
+### Golf nur für Golfer
+
+Ohne Golf als Sportart erscheint nichts Golfspezifisches: keine Golfübungen (Bereich „golf_“, Golf im Namen oder nur
+mit Golfschläger machbar) im Plan und in der Bibliothek, keine Golf-Plaketten, kein Abschnitt „Für deinen
+Golfschwung“, keine Golffakten, keine Hinweise „Golf-Screening“, Beweglichkeitstests mit allgemeinen statt
+golfbezogenen Erklärungen, Sätze und Zusätze mit Golfbezug in Übungstexten fallen weg. Allgemeine Übungen, die auch
+Golfern helfen, bleiben.
+
 ## 4. Spiel
 
 - XP je Einheit: 20 + 2 je Satz + 15 je neuem Bestwert, +10 für Mobilität oder Regeneration, +10 in der Entlastungswoche. Entlastung und Erholung werden also belohnt, nicht bestraft.
