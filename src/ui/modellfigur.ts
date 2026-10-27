@@ -189,6 +189,68 @@ vec3 haarDrehe(vec3 v, vec3 p) {
 export const RASTER = { value: 0 }
 /** Ohne Kleidung (Entwicklermodus): Shorts, Bustier und Socken weg, nur Haut */
 export const NACKT = { value: 0 }
+/**
+ * Alltagskleidung für alle: locker fallendes T-Shirt mit kurzen Ärmeln und knielange, weite Shorts. Nur im
+ * Entwicklermodus (0) die enge Sportkleidung zum genauen Prüfen.
+ */
+export const LOCKER = { value: 1 }
+
+/**
+ * Lockere Kleidung als Versatz der Haut in der Ruhehaltung (cm, z = Höhe, vorn = -y): Stoff steht etwas ab, das
+ * Shirt fällt vorn gerade von der Brust und hinten von den Schulterblättern. Am Hals und an den Netzgrenzen kein
+ * Versatz, damit keine Spalten entstehen. uTeil: 0 Rumpf und Beine, 1 Arme.
+ */
+const KLEID_VERTEX = `
+float maskeShirt(vec3 p) {
+  float h = p.z, s = abs(p.x);
+  float oben = 1.0 - smoothstep(125.0, 130.0, h);
+  // An der Naht Rumpf/Arm (Schulter, Achsel) liegt der Stoff an, sonst klafft dort ein Spalt zwischen den Netzen
+  if (uTeil < 0.5) return smoothstep(83.0, 85.0, h) * (1.0 - smoothstep(16.5, 18.5, s)) * oben * (1.0 - smoothstep(10.0, 12.0, s) * smoothstep(106.0, 111.0, h));
+  return smoothstep(117.0, 119.0, h) * (1.0 - smoothstep(26.0, 28.0, s)) * oben * smoothstep(16.0, 19.0, s);
+}
+float maskeHose(vec3 p) {
+  return uTeil < 0.5 ? smoothstep(51.0, 53.0, p.z) * (1.0 - smoothstep(100.5, 102.5, p.z)) : 0.0;
+}
+// Stoff glättet: Normale zur Rumpf- bzw. Beinachse hin, damit Bauchmuskeln und Brust nicht durchzeichnen
+vec3 kleidNormale(vec3 p, vec3 n) {
+  if (uTeil > 0.5) return n;
+  float w = max(maskeShirt(p), maskeHose(p)) * 0.75;
+  if (w <= 0.0) return n;
+  vec3 r = p.z < 80.0 ? vec3(p.x - sign(p.x) * 8.5, p.y - 1.0, 0.0) : vec3(p.x, p.y - 1.0, 0.0);
+  return normalize(mix(n, normalize(r + vec3(0.0, 0.0, 1e-4)), w));
+}
+vec3 kleidVersatz(vec3 p, vec3 n) {
+  float h = p.z, s = abs(p.x);
+  float sh = maskeShirt(p), ho = maskeHose(p);
+  vec3 d = n * max(sh * 1.3, ho * 2.0);
+  if (uTeil < 0.5) {
+    // Shirt fällt vorn gerade von der Brust, hinten von den Schulterblättern, seitlich von der Brustbreite
+    float unten = 1.0 - smoothstep(116.0, 119.0, h);
+    float rumpf = sh * unten * (1.0 - smoothstep(12.0, 14.5, s));
+    // nur zur Hälfte: größere Versätze verformen sich beim Beugen des Rumpfs
+    d.y += 0.5 * min(0.0, -12.6 + (117.0 - h) * 0.04 - (p.y + d.y)) * smoothstep(0.2, 0.7, -n.y) * rumpf;
+    d.y += 0.5 * max(0.0, 10.8 - (p.y + d.y)) * smoothstep(0.2, 0.7, n.y) * rumpf * smoothstep(94.0, 98.0, h);
+    // zwischen der Brust gespannt statt anliegend
+    float mitte = (1.0 - smoothstep(3.0, 6.5, s)) * smoothstep(112.0, 115.0, h) * (1.0 - smoothstep(123.0, 126.0, h));
+    d.y += 0.6 * min(0.0, -11.6 - (p.y + d.y)) * smoothstep(0.2, 0.7, -n.y) * sh * mitte;
+    float seitlich = smoothstep(0.3, 0.8, abs(n.x)) * sh * unten * smoothstep(84.0, 87.0, h);
+    d.x += 0.5 * sign(p.x) * max(0.0, 14.2 - (s + d.x * sign(p.x))) * seitlich;
+  }
+  return d;
+}`
+
+/** Farbe und Stoff der lockeren Kleidung (gleiche Bereiche wie KLEID_VERTEX) */
+const KLEID_FARBE = `
+bool lockerShirt = uTeil < 0.5 ? (h >= 84.0 && h < 131.0 && seite < 17.5) : (h > 118.0 && seite < 27.0);
+// Rundhals vorn, bis zum Hals offen
+if (h > 126.0 + seite * 0.25 && vRuhe.y < 2.0 && seite < 7.0) lockerShirt = false;
+bool lockerHose = uTeil < 0.5 && h >= 52.0 && h < 84.0;
+if (lockerShirt) { diffuseColor.rgb = vec3(0.07, 0.17, 0.23); stoffig = true; }
+else if (lockerHose) { diffuseColor.rgb = vec3(0.03, 0.035, 0.05); stoffig = true; }
+// Saum etwas dunkler
+if (lockerShirt && uTeil < 0.5 && h < 85.2) diffuseColor.rgb *= 0.8;
+if (lockerHose && h < 53.2) diffuseColor.rgb *= 0.8;
+if (h < 11.0) diffuseColor.rgb = uSocke;`
 const RASTER_GLSL = `
 if (uRaster > 0.5) {
   // Linien alle 3 cm in der Ruhehaltung: waagerechte Ringe weiß, senkrechte Ebenen hellblau, Körpermitte rot
@@ -315,7 +377,8 @@ export class Modellfigur {
 
   /** Haltung der Dehnfigur übernehmen (die Dehnfigur ist schon gestellt). */
   uebernehmen(boden: boolean, matte = 0.006) {
-    for (const b of this.bustier) b.visible = NACKT.value < 0.5
+    // Bustier nur bei der engen Sportkleidung (unter dem lockeren Shirt würde es durchstechen)
+    for (const b of this.bustier) b.visible = NACKT.value < 0.5 && LOCKER.value < 0.5
     const m = this.modell
     m.position.set(0, 0, 0)
     m.updateMatrixWorld(true)
@@ -448,15 +511,20 @@ export class Modellfigur {
     const haut = "#d9a07a"
     const stoff = new THREE.Color("#4e2e24")
     const socke = new THREE.Color("#f2f2f0")
-    const kleid = (m: THREE.MeshStandardMaterial) => {
+    const kleid = (m: THREE.MeshStandardMaterial, teil = 0) => {
       m.onBeforeCompile = (sh) => {
         sh.uniforms.uStoff = { value: stoff }
         sh.uniforms.uSocke = { value: socke }
         sh.uniforms.uRaster = RASTER
         sh.uniforms.uNackt = NACKT
-        sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;")
+        sh.uniforms.uLocker = LOCKER
+        sh.uniforms.uTeil = { value: teil }
+        sh.vertexShader = sh.vertexShader
+          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform float uLocker;\nuniform float uNackt;\nuniform float uTeil;\n" + KLEID_VERTEX)
+          .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\nif (uLocker > 0.5 && uNackt < 0.5) objectNormal = kleidNormale(position, objectNormal);")
+          .replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;\nif (uLocker > 0.5 && uNackt < 0.5) transformed += kleidVersatz(position, objectNormal);")
         sh.fragmentShader = sh.fragmentShader
-          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform vec3 uStoff;\nuniform vec3 uSocke;\nuniform float uRaster;\nuniform float uNackt;")
+          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform vec3 uStoff;\nuniform vec3 uSocke;\nuniform float uRaster;\nuniform float uNackt;\nuniform float uLocker;\nuniform float uTeil;")
           .replace(
             "#include <color_fragment>",
             `#include <color_fragment>
@@ -464,7 +532,9 @@ export class Modellfigur {
             float h = vRuhe.z;
             float seite = abs(vRuhe.x);
             bool stoffig = false;
-            if (uNackt < 0.5) {
+            if (uNackt < 0.5 && uLocker > 0.5) {
+            ${KLEID_FARBE}
+            } else if (uNackt < 0.5 && uTeil < 0.5) {
             // Scrunch-Shorts: hoher Bund bis knapp über den Nabel, Bein endet etwa 5 cm unter der Gesäßfalte (bei 79 cm)
             if (h > 74.0 && h < 101.5 && seite < 19.0) { diffuseColor.rgb = uStoff; stoffig = true; }
             // Bustier-Unterbrustband
@@ -479,7 +549,7 @@ export class Modellfigur {
           // Stoff matt wie das Bustier, Haut seidig
           .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n if (stoffig) roughnessFactor = 0.85;")
       }
-      m.customProgramCacheKey = () => "kleidung"
+      m.customProgramCacheKey = () => "kleidung" + teil
     }
     this.modell.traverse((o) => {
       const mesh = o as THREE.Mesh
@@ -510,6 +580,12 @@ export class Modellfigur {
             )
           }
           m.customProgramCacheKey = () => "kopfhaut"
+          return m
+        }
+        if (/Skin_Arm/.test(n)) {
+          // Arme: Ärmel des lockeren Shirts
+          const m = std(haut, 0.55)
+          kleid(m, 1)
           return m
         }
         if (/Skin|Arm/.test(n)) return mitRaster(std(haut, 0.55), "haut-raster")

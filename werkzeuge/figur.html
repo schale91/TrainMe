@@ -15,7 +15,8 @@
   if (q.get("modell") === "fbx") modellSetzen(await new FBXLoader().loadAsync("./privat/frau.fbx"))
   else if (q.get("modell")) modellSetzen(await modellLaden("./privat/figur.bin"))
   // ?raster=1, ?nackt=1, ?gelenke=1: Prüfansichten wie im Entwicklermodus
-  pruefansicht({ gelenke: !!q.get("gelenke"), raster: !!q.get("raster"), nackt: !!q.get("nackt") })
+  // ?locker=1: Alltagskleidung wie für alle Nutzer, sonst enge Sportkleidung (Entwicklermodus)
+  pruefansicht({ gelenke: !!q.get("gelenke"), raster: !!q.get("raster"), nackt: !!q.get("nackt"), eng: !q.get("locker") })
   const alle = { ...DEHNUNGEN, ...TEST_DEHNUNGEN }
   const ids = (q.get("ids") || Object.keys(alle).join(",")).split(",")
   // t=z: Zielhaltung (bei Abfolgen der mittlere Schritt)

@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest"
 import { DEHNUNGEN, TEST_DEHNUNGEN } from "../src/daten/dehnungen"
 import { TESTS } from "../src/daten/tests"
-import { uebung } from "../src/daten/uebungen/index"
+import { UEBUNGEN, uebung } from "../src/daten/uebungen/index"
 import { ablauf, dauer, mische, standZu } from "../src/logik/dehnbewegung"
 
 describe("Dehnfiguren", () => {
   it("jeder Beweglichkeitstest hat eine Animation", () => {
     for (const t of TESTS) expect(TEST_DEHNUNGEN[t.id], t.id).toBeDefined()
+  })
+  it("jede Mobilitätsübung hat eine Animation", () => {
+    const fehlen = UEBUNGEN.filter((u) => u.muster.startsWith("mobilitaet") && !DEHNUNGEN[u.id]).map((u) => u.id)
+    expect(fehlen).toEqual([])
   })
   it("jede Dehnfigur gehört zu einer echten Übung", () => {
     for (const id of Object.keys(DEHNUNGEN)) expect(uebung(id), id).toBeDefined()

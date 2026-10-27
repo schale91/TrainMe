@@ -20,8 +20,8 @@ function gespeichert(): Pruef {
     return AUS
   }
 }
-/** Was gerade gilt: ohne Entwicklermodus immer alles aus */
-const wirksam = (): Pruef => (entwickler() ? gespeichert() : AUS)
+/** Was gerade gilt: ohne Entwicklermodus alles aus und Alltagskleidung; im Entwicklermodus enge Sportkleidung */
+const wirksam = () => (entwickler() ? { ...gespeichert(), eng: true } : { ...AUS, eng: false })
 /** Alle sichtbaren Figuren teilen sich die Schalter */
 const hoerer = new Set<(p: Pruef) => void>()
 const KNOEPFE: [keyof Pruef, string][] = [
@@ -55,7 +55,7 @@ export default function Dehnfigur(props: { dehnung: Dehnung; haltenS?: number; k
       // ohne Speicher gilt die Einstellung bis zum Neustart
     }
     for (const h of hoerer) h(neu)
-    void import("./dehnfigur").then((f) => f.pruefansicht(neu))
+    void import("./dehnfigur").then((f) => f.pruefansicht({ ...neu, eng: entwickler() }))
   }
   const { dehnung, haltenS } = props
   useEffect(() => {
