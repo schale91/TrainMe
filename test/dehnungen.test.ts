@@ -23,3 +23,13 @@ describe("Dehnfiguren", () => {
     expect(standZu(d, 0.5).haltung.dreh?.[0] ?? 0).toBeCloseTo(0)
   })
 })
+
+describe("Dehnfigur ohne Durchdringen", () => {
+  it("geht in keiner Übung durch Boden oder Gegenstände (gezeichnete Figur)", async () => {
+    const { _durchdringungen } = await import("../src/ui/dehnfigur")
+    const funde: string[] = []
+    for (const [id, d] of Object.entries({ ...DEHNUNGEN, ...TEST_DEHNUNGEN }))
+      for (const f of _durchdringungen(d, 8, 1)) funde.push(`${id}: ${f.was} ${(f.tiefe * 100).toFixed(1)} cm bei t=${f.t}`)
+    expect(funde).toEqual([])
+  }, 60000)
+})

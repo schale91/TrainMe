@@ -2391,6 +2391,12 @@ select.ampel.rot {
   aspect-ratio: 1;
   max-width: 220px;
 }
+.dehnhinweis {
+  margin: -4px 0 8px;
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
 .dehnphase {
   margin: 0 0 8px;
   text-align: center;

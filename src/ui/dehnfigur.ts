@@ -294,9 +294,16 @@ class Koerper {
     for (const p of this.proben) for (const q of p.punkte) box.expandByPoint(v.copy(q).applyMatrix4(p.mesh.matrixWorld))
   }
 
+  /** Gezeigtes Modell: liefert die Stelle einer Marke an seinem Körper (sonst gilt die Rechenfigur) */
+  ersatz: ((marke: THREE.Object3D) => THREE.Vector3 | null) | null = null
+
   punkt(p: Punkt): THREE.Vector3 {
     if (p === "haende") return this.punkt("hand_l").add(this.punkt("hand_r")).multiplyScalar(0.5)
     const m = this.marken[p]
+    if (m && this.ersatz) {
+      const v = this.ersatz(m)
+      if (v) return v
+    }
     return m ? m.getWorldPosition(new THREE.Vector3()) : this.becken.getWorldPosition(new THREE.Vector3())
   }
 }
@@ -327,6 +334,7 @@ function kiste(mitte: THREE.Vector3, gr: [number, number, number], farbe: string
 function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
   const out: THREE.Object3D[] = []
   for (const h of liste) {
+    const vorher = out.length
     if (h.art === "wand") {
       const p = k.punkt(h.an)
       const n = { vorn: [0, 0, 1], hinten: [0, 0, -1], links: [1, 0, 0], rechts: [-1, 0, 0], unten: [0, -1, 0] }[h.richtung]
@@ -360,6 +368,7 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const p = k.punkt(h.an)
       out.push(zylinder(new THREE.Vector3(-0.7, p.y + 0.02, p.z), new THREE.Vector3(0.7, p.y + 0.02, p.z), 0.016, FARBE.metall))
     }
+    for (let i = vorher; i < out.length; i++) out[i].name = h.art
   }
   return out
 }
@@ -380,6 +389,73 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
   }
   return out
 }
+
+// ---------------------------------------------------------------- Nicht durch Boden und Gegenstände
+/** Fester Gegenstand, für viele Punkttests vorbereitet */
+interface Hindernis {
+  m: THREE.Mesh
+  inv: THREE.Matrix4
+  rot: THREE.Quaternion
+  s: THREE.Vector3
+}
+function hindernis(m: THREE.Mesh): Hindernis {
+  m.updateMatrixWorld(true)
+  m.geometry.boundingBox ?? m.geometry.computeBoundingBox()
+  return { m, inv: m.matrixWorld.clone().invert(), rot: m.getWorldQuaternion(new THREE.Quaternion()), s: m.getWorldScale(new THREE.Vector3()) }
+}
+
+/**
+ * Schub (Welt), der den Punkt p aus dem Gegenstand schiebt, bei Kästen zur Seite des Körpers (Becken) hin, damit
+ * eine Hand an der Wand nicht auf die andere Seite gedrückt wird. null, wenn der Punkt außen liegt.
+ */
+function herausschieben(h: Hindernis, p: THREE.Vector3, koerper: THREE.Vector3): THREE.Vector3 | null {
+  const g = h.m.geometry
+  const l = p.clone().applyMatrix4(h.inv)
+  const welt = (v: THREE.Vector3, laenge: number) => v.normalize().applyQuaternion(h.rot).multiplyScalar(laenge)
+  // Ball und liegende Rolle: man liegt darauf, also senkrecht nach oben heraus (nicht seitlich in den Boden)
+  const oben = new THREE.Vector3(0, 1, 0).applyQuaternion(h.rot.clone().invert())
+  const hoch = (a: number, b: number, c: number, ua: number, ub: number, uc: number, r: number) => {
+    const pu = a * ua + b * ub + c * uc
+    const t = -pu + Math.sqrt(Math.max(0, pu * pu - (a * a + b * b + c * c - r * r)))
+    return new THREE.Vector3(0, t * h.s.x, 0)
+  }
+  if (g instanceof THREE.SphereGeometry) {
+    const r = g.parameters.radius
+    if (l.length() >= r) return null
+    return hoch(l.x, l.y, l.z, oben.x, oben.y, oben.z, r)
+  }
+  if (g instanceof THREE.CylinderGeometry) {
+    const r = g.parameters.radiusTop, hh = g.parameters.height / 2
+    const rl = Math.hypot(l.x, l.z)
+    if (rl >= r || Math.abs(l.y) >= hh) return null
+    if (Math.abs(oben.y) < 0.3) return hoch(l.x, 0, l.z, oben.x, 0, oben.z, r)
+    const radial = (r - rl) * h.s.x, axial = (hh - Math.abs(l.y)) * h.s.y
+    if (radial <= axial) return welt(rl > 1e-6 ? new THREE.Vector3(l.x, 0, l.z) : new THREE.Vector3(1, 0, 0), radial)
+    return welt(new THREE.Vector3(0, Math.sign(l.y) || 1, 0), axial)
+  }
+  const b = g.boundingBox!
+  if (!b.containsPoint(l)) return null
+  const k = koerper.clone().applyMatrix4(h.inv)
+  let best: THREE.Vector3 | null = null
+  let min = Infinity
+  const lokalOben = Math.abs(oben.y) > 0.9 ? "y" : null
+  for (const a of ["x", "y", "z"] as const) {
+    const plus = k[a] >= (b.min[a] + b.max[a]) / 2
+    // nie nach unten in den Boden drücken (Fuß an der Wand, Knie vor dem Kasten)
+    if (a === lokalOben && plus !== oben.y > 0) continue
+    const tiefe = (plus ? b.max[a] - l[a] : l[a] - b.min[a]) * h.s[a]
+    if (tiefe < min) {
+      min = tiefe
+      const r = new THREE.Vector3()
+      r[a] = plus ? 1 : -1
+      best = welt(r, tiefe)
+    }
+  }
+  return best
+}
+
+/** Gehaltene Gegenstände (Stange zum Hängen) berühren die Hände absichtlich */
+const GEHALTEN = new Set(["stange"])
 
 // ---------------------------------------------------------------- Szene und Kamera
 const BLICK: Record<string, [number, number, number]> = {
@@ -432,6 +508,8 @@ class Buehne {
       // Die gezeichnete Figur rechnet die Haltung unsichtbar weiter, das Modell zeigt sie
       this.koerper.stelle({ g: {} })
       this.modell = new Modellfigur(skelettKlon(vorlage), this.koerper)
+      const modell = this.modell
+      this.koerper.ersatz = (m) => modell.punkt(m)
       this.koerper.wurzel.traverse((o) => {
         if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).visible = false
       })
@@ -444,15 +522,15 @@ class Buehne {
     const gesamt = this.laenge()
     const ziel = d.ziel || d.schritte?.[Math.floor((d.schritte.length - 1) / 2)]?.h || d.start
     this.koerper.stelle(ziel)
+    this.modell?.uebernehmen(ziel.boden !== false)
     this.fest = festeHilfsmittel(this.koerper, d.hilfsmittel || [])
     for (const o of this.fest) s.add(o)
+    for (const o of this.fest) this.festBasis.set(o, o.position.clone())
+    this.sitzAnpassen(ziel)
     for (const u of proben) {
-      const st = standZu(d, u * gesamt, haltenS)
-      this.koerper.stelle(st.haltung)
-      if (this.modell) {
-        this.modell.uebernehmen(st.haltung.boden !== false)
-        this.modell.umriss(box)
-      } else this.koerper.umriss(box)
+      this.stelle(u * gesamt)
+      if (this.modell) this.modell.umriss(box)
+      else this.koerper.umriss(box)
     }
     for (const o of this.fest) if (o instanceof THREE.Mesh && !(o.geometry instanceof THREE.BoxGeometry && o.scale.y > 2)) box.expandByObject(o)
     box.getCenter(this.mitte)
@@ -474,10 +552,105 @@ class Buehne {
     return d.seiten ? 2 * n : n
   }
 
+  festBasis = new Map<THREE.Object3D, THREE.Vector3>()
+
+  /** Sichtbare Haut als Punkte in Weltkoordinaten */
+  punkte(): THREE.Vector3[] {
+    const liste: THREE.Vector3[] = []
+    const v = new THREE.Vector3()
+    if (this.modell) for (const p of this.modell.proben) for (const i of p.index) liste.push(p.mesh.localToWorld(p.mesh.getVertexPosition(i, v)).clone())
+    else for (const p of this.koerper.proben) for (const q of p.punkte) liste.push(q.clone().applyMatrix4(p.mesh.matrixWorld))
+    return liste
+  }
+
+  hindernisse(): Hindernis[] {
+    const liste: Hindernis[] = []
+    for (const o of this.fest) if (!GEHALTEN.has(o.name)) o.traverse((x) => (x as THREE.Mesh).isMesh && liste.push(hindernis(x as THREE.Mesh)))
+    return liste
+  }
+
+  /**
+   * Sitzfläche (Bank, Stuhl, Kasten) auf die Höhe des Modells in der Zielhaltung senken: das Modell hat andere
+   * Proportionen als die gerechnete Figur und säße sonst im Polster. Die Füße bleiben dabei auf dem Boden.
+   */
+  private sitzAnpassen(ziel: Haltung) {
+    if (!this.fest.some((o) => /bank|stuhl|box/.test(o.name))) return
+    this.koerper.wurzel.position.set(0, 0, 0)
+    this.koerper.stelle(ziel)
+    this.modell?.uebernehmen(ziel.boden !== false)
+    const pk = this.punkte()
+    const unten = Math.max(0, MATTE - Math.min(...pk.map((p) => p.y)))
+    const becken = this.koerper.becken.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, unten, 0))
+    for (const art of ["bank", "stuhl", "box"]) {
+      const teile = this.fest.filter((o) => o.name === art) as THREE.Mesh[]
+      const sitz = teile.find((m) => m.position.y - (m.geometry.boundingBox ?? (m.geometry.computeBoundingBox(), m.geometry.boundingBox!)).max.y * m.scale.y < 0.01)
+      if (!sitz) continue
+      const h = hindernis(sitz)
+      let tief = 0
+      for (const p of pk) {
+        const v = herausschieben(h, p.clone().setY(p.y + unten), becken)
+        // nur von oben eingesunken zählt, seitlich (Füße am Kasten) schiebt die Figur weg
+        if (v && v.y > 0.7 * v.length()) tief = Math.max(tief, v.length())
+      }
+      if (tief < 0.005) continue
+      const hoehe = (sitz.geometry as THREE.BoxGeometry).parameters.height * sitz.scale.y
+      const neu = Math.max(0.05, hoehe - tief)
+      for (const m of teile) {
+        if (m === sitz) {
+          m.scale.y *= neu / hoehe
+          m.position.y = neu / 2
+        } else m.position.y -= hoehe - neu
+        this.festBasis.set(m, m.position.clone())
+      }
+    }
+  }
+
+  /** Figur aus Boden und festen Gegenständen schieben. Liefert den Versatz (Welt). */
+  private ausweichen(): THREE.Vector3 {
+    const c = new THREE.Vector3()
+    const hin = this.hindernisse()
+    const pk = this.punkte()
+    const becken = this.koerper.becken.getWorldPosition(new THREE.Vector3())
+    const q = new THREE.Vector3()
+    for (let runde = 0; runde < 8; runde++) {
+      const schritt = new THREE.Vector3()
+      let min = Infinity
+      for (const p of pk) min = Math.min(min, p.y + c.y)
+      if (min < MATTE - 0.002) schritt.y = MATTE - min
+      for (const h of hin) {
+        let groesster: THREE.Vector3 | null = null
+        for (const p of pk) {
+          const v = herausschieben(h, q.copy(p).add(c).add(schritt), becken.clone().add(c))
+          if (v && (!groesster || v.lengthSq() > groesster.lengthSq())) groesster = v
+        }
+        if (groesster) schritt.add(groesster)
+      }
+      if (schritt.lengthSq() < 1e-6) break
+      c.add(schritt)
+    }
+    return c
+  }
+
   stelle(t: number): Stand {
     const st = standZu(this.d, t, this.haltenS)
+    this.koerper.wurzel.position.set(0, 0, 0)
     this.koerper.stelle(st.haltung, st.atem)
     this.modell?.uebernehmen(st.haltung.boden !== false)
+    // Nur nötig mit Gegenständen oder ohne Bodenkontakt (sonst steht die Figur schon auf dem Boden)
+    if (this.fest.length || st.haltung.boden === false) {
+      const c = this.ausweichen()
+      if (c.lengthSq() > 1e-8) {
+        this.koerper.wurzel.position.copy(c)
+        this.koerper.wurzel.updateMatrixWorld(true)
+        if (this.modell) {
+          this.modell.modell.position.add(c)
+          this.modell.modell.updateMatrixWorld(true)
+          this.modell.haareFallen(MATTE)
+        }
+      }
+      // Die Stange hängt an den Händen: sie wandert mit
+      for (const o of this.fest) if (GEHALTEN.has(o.name)) o.position.copy(this.festBasis.get(o)!).add(c)
+    }
     this.modell?.gesicht(t)
     for (const o of this.beweglich) this.szene.remove(o)
     this.beweglich = beweglicheHilfsmittel(this.koerper, this.d.hilfsmittel || [])
@@ -485,13 +658,18 @@ class Buehne {
     return st
   }
 
+  /** Vom Nutzer gewischte Drehung (Bogenmaß) und Zoom, zusätzlich zur Ansicht der Übung */
+  blick = { azi: 0, hoehe: 0, nah: 1 }
+
   rahme(seiten: number) {
-    const r = BLICK[this.d.ansicht] || BLICK.schraeg
-    const dir = new THREE.Vector3(...r).normalize()
+    const r = new THREE.Vector3(...(BLICK[this.d.ansicht] || BLICK.schraeg)).normalize()
+    const azi = Math.atan2(r.x, r.z) + this.blick.azi
+    const hoehe = THREE.MathUtils.clamp(Math.asin(r.y) + this.blick.hoehe, -0.05, 1.5)
+    const dir = new THREE.Vector3(Math.cos(hoehe) * Math.sin(azi), Math.sin(hoehe), Math.cos(hoehe) * Math.cos(azi))
     const fov = rad(this.kamera.fov)
     const noetig = (this.radius * 1.12) / Math.sin(fov / 2) / Math.min(1, seiten)
     this.kamera.aspect = seiten
-    this.kamera.position.copy(this.mitte).addScaledVector(dir, Math.max(1.6, noetig))
+    this.kamera.position.copy(this.mitte).addScaledVector(dir, Math.max(1.6, noetig) / this.blick.nah)
     this.kamera.lookAt(this.mitte)
     this.kamera.updateProjectionMatrix()
   }
@@ -579,10 +757,76 @@ export function zeigeDehnung(canvas: HTMLCanvasElement, d: Dehnung, haltenS?: nu
     laeuft = true
     requestAnimationFrame(schleife)
   }
+  const losLassen = wischenDreht(e)
   return () => {
+    losLassen()
     e.io?.disconnect()
     const i = eintraege.indexOf(e)
     if (i >= 0) eintraege.splice(i, 1)
+  }
+}
+
+/**
+ * Wischen auf der Figur dreht die Ansicht frei (waagerecht um die Figur, senkrecht von unten bis oben), zwei Finger
+ * zoomen, doppelt tippen stellt die Ansicht der Übung wieder her.
+ */
+function wischenDreht(e: Eintrag): () => void {
+  const c = e.canvas
+  const finger = new Map<number, { x: number; y: number }>()
+  let abstand = 0
+  let letzterTipp = 0
+  const neu = () => {
+    if (e.still || !e.sichtbar) zeichne(e, performance.now() / 1000)
+  }
+  const zurueck = () => {
+    e.buehne.blick = { azi: 0, hoehe: 0, nah: 1 }
+    neu()
+  }
+  const ab = (ev: PointerEvent) => {
+    // Doppeltipp (auch ohne dblclick, das nicht jede WebView meldet)
+    const jetzt = performance.now()
+    if (finger.size === 0 && jetzt - letzterTipp < 320) zurueck()
+    letzterTipp = jetzt
+    finger.set(ev.pointerId, { x: ev.clientX, y: ev.clientY })
+    c.setPointerCapture?.(ev.pointerId)
+    if (finger.size === 2) {
+      const [a, b] = [...finger.values()]
+      abstand = Math.hypot(a.x - b.x, a.y - b.y)
+    }
+  }
+  const zug = (ev: PointerEvent) => {
+    const alt = finger.get(ev.pointerId)
+    if (!alt) return
+    const b = e.buehne.blick
+    if (finger.size === 1) {
+      const breite = c.clientWidth || 300
+      b.azi -= ((ev.clientX - alt.x) / breite) * Math.PI * 1.5
+      b.hoehe += ((ev.clientY - alt.y) / breite) * Math.PI
+    }
+    finger.set(ev.pointerId, { x: ev.clientX, y: ev.clientY })
+    if (finger.size === 2) {
+      const [p, q] = [...finger.values()]
+      const d = Math.hypot(p.x - q.x, p.y - q.y)
+      if (abstand > 0) b.nah = THREE.MathUtils.clamp((b.nah * d) / abstand, 0.7, 2.5)
+      abstand = d
+    }
+    neu()
+  }
+  const hoch = (ev: PointerEvent) => {
+    finger.delete(ev.pointerId)
+    abstand = 0
+  }
+  c.style.touchAction = "none"
+  c.style.cursor = "grab"
+  c.addEventListener("pointerdown", ab)
+  c.addEventListener("pointermove", zug)
+  c.addEventListener("pointerup", hoch)
+  c.addEventListener("pointercancel", hoch)
+  return () => {
+    c.removeEventListener("pointerdown", ab)
+    c.removeEventListener("pointermove", zug)
+    c.removeEventListener("pointerup", hoch)
+    c.removeEventListener("pointercancel", hoch)
   }
 }
 
@@ -595,3 +839,33 @@ export function standbild(canvas: HTMLCanvasElement, d: Dehnung, t: number, halt
   return st!
 }
 export const _koerper = () => new Koerper()
+
+/**
+ * Prüfung (Werkzeug): Stellen im Ablauf, an denen die Figur mehr als `toleranz` Meter in den Boden oder in ein
+ * Hilfsmittel eintaucht. Liefert je Fund Zeit, Gegenstand und Tiefe.
+ */
+export function _durchdringungen(d: Dehnung, haltenS = 8, schritt = 0.5, toleranz = 0.02) {
+  const b = new Buehne(d, haltenS)
+  const funde: { t: number; was: string; tiefe: number; hoehe: number }[] = []
+  for (let t = 0; t < b.laenge(); t += schritt) {
+    b.stelle(t)
+    b.szene.updateMatrixWorld(true)
+    const pk = b.punkte()
+    const becken = b.koerper.becken.getWorldPosition(new THREE.Vector3())
+    let unten = 0
+    for (const p of pk) unten = Math.max(unten, MATTE - p.y)
+    if (unten > toleranz) funde.push({ t, was: "Boden", tiefe: unten, hoehe: 0 })
+    for (const h of b.hindernisse()) {
+      let tief = 0, hoehe = 0
+      for (const p of pk) {
+        const v = herausschieben(h, p, becken)
+        if (v && v.length() > tief) {
+          tief = v.length()
+          hoehe = p.y
+        }
+      }
+      if (tief > toleranz) funde.push({ t, was: h.m.name || h.m.geometry.type, tiefe: tief, hoehe })
+    }
+  }
+  return funde
+}

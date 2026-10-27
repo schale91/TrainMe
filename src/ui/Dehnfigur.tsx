@@ -25,12 +25,13 @@ export default function Dehnfigur(props: { dehnung: Dehnung; haltenS?: number; k
   }, [dehnung, haltenS])
   return (
     <div className={"dehnfigur" + (props.klein ? " klein" : "")}>
-      <canvas ref={ref} className={"figur" + (props.klein ? " klein" : "")} width={props.klein ? 300 : 480} height={props.klein ? 300 : 420} aria-hidden="true" />
+      <canvas ref={ref} className={"figur" + (props.klein ? " klein" : "")} width={props.klein ? 300 : 480} height={props.klein ? 300 : 420} aria-hidden="true" title="Wischen dreht die Ansicht, doppelt tippen stellt sie zurück" />
       {phase ? (
         <p className="dehnphase" aria-live="off">
           {phase}
         </p>
       ) : null}
+      {!props.klein ? <p className="dehnhinweis">Wischen dreht · zwei Finger zoomen · Doppeltipp: zurück</p> : null}
     </div>
   )
 }
