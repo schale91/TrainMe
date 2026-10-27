@@ -13,6 +13,8 @@ import { MUSTER_NAME, datumText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym, SymKachel } from "./symbole"
 import Koerpergewicht from "./Koerper"
+import Dehnfigur from "./Dehnfigur"
+import { TEST_DEHNUNGEN } from "../daten/dehnungen/tests"
 
 type Punkt = { datum: string; wert: number }
 
@@ -266,6 +268,7 @@ export function Beweglichkeit(props: { daten: Daten; aendern: (f: (d: Daten) => 
         {test ? (
           <div className="testblatt">
             <p className="infokurz">{testTexte(test, golf).bedeutung}</p>
+            {TEST_DEHNUNGEN[test.id] ? <Dehnfigur dehnung={TEST_DEHNUNGEN[test.id]} /> : null}
             <h4>So misst du</h4>
             <ol className="schritte">
               {test.anleitung.map((s, i) => (

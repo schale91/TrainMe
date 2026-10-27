@@ -29,6 +29,20 @@ jobs:
       - name: Abhängigkeiten
         run: npm ci
 
+      - name: Modell der Dehnfigur
+        env:
+          MODELL_TOKEN: ${{ secrets.MODELL_TOKEN }}
+        run: |
+          # Lizenziertes Modell aus dem privaten Repo TrainMe-Modell; ohne Zugang zeigt die App die einfache Figur
+          if [ -n "$MODELL_TOKEN" ]; then
+            git clone --quiet --depth 1 "https://x-access-token:${MODELL_TOKEN}@github.com/${{ github.repository_owner }}/TrainMe-Modell.git" "$RUNNER_TEMP/modell"
+            mkdir -p public/modell
+            cp "$RUNNER_TEMP/modell/figur.bin" public/modell/figur.bin
+            rm -rf "$RUNNER_TEMP/modell"
+          else
+            echo "::warning::Secret MODELL_TOKEN fehlt: die Dehnfigur nutzt die einfache gezeichnete Figur."
+          fi
+
       - name: Tests und Typen
         run: |
           npm test

@@ -200,6 +200,12 @@ Die Planung wählt je Block feste Übungen (damit Fortschritt messbar ist) und w
 
 15 Selbsttests mit Orientierungswerten, angelehnt an Fachliteratur und das öffentlich beschriebene Screening des Titleist Performance Institute (TPI): Finger-Boden-Abstand, Rumpfbeuge im Sitzen, Knie zur Wand, Rotation im Sitzen, Beckenrotation, Hüft-Innen- und Außenrotation, gestrecktes Beinheben, Hände hinter dem Rücken, Einbeinstand mit geschlossenen Augen, Brücke mit Beinstreckung, Halswirbelsäule, tiefe Kniebeuge über Kopf, Schulter 90/90, Becken kippen. Schwach bewertete Bereiche bekommen im Plan zusätzliche Mobilitätsübungen. Die Werte sind eine Orientierung, keine Diagnose.
 
+### Dehnfigur
+
+Alle Tests und die Mobilitätsübungen für Rücken, Schultern, Nacken und Handgelenke zeigen eine animierte Figur (weitere Gruppen folgen). Ablauf je Übung: Ausgangsstellung, langsam hinein (etwa 4 s), halten (Haltezeit aus dem Plan, sonst 30 s), lösen (etwa 3 s), bei einseitigen Übungen danach die andere Seite. Unter der Figur stehen Phase und Restsekunden. Bei „Bewegung reduzieren“ zeigt sie ein Standbild in der Dehnung.
+
+Das fotorealistische Modell ist lizenziert und liegt deshalb nicht im öffentlichen Repo, sondern im privaten Repo TrainMe-Modell. Der APK-Build holt es mit dem Secret MODELL_TOKEN (Fine-grained Token, nur Lesen auf TrainMe-Modell). In der App liegt es verschlüsselt als `modell/figur.bin`. Fehlt es, zeichnet die App eine einfache Figur mit denselben Bewegungen. Packen: `werkzeuge/modell_packen.html` aus `werkzeuge/privat/frau.fbx` (gitignored).
+
 ## 7. Pausentimer
 
 Nach jedem abgehakten Satz läuft die Pause. In der Android-App übernimmt ein Vordergrunddienst: Restzeit in der Benachrichtigung (auch auf dem Sperrbildschirm) und, wenn erlaubt, als verschiebbare Uhr über allen anderen Apps. Am Ende klingelt und vibriert es.

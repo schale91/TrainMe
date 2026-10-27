@@ -2382,6 +2382,23 @@ select.ampel.rot {
 .figur.klein {
   max-width: 200px;
 }
+/* Dehnfigur: quadratisch, Phase und Sekunden darunter */
+.dehnfigur .figur {
+  aspect-ratio: 8 / 7;
+  margin-bottom: 2px;
+}
+.dehnfigur.klein .figur {
+  aspect-ratio: 1;
+  max-width: 220px;
+}
+.dehnphase {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text2, inherit);
+  font-variant-numeric: tabular-nums;
+  min-height: 1.3em;
+}
 
 /* ---------- Plan umstellen ---------- */
 

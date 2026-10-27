@@ -519,7 +519,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             <h2 className="uebungsname" onClick={() => setInfo(u)}>
               {u.name}
             </h2>
-            <Figur uebung={u} geraet={geraet} klein />
+            <Figur uebung={u} geraet={geraet} klein haltenS={u.belastung === "zeit" ? p.vorgabe.last || 30 : undefined} />
             {kurve && kurve.punkte.length ? (
               <button type="button" className="trainingskurve" onClick={() => setKurveOffen(i)} aria-label={"Kraftkurve " + u.name}>
                 <span className="trainingskurvetext">
