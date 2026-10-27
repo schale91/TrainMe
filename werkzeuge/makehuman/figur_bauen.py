@@ -68,6 +68,13 @@ FORM = {
     "measure/measure-frontchest-dist": -0.75,
     "stomach/stomach-tone": -0.6,
     "hip/hip-waist": 0.26,
+    # schmalere, weichere Schultern
+    "measure/measure-shoulder-dist": -0.6,
+    "torso/torso-vshape": -0.4,
+    "armslegs/l-upperarm-shoulder-muscle": -0.7,
+    "armslegs/r-upperarm-shoulder-muscle": -0.7,
+    "armslegs/l-upperarm-muscle": -0.3,
+    "armslegs/r-upperarm-muscle": -0.3,
 }
 # Weicheres, freundliches Gesicht und schlanker Hals (Formziele von MakeHuman, Anteil 0..1)
 GESICHT = {
@@ -341,6 +348,7 @@ def bauen(zw, ziel):
     schreiben(ziel, netze, namen, eltern, kopf)
     hoehe = p[:, 2].max()
     print("fertig:", ziel, "Höhe %.1f cm, Hüfte %.1f cm, %d Knochen" % (hoehe, kopf["root"][2], len(namen)))
+    print("Schultergelenke %.1f cm auseinander" % (2 * kopf["upperarm01.L"][0]))
     for b in () and ("root", "spine04", "spine02", "neck01", "head", "upperarm01.L", "lowerarm01.L", "wrist.L", "upperleg01.L", "lowerleg01.L", "foot.L"):
         print("  ", b, np.round(kopf[b], 1))
 
