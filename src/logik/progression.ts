@@ -29,6 +29,32 @@ export function e1rm(s: Satz): number {
   return s.last * (1 + (s.wdh + Math.max(0, s.rir)) / 30)
 }
 
+/**
+ * Belastbares Maximum aus den Sätzen einer Einheit. Einzelne Sätze, deren Schätzung mehr als 10 % über dem Median
+ * liegt, zählen nicht: Sie sind fast immer falsch eingetragen (etwa vorausgefüllte Werte nur abgehakt), denn nach
+ * 2 bis 3 Minuten Pause fällt die Leistung nicht von 8 auf 2 Wiederholungen. Sonst gilt der beste Satz.
+ */
+export function belastbaresE1rm(saetze: Satz[]): number {
+  const w = saetze
+    .map(e1rm)
+    .filter((x) => x > 0)
+    .sort((a, b) => a - b)
+  if (!w.length) return 0
+  const median = w[Math.floor((w.length - 1) / 2)]
+  return Math.max(...w.filter((x) => x <= median * 1.1))
+}
+
+/**
+ * Obergrenze für das nächste Gewicht: höchstens 7,5 % über dem schwersten Gewicht, mit dem letztes Mal der
+ * Wiederholungsbereich geschafft wurde (ACSM 2009 empfiehlt Steigerungen von 2 bis 10 %).
+ */
+export function steigerungsGrenze(saetze: Satz[], lo: number): number | null {
+  const geschafft = saetze.filter((s) => s.last && s.wdh >= lo).map((s) => s.last as number)
+  const alle = saetze.filter((s) => s.last).map((s) => s.last as number)
+  const basis = geschafft.length ? Math.max(...geschafft) : alle.length ? Math.max(...alle) : 0
+  return basis ? basis * 1.075 : null
+}
+
 /** Bestes geschätztes Maximum eines Protokolls. */
 export function bestesE1rm(p: Protokoll): number {
   return Math.max(0, ...p.saetze.map(e1rm))
@@ -217,9 +243,10 @@ export function vorgabe(profil: PlanProfil, rolle: Rolle, u: Uebung, saetze: num
     }
   } else {
     // RIR-gesteuert: aus dem geschätzten Maximum das Gewicht für die Mitte des Bereichs beim Ziel-RIR
-    const max = Math.max(...saetzeLetzte.map(e1rm))
+    const max = belastbaresE1rm(saetzeLetzte)
     const wdh = Math.round((lo + hi) / 2)
-    const roh = max / (1 + (wdh + rir) / 30)
+    const grenze = steigerungsGrenze(saetzeLetzte, lo)
+    const roh = Math.min(max / (1 + (wdh + rir) / 30), grenze ?? Infinity)
     const gerundet = abrunden(roh, lasten)
     v.last = gerundet === null ? altLast : gerundet
     v.wdh_von = v.wdh_bis = wdh

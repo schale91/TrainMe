@@ -59,7 +59,8 @@ function startSaetze(p: Platz, daten: Daten): Eingabe[] {
   return Array.from({ length: v.saetze }, () => {
     if (p.uebung.belastung === "zeit") return { last: null, wdh: 1, rir: v.rir, sekunden: v.last || 30, fertig: false }
     if (p.uebung.belastung === "distanz") return { last: null, wdh: 1, rir: 4, fertig: false }
-    return { last, wdh: v.wdh_bis, rir: v.rir, fertig: false }
+    // Vorbelegt mit der Mitte des Bereichs: Wer nur abhakt, trägt keine zu optimistischen Werte ein
+    return { last, wdh: Math.round((v.wdh_von + v.wdh_bis) / 2), rir: v.rir, fertig: false }
   })
 }
 

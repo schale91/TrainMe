@@ -5,7 +5,7 @@
 
 import { FREI, uebung } from "../daten/uebungen/index"
 import { abrunden } from "./gewichte"
-import { e1rm } from "./progression"
+import { belastbaresE1rm, steigerungsGrenze } from "./progression"
 import type { Daten, EigenerPlan, Einheit, Erledigt, PlanTag, PlanUebung, Platz, Profil, Protokoll, Rolle, Uebung, Vorgabe } from "./typen"
 
 export { FREI }
@@ -70,7 +70,8 @@ export function maximum(daten: Daten, id: string, vor = "9999-12-31"): { kg: num
   const verlauf = daten.protokoll.filter((p) => p.uebung === id && p.datum < vor).sort((a, b) => (a.datum < b.datum ? -1 : 1))
   const letzte = verlauf.slice(-3)
   let best = 0
-  for (const p of letzte) for (const s of p.saetze) best = Math.max(best, e1rm(s))
+  // je Einheit das belastbare Maximum, damit ein falsch eingetragener Satz nicht alles nach oben zieht
+  for (const p of letzte) best = Math.max(best, belastbaresE1rm(p.saetze))
   const ausVerlauf = best > 0 ? { kg: Math.round(best * 10) / 10, datum: letzte[letzte.length - 1].datum, quelle: "verlauf" as const } : null
   const ausMax = mw && mw.kg > 0 ? { kg: mw.kg, datum: mw.datum, quelle: "max" as const } : null
   // Ein eingetragenes Maximum gilt, bis die Einheiten danach ein höheres ergeben
@@ -135,11 +136,14 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
   const letzte = verlauf[verlauf.length - 1]
   const saetze = letzte ? letzte.saetze.filter((s) => s.last && s.wdh > 0) : []
   if (saetze.length) {
-    const max = Math.max(...saetze.map(e1rm))
-    const ziel = max / (1 + (mitte + rir) / 30)
+    // belastbares Maximum (Ausreißer zählen nicht) und höchstens 7,5 % über dem zuletzt geschafften Gewicht
+    const max = belastbaresE1rm(saetze)
+    const grenze = steigerungsGrenze(saetze, pu.wdh_von)
+    const roh = max / (1 + (mitte + rir) / 30)
+    const ziel = grenze !== null ? Math.min(roh, grenze) : roh
     v.last = runde(ziel, lasten)
-    const s = saetze[saetze.length - 1]
-    v.begruendung = "Letztes Mal " + kg(s.last as number) + " kg × " + s.wdh + " mit " + s.rir + " im Tank: für " + mitte + " Wiederholungen mit " + rir + " im Tank etwa " + kg(v.last) + " kg."
+    const gedeckelt = grenze !== null && grenze < roh
+    v.begruendung = "Geschätztes Maximum aus dem letzten Mal etwa " + kg(Math.round(max)) + " kg: für " + mitte + " Wiederholungen mit " + rir + " im Tank etwa " + kg(v.last) + " kg" + (gedeckelt ? " (höchstens 7,5 % mehr als zuletzt geschafft)" : "") + "."
     return v
   }
   const max = maximum(daten, u.id, datum)
