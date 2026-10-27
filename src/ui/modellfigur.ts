@@ -1,6 +1,6 @@
 // Steuert ein geriggtes 3D-Modell (Skelett nach dem Schema EM3D_Base_…) mit den Gelenkwinkeln der Dehnfigur. Die
 // Dehnfigur rechnet die Haltung, das Modell übernimmt die Ausrichtung jedes Knochens im Raum. Kleidung wird per
-// Shader auf die Haut gefärbt: Sport-Bustier, kurze Scrunch-Shorts bis Mitte Oberschenkel, weiße Söckchen.
+// Shader auf die Haut gefärbt: Sport-Bustier, kurze Scrunch-Shorts (Saum etwa 5 cm unter dem Po), weiße Söckchen.
 
 import * as THREE from "three"
 
@@ -299,8 +299,8 @@ export class Modellfigur {
             float h = vRuhe.z;
             float seite = abs(vRuhe.x);
             bool stoffig = false;
-            // Scrunch-Shorts: hoher Bund bis knapp über den Nabel, Bein bis Mitte Oberschenkel
-            if (h > 71.0 && h < 101.5 && seite < 19.0) { diffuseColor.rgb = uStoff; stoffig = true; }
+            // Scrunch-Shorts: hoher Bund bis knapp über den Nabel, Bein endet etwa 5 cm unter der Gesäßfalte (bei 79 cm)
+            if (h > 74.0 && h < 101.5 && seite < 19.0) { diffuseColor.rgb = uStoff; stoffig = true; }
             // Bustier-Unterbrustband
             if (h > 111.5 && h < 117.5 && seite < 15.0) { diffuseColor.rgb = uStoff; stoffig = true; }
             // Söckchen
