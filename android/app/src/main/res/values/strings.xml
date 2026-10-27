@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TrainMe</string>
+    <string name="title_activity_main">TrainMe</string>
+    <string name="package_name">io.github.schale91.trainme</string>
+    <string name="custom_url_scheme">io.github.schale91.trainme</string>
+</resources>

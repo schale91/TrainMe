@@ -4,13 +4,23 @@ Trainingsplaner für Kraft, Mobilität und Ausdauer, komplett auf dem Handy. Kei
 
 **Download:** [TrainMe.apk (neueste Version)](https://github.com/schale91/TrainMe/releases/latest/download/TrainMe.apk)
 
-Auf dem Android-Handy öffnen und installieren. Beim ersten Mal fragt Android, ob der Browser oder die Dateien-App „unbekannte Apps installieren“ darf. Updates einfach über die alte Version installieren, die Daten bleiben erhalten.
+Auf dem Android-Handy öffnen und installieren. Beim ersten Mal fragt Android, ob der Browser oder die Dateien-App „unbekannte Apps installieren“ darf. Updates einfach über die alte Version installieren, die Daten bleiben erhalten. Ab Version 0.4 meldet die App selbst, wenn ein Update bereitliegt (Profil, App-Update).
 
 ## Was TrainMe kann
 
+- **Rund 1000 Übungen** mit ausführlicher Anleitung hinter jedem „i“: Schritte, Atmung, Fehler, Nutzen, Tipps, Golfbezug.
+- **Golf-Fokus:** eigene Golf-Übungen (Rotation, Würfe, Schnellkraft, Haltung, Handgelenk), immer passend zur Ausrüstung.
+- **Beweglichkeitstests** wie Finger-Boden-Abstand, Rotation im Sitzen oder Knie zur Wand, angelehnt an das TPI-Screening. Schwachstellen bekommen mehr Mobilität im Plan.
+- **Pausentimer im Hintergrund:** Restzeit in der Benachrichtigung und schwebend über anderen Apps, zum Beispiel über YouTube.
+- **Dein Weg und Jahresplan:** Phasen von der Grundlage über Kraft und Schnellkraft bis zur Saison. Eine Zeitleiste zeigt, was geschafft ist, wo du stehst und was als Nächstes kommt.
+- **1-%-Methode, Kraftkurven und Fakten mit Quellen.**
+- **Im Training:** Topsatz mit Back-off-Sätzen, Aufwärmsätze, Scheibenrechner, Zahlenfeld, längere Pause nach knappen Sätzen, Hinweis auf Bestwerte und Tippfehler, Maximum-Vorschlag nach der Einheit, Bildschirm bleibt an.
+- **Körpergewicht:** 7-Tage-Schnitt und Trend pro Woche, eingeordnet nach Ziel.
+
 - **Individuell:** Trainingstage und Minuten je Tag, mehrere Orte mit eigenen Geräten, echten Gewichtsstufen (Kurzhanteln, Scheibenpaare, Kettlebells, Maschinen) und Deckenhöhe, Ziel, Erfahrung, Beschwerden je Gelenk, ausgeschlossene Übungen.
 - **Kraft, Mobilität, Ausdauer:** einzeln anwählbar.
-- **Sportspezifisch:** Golf, Fußball, Laufen oder allgemein, mit Saisonphase. Keine schweren Beine vor dem Spiel, Regeneration danach.
+- **Sportspezifisch:** Golf, Football (mit Position), Fußball, Laufen, Bodybuilding oder allgemein, mit Saisonphase.
+- **Reha und Gelenke:** Hüft- und Kniearthrose, nach Gelenk-OP, seitlicher Hüftschmerz, Leistenschmerz, Kreuzschmerz. Übungsfamilien mit Stufen nach dem GLA:D-Vorbild, Schmerz-Ampel nach jedem Satz, Rückfrage am Morgen danach, Warnzeichen, Funktionstests alle fünf Wochen. Ersetzt keine ärztliche oder physiotherapeutische Behandlung. Keine schweren Beine vor dem Spiel, Regeneration danach.
 - **Steigerung wie bei evidenzbasierten Coaches:** Blöcke mit Entlastungswoche, Reserve-Wiederholungen (RIR) je Woche, doppelte Progression, RIR-Steuerung über das geschätzte Maximum, Plateau-Erkennung. Jede Vorgabe sagt, warum.
 - **Spielerisch:** XP, Stufen, Wochenserie, Abzeichen, Bestwerte.
 - **Sicherung:** Export und Import als Datei.
