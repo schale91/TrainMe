@@ -1,18 +1,21 @@
-// Lädt das 3D-Modell der Dehnfigur (src/figur/figur.glb, aus MakeHuman gebaut, CC0). Vite legt es als Datei neben die
-// App, auch im flachen Lebenswelt-Build. Fehlt es oder lässt es sich nicht lesen, bleibt die gezeichnete Figur.
-// Wird nur einmal geladen.
+// Lädt das 3D-Modell der Dehnfigur aus dem TrainMe-Paket (modell/figur.bin), falls es beim Build dabei war. Fehlt
+// es, bleibt die gezeichnete Figur. Wird nur einmal geladen.
 
 import type * as THREE from "three"
 
 let laden: Promise<THREE.Object3D | null> | null = null
 
-export function modellLaden(url = new URL("../figur/figur.glb", import.meta.url).href): Promise<THREE.Object3D | null> {
+export function modellLaden(url = (import.meta.env?.BASE_URL ?? "./") + "modell/figur.bin"): Promise<THREE.Object3D | null> {
   laden ??= (async () => {
     try {
       const antwort = await fetch(url)
       if (!antwort.ok) return null
-      const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js")
-      const gltf = await new GLTFLoader().parseAsync(await antwort.arrayBuffer(), "")
+      const paket = new Uint8Array(await antwort.arrayBuffer())
+      const [{ entpacken }, { GLTFLoader }, { verfeinern }] = await Promise.all([import("./modellpaket"), import("three/examples/jsm/loaders/GLTFLoader.js"), import("./verfeinern")])
+      const glb = entpacken(paket)
+      const gltf = await new GLTFLoader().parseAsync(glb.buffer.slice(glb.byteOffset, glb.byteOffset + glb.byteLength) as ArrayBuffer, "")
+      // Rumpf und Beine feiner und runder (einmal beim Laden)
+      verfeinern(gltf.scene)
       return gltf.scene
     } catch {
       return null
