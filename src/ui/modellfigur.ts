@@ -32,12 +32,16 @@ const ZUORDNUNG: [string, string, string | null, string | null][] = [
 ]
 const FINGER = ["Index", "Mid", "Ring", "Pinky"]
 
-/** Tiefster Knochen mit diesem Namen (FBX legt oft gleichnamige Hilfsknoten darüber). */
+/**
+ * Tiefster Knoten mit diesem Namen. FBX legt oft gleichnamige Hilfsknoten darüber; nach dem Umwandeln in glb
+ * tragen Doppelte ein Suffix wie „_1“.
+ */
 function knochen(modell: THREE.Object3D, name: string): THREE.Bone | null {
   let best: THREE.Bone | null = null
   let tiefe = -1
+  const muster = new RegExp("^" + name + "(_\\d+)?$")
   modell.traverse((o) => {
-    if (!(o as THREE.Bone).isBone || o.name !== name) return
+    if (!muster.test(o.name) || (o as THREE.Mesh).isMesh) return
     let t = 0
     for (let p = o.parent; p; p = p.parent) t++
     if (t > tiefe) {
@@ -90,7 +94,7 @@ function haareVerlaengern(geo: THREE.BufferGeometry) {
     pos.setXYZ(i, x * weit, y + (y + 1) * (weit - 1) * 0.6, zNeu)
   }
   pos.needsUpdate = true
-  geo.computeVertexNormals()
+  // Normalen bleiben die originalen (weich); neu berechnet würden die Strähnen kantig
   geo.computeBoundingBox()
   geo.computeBoundingSphere()
 }
@@ -200,9 +204,11 @@ export class Modellfigur {
     // Stichproben der Haut für den tiefsten Punkt
     modell.traverse((o) => {
       const m = o as THREE.SkinnedMesh
-      if (!m.isSkinnedMesh || !/Body|Bra|Underwear/.test(m.name)) return
+      // Haut und Bustier, erkannt am Material (Netznamen ändern sich beim Umwandeln)
+      const mat = !m.isMesh ? "" : [].concat(m.material as never).map((x: THREE.Material) => x.name).join(",")
+      if (!m.isSkinnedMesh || !m.visible || !/Skin|Bra/.test(mat)) return
       const n = m.geometry.getAttribute("position").count
-      const schritt = Math.max(1, Math.floor(n / (m.name.includes("Body") ? 1600 : 120)))
+      const schritt = Math.max(1, Math.floor(n / (/Skin_(Body|Leg|Arm)/.test(mat) ? 500 : 150)))
       const index: number[] = []
       for (let i = 0; i < n; i += schritt) index.push(i)
       this.proben.push({ mesh: m, index })
@@ -277,9 +283,10 @@ export class Modellfigur {
   private kleiden() {
     this.modell.traverse((o) => {
       const m = o as THREE.Mesh
-      if (m.isMesh && /HAIR/i.test(m.name)) haareVerlaengern(m.geometry)
+      const mat = m.isMesh ? [].concat(m.material as never).map((x: THREE.Material) => x.name).join(",") : ""
+      if (m.isMesh && /HAIR/i.test(m.name + mat)) haareVerlaengern(m.geometry)
       // Slip unter den Shorts ausblenden, sonst zeichnet er sich ab
-      if (m.isMesh && /Underwear/.test(m.name)) m.visible = false
+      if (m.isMesh && /Underwear/.test(m.name + mat)) m.visible = false
       if (m.isMesh && m.morphTargetDictionary) this.gesichter.push(m)
     })
     const haut = "#d9a07a"

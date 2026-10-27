@@ -135,6 +135,9 @@ export function mit(a: Haltung, b: Partial<Haltung> & { g?: Winkel }): Haltung {
 const wert = (w: Winkel, g: Gelenk, i: number) => w[g]?.[i] ?? 0
 
 /** Zwischen zwei Haltungen überblenden (u von 0 bis 1). */
+/** Beckenposition, wenn eine Haltung keine angibt (Stand, Meter). */
+export const POS_GRUND: V3 = [0, 0.94, 0]
+
 export function mische(a: Haltung, b: Haltung, u: number): Haltung {
   const g: Winkel = {}
   for (const k of GELENKE) {
@@ -142,8 +145,10 @@ export function mische(a: Haltung, b: Haltung, u: number): Haltung {
     if (!n) continue
     g[k] = Array.from({ length: n }, (_, i) => wert(a.g, k, i) + (wert(b.g, k, i) - wert(a.g, k, i)) * u)
   }
-  const v = (x: V3 | undefined, y: V3 | undefined): V3 | undefined => (x || y ? [0, 1, 2].map((i) => (x?.[i] ?? y?.[i] ?? 0) + ((y?.[i] ?? x?.[i] ?? 0) - (x?.[i] ?? y?.[i] ?? 0)) * u) as V3 : undefined)
-  return { pos: v(a.pos, b.pos), dreh: v(a.dreh, b.dreh), g, boden: u < 0.5 ? a.boden : b.boden }
+  // Fehlende Werte sind die Grundstellung, nicht der Wert der anderen Haltung (sonst springt das Becken sofort)
+  const v = (x: V3 | undefined, y: V3 | undefined, grund: V3): V3 | undefined =>
+    x || y ? ([0, 1, 2].map((i) => (x ?? grund)[i] + ((y ?? grund)[i] - (x ?? grund)[i]) * u) as V3) : undefined
+  return { pos: v(a.pos, b.pos, POS_GRUND), dreh: v(a.dreh, b.dreh, [0, 0, 0]), g, boden: u < 0.5 ? a.boden : b.boden }
 }
 
 /** Gegenseite: links und rechts tauschen, seitliche Bewegungen umkehren. */

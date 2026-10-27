@@ -8,7 +8,7 @@
 
 import * as THREE from "three"
 import { clone as skelettKlon } from "three/examples/jsm/utils/SkeletonUtils.js"
-import { standZu, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand } from "../logik/dehnbewegung"
+import { POS_GRUND, standZu, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand } from "../logik/dehnbewegung"
 import { Modellfigur } from "./modellfigur"
 
 /** Geriggtes Modell, das statt der gezeichneten Figur gezeigt wird (falls geladen). */
@@ -264,7 +264,7 @@ class Koerper {
     const d = h.dreh || [0, 0, 0]
     // Neigen (Seitlage), dann Kippen (Rücken-, Bauchlage), dann Drehen um die eigene Längsachse
     this.becken.quaternion.setFromEuler(new THREE.Euler(rad(d[0]), rad(d[1]), rad(-d[2]), "ZXY"))
-    const p = h.pos || [0, 0.94, 0]
+    const p = h.pos || POS_GRUND
     this.becken.position.set(p[0], p[1], p[2])
     this.brustkorb.scale.set(1 + atem * 0.018, 1, 0.7 * (1 + atem * 0.03))
     this.wurzel.updateMatrixWorld(true)
