@@ -6,9 +6,12 @@
 <div id="raster"></div>
 <script type="module">
   // Werkzeug zur Prüfung: ?ids=a,b&t=0,5,10 zeigt Standbilder der Dehnungen zu den Zeiten
-  import { standbild } from "../src/ui/dehnfigur.ts"
+  import { standbild, modellSetzen } from "../src/ui/dehnfigur.ts"
+  import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js"
   import { DEHNUNGEN, TEST_DEHNUNGEN } from "../src/daten/dehnungen/index.ts"
   const q = new URLSearchParams(location.search)
+  // ?modell=1: lokales Modell aus werkzeuge/privat laden (liegt nicht im Repository)
+  if (q.get("modell")) modellSetzen(await new FBXLoader().loadAsync("./privat/frau.fbx"))
   const alle = { ...DEHNUNGEN, ...TEST_DEHNUNGEN }
   const ids = (q.get("ids") || Object.keys(alle).join(",")).split(",")
   // t=z: Zielhaltung (bei Abfolgen der mittlere Schritt)

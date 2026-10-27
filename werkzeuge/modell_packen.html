@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8" /><title>Modell packen</title></head>
+<body><pre id="info"></pre>
+<script type="module">
+  // Wandelt das FBX in ein glb (ohne unsichtbare Teile) und packt es in das TrainMe-Format (figur.bin).
+  import * as THREE from "three"
+  import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js"
+  import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js"
+  import { packen } from "../src/ui/modellpaket.ts"
+  const obj = await new FBXLoader().loadAsync("./privat/frau.fbx")
+  const weg = []
+  obj.traverse((o) => { if (o.isMesh && /Tongue|Teeth|OEM3Dlusion|Occlusion|TearLine/.test(o.name)) weg.push(o) })
+  for (const o of weg) o.parent.remove(o)
+  // Texturen weglassen, die Farben setzt TrainMe selbst
+  obj.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) { m.map = null; m.normalMap = null; m.alphaMap = null } })
+  const glb = await new GLTFExporter().parseAsync(obj, { binary: true, onlyVisible: false })
+  const bin = packen(new Uint8Array(glb))
+  window.ergebnis = { glb: glb.byteLength, bin: bin.byteLength, daten: Array.from(bin) }
+  document.getElementById("info").textContent = "glb " + glb.byteLength + " bin " + bin.byteLength
+  window.fertig = true
+</script></body></html>

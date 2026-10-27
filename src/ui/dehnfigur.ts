@@ -7,7 +7,15 @@
 // Wird erst geladen, wenn eine Dehnfigur sichtbar wird (eigener Teil des Bundles).
 
 import * as THREE from "three"
+import { clone as skelettKlon } from "three/examples/jsm/utils/SkeletonUtils.js"
 import { standZu, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand } from "../logik/dehnbewegung"
+import { Modellfigur } from "./modellfigur"
+
+/** Geriggtes Modell, das statt der gezeichneten Figur gezeigt wird (falls geladen). */
+let vorlage: THREE.Object3D | null = null
+export function modellSetzen(m: THREE.Object3D | null) {
+  vorlage = m
+}
 
 const FARBE = {
   haut: "#d6a07c",
@@ -389,6 +397,7 @@ class Buehne {
   kamera = new THREE.PerspectiveCamera(28, 4 / 3, 0.05, 30)
   fest: THREE.Object3D[] = []
   beweglich: THREE.Object3D[] = []
+  modell: Modellfigur | null = null
   mitte = new THREE.Vector3()
   abstand = 3
 
@@ -419,6 +428,15 @@ class Buehne {
     const matte = kiste(new THREE.Vector3(0, MATTE / 2, 0), [0.62, MATTE, 1.85], FARBE.matte)
     s.add(matte)
     s.add(this.koerper.wurzel)
+    if (vorlage) {
+      // Die gezeichnete Figur rechnet die Haltung unsichtbar weiter, das Modell zeigt sie
+      this.koerper.stelle({ g: {} })
+      this.modell = new Modellfigur(skelettKlon(vorlage), this.koerper)
+      this.koerper.wurzel.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).visible = false
+      })
+      s.add(this.modell.modell)
+    }
 
     // Hilfsmittel an der Zielhaltung ausrichten, Kamera auf den ganzen Ablauf
     const box = new THREE.Box3()
@@ -431,7 +449,10 @@ class Buehne {
     for (const u of proben) {
       const st = standZu(d, u * gesamt, haltenS)
       this.koerper.stelle(st.haltung)
-      this.koerper.umriss(box)
+      if (this.modell) {
+        this.modell.uebernehmen(st.haltung.boden !== false)
+        this.modell.umriss(box)
+      } else this.koerper.umriss(box)
     }
     for (const o of this.fest) if (o instanceof THREE.Mesh && !(o.geometry instanceof THREE.BoxGeometry && o.scale.y > 2)) box.expandByObject(o)
     box.getCenter(this.mitte)
@@ -456,6 +477,7 @@ class Buehne {
   stelle(t: number): Stand {
     const st = standZu(this.d, t, this.haltenS)
     this.koerper.stelle(st.haltung, st.atem)
+    this.modell?.uebernehmen(st.haltung.boden !== false)
     for (const o of this.beweglich) this.szene.remove(o)
     this.beweglich = beweglicheHilfsmittel(this.koerper, this.d.hilfsmittel || [])
     for (const o of this.beweglich) this.szene.add(o)
