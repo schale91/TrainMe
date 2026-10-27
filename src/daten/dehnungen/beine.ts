@@ -6,16 +6,16 @@ import { B, BAUCHLAGE, FERSENSITZ, H, HALBKNIESTAND, HUND, LANGSITZ, RUECKENLAGE
 
 const STAND_H = mit(STAND, { g: B("huefte", [0, 6, 0]) })
 /** Hände in den Hüften */
-const HAENDE_HUEFTE = { ...B("schulter", [-15, 35, 0]), ...B("ellbogen", [105, 0]) }
+const HAENDE_HUEFTE = { ...B("schulter", [-5, 45, -80]), ...B("ellbogen", [90, 0]) }
 /** Linke Hand greift den linken Fuß hinter dem Gesäß (Knie gebeugt) */
-const FUSSGRIFF_L = { huefte_l: [-10, 2, 0], knie_l: [150], fuss_l: [-45, 0], schulter_l: [-62, 6, 0], ellbogen_l: [22, 0], hand_l: [-20, 0] }
+const FUSSGRIFF_L = { huefte_l: [-4, 2, 0], knie_l: [162], fuss_l: [-50, 0], schulter_l: [-50, 20, -40], ellbogen_l: [90, 0], hand_l: [-20, 0] }
 
 // Stehend vorderer Oberschenkel: rechter Arm hält das Gleichgewicht
 const QUAD_STEHEND: Haltung = mit(STAND_H, { g: { ...FUSSGRIFF_L, schulter_r: [60, 35, 0], ellbogen_r: [10, 0], knie_r: [6] } })
 
 // Seitlage: unteres Knie zur Brust, oberes Bein nach hinten (hier liegt die Figur auf links, oben ist rechts)
 const SEITLAGE_KOPF = { schulter_l: [165, 0, 0], ellbogen_l: [125, 0] }
-const QUAD_SEITLAGE: Haltung = mit(SEITLAGE, { g: { ...SEITLAGE_KOPF, huefte_l: [115, 0, 0], knie_l: [115], huefte_r: [-15, 0, 0], knie_r: [140], fuss_r: [-45, 0], schulter_r: [-40, 8, 0], ellbogen_r: [15, 0] } })
+const QUAD_SEITLAGE: Haltung = mit(SEITLAGE, { g: { ...SEITLAGE_KOPF, huefte_l: [115, 0, 0], knie_l: [115], huefte_r: [-15, 0, 0], knie_r: [155], fuss_r: [-50, 0], schulter_r: [-50, 30, -60], ellbogen_r: [90, 0] } })
 
 // Bauchlage, Stirn auf dem rechten Unterarm, Band um den linken Fuß über die linke Schulter
 const BAUCH_STIRN: Haltung = mit(BAUCHLAGE, { g: { schulter_r: [160, 30, 0], ellbogen_r: [120, 90], schulter_l: [150, 25, 0], ellbogen_l: [130, 0] } })
@@ -27,11 +27,36 @@ const RUECKSTUETZ: Haltung = H({ ...B("huefte", [60, 6, 0]), ...B("schulter", [-
 const BAND_RUECKEN = { ...B("schulter", [55, 10, 0]), ...B("ellbogen", [25, 0]) }
 const BEIN_HOCH = (beugung: number): Haltung => mit(RUECKENLAGE, { g: { ...BAND_RUECKEN, huefte_l: [beugung, 0, 0], fuss_l: [10, 0], fuss_r: [5, 0] } })
 
+/** Sitz, beide Hände auf dem rechten Oberschenkel */
+const HAENDE_OBERSCHENKEL_R = { schulter_r: [30, -20, 40], ellbogen_r: [20, 0], schulter_l: [35, -30, -60], ellbogen_l: [10, 0] }
+
 // Wand vor dem Körper, Hände auf Schulterhöhe
 const HAENDE_WAND = { ...B("schulter", [90, 8, 0]), ...B("ellbogen", [25, 0]), ...B("hand", [70, 0]) }
 /** Wadendehnung: links hinten gestreckt, Ferse am Boden, rechts vorn gebeugt, Körper zur Wand geneigt */
 const WADE = (vor: number): Haltung =>
   H({ ...HAENDE_WAND, schulter_l: [90 + vor, 8, 0], schulter_r: [90 + vor, 8, 0], huefte_l: [-24 + vor, 4, 0], knie_l: [0], fuss_l: [24, 0], huefte_r: [36 + vor, 4, 0], knie_r: [44], fuss_r: [8, 0] }, [vor, 0, 0])
+
+/**
+ * Herabschauender Hund mit tieferem Oberkörper, damit Hände und Füße gleichzeitig am Boden sind (die Grundhaltung
+ * HUND steht nur auf den Füßen). Ein Knie gebeugt auf dem Fußballen, das andere Bein gestreckt, Ferse Richtung Boden.
+ */
+const HUND_TRETEN = (gebeugt: "l" | "r"): Haltung => {
+  const gestreckt = gebeugt === "l" ? "r" : "l"
+  return mit(HUND, {
+    dreh: [KIPP_HUND, 0, 0],
+    g: {
+      ["huefte_" + gestreckt]: [HUEFTE_HUND, 4, 0],
+      ["knie_" + gestreckt]: [0],
+      ["fuss_" + gestreckt]: [32, 0],
+      ["huefte_" + gebeugt]: [HUEFTE_HUND + 22, 4, 0],
+      ["knie_" + gebeugt]: [45],
+      ["fuss_" + gebeugt]: [-15, 0],
+      ["zehen_" + gebeugt]: [50],
+    },
+  })
+}
+const KIPP_HUND = 125
+const HUEFTE_HUND = 85
 
 // Kniestand, Hände neben dem vorderen Bein am Boden
 const HAENDE_BODEN = (rumpf: number): Partial<Record<string, number[]>> => ({ ...B("schulter", [rumpf + 8, 14, 0]), ...B("ellbogen", [5, 0]), ...B("hand", [80, 0]) })
@@ -146,10 +171,10 @@ export const BEINE: Record<string, Dehnung> = {
     { seiten: true, hilfsmittel: [{ art: "box", unter: "ferse_l", hoehe: 0.45 }], hinweis: "Hüfte zeigt nach vorn, Rücken lang." },
   ),
   beinrueckseite_dehnen_tuerrahmen: halte(
-    "seite",
-    mit(RUECKENLAGE, { g: { huefte_l: [80, 0, 0], knie_l: [40], fuss_l: [5, 0] } }),
+    "seite_links",
+    mit(RUECKENLAGE, { g: { huefte_l: [86, 0, 0], knie_l: [40], fuss_l: [5, 0] } }),
     mit(RUECKENLAGE, { g: { huefte_l: [86, 0, 0], knie_l: [0], fuss_l: [5, 0], fuss_r: [5, 0] } }),
-    // Ohne automatischen Seitenwechsel: die Wand steht fest, für die andere Seite legt man sich anders herum hin
+    // Ohne automatischen Seitenwechsel: die Wand steht fest. Wandkante seitlich am Bein (Türpfosten liefen beim Strecken durch das Bein)
     { hilfsmittel: [{ art: "wand", an: "knie_l", richtung: "links" }], hinweis: "Bein an Türrahmen oder Wandkante, das andere Bein liegt lang am Boden. Danach die Seite wechseln." },
   ),
   beinrueckseite_dehnen_stehend_ferse: halte(
@@ -216,8 +241,8 @@ export const BEINE: Record<string, Dehnung> = {
   ),
   beinrueckseite_stuhl: halte(
     "seite",
-    mit(STUHLSITZ, { g: { huefte_l: [56, 4, 0], knie_l: [0], fuss_l: [20, 0], ...B("schulter", [35, 10, 0]), ...B("ellbogen", [40, 0]) } }),
-    mit(STUHLSITZ, { dreh: [34, 0, 0], g: { huefte_l: [90, 4, 0], knie_l: [0], fuss_l: [20, 0], huefte_r: [124, 5, 0], ...B("schulter", [70, 10, 0]), ...B("ellbogen", [30, 0]), hals: [-8, 0, 0] } }),
+    mit(STUHLSITZ, { g: { huefte_l: [56, 4, 0], knie_l: [0], fuss_l: [20, 0], ...HAENDE_OBERSCHENKEL_R } }),
+    mit(STUHLSITZ, { dreh: [34, 0, 0], g: { huefte_l: [90, 4, 0], knie_l: [0], fuss_l: [20, 0], huefte_r: [124, 5, 0], schulter_r: [0, 0, -20], ellbogen_r: [90, 0], schulter_l: [10, -5, -40], ellbogen_l: [80, 0], hals: [-8, 0, 0] } }),
     { seiten: true, hilfsmittel: [{ art: "stuhl", unter: "gesaess", hoehe: 0.42 }], hinweis: "Langer Rücken, aus der Hüfte nach vorn." },
   ),
   slump_mobilisation: wdh(
@@ -236,9 +261,10 @@ export const BEINE: Record<string, Dehnung> = {
 
   // ---------- Spagat
   spagat_gleiten: wdh("seite", kniespagat(8), kniespagat(42), 3, { halten: 1, aus: 3, seiten: true, hinweis: "Ferse gleitet vor, dann aus der Beinrückseite zurückziehen." }),
-  spagat_gestuetzt: halte("seite", kniespagat(8), spagat(0.7), {
+  spagat_gestuetzt: halte("schraeg", kniespagat(8), mit(spagat(0.8, 22), { g: { ...B("schulter", [30, 30, 0]), ...B("ellbogen", [5, 0]), ...B("hand", [80, 0]) } }), {
     seiten: true,
-    hilfsmittel: [{ art: "box", unter: "hand_l", hoehe: 0.15 }, { art: "box", unter: "hand_r", hoehe: 0.15 }],
+    // Blöcke seitlich neben dem Körper, ihre Höhe passt sich den Händen an
+    hilfsmittel: [{ art: "box", unter: "hand_l", hoehe: 0.45 }, { art: "box", unter: "hand_r", hoehe: 0.45 }],
     hinweis: "Becken gerade nach vorn, Hände auf Blöcken.",
   }),
   spagat: halte("seite", kniespagat(8), spagat(1), { ein: 8, seiten: true, hinweis: "Nur so tief, wie es kontrolliert geht, die Hände stützen." }),
@@ -270,7 +296,7 @@ export const BEINE: Record<string, Dehnung> = {
     mit(LANGSITZ, { g: { ...B("schulter", [55, 10, 0]), ...B("ellbogen", [40, 0]), fuss_l: [28, 0] } }),
     { seiten: true, hilfsmittel: [{ art: "band", von: "haende", bis: "fuss_l" }], hinweis: "Knie gestreckt, Fußspitze zu dir ziehen." },
   ),
-  hund_wadendehnung: wdh("seite", mit(HUND, { g: { huefte_l: [105, 4, 0], knie_l: [42], fuss_l: [-20, 0], zehen_l: [50] } }), mit(HUND, { g: { huefte_r: [105, 4, 0], knie_r: [42], fuss_r: [-20, 0], zehen_r: [50] } }), 1.5, {
+  hund_wadendehnung: wdh("seite", HUND_TRETEN("l"), HUND_TRETEN("r"), 1.5, {
     halten: 1.5,
     aus: 1.5,
     hinweis: "Abwechselnd ein Knie beugen, die andere Ferse zum Boden.",
