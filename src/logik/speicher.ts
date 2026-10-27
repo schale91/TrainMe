@@ -132,7 +132,7 @@ export function studio(): Ort {
   return {
     name: "Studio",
     geraete: [...STUDIO_GERAETE],
-    gewichte: { kurzhanteln: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40], stange: 20, sz_stange: 10, trap_bar: 0, multipresse_stange: 15, scheiben: [1.25, 2.5, 5, 10, 10, 15, 20, 20, 25], kettlebells: [8, 12, 16, 20, 24, 28, 32], medizinbaelle: [3, 5, 7], maschine_schritt: 5, maschine_max: 150, baender: 3 },
+    gewichte: { kurzhanteln: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40], stange: 20, sz_stange: 10, trap_bar: 0, multipresse_stange: 15, scheiben: [1.25, 2.5, 5, 10, 15, 20, 25], scheiben_beliebig: true, kettlebells: [8, 12, 16, 20, 24, 28, 32], medizinbaelle: [3, 5, 7], maschine_schritt: 5, maschine_max: 150, baender: 3 },
     deckenhoehe_cm: 400,
   }
 }

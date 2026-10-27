@@ -9,10 +9,29 @@ export const LEER: Gewichte = { kurzhanteln: [], stange: 0, sz_stange: 0, trap_b
 
 const rund = (x: number) => Math.round(x * 100) / 100
 
+/** Höchstens so viel Scheiben je Seite, wenn von jeder Sorte genug da ist. */
+const MAX_SEITE = 200
+
+/** Alle Summen je Seite aus beliebig vielen Scheiben der Sorten (in 0,05-kg-Schritten gerechnet). */
+export function summenBeliebig(sorten: number[], max = MAX_SEITE): number[] {
+  const einheiten = Array.from(new Set(sorten.filter((x) => x > 0).map((x) => Math.round(x * 20))))
+  const grenze = Math.round(max * 20)
+  const geht = new Uint8Array(grenze + 1)
+  geht[0] = 1
+  for (let x = 1; x <= grenze; x++) for (const e of einheiten) if (e <= x && geht[x - e]) {
+    geht[x] = 1
+    break
+  }
+  const out: number[] = []
+  for (let x = 0; x <= grenze; x++) if (geht[x]) out.push(x / 20)
+  return out
+}
+
 /** Alle Gesamtgewichte einer Stange: Stange plus beliebige Auswahl der Scheibenpaare. */
 function stangenGewichte(stange: number, g: Gewichte): number[] {
   if (!stange) return []
-  const scheiben = g.scheiben.slice(0, 14)
+  if (g.scheiben_beliebig) return summenBeliebig(g.scheiben).map((x) => rund(stange + 2 * x))
+  const scheiben = g.scheiben.slice(0, 24)
   const summen = new Set<number>([0])
   for (const s of scheiben) for (const x of Array.from(summen)) summen.add(rund(x + 2 * s))
   return Array.from(summen).map((x) => rund(stange + x))

@@ -59,6 +59,49 @@ export function MehrKarten<T extends string>(props: { werte: { id: T; name: stri
   )
 }
 
+const zahlText = (x: number) => String(Math.round(x * 100) / 100).replace(".", ",")
+
+/** Ein Wert zum Antippen; „Andere“ öffnet ein Zahlenfeld für Werte, die nicht in der Liste stehen. */
+export function WertWahl(props: { werte: number[]; wert: number; onChange: (x: number) => void; einheit?: string; text?: (x: number) => string; min?: number; max?: number }) {
+  const inListe = props.werte.some((x) => Math.abs(x - props.wert) < 1e-9)
+  const [andere, setAndere] = useState(!inListe)
+  const name = props.text || ((x: number) => zahlText(x) + (props.einheit ? " " + props.einheit : ""))
+  return (
+    <div className="chips">
+      {props.werte.map((x) => (
+        <button key={x} type="button" aria-pressed={!andere && Math.abs(x - props.wert) < 1e-9} className={"chip" + (!andere && Math.abs(x - props.wert) < 1e-9 ? " an" : "")} onClick={() => {
+          setAndere(false)
+          props.onChange(x)
+        }}>
+          {name(x)}
+        </button>
+      ))}
+      <button type="button" aria-pressed={andere} className={"chip" + (andere ? " an" : "")} onClick={() => setAndere(true)}>
+        Andere
+      </button>
+      {andere ? <Zahl wert={props.wert} min={props.min} max={props.max} einheit={props.einheit} onChange={props.onChange} /> : null}
+    </div>
+  )
+}
+
+/** Mehrere Werte zum Antippen, z. B. vorhandene Kettlebells. Werte außerhalb der Vorschläge bleiben als Chips sichtbar. */
+export function ZahlChips(props: { vorschlaege: number[]; wert: number[]; onChange: (x: number[]) => void; einheit?: string }) {
+  const alle = Array.from(new Set([...props.vorschlaege, ...props.wert])).sort((a, b) => a - b)
+  return (
+    <div className="chips">
+      {alle.map((x) => {
+        const an = props.wert.some((y) => Math.abs(x - y) < 1e-9)
+        return (
+          <button key={x} type="button" aria-pressed={an} className={"chip zahlchip" + (an ? " an" : "")} onClick={() => props.onChange(an ? props.wert.filter((y) => Math.abs(x - y) > 1e-9) : [...props.wert, x].sort((a, b) => a - b))}>
+            {zahlText(x)}
+            {props.einheit ? <small>{props.einheit}</small> : null}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /** Eingabe einer Zahlenliste wie „2, 4, 6,5“. */
 export function Zahlenliste(props: { wert: number[]; onChange: (x: number[]) => void; platzhalter?: string }) {
   const [text, setText] = useState(props.wert.map((x) => String(x).replace(".", ",")).join("; "))

@@ -172,3 +172,22 @@ describe("Zahlenfeld", () => {
     expect(zahlAus(taste(st, "clr", true).puffer)).toBeNull()
   })
 })
+
+import { summenBeliebig, verfuegbar } from "../src/logik/gewichte"
+
+describe("Scheiben: von jeder Sorte genug", () => {
+  it("Langhantel mit beliebig vielen 1,25-, 2,5-, 5-, 10- und 20-kg-Scheiben", () => {
+    const g = { ...LEER, stange: 20, scheiben: [1.25, 2.5, 5, 10, 20], scheiben_beliebig: true }
+    const l = verfuegbar("langhantel", g)
+    expect(l[0]).toBe(20)
+    expect(l).toContain(142.5)
+    expect(l).toContain(220)
+    expect(l[1] - l[0]).toBe(2.5)
+    expect(summenBeliebig([5], 20)).toEqual([0, 5, 10, 15, 20])
+  })
+  it("Scheibenrechner nutzt mehrere gleiche Scheiben", () => {
+    expect(scheibenProSeite(180, 20, [5, 10, 20], true)).toEqual([20, 20, 20, 20])
+    expect(scheibenProSeite(170, 20, [5, 10, 20], true)).toEqual([20, 20, 20, 10, 5])
+    expect(scheibenProSeite(181, 20, [5, 10, 20], true)).toBeNull()
+  })
+})

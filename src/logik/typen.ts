@@ -254,6 +254,8 @@ export interface Gewichte {
   multipresse_stange: number
   /** Hantelscheiben, die paarweise vorhanden sind (kg je Scheibe) */
   scheiben: number[]
+  /** Von jeder Scheibensorte genug (Studio): scheiben listet dann nur die Sorten */
+  scheiben_beliebig?: boolean
   kettlebells: number[]
   medizinbaelle: number[]
   /** Schrittweite an Maschinen und am Kabelzug */

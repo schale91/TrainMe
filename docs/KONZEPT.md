@@ -103,8 +103,12 @@ insgesamt 1 bis 5 Minuten. Der Grund steht auf der Karte der nächsten Übung.
   40 kg Arbeitsgewicht entfällt der Satz über 80 %. Pausen 60 Sekunden, vor dem ersten Arbeitssatz 90. Grundlage:
   Aufwärmen verbessert die Leistung in den meisten untersuchten Messgrößen (Fradkin et al. 2010), spezifisch mit
   steigender Last und wenigen Wiederholungen nach dem NSCA-Lehrbuch (Haff und Triplett 2016).
-- **Scheibenrechner:** Scheiben je Seite mit möglichst wenigen Scheiben aus den eingetragenen Paaren; ohne Liste mit
-  den üblichen Studioscheiben (25 bis 1,25 kg). Farben wie bei Wettkampfscheiben.
+- **Scheibenrechner:** Scheiben je Seite mit möglichst wenigen Scheiben aus den eingetragenen Paaren; im Studio
+  („Genug von jeder Sorte“) mit beliebig vielen Scheiben der gewählten Sorten, ohne Liste mit den üblichen
+  Studioscheiben (25 bis 1,25 kg). Farben wie bei Wettkampfscheiben.
+- **Geräte im Ort antippen statt eintippen:** Stangen, Scheiben (Sorten und, zu Hause, Zahl der Paare),
+  Kurzhanteln (Reihe von, bis, Schritt, fehlende abwählen), Kettlebells, Medizinbälle, Maschinenschritte, Bänder und
+  Deckenhöhe als Auswahl; „Andere“ für Werte außerhalb der Vorschläge.
 - **Längere Pause:** Fehlten Wiederholungen oder ging der Satz bis 0 im Tank, 30 Sekunden mehr (höchstens 5
   Minuten). Längere Pausen halten die Wiederholungen in den Folgesätzen (Willardson 2006, de Salles et al. 2009).
 - **Plausibilität und Bestwerte:** Ein Satz, dessen geschätztes Maximum mehr als 20 % über dem bisher besten liegt

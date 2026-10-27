@@ -2855,3 +2855,56 @@ select.ampel.rot {
   display: flex;
   gap: 8px;
 }
+
+/* ---------- Geräte im Ort: antippen statt eintippen ---------- */
+.zahlchip {
+  min-width: 52px;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.zahlchip small {
+  font-size: 11.5px;
+  opacity: 0.75;
+}
+.chips .zahl {
+  flex: 0 0 120px;
+}
+.paarliste {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.paarzeile {
+  display: grid;
+  grid-template-columns: 1fr 36px 84px 36px;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.paarzeile b {
+  text-align: center;
+  font-weight: 650;
+}
+.paarzeile .rundknopf {
+  font-size: 20px;
+  line-height: 1;
+}
+.paarzeile .rundknopf:disabled {
+  opacity: 0.35;
+}
+.reihenwahl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.reihenwahl label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reihenwahl small {
+  color: var(--leise);
+  font-size: 12px;
+}

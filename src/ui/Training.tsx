@@ -411,7 +411,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     const geraet = lastGeraet(u, ort)
     const stange = stangeVon(geraet, ort.gewichte)
     const wert = zahlAus(pd.puffer)
-    const sch = pd.feld === "kg" && stange && wert ? scheibenProSeite(wert, stange, ort.gewichte.scheiben) : null
+    const sch = pd.feld === "kg" && stange && wert ? scheibenProSeite(wert, stange, ort.gewichte.scheiben, ort.gewichte.scheiben_beliebig) : null
     const schritt = (r: 1 | -1) => {
       const d = Math.abs(padSchritt(pd, r) - (wert ?? 0))
       return (r > 0 ? "+" : "−") + (d ? zahl(d) : "")
@@ -489,7 +489,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         const formWaehlbar = satzformVon({ ...v, saetze: saetze[i].length, topsatz: true }, undefined, u.belastung === "gewicht" && !reha && (p.rolle === "haupt" || p.rolle === "neben") && geraet !== "band") === "topsatz"
         const stange = stangeVon(geraet, ort.gewichte)
         const offenerSatz = saetze[i].find((x) => !x.fertig)
-        const scheiben = stange && offenerSatz?.last ? scheibenProSeite(offenerSatz.last, stange, ort.gewichte.scheiben) : null
+        const scheiben = stange && offenerSatz?.last ? scheibenProSeite(offenerSatz.last, stange, ort.gewichte.scheiben, ort.gewichte.scheiben_beliebig) : null
         const warmups = saetze[i].some((x) => x.fertig) ? [] : aufwaermen(i)
         return (
           <section key={i + u.id} id={"uebung-" + i} className={"uebungskarte" + (alle ? " geschafft" : "") + (i === aktiveUebung && erledigt > 0 ? " dran" : "")}>
@@ -602,7 +602,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 </div>
                 {warmups.map((w, k) => {
                   const an = warm.indexOf(i + "-" + k) >= 0
-                  const sch = stange ? scheibenProSeite(w.last, stange, ort.gewichte.scheiben) : null
+                  const sch = stange ? scheibenProSeite(w.last, stange, ort.gewichte.scheiben, ort.gewichte.scheiben_beliebig) : null
                   return (
                     <div key={k} className={"aufwaermsatz" + (an ? " fertig" : "")}>
                       <span className="aw">

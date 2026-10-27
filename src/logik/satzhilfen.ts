@@ -62,21 +62,29 @@ const STUDIO_SCHEIBEN = [25, 20, 15, 10, 5, 2.5, 1.25]
 
 /**
  * Scheiben je Seite für ein Gesamtgewicht, möglichst wenige. scheiben: vorhandene Paare (jeder Eintrag ein Paar);
- * leer heißt Studio mit beliebig vielen üblichen Scheiben. null, wenn es nicht aufgeht.
+ * beliebig: von jeder Sorte genug; leer heißt Studio mit den üblichen Scheiben. null, wenn es nicht aufgeht.
  */
-export function scheibenProSeite(gesamt: number, stange: number, scheiben: number[]): number[] | null {
+export function scheibenProSeite(gesamt: number, stange: number, scheiben: number[], beliebig = false): number[] | null {
   const seite = rund((gesamt - stange) / 2)
   if (seite < -1e-9) return null
   if (seite < 1e-9) return []
-  if (!scheiben.length) {
+  if (!scheiben.length || beliebig) {
+    // Von jeder Sorte genug: wenigste Scheiben über alle Sorten (in 0,05-kg-Schritten)
+    const sorten = Array.from(new Set((scheiben.length ? scheiben : STUDIO_SCHEIBEN).map((x) => Math.round(x * 20)))).filter((x) => x > 0)
+    const ziel = Math.round(seite * 20)
+    const anzahl = new Array<number>(ziel + 1).fill(Infinity)
+    const letzte = new Array<number>(ziel + 1).fill(0)
+    anzahl[0] = 0
+    for (let x = 1; x <= ziel; x++)
+      for (const e of sorten)
+        if (e <= x && anzahl[x - e] + 1 < anzahl[x]) {
+          anzahl[x] = anzahl[x - e] + 1
+          letzte[x] = e
+        }
+    if (!isFinite(anzahl[ziel])) return null
     const out: number[] = []
-    let rest = seite
-    for (const s of STUDIO_SCHEIBEN)
-      while (rest >= s - 1e-9) {
-        out.push(s)
-        rest = rund(rest - s)
-      }
-    return rest < 1e-9 ? out : null
+    for (let x = ziel; x > 0; x -= letzte[x]) out.push(letzte[x] / 20)
+    return out.sort((a, b) => b - a)
   }
   // Wenigste Scheiben für jede erreichbare Summe (Rucksack über die vorhandenen Paare)
   const best = new Map<number, number[]>([[0, []]])
