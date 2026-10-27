@@ -11,9 +11,11 @@ export function modellLaden(url = (import.meta.env?.BASE_URL ?? "./") + "modell/
       const antwort = await fetch(url)
       if (!antwort.ok) return null
       const paket = new Uint8Array(await antwort.arrayBuffer())
-      const [{ entpacken }, { GLTFLoader }] = await Promise.all([import("./modellpaket"), import("three/examples/jsm/loaders/GLTFLoader.js")])
+      const [{ entpacken }, { GLTFLoader }, { verfeinern }] = await Promise.all([import("./modellpaket"), import("three/examples/jsm/loaders/GLTFLoader.js"), import("./verfeinern")])
       const glb = entpacken(paket)
       const gltf = await new GLTFLoader().parseAsync(glb.buffer.slice(glb.byteOffset, glb.byteOffset + glb.byteLength) as ArrayBuffer, "")
+      // Rumpf und Beine feiner und runder (einmal beim Laden)
+      verfeinern(gltf.scene)
       return gltf.scene
     } catch {
       return null

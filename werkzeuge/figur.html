@@ -6,7 +6,7 @@
 <div id="raster"></div>
 <script type="module">
   // Werkzeug zur Prüfung: ?ids=a,b&t=0,5,10 zeigt Standbilder der Dehnungen zu den Zeiten
-  import { standbild, modellSetzen } from "../src/ui/dehnfigur.ts"
+  import { standbild, modellSetzen, pruefansicht } from "../src/ui/dehnfigur.ts"
   import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js"
   import { modellLaden } from "../src/ui/modellladen.ts"
   import { DEHNUNGEN, TEST_DEHNUNGEN } from "../src/daten/dehnungen/index.ts"
@@ -14,6 +14,8 @@
   // ?modell=1: lokales Modell aus werkzeuge/privat laden (liegt nicht im Repository)
   if (q.get("modell") === "fbx") modellSetzen(await new FBXLoader().loadAsync("./privat/frau.fbx"))
   else if (q.get("modell")) modellSetzen(await modellLaden("./privat/figur.bin"))
+  // ?raster=1, ?nackt=1, ?gelenke=1: Prüfansichten wie im Entwicklermodus
+  pruefansicht({ gelenke: !!q.get("gelenke"), raster: !!q.get("raster"), nackt: !!q.get("nackt") })
   const alle = { ...DEHNUNGEN, ...TEST_DEHNUNGEN }
   const ids = (q.get("ids") || Object.keys(alle).join(",")).split(",")
   // t=z: Zielhaltung (bei Abfolgen der mittlere Schritt)
