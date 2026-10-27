@@ -185,10 +185,41 @@ vec3 haarDrehe(vec3 v, vec3 p) {
   return m
 }
 
+/** Messgitter auf Körper und Kleidung (Entwicklermodus): macht Rundungen und Verdrehungen sichtbar */
+export const RASTER = { value: 0 }
+/** Ohne Kleidung (Entwicklermodus): Shorts, Bustier und Socken weg, nur Haut */
+export const NACKT = { value: 0 }
+const RASTER_GLSL = `
+if (uRaster > 0.5) {
+  // Linien alle 3 cm in der Ruhehaltung: waagerechte Ringe weiß, senkrechte Ebenen hellblau, Körpermitte rot
+  vec3 q = vRuhe / 3.0;
+  vec3 g = abs(fract(q - 0.5) - 0.5) / max(fwidth(q), vec3(1e-4));
+  float ring = 1.0 - clamp(g.z, 0.0, 1.0);
+  float senk = 1.0 - clamp(min(g.x, g.y), 0.0, 1.0);
+  float mitte = 1.0 - clamp(abs(vRuhe.x) / max(fwidth(vRuhe.x), 1e-4) * 0.5, 0.0, 1.0);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.86, 1.0), senk * 0.75);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), ring * 0.85);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.25, 0.25), mitte);
+}`
+
+/** Gitter auch auf Netzen ohne Kleidungs-Shader (Arme, Bustier) */
+function mitRaster(m: THREE.MeshStandardMaterial, schluessel: string): THREE.MeshStandardMaterial {
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uRaster = RASTER
+    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;")
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform float uRaster;")
+      .replace("#include <color_fragment>", "#include <color_fragment>\n" + RASTER_GLSL)
+  }
+  m.customProgramCacheKey = () => schluessel
+  return m
+}
+
 export class Modellfigur {
   /** Werte für den Haar-Shader, je Bild neu gesetzt */
   haar: Haarwerte = { uQ: { value: new THREE.Vector4(0, 0, 0, 1) }, uDreh: { value: new THREE.Vector3() }, uBodenP: { value: new THREE.Vector3(0, 0, -1e4) }, uBodenN: { value: new THREE.Vector3(0, 0, 1) } }
   haarNetz: THREE.SkinnedMesh | null = null
+  bustier: THREE.Mesh[] = []
   kopf: THREE.Bone | null = null
   eintraege: Eintrag[] = []
   hueftknochen: THREE.Bone
@@ -284,6 +315,7 @@ export class Modellfigur {
 
   /** Haltung der Dehnfigur übernehmen (die Dehnfigur ist schon gestellt). */
   uebernehmen(boden: boolean, matte = 0.006) {
+    for (const b of this.bustier) b.visible = NACKT.value < 0.5
     const m = this.modell
     m.position.set(0, 0, 0)
     m.updateMatrixWorld(true)
@@ -411,6 +443,7 @@ export class Modellfigur {
       // Slip unter den Shorts ausblenden, sonst zeichnet er sich ab
       if (m.isMesh && /Underwear/.test(m.name + mat)) m.visible = false
       if (m.isMesh && m.morphTargetDictionary) this.gesichter.push(m)
+      if (m.isMesh && /Bra/.test(mat)) this.bustier.push(m)
     })
     const haut = "#d9a07a"
     const stoff = new THREE.Color("#4e2e24")
@@ -419,9 +452,11 @@ export class Modellfigur {
       m.onBeforeCompile = (sh) => {
         sh.uniforms.uStoff = { value: stoff }
         sh.uniforms.uSocke = { value: socke }
+        sh.uniforms.uRaster = RASTER
+        sh.uniforms.uNackt = NACKT
         sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvRuhe = position;")
         sh.fragmentShader = sh.fragmentShader
-          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform vec3 uStoff;\nuniform vec3 uSocke;")
+          .replace("#include <common>", "#include <common>\nvarying vec3 vRuhe;\nuniform vec3 uStoff;\nuniform vec3 uSocke;\nuniform float uRaster;\nuniform float uNackt;")
           .replace(
             "#include <color_fragment>",
             `#include <color_fragment>
@@ -429,6 +464,7 @@ export class Modellfigur {
             float h = vRuhe.z;
             float seite = abs(vRuhe.x);
             bool stoffig = false;
+            if (uNackt < 0.5) {
             // Scrunch-Shorts: hoher Bund bis knapp über den Nabel, Bein endet etwa 5 cm unter der Gesäßfalte (bei 79 cm)
             if (h > 74.0 && h < 101.5 && seite < 19.0) { diffuseColor.rgb = uStoff; stoffig = true; }
             // Bustier-Unterbrustband
@@ -436,7 +472,9 @@ export class Modellfigur {
             // Söckchen
             if (h < 11.0) diffuseColor.rgb = uSocke;
             // Raffnaht hinten über dem Gesäß
-            if (h > 84.0 && h < 96.0 && vRuhe.y > 6.0 && abs(abs(vRuhe.x) - (96.0 - h) * 0.28) < 0.35) diffuseColor.rgb *= 0.7;`,
+            if (h > 84.0 && h < 96.0 && vRuhe.y > 6.0 && abs(abs(vRuhe.x) - (96.0 - h) * 0.28) < 0.35) diffuseColor.rgb *= 0.7;
+            }
+            ${RASTER_GLSL}`,
           )
           // Stoff matt wie das Bustier, Haut seidig
           .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n if (stoffig) roughnessFactor = 0.85;")
@@ -474,13 +512,13 @@ export class Modellfigur {
           m.customProgramCacheKey = () => "kopfhaut"
           return m
         }
-        if (/Skin|Arm/.test(n)) return std(haut, 0.55)
+        if (/Skin|Arm/.test(n)) return mitRaster(std(haut, 0.55), "haut-raster")
         if (/Nails/.test(n)) return std("#c98f7c", 0.4)
         if (/Eyelash|Eyebrow/.test(n)) return new THREE.MeshStandardMaterial({ name: n, color: "#2a1a14", roughness: 0.8 })
         if (/Hair/.test(n)) return haarMaterial(n, this.haar)
         if (/Cornea/.test(n)) return new THREE.MeshStandardMaterial({ name: n, color: "#ffffff", roughness: 0.05, transparent: true, opacity: 0.08, depthWrite: false })
         if (/Eye_[LR]/.test(n)) return augen(mesh as THREE.Mesh)
-        if (/Bra|Underwear/.test(n)) return std("#4e2e24", 0.8)
+        if (/Bra|Underwear/.test(n)) return mitRaster(std("#4e2e24", 0.8), "stoff-raster")
         if (/Teeth/.test(n)) return std("#f1ece4", 0.4)
         if (/Tongue/.test(n)) return std("#b0605a", 0.5)
         if (/Occlusion|OEM3Dlusion|Tearline/.test(n)) return new THREE.MeshBasicMaterial({ visible: false })

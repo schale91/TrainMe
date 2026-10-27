@@ -9,7 +9,7 @@
 import * as THREE from "three"
 import { clone as skelettKlon } from "three/examples/jsm/utils/SkeletonUtils.js"
 import { POS_GRUND, standZu, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand } from "../logik/dehnbewegung"
-import { Modellfigur } from "./modellfigur"
+import { Modellfigur, NACKT, RASTER } from "./modellfigur"
 
 /** Geriggtes Modell, das statt der gezeichneten Figur gezeigt wird (falls geladen). */
 let vorlage: THREE.Object3D | null = null
@@ -906,9 +906,11 @@ function wischenDreht(e: Eintrag): () => void {
   }
 }
 
-/** Gelenk-Einblendung für alle Figuren an- oder ausschalten und sofort neu zeichnen */
-export function gelenkeZeigen(an: boolean) {
-  anzeige.gelenke = an
+/** Prüfansichten (Entwicklermodus) für alle Figuren setzen und sofort neu zeichnen */
+export function pruefansicht(a: { gelenke: boolean; raster: boolean; nackt: boolean }) {
+  anzeige.gelenke = a.gelenke
+  RASTER.value = a.raster ? 1 : 0
+  NACKT.value = a.nackt ? 1 : 0
   for (const e of eintraege) zeichne(e, e.still ? 0 : performance.now() / 1000)
 }
 

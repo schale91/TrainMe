@@ -2399,10 +2399,16 @@ select.ampel.rot {
 .dehnfigur.klein .figur {
   aspect-ratio: 1;
 }
-.gelenkknopf {
+.dehnpruef {
   position: absolute;
   top: 8px;
   right: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.gelenkknopf {
   padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.35);
