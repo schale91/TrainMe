@@ -393,6 +393,7 @@ export class Modellfigur {
       }
       zuletzt.set(e.gelenk, weltQ(quelle))
       ziel.multiply(e.korrektur)
+      if (e.gelenk.startsWith("schulterblatt_")) ziel.premultiply(this.schulterRhythmus(e.gelenk.slice(-1)))
       const eltern = e.bone.parent ? weltQ(e.bone.parent) : new THREE.Quaternion()
       e.bone.quaternion.copy(eltern.invert().multiply(ziel))
       e.bone.updateMatrixWorld(true)
@@ -435,6 +436,24 @@ export class Modellfigur {
     // Boden als Ebene im Netzraum
     this.haar.uBodenP.value.set(0, matte, 0).applyMatrix4(new THREE.Matrix4().copy(netz.matrixWorld).invert())
     this.haar.uBodenN.value.copy(unten).negate()
+  }
+
+  /**
+   * Schulterblatt-Rhythmus: Wird der Arm über etwa 60 Grad gehoben, hebt sich das Schlüsselbein mit (bis 35 Grad,
+   * gut ein Drittel der weiteren Hebung). Sonst knickt die Haut an Schulter und Achsel ein, weil nur der Oberarm dreht.
+   */
+  private schulterRhythmus(seite: string): THREE.Quaternion {
+    const k = this.quelle.k
+    const sch = k["schulter_" + seite], ell = k["ellbogen_" + seite], rumpf = k["bws"]
+    if (!sch || !ell || !rumpf) return new THREE.Quaternion()
+    const arm = weltP(ell).sub(weltP(sch)).normalize()
+    const rq = weltQ(rumpf)
+    const unten = new THREE.Vector3(0, -1, 0).applyQuaternion(rq)
+    const hebung = THREE.MathUtils.radToDeg(arm.angleTo(unten))
+    const winkel = THREE.MathUtils.clamp((hebung - 60) * 0.38, 0, 35)
+    if (!winkel) return new THREE.Quaternion()
+    const vorn = new THREE.Vector3(0, 0, 1).applyQuaternion(rq)
+    return new THREE.Quaternion().setFromAxisAngle(vorn, THREE.MathUtils.degToRad(seite === "l" ? winkel : -winkel))
   }
 
   /** Freundlicher Ausdruck mit leichtem Lächeln, Blinzeln etwa alle 4 Sekunden. */

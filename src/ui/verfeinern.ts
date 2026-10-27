@@ -66,7 +66,7 @@ export function verfeinern(modell: THREE.Object3D) {
   }
 
   // Kanten mit ihren gegenüberliegenden Punkten, Nachbarn je Punkt, feste Punkte (Rand oder Naht)
-  const kanten = new Map<string, { gegen: number[]; naht: boolean }>()
+  const kanten = new Map<string, { gegen: number[]; naht: boolean; geteilt: boolean }>()
   const nachbarn: Set<number>[] = lage.map(() => new Set())
   const fest = new Uint8Array(lage.length)
   const kante = (a: number, b: number) => (a < b ? a + "_" + b : b + "_" + a)
@@ -75,9 +75,10 @@ export function verfeinern(modell: THREE.Object3D) {
       const p = [n.punkt[n.ecken[e]], n.punkt[n.ecken[e + 1]], n.punkt[n.ecken[e + 2]]]
       for (let k = 0; k < 3; k++) {
         const a = p[k], b = p[(k + 1) % 3], c = p[(k + 2) % 3]
-        const x = kanten.get(kante(a, b)) ?? { gegen: [], naht: false }
+        const x = kanten.get(kante(a, b)) ?? { gegen: [], naht: false, geteilt: false }
         x.gegen.push(c)
         if (!n.teilen) x.naht = true
+        if (n.teilen) x.geteilt = true
         kanten.set(kante(a, b), x)
         nachbarn[a].add(b)
         nachbarn[b].add(a)
@@ -109,70 +110,92 @@ export function verfeinern(modell: THREE.Object3D) {
     kantenpunkt.set(k, m)
   }
 
+  // Ecke eines neuen Dreiecks: aus Eckpunkt a (b < 0) oder als Mitte von a und b, an der Lage p
+  type Ecke = [number, number, THREE.Vector3]
   for (const n of netze) {
-    if (!n.teilen) continue
-    const g = n.geo
-    const namen = Object.keys(g.attributes)
-    const quelle = namen.map((name) => g.getAttribute(name))
-    const morph = (g.morphAttributes.position || []).map((a) => a)
-    const anzahl = (n.ecken.length / 3) * 12
-    const ziel = quelle.map((a) => new Float32Array(anzahl * a.itemSize))
-    const morphZiel = morph.map(() => new Float32Array(anzahl * 3))
-    const iSkin = namen.indexOf("skinIndex"), iGew = namen.indexOf("skinWeight"), iPos = namen.indexOf("position"), iNorm = namen.indexOf("normal")
-    let o = 0
-    // Ecke schreiben: aus einem Eckpunkt (b < 0) oder als Mitte zweier Eckpunkte a und b
-    const schreibe = (a: number, b: number, lagePunkt: THREE.Vector3) => {
-      for (let q = 0; q < quelle.length; q++) {
-        const at = quelle[q], s = at.itemSize, z = ziel[q]
-        if (q === iSkin || q === iGew) continue
-        for (let c = 0; c < s; c++) z[o * s + c] = b < 0 ? at.getComponent(a, c) : (at.getComponent(a, c) + at.getComponent(b, c)) / 2
-        if (q === iNorm && b >= 0) {
-          v.set(z[o * 3], z[o * 3 + 1], z[o * 3 + 2]).normalize()
-          z[o * 3] = v.x
-          z[o * 3 + 1] = v.y
-          z[o * 3 + 2] = v.z
-        }
-      }
-      if (iPos >= 0) {
-        ziel[iPos][o * 3] = lagePunkt.x
-        ziel[iPos][o * 3 + 1] = lagePunkt.y
-        ziel[iPos][o * 3 + 2] = lagePunkt.z
-      }
-      if (iSkin >= 0 && iGew >= 0) {
-        const ia = [0, 1, 2, 3].map((c) => quelle[iSkin].getComponent(a, c)), wa = [0, 1, 2, 3].map((c) => quelle[iGew].getComponent(a, c))
-        let [ii, ww] = [ia, wa]
-        if (b >= 0) [ii, ww] = gewichte(ia, wa, [0, 1, 2, 3].map((c) => quelle[iSkin].getComponent(b, c)), [0, 1, 2, 3].map((c) => quelle[iGew].getComponent(b, c)))
-        for (let c = 0; c < 4; c++) {
-          ziel[iSkin][o * 4 + c] = ii[c]
-          ziel[iGew][o * 4 + c] = ww[c]
-        }
-      }
-      morph.forEach((m, k) => {
-        for (let c = 0; c < 3; c++) morphZiel[k][o * 3 + c] = b < 0 ? m.getComponent(a, c) : (m.getComponent(a, c) + m.getComponent(b, c)) / 2
-      })
-      o++
-    }
+    const ecken: Ecke[] = []
+    let geaendert = n.teilen
     for (let e = 0; e < n.ecken.length; e += 3) {
       const c = [n.ecken[e], n.ecken[e + 1], n.ecken[e + 2]]
       const p = c.map((i) => n.punkt[i])
-      const m01 = kantenpunkt.get(kante(p[0], p[1]))!, m12 = kantenpunkt.get(kante(p[1], p[2]))!, m20 = kantenpunkt.get(kante(p[2], p[0]))!
-      const ecke = (k: number) => schreibe(c[k], -1, neu[p[k]])
-      const mitte = (k: number) => [() => schreibe(c[0], c[1], m01), () => schreibe(c[1], c[2], m12), () => schreibe(c[2], c[0], m20)][k]()
-      // vier Dreiecke, gleiche Umlaufrichtung wie das alte
-      ecke(0); mitte(0); mitte(2)
-      mitte(0); ecke(1); mitte(1)
-      mitte(2); mitte(1); ecke(2)
-      mitte(0); mitte(1); mitte(2)
+      const mitte = (k: number): Ecke => [c[k], c[(k + 1) % 3], kantenpunkt.get(kante(p[k], p[(k + 1) % 3]))!]
+      if (n.teilen) {
+        const ecke = (k: number): Ecke => [c[k], -1, neu[p[k]]]
+        // vier Dreiecke, gleiche Umlaufrichtung wie das alte
+        ecken.push(ecke(0), mitte(0), mitte(2), mitte(0), ecke(1), mitte(1), mitte(2), mitte(1), ecke(2), mitte(0), mitte(1), mitte(2))
+        continue
+      }
+      // Nicht unterteiltes Netz (Arm, Kopf): Kanten an der Naht zum unterteilten Rumpf ebenfalls teilen, sonst
+      // bleiben dort T-Stöße mit feinen Löchern. Die Form ändert sich nicht (Mitte der Kante).
+      const geteilt = [0, 1, 2].map((k) => !!kanten.get(kante(p[k], p[(k + 1) % 3]))?.geteilt)
+      const ecke = (k: number): Ecke => [c[k], -1, lage[p[k]]]
+      const zahl = geteilt.filter(Boolean).length
+      if (zahl) geaendert = true
+      if (zahl === 0) ecken.push(ecke(0), ecke(1), ecke(2))
+      else if (zahl === 3) ecken.push(ecke(0), mitte(0), mitte(2), mitte(0), ecke(1), mitte(1), mitte(2), mitte(1), ecke(2), mitte(0), mitte(1), mitte(2))
+      else if (zahl === 1) {
+        const k = geteilt.indexOf(true)
+        ecken.push(ecke(k), mitte(k), ecke((k + 2) % 3), mitte(k), ecke((k + 1) % 3), ecke((k + 2) % 3))
+      } else {
+        // zwei geteilte Kanten: k ist die ungeteilte
+        const k = geteilt.indexOf(false)
+        const a = (k + 1) % 3, b = (k + 2) % 3
+        // Kanten a (von Ecke a nach b) und b (von Ecke b nach k) sind geteilt
+        ecken.push(mitte(a), ecke(b), mitte(b), ecke(a), mitte(a), mitte(b), ecke(a), mitte(b), ecke(k))
+      }
     }
-    const fein = new THREE.BufferGeometry()
-    namen.forEach((name, q) => fein.setAttribute(name, new THREE.BufferAttribute(ziel[q], quelle[q].itemSize, quelle[q].normalized)))
-    if (morph.length) {
-      fein.morphAttributes.position = morphZiel.map((z) => new THREE.BufferAttribute(z, 3))
-      fein.morphTargetsRelative = g.morphTargetsRelative
-    }
-    fein.userData = { ...g.userData, verfeinert: true }
-    fein.computeBoundingBox()
-    fein.computeBoundingSphere()
-    n.mesh.geometry = fein
+    if (geaendert) n.mesh.geometry = ausgeben(n.geo, ecken)
   }
+}
+
+/** Neue, nicht indizierte Geometrie aus Ecken (Eckpunkt oder Mitte zweier Eckpunkte) bauen */
+function ausgeben(g: THREE.BufferGeometry, ecken: [number, number, THREE.Vector3][]): THREE.BufferGeometry {
+  const v = new THREE.Vector3()
+  const namen = Object.keys(g.attributes)
+  const quelle = namen.map((name) => g.getAttribute(name))
+  const morph = (g.morphAttributes.position || []).map((a) => a)
+  const anzahl = ecken.length
+  const ziel = quelle.map((a) => new Float32Array(anzahl * a.itemSize))
+  const morphZiel = morph.map(() => new Float32Array(anzahl * 3))
+  const iSkin = namen.indexOf("skinIndex"), iGew = namen.indexOf("skinWeight"), iPos = namen.indexOf("position"), iNorm = namen.indexOf("normal")
+  ecken.forEach(([a, b, lagePunkt], o) => {
+    for (let q = 0; q < quelle.length; q++) {
+      const at = quelle[q], s = at.itemSize, z = ziel[q]
+      if (q === iSkin || q === iGew) continue
+      for (let c = 0; c < s; c++) z[o * s + c] = b < 0 ? at.getComponent(a, c) : (at.getComponent(a, c) + at.getComponent(b, c)) / 2
+      if (q === iNorm && b >= 0) {
+        v.set(z[o * 3], z[o * 3 + 1], z[o * 3 + 2]).normalize()
+        z[o * 3] = v.x
+        z[o * 3 + 1] = v.y
+        z[o * 3 + 2] = v.z
+      }
+    }
+    if (iPos >= 0) {
+      ziel[iPos][o * 3] = lagePunkt.x
+      ziel[iPos][o * 3 + 1] = lagePunkt.y
+      ziel[iPos][o * 3 + 2] = lagePunkt.z
+    }
+    if (iSkin >= 0 && iGew >= 0) {
+      const ia = [0, 1, 2, 3].map((c) => quelle[iSkin].getComponent(a, c)), wa = [0, 1, 2, 3].map((c) => quelle[iGew].getComponent(a, c))
+      let [ii, ww] = [ia, wa]
+      if (b >= 0) [ii, ww] = gewichte(ia, wa, [0, 1, 2, 3].map((c) => quelle[iSkin].getComponent(b, c)), [0, 1, 2, 3].map((c) => quelle[iGew].getComponent(b, c)))
+      for (let c = 0; c < 4; c++) {
+        ziel[iSkin][o * 4 + c] = ii[c]
+        ziel[iGew][o * 4 + c] = ww[c]
+      }
+    }
+    morph.forEach((m, k) => {
+      for (let c = 0; c < 3; c++) morphZiel[k][o * 3 + c] = b < 0 ? m.getComponent(a, c) : (m.getComponent(a, c) + m.getComponent(b, c)) / 2
+    })
+  })
+  const fein = new THREE.BufferGeometry()
+  namen.forEach((name, q) => fein.setAttribute(name, new THREE.BufferAttribute(ziel[q], quelle[q].itemSize, quelle[q].normalized)))
+  if (morph.length) {
+    fein.morphAttributes.position = morphZiel.map((z) => new THREE.BufferAttribute(z, 3))
+    fein.morphTargetsRelative = g.morphTargetsRelative
+  }
+  fein.userData = { ...g.userData, verfeinert: true }
+  fein.computeBoundingBox()
+  fein.computeBoundingSphere()
+  return fein
 }
