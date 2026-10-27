@@ -2433,3 +2433,38 @@ select.ampel.rot {
   pointer-events: none;
   transition: opacity 0.15s;
 }
+
+/* ---------- Kraftkurve in der laufenden Übung ---------- */
+
+.trainingskurve {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 4px 0 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius);
+  background: var(--flaeche2);
+  color: var(--text);
+  text-align: left;
+}
+.trainingskurvetext {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+}
+.trainingskurvetext small {
+  color: var(--leise);
+  font-size: 12px;
+}
+.trainingskurvetext small.heute {
+  color: var(--gruen);
+}
+.trainingskurvetext b {
+  font-size: 17px;
+}
+.trainingskurve .minikurve {
+  flex: 1;
+  min-width: 0;
+}

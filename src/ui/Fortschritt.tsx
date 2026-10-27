@@ -97,6 +97,11 @@ function verlaufVon(protokoll: Protokoll[], id: string): Punkt[] {
     .map(([datum, wert]) => ({ datum, wert }))
 }
 
+/** Punkte der Kraftkurve einer Übung: ältere Werte (z. B. aus dem Kraftbuch) und das Protokoll. */
+export function kurvenPunkte(daten: Daten, id: string): Punkt[] {
+  return [...(daten.archiv?.[id] || []).map((x) => ({ datum: x.datum, wert: x.kg })), ...verlaufVon(daten.protokoll, id)].sort((a, b) => (a.datum < b.datum ? -1 : 1))
+}
+
 function Kraft(props: { daten: Daten }) {
   const { daten } = props
   const [offen, setOffen] = useState<string | null>(null)
@@ -124,7 +129,7 @@ function Kraft(props: { daten: Daten }) {
   }
   const sel = offen ? uebung(offen) : null
   // Ältere Werte (z. B. Phase 1 aus dem Kraftbuch) stehen davor in der Kurve
-  const selPunkte = offen ? [...(daten.archiv?.[offen] || []).map((x) => ({ datum: x.datum, wert: x.kg })), ...verlaufVon(daten.protokoll, offen)].sort((a, b) => (a.datum < b.datum ? -1 : 1)) : []
+  const selPunkte = offen ? kurvenPunkte(daten, offen) : []
   const mitLast = offen ? daten.protokoll.some((p) => p.uebung === offen && p.saetze.some((s) => s.last)) : false
   const einheit = (id: string) => (daten.protokoll.some((p) => p.uebung === id && p.saetze.some((s) => s.last)) ? "kg" : uebung(id)?.belastung === "zeit" ? "s" : "Wdh")
 

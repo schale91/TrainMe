@@ -17,6 +17,8 @@ import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
 import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
+import { Kurve, kurvenPunkte } from "./Fortschritt"
+import { bestwert } from "../logik/spiel"
 
 type Eingabe = Satz & { fertig: boolean }
 /** ort: Kennung des Orts (Name, Geräte, Gewichte), für den die Vorgaben gerechnet wurden */
@@ -108,6 +110,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [jetzt, setJetzt] = useState(Date.now())
   const [tausch, setTausch] = useState<number | null>(null)
   const [info, setInfo] = useState<Uebung | null>(null)
+  const [kurveOffen, setKurveOffen] = useState<number | null>(null)
   const [rirHilfe, setRirHilfe] = useState(false)
   const [warumOffen, setWarumOffen] = useState<number | null>(null)
   const [anpassungen, setAnpassungen] = useState<Record<number, (Anpassung & { satz: number }) | undefined>>({})
@@ -183,6 +186,16 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   }
   const erledigt = saetze.reduce((n, ss) => n + ss.filter((s) => s.fertig).length, 0)
   const gesamt = saetze.reduce((n, ss) => n + ss.length, 0)
+  const aktiveUebung = saetze.findIndex((ss) => ss.length > 0 && ss.some((s) => !s.fertig))
+  /** Kurve einer Übung mit dem heutigen Stand aus den schon abgehakten Sätzen. */
+  const kurveMitHeute = (i: number) => {
+    const u = plaetze[i].uebung
+    const punkte = kurvenPunkte(daten, u.id).filter((x) => x.datum !== einheit.datum)
+    const fertig = saetze[i].filter((s) => s.fertig).map(({ fertig: _f, ...s }) => s)
+    const wert = fertig.length ? Math.round(bestwert({ datum: einheit.datum, uebung: u.id, saetze: fertig }) * 2) / 2 : 0
+    const kg = fertig.some((s) => s.last) || daten.protokoll.some((p) => p.uebung === u.id && p.saetze.some((s) => s.last))
+    return { punkte: wert > 0 ? [...punkte, { datum: einheit.datum, wert }] : punkte, heute: wert > 0, kg, einheit: kg ? "kg" : u.belastung === "zeit" ? "s" : "Wdh" }
+  }
   const vollstaendig = saetze.every((ss) => ss.some((s) => s.fertig))
 
   const fertig = () => {
@@ -251,6 +264,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
 
       {plaetze.map((p, i) => {
         const u = p.uebung
+        // Kraftkurve nur bei der Übung, an der gerade gearbeitet wird (erste mit offenen Sätzen)
+        // Bei Schnellkraft (Würfe, Sprünge) sagt ein geschätztes Maximum nichts aus
+        const kurve = i === aktiveUebung && p.rolle !== "mobil" && p.rolle !== "ausdauer" && p.rolle !== "schnellkraft" && u.muster.indexOf("schnellkraft") < 0 ? kurveMitHeute(i) : null
         const v = p.vorgabe
         const geraet = lastGeraet(u, ort)
         const lasten = lastenAn(u, ort)
@@ -280,6 +296,20 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               {u.name}
             </h2>
             <Figur uebung={u} geraet={geraet} klein />
+            {kurve && kurve.punkte.length ? (
+              <button type="button" className="trainingskurve" onClick={() => setKurveOffen(i)} aria-label={"Kraftkurve " + u.name}>
+                <span className="trainingskurvetext">
+                  <small>{kurve.kg ? "Geschätztes Maximum" : "Bester Satz"}</small>
+                  <b>
+                    {zahl(kurve.punkte[kurve.punkte.length - 1].wert)} {kurve.einheit}
+                  </b>
+                  {kurve.heute ? <small className="heute">mit deinen Sätzen von heute</small> : null}
+                </span>
+                <span className="minikurve">
+                  <Kurve punkte={kurve.punkte} einheit="" hoehe={56} mini />
+                </span>
+              </button>
+            ) : null}
             <div className="vorgabezeile">
               <span className="vorgabe">{vorgabeText(p)}</span>
               {v.last !== null && u.belastung === "gewicht" ? <span className="vorgabe gewicht">{lastText(v.last, geraet)}</span> : null}
@@ -481,6 +511,14 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         <p className="gruppenfuss">Ehrlich schätzen: Danach richtet sich das Gewicht der nächsten Einheit. Die Schätzung wird mit Übung genauer (Zourdos et al. 2016).</p>
       </Blatt>
 
+      <Blatt offen={kurveOffen !== null} onClose={() => setKurveOffen(null)} titel={kurveOffen !== null ? plaetze[kurveOffen].uebung.name : ""}>
+        {kurveOffen !== null ? (
+          <>
+            <p className="infokurz">{kurveMitHeute(kurveOffen).kg ? "Geschätztes Maximum (1 Wiederholung) je Einheit, der letzte Punkt mit deinen Sätzen von heute." : "Bester Satz je Einheit, der letzte Punkt mit deinen Sätzen von heute."}</p>
+            <Kurve punkte={kurveMitHeute(kurveOffen).punkte} einheit={kurveMitHeute(kurveOffen).einheit} hoehe={190} />
+          </>
+        ) : null}
+      </Blatt>
       <UebungInfoBlatt uebung={info} onClose={() => setInfo(null)} />
     </Seite>
   )
