@@ -19,7 +19,24 @@ import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
 
 type Eingabe = Satz & { fertig: boolean }
-type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][] }
+/** ort: Kennung des Orts (Name, Geräte, Gewichte), für den die Vorgaben gerechnet wurden */
+type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string }
+
+/** Kennung eines Orts: ändern sich Geräte oder Gewichte, stimmen die Vorschläge eines Entwurfs nicht mehr. */
+const ortKennung = (o: unknown) => JSON.stringify(o ?? null)
+
+/**
+ * Entwurf an einen geänderten Ort anpassen: Übungen bekommen die neu gerechneten Vorgaben, abgehakte Sätze bleiben,
+ * offene Sätze bekommen die neuen Gewichtsvorschläge. Getauschte Übungen bleiben getauscht.
+ */
+export function entwurfAnpassen(e: Entwurf, neu: Platz[], start: (p: Platz) => Eingabe[]): { plaetze: Platz[]; saetze: Eingabe[][] } {
+  const plaetze = e.plaetze.map((p, i) => neu.find((x, k) => x.uebung.id === p.uebung.id && (k === i || !e.plaetze.some((y, j) => j !== i && y.uebung.id === p.uebung.id))) ?? p)
+  const saetze = e.saetze.map((liste, i) => {
+    const frisch = start(plaetze[i])
+    return liste.map((s, k) => (s.fertig ? s : (frisch[k] ?? { ...s, last: frisch[0]?.last ?? s.last })))
+  })
+  return { plaetze, saetze }
+}
 
 const ENTWURF = "trainme.entwurf"
 
@@ -78,7 +95,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [schmerzVor, setSchmerzVor] = useState<number | null>(null)
   const ort = profil.orte[einheit.ort] || profil.orte[0]
   const schluessel = einheit.datum + "|" + einheit.titel
-  const gespeichert = useMemo(() => ladeEntwurf(schluessel), [schluessel])
+  const kennung = ortKennung(ort)
+  const gespeichert = useMemo(() => {
+    const e = ladeEntwurf(schluessel)
+    // Ort oder Ausstattung seitdem geändert: Vorschläge neu rechnen, Abgehaktes behalten
+    return e && e.ort !== kennung ? { ...e, ...entwurfAnpassen(e, einheit.plaetze, (p) => startSaetze(p, daten)) } : e
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schluessel])
   const [plaetze, setPlaetze] = useState<Platz[]>(gespeichert ? gespeichert.plaetze : einheit.plaetze)
   const [saetze, setSaetze] = useState<Eingabe[][]>(gespeichert ? gespeichert.saetze : einheit.plaetze.map((p) => startSaetze(p, daten)))
   const [pauseBis, setPauseBis] = useState<number | null>(null)
@@ -92,11 +115,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
 
   useEffect(() => {
     try {
-      localStorage.setItem(ENTWURF, JSON.stringify({ schluessel, plaetze, saetze }))
+      localStorage.setItem(ENTWURF, JSON.stringify({ schluessel, plaetze, saetze, ort: kennung }))
     } catch {
       /* Speicher voll oder gesperrt */
     }
-  }, [schluessel, plaetze, saetze])
+  }, [schluessel, plaetze, saetze, kennung])
 
   useEffect(() => {
     if (pauseBis === null) return

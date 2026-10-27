@@ -338,3 +338,29 @@ describe("Übungsfiguren", () => {
     expect(figurName(["Etwas ganz Unbekanntes"])).toBeNull()
   })
 })
+
+describe("Ort geändert, Einheit schon offen", () => {
+  test("offene Sätze bekommen die neuen Gewichte, abgehakte bleiben", async () => {
+    const { entwurfAnpassen } = await import("../src/ui/Training")
+    const d = leer()
+    einspielen(d, uebernehmen(kraftbuchDoks(), "2026-10-26"), "2026-10-26", "Alex")
+    const tag = d.eigenerPlan!.tage[2]
+    const alt = einheitAusPlan(d.profil!, d, tag, "2026-10-27", 0, () => [20])
+    const neu = einheitAusPlan(d.profil!, d, tag, "2026-10-27", 0, () => [100, 102.5, 105])
+    const s = (last: number | null, fertig: boolean) => ({ last, wdh: 4, rir: 2, fertig })
+    const e = { schluessel: "x", plaetze: alt.plaetze, saetze: alt.plaetze.map((_, i) => (i === 0 ? [s(20, true), s(20, false)] : [s(null, false)])) }
+    const r = entwurfAnpassen(e, neu.plaetze, (p) => [{ last: p.vorgabe.last, wdh: 4, rir: 2, fertig: false }, { last: p.vorgabe.last, wdh: 4, rir: 2, fertig: false }])
+    expect(r.plaetze[0].vorgabe.last).toBe(102.5)
+    expect(r.saetze[0].map((x) => x.last)).toEqual([20, 102.5])
+    expect(r.saetze[0][0].fertig).toBe(true)
+  })
+
+  test("Übernahme in ein schon eingerichtetes Profil: Kraftraum für die Trainingstage, Einstufung erledigt", () => {
+    const d = mitProfil()
+    einspielen(d, uebernehmen(kraftbuchDoks(), "2026-10-26"), "2026-10-26")
+    const k = d.profil!.orte.findIndex((o) => o.name.startsWith("Kraftraum"))
+    expect(k).toBeGreaterThan(0)
+    expect(d.profil!.woche.filter((t) => t.art === "training").every((t) => t.ort === k)).toBe(true)
+    expect(d.einstufung).toEqual({ kraft: "2026-10-26", mobil: "2026-10-26" })
+  })
+})

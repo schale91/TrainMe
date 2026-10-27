@@ -2409,3 +2409,8 @@ select.ampel.rot {
 .umstellen:active {
   border-color: var(--akzent);
 }
+
+/* Eingebettet in der Lebenswelt: zurück in die Lebenswelt (sie zeigt keine eigene Leiste) */
+.zurlebenswelt {
+  position: static;
+}
