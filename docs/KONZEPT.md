@@ -79,6 +79,15 @@ Jeder Platz speichert die Gründe der Auswahl: Platz in der Vorlage, Ersatzmuste
 Golf- oder Sportbezug, steigerbares Gerät am Ort, Schwierigkeit passend zur Erfahrung, Schonung bei Beschwerden,
 Aufstieg zur schwereren Variante, bisheriger Verlauf, gleiche Übung im ganzen Block und die Phase.
 
+### Wechsel zur nächsten Übung
+
+Nach dem letzten Satz einer Übung (bei Supersätzen nach dem letzten Satz der Gruppe) rückt die nächste offene Übung
+ins Bild und ist als „Jetzt dran“ markiert. Die Wechselpause richtet sich nach der kommenden Übung: ihre Satzpause
+(schwere Grundübungen 2 bis 3 Minuten, Ergänzungen 1 bis 2 Minuten nach dem ACSM Position Stand 2009; für Kraft
+wirken Pausen über 2 Minuten besser, Grgic et al. 2018). Arbeiten dieselben Muskeln weiter, gilt die längere der
+beiden Pausen. Für einen Gerätewechsel kommen 30 Sekunden dazu. Vor Beweglichkeit 30 Sekunden, vor Ausdauer 60,
+insgesamt 1 bis 5 Minuten. Der Grund steht auf der Karte der nächsten Übung.
+
 ## 3. Sportprofile
 
 - **Golf:** Grundkraft (Kniebeuge, Hüftstreckung, einbeinig), Rotations- und Anti-Rotationskraft, Medizinballwürfe und Sprünge für die Schlägerkopfgeschwindigkeit, Schultergesundheit und Griff, Beweglichkeit von Hüfte und Brustwirbelsäule.
@@ -180,6 +189,8 @@ Nach jedem abgehakten Satz läuft die Pause. In der Android-App übernimmt ein V
 - Vellas BJ et al. (1997): One-leg balance is an important predictor of injurious falls in older persons. *Journal of the American Geriatrics Society* 45(6), 735–738.
 - Rikli RE, Jones CJ (2013): Senior Fitness Test Manual, 2. Auflage. Human Kinetics.
 - CDC STEADI: Timed Up and Go (TUG).
+- American College of Sports Medicine (2009): Progression models in resistance training for healthy adults. *Medicine and Science in Sports and Exercise* 41(3), 687–708.
+- Grgic J et al. (2018): Effects of rest interval duration in resistance training on measures of muscular strength: a systematic review. *Sports Medicine* 48(1), 137–151.
 - Issurin VB (2010): New horizons for the methodology and physiology of training periodization. *Sports Medicine* 40(3), 189–206.
 - Rønnestad BR, Nymark BS, Raastad T (2011): Effects of in-season strength maintenance training frequency in professional soccer players. *Journal of Strength and Conditioning Research* 25(10), 2653–2660.
 - Epley B (1985): Poundage Chart. Boyd Epley Workout, Lincoln (Nebraska). Formel für das geschätzte Maximum.

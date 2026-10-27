@@ -17,6 +17,7 @@ import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
 import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
+import { wechselPause } from "../logik/wechsel"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
 import { bestwert } from "../logik/spiel"
 
@@ -111,6 +112,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [tausch, setTausch] = useState<number | null>(null)
   const [info, setInfo] = useState<Uebung | null>(null)
   const [kurveOffen, setKurveOffen] = useState<number | null>(null)
+  const [wechsel, setWechsel] = useState<{ nach: number; grund: string } | null>(null)
   const [rirHilfe, setRirHilfe] = useState(false)
   const [warumOffen, setWarumOffen] = useState<number | null>(null)
   const [anpassungen, setAnpassungen] = useState<Record<number, (Anpassung & { satz: number }) | undefined>>({})
@@ -149,6 +151,26 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   }
 
   const setSatz = (i: number, k: number, neu: Partial<Eingabe>) => setSaetze(saetze.map((ss, a) => (a === i ? ss.map((s, b) => (b === k ? { ...s, ...neu } : s)) : ss)))
+  /**
+   * Letzter Satz einer Übung (oder eines Supersatzes): die nächste offene Übung markieren, ins Bild holen und die
+   * Wechselpause starten, die zur nächsten Übung passt.
+   */
+  const uebungFertig = (i: number) => {
+    const offen = (x: number) => x !== i && saetze[x].some((s) => !s.fertig) && !(plaetze[i].gruppe && plaetze[x].gruppe === plaetze[i].gruppe)
+    const kandidaten = plaetze.map((_, x) => x).filter(offen)
+    const nach = kandidaten.find((x) => x > i) ?? kandidaten[0]
+    if (nach === undefined) {
+      pauseSetzen(null)
+      setWechsel(null)
+      return
+    }
+    const w = wechselPause(plaetze[i], plaetze[nach])
+    pauseSetzen(Date.now() + w.sekunden * 1000, plaetze[nach].uebung.name)
+    setWechsel({ nach, grund: w.grund })
+    // kurz warten, bis der Haken gezeichnet ist, dann sanft zur nächsten Übung
+    setTimeout(() => document.getElementById("uebung-" + nach)?.scrollIntoView({ behavior: "smooth", block: "start" }), 350)
+  }
+
   const abhaken = (i: number, k: number) => {
     const s = saetze[i][k]
     const u = plaetze[i].uebung
@@ -176,17 +198,20 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         // Letzte Übung der Gruppe: Pause, danach wieder die erste
         const erste = gruppe[0]
         const offen = saetze[erste].some((x) => !x.fertig)
-        pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, offen ? plaetze[erste].uebung.name + ", Satz " + (k + 2) : plaetze[i + 1]?.uebung.name)
+        if (offen) pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, plaetze[erste].uebung.name + ", Satz " + (k + 2))
+        else uebungFertig(i)
       } else {
         const letzterSatz = saetze[i].every((x, b) => b === k || x.fertig)
-        const naechste = letzterSatz ? plaetze[i + 1]?.uebung.name : plaetze[i].uebung.name + ", Satz " + (k + 2)
-        pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, naechste)
+        if (letzterSatz) uebungFertig(i)
+        else pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, plaetze[i].uebung.name + ", Satz " + (k + 2))
       }
     }
   }
   const erledigt = saetze.reduce((n, ss) => n + ss.filter((s) => s.fertig).length, 0)
   const gesamt = saetze.reduce((n, ss) => n + ss.length, 0)
-  const aktiveUebung = saetze.findIndex((ss) => ss.length > 0 && ss.some((s) => !s.fertig))
+  const ersteOffene = saetze.findIndex((ss) => ss.length > 0 && ss.some((s) => !s.fertig))
+  // Nach einem Wechsel ist die angesteuerte Übung dran, sonst die erste mit offenen Sätzen
+  const aktiveUebung = wechsel && saetze[wechsel.nach]?.some((s) => !s.fertig) ? wechsel.nach : ersteOffene
   /** Kurve einer Übung mit dem heutigen Stand aus den schon abgehakten Sätzen. */
   const kurveMitHeute = (i: number) => {
     const u = plaetze[i].uebung
@@ -274,7 +299,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         const zeigeRir = !reha && p.rolle !== "mobil" && p.rolle !== "ausdauer" && u.belastung !== "zeit" && u.belastung !== "distanz"
         const zeigeSchmerz = reha && p.rolle !== "ausdauer"
         return (
-          <section key={i + u.id} className={"uebungskarte" + (alle ? " geschafft" : "")}>
+          <section key={i + u.id} id={"uebung-" + i} className={"uebungskarte" + (alle ? " geschafft" : "") + (i === aktiveUebung && erledigt > 0 ? " dran" : "")}>
+            {i === aktiveUebung && erledigt > 0 ? <span className="dranmarke">Jetzt dran</span> : null}
+            {wechsel && wechsel.nach === i && !saetze[i].some((x) => x.fertig) ? (
+              <p className="wechselgrund">
+                <Icon name="timer" groesse={15} /> {wechsel.grund}
+              </p>
+            ) : null}
             <div className="uebungskopf">
               <span className={"marke " + p.rolle}>{p.gruppe ? "Supersatz " + p.gruppe + (plaetze.slice(0, i + 1).filter((x) => x.gruppe === p.gruppe).length) : p.etikett || ROLLE[p.rolle]}</span>
               {u.golf && hatSport(profil, "golf") ? (
@@ -457,7 +488,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             <Icon name="timer" groesse={20} />
           </div>
           <div className="pausentext">
-            <small>Pause</small>
+            <small>{wechsel && !saetze[wechsel.nach]?.some((x) => x.fertig) ? "Wechsel zu " + plaetze[wechsel.nach].uebung.name : "Pause"}</small>
             <b>
               {Math.floor(rest / 60)}:{String(rest % 60).padStart(2, "0")}
             </b>

@@ -249,6 +249,8 @@ function Ueber(props: { zurueck: { text: string; onClick: () => void } }) {
         <Zeile titel="Robinson et al. 2024" untertitel="Nähe zum Versagen, Kraft und Muskelaufbau, Sports Medicine" />
         <Zeile titel="Schoenfeld et al. 2017" untertitel="Trainingsvolumen und Muskelaufbau, Journal of Sports Sciences" />
         <Zeile titel="Bell et al. 2023" untertitel="Entlastungswochen, Sports Medicine Open" />
+        <Zeile titel="ACSM Position Stand 2009" untertitel="Pausen: 2 bis 3 min bei schweren Grundübungen, 1 bis 2 min bei Ergänzungen, Medicine and Science in Sports and Exercise" />
+        <Zeile titel="Grgic et al. 2018" untertitel="Pausenlänge und Kraftzuwachs, Sports Medicine" />
         <Zeile titel="Issurin 2010" untertitel="Blockperiodisierung, Sports Medicine" />
         <Zeile titel="Rønnestad et al. 2011" untertitel="Krafterhalt in der Saison, Journal of Strength and Conditioning Research" />
         <Zeile titel="Ehlert 2020" untertitel="Krafttraining und Golfleistung, Journal of Sports Sciences" />
