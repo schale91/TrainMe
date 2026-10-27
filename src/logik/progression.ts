@@ -25,14 +25,16 @@ export function istEntlastung(woche: number): boolean {
 
 /** Geschätztes Maximum (1RM) aus einem Satz nach Epley, mit den Wiederholungen im Tank. */
 export function e1rm(s: Satz): number {
-  if (!s.last || s.last <= 0 || s.wdh <= 0) return 0
+  // vermutlich vertippt und nicht bestätigt: zählt nicht
+  if (!s.last || s.last <= 0 || s.wdh <= 0 || s.unplausibel) return 0
   return s.last * (1 + (s.wdh + Math.max(0, s.rir)) / 30)
 }
 
 /**
  * Belastbares Maximum aus den Sätzen einer Einheit: Mittel der beiden besten Schätzungen. Ein einzelner frischer Satz
  * überschätzt, was über mehrere Sätze mit kurzer Pause geht (z. B. 80 kg × 8, danach nur noch × 2); so zählt er nur
- * zur Hälfte. Mit nur einem Satz gilt dieser.
+ * zur Hälfte. Mit nur einem Satz gilt dieser. Mit Topsatz gilt der Topsatz: Die Back-off-Sätze danach sind
+ * absichtlich leichter und würden das Maximum sonst nach unten ziehen.
  */
 export function belastbaresE1rm(saetze: Satz[]): number {
   const w = saetze
@@ -40,7 +42,9 @@ export function belastbaresE1rm(saetze: Satz[]): number {
     .filter((x) => x > 0)
     .sort((a, b) => b - a)
   if (!w.length) return 0
-  return w.length === 1 ? w[0] : (w[0] + w[1]) / 2
+  const mittel = w.length === 1 ? w[0] : (w[0] + w[1]) / 2
+  const top = saetze.find((s) => s.art === "top")
+  return top ? Math.max(e1rm(top), mittel) : mittel
 }
 
 /**
@@ -250,6 +254,10 @@ export function vorgabe(profil: PlanProfil, rolle: Rolle, u: Uebung, saetze: num
     v.last = gerundet === null ? altLast : gerundet
     v.wdh_von = v.wdh_bis = wdh
     v.begruendung = "Geschätztes Maximum " + kg(max) + " kg: " + wdh + " Wiederholungen mit noch " + rir + " im Tank sind etwa " + Math.round((roh / max) * 100) + " % davon."
+    if (topsatzPasst(profil, saetze, entlastung)) {
+      v.topsatz = true
+      v.begruendung += " Erster Satz als Topsatz, danach Back-off-Sätze mit etwa 10 % weniger, damit die Leistung nicht einbricht."
+    }
   }
 
   if (entlastung && v.last !== null) {
@@ -261,6 +269,28 @@ export function vorgabe(profil: PlanProfil, rolle: Rolle, u: Uebung, saetze: num
     v.begruendung = "Entlastungswoche: halbe Sätze, locker bleiben."
   }
   return v
+}
+
+/**
+ * Topsatz mit Back-off-Sätzen als Standard: schwere Hauptübungen in den Phasen Kraft und Schnellkraft (ohne
+ * Jahresplan beim Ziel Kraft), ab drei Sätzen und nicht in der Entlastungswoche (Helms et al. 2016).
+ */
+export function topsatzPasst(profil: PlanProfil, saetze: number, entlastung: boolean): boolean {
+  if (entlastung || saetze < 3) return false
+  if (profil.phase) return profil.phase === "kraft" || profil.phase === "schnellkraft"
+  return hatZiel(profil, "kraft")
+}
+
+/**
+ * Pause nach einem Satz: Fehlten Wiederholungen oder ging der Satz ans Limit, 30 Sekunden länger. Längere Pausen
+ * halten die Wiederholungen in den Folgesätzen (de Salles et al. 2009, Willardson 2006). Höchstens 5 Minuten.
+ */
+export function pauseNachSatz(v: Vorgabe, satz: Satz, belastung: Uebung["belastung"]): { sekunden: number; grund?: string } {
+  if (v.pause_s <= 0 || (belastung !== "gewicht" && belastung !== "wiederholungen")) return { sekunden: v.pause_s }
+  const lang = (grund: string) => ({ sekunden: Math.min(300, v.pause_s + 30), grund })
+  if (satz.wdh < v.wdh_von) return lang("30 s länger, weil Wiederholungen fehlten")
+  if (satz.rir === 0 && v.rir > 0) return lang("30 s länger, weil der Satz bis ans Limit ging")
+  return { sekunden: v.pause_s }
 }
 
 /** Hat die Übung in den letzten drei Einheiten kein neues Maximum gebracht? Dann Hinweis auf Plateau. */

@@ -29,6 +29,8 @@ import { gesundheitLesen } from "./ui/gesundheit"
 import { anfrage, aufLinkHoeren, bruecke, koppeln, modus, speicherSchluessel } from "./ui/lebenswelt"
 import { abgleichen, neuerStand, type Abgleichstand } from "./logik/abgleich"
 import { einspielen, uebernehmen, type KbDok } from "./logik/kraftbuch"
+import { maxZusammenfassung, type MaxZeile } from "./logik/zusammenfassung"
+import { ausLebenswelt } from "./logik/koerper"
 
 type Tab = "heute" | "weg" | "uebungen" | "fortschritt" | "profil"
 
@@ -40,7 +42,7 @@ const TABS: { id: Tab; name: string; icon: string }[] = [
   { id: "profil", name: "Profil", icon: "profil" },
 ]
 
-type Belohnung = Ergebnis & { stufeVorher: number; stufeNachher: number; einheiten: number }
+type Belohnung = Ergebnis & { stufeVorher: number; stufeNachher: number; einheiten: number; maxima: MaxZeile[]; datum: string }
 
 /** Stand des Abgleichs mit der Lebenswelt auf diesem Gerät. */
 function ladeStand(schluessel: string): Abgleichstand {
@@ -154,11 +156,13 @@ export default function App() {
     document.addEventListener("visibilitychange", sichtbar)
     // Garmin-Werte und Körpergewicht aus der Lebenswelt
     void anfrage("GET", "/api/lebenswelt/trainme/gesundheit").then((r) => {
-      const g = r.status === 200 ? (r.daten as { stand?: string; tage?: Record<string, Tageswerte>; gewicht?: { kg: number } | null }) : null
+      const g = r.status === 200 ? (r.daten as { stand?: string; tage?: Record<string, Tageswerte>; gewicht?: { kg: number; datum?: string } | null }) : null
       if (!g) return
       aendern((d) => {
         d.gesundheit = { verbunden: d.gesundheit?.verbunden ?? false, tage: d.gesundheit?.tage || {}, garmin: { stand: g.stand || "", tage: g.tage || {} } }
         if (g.gewicht?.kg && d.profil && d.profil.koerpergewicht_kg !== g.gewicht.kg) d.profil.koerpergewicht_kg = g.gewicht.kg
+        // Verlauf für den Trend (dieselbe alte Messung wird nicht jeden Tag neu eingetragen)
+        if (g.gewicht?.kg) d.koerper = ausLebenswelt(d.koerper, heute(), g.gewicht.kg, typeof g.gewicht.datum === "string" ? g.gewicht.datum.slice(0, 10) : undefined)
       })
     })
     return () => {
@@ -261,6 +265,8 @@ export default function App() {
     const vorher = stufe(aktuell.current.spiel.xp).stufe
     let ergebnis: Ergebnis | null = null
     let einheiten = 0
+    // Maxima vor dem Eintragen vergleichen, sonst stünde das heutige schon im Verlauf
+    const maxima = maxZusammenfassung(aktuell.current, protokolle.map((p) => ({ ...p, datum: tag })), tag)
     aendern((d) => {
       ergebnis = abschliessen(
         d,
@@ -275,7 +281,7 @@ export default function App() {
     })
     setOffen(null)
     const r = ergebnis as unknown as Ergebnis
-    setBelohnung({ ...r, stufeVorher: vorher, stufeNachher: stufe(aktuell.current.spiel.xp).stufe, einheiten })
+    setBelohnung({ ...r, stufeVorher: vorher, stufeNachher: stufe(aktuell.current.spiel.xp).stufe, einheiten, maxima, datum: tag })
   }
 
   const zeigeProfil = (u: Unterseite) => {
@@ -368,7 +374,7 @@ export default function App() {
             if (f) b[id] = f
             else delete b[id]
             d.bandfarben = b
-          })} />
+          })} satzform={(id, f) => aendern((d) => void (d.satzform = { ...(d.satzform || {}), [id]: f }))} />
         ) : tab === "heute" ? (
           <Heute daten={daten} aendern={aendern} oeffnen={oeffnen} einstufen={() => setEinstufen(true)} zumWeg={() => setTab("weg")} lebenswelt={lw} />
         ) : tab === "weg" ? (
@@ -434,6 +440,34 @@ export default function App() {
                 {belohnung.rekorde.map((id) => (
                   <span key={id}>{uebung(id)?.name}</span>
                 ))}
+              </div>
+            ) : null}
+            {belohnung.maxima.length ? (
+              <div className="maxliste">
+                <b>Geschätztes Maximum heute</b>
+                {belohnung.maxima.map((m) => {
+                  const diff = m.vorher !== null ? Math.round((m.heute - m.vorher) * 2) / 2 : null
+                  const uebernommen = daten.maxwerte?.[m.uebung]?.kg === m.vorschlag && daten.maxwerte?.[m.uebung]?.datum === belohnung.datum
+                  return (
+                    <div key={m.uebung} className="maxzeile">
+                      <span className="maxname">{uebung(m.uebung)?.name || m.uebung}</span>
+                      <span className="maxwert">
+                        {String(m.heute).replace(".", ",")} kg
+                        {diff ? <small className={diff > 0 ? "plus" : "minus"}>{(diff > 0 ? " +" : " −") + String(Math.abs(diff)).replace(".", ",")}</small> : null}
+                      </span>
+                      {m.vorschlag !== null ? (
+                        uebernommen ? (
+                          <small className="maxok">als Maximum übernommen</small>
+                        ) : (
+                          <button type="button" className="knopf klein" onClick={() => aendern((d) => void (d.maxwerte = { ...(d.maxwerte || {}), [m.uebung]: { kg: m.vorschlag!, datum: belohnung.datum } }))}>
+                            Als Maximum übernehmen
+                          </button>
+                        )
+                      ) : null}
+                    </div>
+                  )
+                })}
+                <small className="leise">Aus Sätzen bis 10 Wiederholungen. Ein übernommenes Maximum nutzt der Plan für Prozentangaben.</small>
               </div>
             ) : null}
             {(lw ? [] : belohnung.neueAbzeichen).map((id) => {

@@ -392,6 +392,8 @@ export interface Vorgabe {
   modell: Progressionsmodell
   pause_s: number
   begruendung: string
+  /** Erster Satz als Topsatz, danach Back-off-Sätze mit etwa 10 % weniger */
+  topsatz?: boolean
 }
 
 export type Progressionsmodell = "linear" | "doppelt" | "rir" | "prozent" | "qualitaet" | "zeit"
@@ -450,6 +452,10 @@ export interface Satz {
   sekunden?: number
   /** Reha: Schmerz während des Satzes, 0 bis 10 */
   schmerz?: number
+  /** Topsatz (schwerster Satz) oder Back-off-Satz danach; ohne Angabe: gleiche Sätze */
+  art?: "top" | "backoff"
+  /** Deutlich über allem Bisherigen und nicht bestätigt (vermutlich vertippt): zählt nicht für Maximum und Steigerung */
+  unplausibel?: boolean
 }
 
 export interface Protokoll {
@@ -519,6 +525,17 @@ export interface Daten {
   archiv?: Record<string, { datum: string; kg: number; text?: string }[]>
   /** Einmal erledigte Übernahmen, z. B. kraftbuch → Datum */
   uebernahmen?: Record<string, string>
+  /** Gewählte Satzform je Übung: Topsatz mit Back-off-Sätzen oder gleiche Sätze */
+  satzform?: Record<string, Satzform>
+  /** Körpergewicht je Tag (eingetragen oder aus der Lebenswelt) */
+  koerper?: Messpunkt[]
+}
+
+export type Satzform = "topsatz" | "gleich"
+
+export interface Messpunkt {
+  datum: string
+  kg: number
 }
 
 export interface Tageswerte {

@@ -49,6 +49,8 @@ export function pruefen(x: unknown): Daten {
   if (o.bandfarben && typeof o.bandfarben === "object") d.bandfarben = { ...o.bandfarben }
   if (o.archiv && typeof o.archiv === "object") d.archiv = { ...o.archiv }
   if (o.uebernahmen && typeof o.uebernahmen === "object") d.uebernahmen = { ...o.uebernahmen }
+  if (o.satzform && typeof o.satzform === "object") d.satzform = { ...o.satzform }
+  if (Array.isArray(o.koerper)) d.koerper = o.koerper.filter((m) => m && typeof m.datum === "string" && typeof m.kg === "number" && m.kg > 0)
   return d
 }
 

@@ -88,6 +88,39 @@ wirken Pausen über 2 Minuten besser, Grgic et al. 2018). Arbeiten dieselben Mus
 beiden Pausen. Für einen Gerätewechsel kommen 30 Sekunden dazu. Vor Beweglichkeit 30 Sekunden, vor Ausdauer 60,
 insgesamt 1 bis 5 Minuten. Der Grund steht auf der Karte der nächsten Übung.
 
+### Im Training (ab 0.8)
+
+- **Topsatz mit Back-off-Sätzen:** Satz 1 ist der schwere Satz mit Zielwiederholungen und -reserve, die übrigen Sätze
+  liegen beim vorhandenen Gewicht, das 90 % am nächsten kommt (Lastabfall nach Helms et al. 2016). Nach dem Topsatz
+  rechnet die App aus dem, was wirklich ging (Epley mit Reserve), das Back-off-Gewicht neu. Back-off-Sätze werden
+  danach nur leichter, nie schwerer. Standard für Hauptübungen im RIR-Modell in den Phasen Kraft und Schnellkraft
+  (ohne Jahresplan beim Ziel Kraft), ab drei Sätzen und nicht in der Entlastung. Jede Gewichtsübung mit mindestens
+  drei Sätzen lässt sich umschalten, die Wahl gilt je Übung weiter. Für das Maximum zählt der Topsatz, damit die
+  leichteren Back-off-Sätze es nicht nach unten ziehen.
+- **Aufwärmsätze:** Bei Hauptübungen mit Gewicht aus dem Gewicht des ersten Arbeitssatzes. Erste Übung der Einheit:
+  leere Stange × 10 (wenn das Arbeitsgewicht mindestens das 1,6-Fache der Stange ist), 50 % × 8, 70 % × 5, 85 % × 3;
+  spätere Hauptübungen 60 % × 5 und 85 % × 2; Kurzhanteln und Kettlebells 50 % × 10 und 75 % × 5 bzw. 60 % × 6. Unter
+  40 kg Arbeitsgewicht entfällt der Satz über 80 %. Pausen 60 Sekunden, vor dem ersten Arbeitssatz 90. Grundlage:
+  Aufwärmen verbessert die Leistung in den meisten untersuchten Messgrößen (Fradkin et al. 2010), spezifisch mit
+  steigender Last und wenigen Wiederholungen nach dem NSCA-Lehrbuch (Haff und Triplett 2016).
+- **Scheibenrechner:** Scheiben je Seite mit möglichst wenigen Scheiben aus den eingetragenen Paaren; ohne Liste mit
+  den üblichen Studioscheiben (25 bis 1,25 kg). Farben wie bei Wettkampfscheiben.
+- **Längere Pause:** Fehlten Wiederholungen oder ging der Satz bis 0 im Tank, 30 Sekunden mehr (höchstens 5
+  Minuten). Längere Pausen halten die Wiederholungen in den Folgesätzen (Willardson 2006, de Salles et al. 2009).
+- **Plausibilität und Bestwerte:** Ein Satz, dessen geschätztes Maximum mehr als 20 % über dem bisher besten liegt
+  (bei mindestens zwei Einheiten Verlauf), gilt als vermutlich vertippt. Er zählt erst nach „Stimmt so“ für Maximum
+  und Steigerung. Neue Bestwerte erscheinen sofort als Hinweis, nicht bei Würfen und Sprüngen.
+- **Zusammenfassung:** Nach der Einheit das geschätzte Maximum je Gewichtsübung aus Sätzen bis 10 Wiederholungen
+  (je weniger Wiederholungen, desto genauer, Reynolds et al. 2006) mit dem Unterschied zum bisherigen. Liegt es über
+  einem eingetragenen Maximum (Einstufung, Kraftbuch), lässt es sich übernehmen; Prozentangaben im eigenen Plan
+  rechnen dann damit.
+- **Eingabe und Bildschirm:** Zahlenfeld mit Plus und Minus in der Stufe des Geräts, Wechsel zwischen Gewicht und
+  Wiederholungen und Abhaken direkt aus dem Feld. Der Bildschirm bleibt während der Einheit an (nativ über das
+  Fensterflag, sonst Wake Lock).
+- **Körpergewicht:** 7-Tage-Schnitt und Trend in kg pro Woche (lineare Regression über 28 Tage, ab 3 Werten über
+  mindestens 7 Tage). Einordnung je Ziel: Abnehmen 0,5 bis 1 % pro Woche (Helms et al. 2014), Muskelaufbau 0,25 bis
+  0,5 % (Iraki et al. 2019). Werte aus der Lebenswelt werden nur übernommen, wenn sie neu sind.
+
 ## 3. Sportprofile
 
 - **Golf:** Grundkraft (Kniebeuge, Hüftstreckung, einbeinig), Rotations- und Anti-Rotationskraft, Medizinballwürfe und Sprünge für die Schlägerkopfgeschwindigkeit, Schultergesundheit und Griff, Beweglichkeit von Hüfte und Brustwirbelsäule.
@@ -193,6 +226,13 @@ Nach jedem abgehakten Satz läuft die Pause. In der Android-App übernimmt ein V
 - Grgic J et al. (2018): Effects of rest interval duration in resistance training on measures of muscular strength: a systematic review. *Sports Medicine* 48(1), 137–151.
 - Issurin VB (2010): New horizons for the methodology and physiology of training periodization. *Sports Medicine* 40(3), 189–206.
 - Rønnestad BR, Nymark BS, Raastad T (2011): Effects of in-season strength maintenance training frequency in professional soccer players. *Journal of Strength and Conditioning Research* 25(10), 2653–2660.
+- Willardson JM (2006): A brief review: factors affecting the length of the rest interval between resistance exercise sets. *Journal of Strength and Conditioning Research* 20(4), 978–984.
+- de Salles BF et al. (2009): Rest interval between sets in strength training. *Sports Medicine* 39(9), 765–777.
+- Fradkin AJ, Zazryn TR, Smoliga JM (2010): Effects of warming-up on physical performance: a systematic review with meta-analysis. *Journal of Strength and Conditioning Research* 24(1), 140–148.
+- Haff GG, Triplett NT (Hrsg.) (2016): Essentials of Strength Training and Conditioning, 4. Auflage. Human Kinetics (NSCA).
+- Reynolds JM, Gordon TJ, Robergs RA (2006): Prediction of one repetition maximum strength from multiple repetition maximum testing and anthropometry. *Journal of Strength and Conditioning Research* 20(3), 584–592.
+- Helms ER, Aragon AA, Fitschen PJ (2014): Evidence-based recommendations for natural bodybuilding contest preparation: nutrition and supplementation. *Journal of the International Society of Sports Nutrition* 11, 20.
+- Iraki J, Fitschen P, Espinar S, Helms E (2019): Nutrition Recommendations for Bodybuilders in the Off-Season: A Narrative Review. *Sports* 7(7), 154.
 - Epley B (1985): Poundage Chart. Boyd Epley Workout, Lincoln (Nebraska). Formel für das geschätzte Maximum.
 - van der Horst N et al. (2015): The preventive effect of the Nordic hamstring exercise on hamstring injuries in amateur soccer players: a randomized controlled trial. *American Journal of Sports Medicine* 43(6), 1316–1323.
 - Harøy J et al. (2019): The Adductor Strengthening Programme prevents groin problems among male football players: a cluster-randomised controlled trial. *British Journal of Sports Medicine* 53(3), 150–157.

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
+import android.view.WindowManager;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -17,7 +18,7 @@ import com.getcapacitor.annotation.PermissionCallback;
 
 /**
  * Schnittstelle zur Web-App: start(ende, titel), stop(), Berechtigungen für Benachrichtigung und
- * Anzeige über anderen Apps.
+ * Anzeige über anderen Apps, wachHalten(an) für den Bildschirm während einer Einheit.
  */
 @CapacitorPlugin(
     name = "PausenTimer",
@@ -47,6 +48,16 @@ public class PausenTimerPlugin extends Plugin {
         i.setAction(PausenTimerService.STOP);
         getContext().startService(i);
         call.resolve();
+    }
+
+    @PluginMethod
+    public void wachHalten(PluginCall call) {
+        boolean an = Boolean.TRUE.equals(call.getBoolean("an", true));
+        getActivity().runOnUiThread(() -> {
+            if (an) getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            else getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            call.resolve();
+        });
     }
 
     @PluginMethod

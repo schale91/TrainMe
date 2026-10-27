@@ -3,14 +3,15 @@
 import { hatSport } from "../logik/auswahl"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { alternativen, lastGeraet, lastenAn, platzMit, verlauf } from "../logik/plan"
-import { lastText } from "../logik/gewichte"
-import { satzAnpassung, type Anpassung } from "../logik/progression"
+import { hoeher, lastText, niedriger } from "../logik/gewichte"
+import { pauseNachSatz, satzAnpassung, type Anpassung } from "../logik/progression"
+import { aufwaermSaetze, backoffLast, backoffNachTopsatz, neuerBestwert, satzformVon, scheibenProSeite, stangeVon, unplausibel } from "../logik/satzhilfen"
 import { rehaAktiv, rehaAnpassung } from "../logik/reha"
 
 /** Farbe der Schmerz-Ampel: 0 bis 2 grün, 3 bis 5 gelb, darüber rot. */
 const ampel = (n: number) => (n > 5 ? "ampel rot" : n >= 3 ? "ampel gelb" : "ampel gruen")
-import type { Daten, Einheit, Platz, Protokoll, Satz, Uebung } from "../logik/typen"
-import { Blatt, Gruppe, Icon, Seite, Zeile } from "./ios"
+import type { Daten, Einheit, Platz, Protokoll, Satz, Satzform, Uebung, Vorgabe } from "../logik/typen"
+import { Blatt, Gruppe, Icon, Seite, useEbene, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
 import { ROLLE, datumText, grundText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
@@ -20,10 +21,17 @@ import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
 import { bestwert } from "../logik/spiel"
+import { Scheiben } from "./Scheiben"
+import { alsPuffer, taste, zahlAus, Zahlenfeld, type Eingabestand } from "./Zahlenfeld"
+import { useWachHalten } from "./wachHalten"
 
 type Eingabe = Satz & { fertig: boolean }
 /** ort: Kennung des Orts (Name, Geräte, Gewichte), für den die Vorgaben gerechnet wurden */
-type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string }
+type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string; warm?: string[] }
+type Feld = "kg" | "wdh" | "sek" | "min"
+type Pad = Eingabestand & { i: number; k: number; feld: Feld }
+
+const mitte = (v: Vorgabe) => Math.round((v.wdh_von + v.wdh_bis) / 2)
 
 /** Kennung eines Orts: ändern sich Geräte oder Gewichte, stimmen die Vorschläge eines Entwurfs nicht mehr. */
 const ortKennung = (o: unknown) => JSON.stringify(o ?? null)
@@ -52,16 +60,19 @@ function ladeEntwurf(schluessel: string): Entwurf | null {
   }
 }
 
-function startSaetze(p: Platz, daten: Daten): Eingabe[] {
+/** Sätze zum Start. Mit Topsatz: Satz 1 mit dem vorgeschlagenen Gewicht, die übrigen etwa 10 % leichter. */
+function startSaetze(p: Platz, daten: Daten, form: Satzform = "gleich", lasten: number[] = []): Eingabe[] {
   const v = p.vorgabe
   const letzte = verlauf(daten, p.uebung.id).slice(-1)[0]
   const last = v.last !== null && p.uebung.belastung === "gewicht" ? v.last : letzte && letzte.saetze[0] && p.uebung.belastung === "gewicht" ? letzte.saetze[0].last : null
-  return Array.from({ length: v.saetze }, () => {
+  const saetze: Eingabe[] = Array.from({ length: v.saetze }, () => {
     if (p.uebung.belastung === "zeit") return { last: null, wdh: 1, rir: v.rir, sekunden: v.last || 30, fertig: false }
     if (p.uebung.belastung === "distanz") return { last: null, wdh: 1, rir: 4, fertig: false }
     // Vorbelegt mit der Mitte des Bereichs: Wer nur abhakt, trägt keine zu optimistischen Werte ein
-    return { last, wdh: Math.round((v.wdh_von + v.wdh_bis) / 2), rir: v.rir, fertig: false }
+    return { last, wdh: mitte(v), rir: v.rir, fertig: false }
   })
+  if (form !== "topsatz" || last === null || saetze.length < 2) return saetze
+  return saetze.map((s, k) => (k === 0 ? { ...s, art: "top" as const } : { ...s, last: backoffLast(last, lasten), art: "backoff" as const }))
 }
 
 function piep() {
@@ -91,7 +102,7 @@ const BANDFARBEN = [
   { id: "blau", name: "Blau", farbe: "#3b7be0" },
 ]
 
-export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void }) {
+export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void }) {
   const { daten, einheit } = props
   const profil = daten.profil!
   // Reha: Schmerz je Satz statt Reserve, Schmerz vor dem Training
@@ -100,14 +111,27 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const ort = profil.orte[einheit.ort] || profil.orte[0]
   const schluessel = einheit.datum + "|" + einheit.titel
   const kennung = ortKennung(ort)
+  // Satzform je Übung: hier gewählt, sonst gespeichert, sonst aus der Vorgabe
+  const [formWahl, setFormWahl] = useState<Record<string, Satzform>>({})
+  const formVon = (p: Platz, anzahl = p.vorgabe.saetze): Satzform =>
+    satzformVon({ ...p.vorgabe, saetze: anzahl }, formWahl[p.uebung.id] ?? daten.satzform?.[p.uebung.id], p.uebung.belastung === "gewicht" && !reha && (p.rolle === "haupt" || p.rolle === "neben") && lastGeraet(p.uebung, ort) !== "band")
+  const start = (p: Platz) => startSaetze(p, daten, formVon(p), lastenAn(p.uebung, ort))
   const gespeichert = useMemo(() => {
     const e = ladeEntwurf(schluessel)
     // Ort oder Ausstattung seitdem geändert: Vorschläge neu rechnen, Abgehaktes behalten
-    return e && e.ort !== kennung ? { ...e, ...entwurfAnpassen(e, einheit.plaetze, (p) => startSaetze(p, daten)) } : e
+    return e && e.ort !== kennung ? { ...e, ...entwurfAnpassen(e, einheit.plaetze, start) } : e
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schluessel])
   const [plaetze, setPlaetze] = useState<Platz[]>(gespeichert ? gespeichert.plaetze : einheit.plaetze)
-  const [saetze, setSaetze] = useState<Eingabe[][]>(gespeichert ? gespeichert.saetze : einheit.plaetze.map((p) => startSaetze(p, daten)))
+  const [saetze, setSaetze] = useState<Eingabe[][]>(gespeichert ? gespeichert.saetze : einheit.plaetze.map(start))
+  // abgehakte Aufwärmsätze („Übung-Satz“), Zahlenfeld, Hinweis auf neue Bestwerte, Grund für eine längere Pause
+  const [warm, setWarm] = useState<string[]>(gespeichert?.warm || [])
+  const [pad, setPad] = useState<Pad | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const [pauseGrund, setPauseGrund] = useState<string | null>(null)
+  const gefeiert = useRef<Record<number, number>>({})
+  useWachHalten()
+  useEbene(pad !== null, () => setPad(null), "blatt")
   const [pauseBis, setPauseBis] = useState<number | null>(null)
   const [jetzt, setJetzt] = useState(Date.now())
   const [tausch, setTausch] = useState<number | null>(null)
@@ -121,11 +145,17 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
 
   useEffect(() => {
     try {
-      localStorage.setItem(ENTWURF, JSON.stringify({ schluessel, plaetze, saetze, ort: kennung }))
+      localStorage.setItem(ENTWURF, JSON.stringify({ schluessel, plaetze, saetze, ort: kennung, warm }))
     } catch {
       /* Speicher voll oder gesperrt */
     }
-  }, [schluessel, plaetze, saetze, kennung])
+  }, [schluessel, plaetze, saetze, kennung, warm])
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 4000)
+    return () => clearTimeout(t)
+  }, [toast])
 
   useEffect(() => {
     if (pauseBis === null) return
@@ -144,8 +174,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   }, [rest, pauseBis])
 
   // Pause auch im Hintergrund und über anderen Apps (Android)
-  const pauseSetzen = (bis: number | null, naechste?: string) => {
+  const pauseSetzen = (bis: number | null, naechste?: string, grund?: string) => {
     setPauseBis(bis)
+    setPauseGrund(grund ?? null)
     setJetzt(Date.now())
     if (bis === null) void pauseStoppen()
     else void pauseStarten(bis, "Pause", naechste ? "Danach: " + naechste : "")
@@ -174,21 +205,52 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
 
   const abhaken = (i: number, k: number) => {
     const s = saetze[i][k]
-    const u = plaetze[i].uebung
+    const p = plaetze[i]
+    const u = p.uebung
+    const v = p.vorgabe
+    const lasten = lastenAn(u, ort)
+    const form = formVon(p, saetze[i].length)
+    const bisher = verlauf(daten, u.id, einheit.datum)
+    // Weit über allem Bisherigen: vermutlich vertippt, erst nach Bestätigung zählen und nichts daraus ableiten
+    const pruefen = !s.fertig && u.belastung === "gewicht" && unplausibel(s, bisher)
     // Nach dem Haken: Vorschlag für die restlichen Sätze dieser Übung
-    const a = s.fertig ? null : reha ? rehaAnpassung(s, plaetze[i].vorgabe, u.belastung) : satzAnpassung(s, plaetze[i].vorgabe, u.belastung, lastenAn(u, ort))
+    let a: Anpassung | null = null
+    if (!s.fertig && !pruefen) {
+      if (reha) a = rehaAnpassung(s, v, u.belastung)
+      else if (form === "topsatz" && k === 0 && s.last) {
+        // Topsatz: Back-off-Sätze aus dem, was heute wirklich ging
+        const b = backoffNachTopsatz(s, mitte(v), v.rir, lasten)
+        const geplant = saetze[i].find((t, y) => y > k && !t.fertig)?.last ?? null
+        if (b) a = { richtung: geplant === null || b.last === geplant ? "gleich" : b.last > geplant ? "hoch" : "runter", text: "Topsatz geschafft, Maximum heute etwa " + zahl(Math.round(b.max * 2) / 2) + " kg. Back-off-Sätze: " + zahl(b.last) + " kg, wieder " + mitte(v) + " Wiederholungen.", last: b.last }
+      } else {
+        a = satzAnpassung(s, v, u.belastung, lasten)
+        // Back-off-Sätze sind absichtlich leichter: nur leichter machen, nie schwerer
+        if (form === "topsatz" && a?.richtung === "hoch" && s.last) a = { richtung: "gleich", text: "Back-off-Sätze bleiben bewusst leichter: " + zahl(s.last) + " kg beibehalten.", last: s.last }
+      }
+      // Neuer Bestwert schon während der Einheit
+      const heute = [...saetze[i].filter((t, y) => t.fertig && y !== k), s].map(({ fertig: _f, ...x }) => x)
+      // bei Würfen und Sprüngen sagt ein geschätztes Maximum nichts aus
+      const b = p.rolle === "schnellkraft" || u.muster.indexOf("schnellkraft") === 0 ? null : neuerBestwert(heute, bisher, u.id, einheit.datum)
+      if (b && b.neu > (gefeiert.current[i] ?? 0) + 1e-9) {
+        gefeiert.current[i] = b.neu
+        setToast(
+          "Neuer Bestwert: " + u.name + (s.last ? ", Maximum etwa " + zahl(Math.round(b.neu * 2) / 2) + " kg (bisher " + zahl(Math.round(b.alt * 2) / 2) + " kg)" : u.belastung === "zeit" ? ", " + b.neu + " s (bisher " + b.alt + " s)" : ", " + b.neu + " Wiederholungen (bisher " + b.alt + ")"),
+        )
+      }
+    }
     setSaetze(
       saetze.map((ss, x) =>
         x !== i
           ? ss
           : ss.map((t, y) => {
-              if (y === k) return { ...t, fertig: !t.fertig }
+              if (y === k) return { ...t, fertig: !t.fertig, unplausibel: pruefen || undefined }
               if (y > k && !t.fertig && a) return { ...t, ...(a.last !== undefined ? { last: a.last } : {}), ...(a.wdh !== undefined ? { wdh: a.wdh } : {}) }
               return t
             }),
       ),
     )
     setAnpassungen({ ...anpassungen, [i]: a ? { ...a, satz: k + 1 } : undefined })
+    const pz = pauseNachSatz(v, s, u.belastung)
     if (!s.fertig && plaetze[i].vorgabe.pause_s > 0) {
       const g = plaetze[i].gruppe
       const gruppe = g ? plaetze.map((p, x) => (p.gruppe === g ? x : -1)).filter((x) => x >= 0) : []
@@ -199,15 +261,100 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         // Letzte Übung der Gruppe: Pause, danach wieder die erste
         const erste = gruppe[0]
         const offen = saetze[erste].some((x) => !x.fertig)
-        if (offen) pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, plaetze[erste].uebung.name + ", Satz " + (k + 2))
+        if (offen) pauseSetzen(Date.now() + pz.sekunden * 1000, plaetze[erste].uebung.name + ", Satz " + (k + 2), pz.grund)
         else uebungFertig(i)
       } else {
         const letzterSatz = saetze[i].every((x, b) => b === k || x.fertig)
         if (letzterSatz) uebungFertig(i)
-        else pauseSetzen(Date.now() + plaetze[i].vorgabe.pause_s * 1000, plaetze[i].uebung.name + ", Satz " + (k + 2))
+        else pauseSetzen(Date.now() + pz.sekunden * 1000, plaetze[i].uebung.name + ", Satz " + (k + 2), pz.grund)
       }
     }
   }
+  /** Satzform umstellen: offene Sätze bekommen die passenden Gewichte, Abgehaktes bleibt. */
+  const formWechseln = (i: number, f: Satzform) => {
+    const p = plaetze[i]
+    const lasten = lastenAn(p.uebung, ort)
+    setFormWahl({ ...formWahl, [p.uebung.id]: f })
+    props.satzform?.(p.uebung.id, f)
+    const erster = saetze[i][0]
+    const topLast = erster?.last ?? p.vorgabe.last
+    const backoff = erster?.fertig ? backoffNachTopsatz(erster, mitte(p.vorgabe), p.vorgabe.rir, lasten)?.last : topLast !== null && topLast !== undefined ? backoffLast(topLast, lasten) : undefined
+    const neu = saetze[i].map((s, k): Eingabe => {
+      if (f === "gleich") return { ...s, art: undefined, last: s.fertig || k === 0 ? s.last : (p.vorgabe.last ?? topLast ?? s.last) }
+      if (k === 0) return { ...s, art: "top" }
+      return { ...s, art: "backoff", last: s.fertig ? s.last : (backoff ?? s.last) }
+    })
+    setSaetze(saetze.map((ss, x) => (x === i ? neu : ss)))
+    setAnpassungen({ ...anpassungen, [i]: undefined })
+  }
+
+  /** Aufwärmsätze einer Hauptübung mit Gewicht, aus dem Gewicht des ersten Arbeitssatzes. */
+  const ersteHaupt = plaetze.findIndex((p) => p.rolle === "haupt" && p.uebung.belastung === "gewicht")
+  const aufwaermen = (i: number) => {
+    const p = plaetze[i]
+    const arbeit = saetze[i][0]?.last
+    if (reha || p.rolle !== "haupt" || p.uebung.belastung !== "gewicht" || !arbeit) return []
+    return aufwaermSaetze(arbeit, lastGeraet(p.uebung, ort), ort.gewichte, lastenAn(p.uebung, ort), i === ersteHaupt)
+  }
+  const warmHaken = (i: number, k: number, anzahl: number) => {
+    const key = i + "-" + k
+    const an = warm.indexOf(key) >= 0
+    setWarm(an ? warm.filter((x) => x !== key) : [...warm, key])
+    // kurze Pausen beim Aufwärmen, vor dem ersten Arbeitssatz etwas länger
+    if (!an) pauseSetzen(Date.now() + (k === anzahl - 1 ? 90 : 60) * 1000, k === anzahl - 1 ? plaetze[i].uebung.name + ", Satz 1" : "Nächster Aufwärmsatz", "Aufwärmpause")
+  }
+
+  // ---------- Zahlenfeld ----------
+  const padOeffnen = (i: number, k: number, feld: Feld) => {
+    const s = saetze[i][k]
+    const wert = feld === "kg" ? s.last : feld === "wdh" ? s.wdh : feld === "sek" ? (s.sekunden ?? 0) : Math.round((s.sekunden || 0) / 60)
+    setPad({ i, k, feld, puffer: alsPuffer(wert), frisch: true })
+    // Zeile über das Zahlenfeld holen
+    setTimeout(() => {
+      const r = document.getElementById("satz-" + i + "-" + k)?.getBoundingClientRect()
+      const grenze = window.innerHeight - 400
+      if (r && r.bottom > grenze) window.scrollBy({ top: r.bottom - grenze + 16, behavior: "smooth" })
+    }, 30)
+  }
+  const padSchreiben = (pd: Pad, puffer: string) => {
+    const x = zahlAus(puffer)
+    const s = saetze[pd.i][pd.k]
+    let neu: Partial<Eingabe> = {}
+    if (pd.feld === "kg") neu = { last: x }
+    else if (pd.feld === "wdh") neu = { wdh: x === null ? 0 : Math.round(x) }
+    else if (pd.feld === "sek") neu = { sekunden: x === null ? 0 : Math.round(x) }
+    else neu = { sekunden: Math.round((x ?? 0) * 60) }
+    // Abgehakten Satz korrigiert: Plausibilität neu prüfen
+    if (s.fertig && plaetze[pd.i].uebung.belastung === "gewicht" && (pd.feld === "kg" || pd.feld === "wdh")) neu.unplausibel = unplausibel({ ...s, ...neu }, verlauf(daten, plaetze[pd.i].uebung.id, einheit.datum)) || undefined
+    setSatz(pd.i, pd.k, neu)
+  }
+  const padTaste = (k: string) => {
+    if (!pad) return
+    const st = taste(pad, k, pad.feld === "kg")
+    setPad({ ...pad, ...st })
+    padSchreiben(pad, st.puffer)
+  }
+  /** Schritt für Plus und Minus: beim Gewicht die nächste vorhandene Stufe. */
+  const padSchritt = (pd: Pad, richtung: 1 | -1): number => {
+    const x = zahlAus(pd.puffer)
+    if (pd.feld !== "kg") {
+      const schritt = pd.feld === "sek" ? 5 : 1
+      return Math.max(0, (x ?? 0) + richtung * schritt)
+    }
+    const u = plaetze[pd.i].uebung
+    const lasten = lastenAn(u, ort)
+    const basis = x ?? plaetze[pd.i].vorgabe.last ?? lasten[0] ?? 0
+    if (lasten.length) return richtung > 0 ? (x === null ? basis : hoeher(basis, lasten)) : niedriger(basis, lasten)
+    const schritt = stangeVon(lastGeraet(u, ort), ort.gewichte) ? 2.5 : 1
+    return Math.max(0, basis + richtung * schritt)
+  }
+  const padPlus = (richtung: 1 | -1) => {
+    if (!pad) return
+    const neu = alsPuffer(padSchritt(pad, richtung))
+    setPad({ ...pad, puffer: neu, frisch: true })
+    padSchreiben(pad, neu)
+  }
+
   const erledigt = saetze.reduce((n, ss) => n + ss.filter((s) => s.fertig).length, 0)
   const gesamt = saetze.reduce((n, ss) => n + ss.length, 0)
   const ersteOffene = saetze.findIndex((ss) => ss.length > 0 && ss.some((s) => !s.fertig))
@@ -242,7 +389,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     if (!u) return
     const p = platzMit(profil, daten, einheit.datum, ort, plaetze[i], u)
     setPlaetze(plaetze.map((x, k) => (k === i ? p : x)))
-    setSaetze(saetze.map((x, k) => (k === i ? startSaetze(p, daten) : x)))
+    setSaetze(saetze.map((x, k) => (k === i ? start(p) : x)))
     if (nieWieder) props.ausschliessen(plaetze[i].uebung.id)
     setTausch(null)
   }
@@ -255,6 +402,45 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     if (u.belastung === "zeit") return v.saetze + " × " + v.last + " s" + (u.einseitig ? " je Seite" : "")
     if (u.belastung === "distanz") return v.saetze + " × " + v.last + " m"
     return v.saetze + " × " + (v.wdh_von === v.wdh_bis ? v.wdh_von : v.wdh_von + " bis " + v.wdh_bis) + (u.einseitig ? " je Seite" : "")
+  }
+
+  const padAnzeige = (pd: Pad) => {
+    const p = plaetze[pd.i]
+    const u = p.uebung
+    const s = saetze[pd.i][pd.k]
+    const geraet = lastGeraet(u, ort)
+    const stange = stangeVon(geraet, ort.gewichte)
+    const wert = zahlAus(pd.puffer)
+    const sch = pd.feld === "kg" && stange && wert ? scheibenProSeite(wert, stange, ort.gewichte.scheiben) : null
+    const schritt = (r: 1 | -1) => {
+      const d = Math.abs(padSchritt(pd, r) - (wert ?? 0))
+      return (r > 0 ? "+" : "−") + (d ? zahl(d) : "")
+    }
+    const feldName = pd.feld === "kg" ? (geraet === "kurzhantel" ? "Gewicht je Hand (kg)" : "Gewicht (kg)") : pd.feld === "wdh" ? "Wiederholungen" : pd.feld === "sek" ? "Sekunden" : "Minuten"
+    const gewicht = u.belastung === "gewicht"
+    return (
+      <Zahlenfeld
+        uebung={u.name + " · Satz " + (pd.k + 1)}
+        feld={feldName}
+        anzeige={pd.puffer}
+        minusText={schritt(-1)}
+        plusText={schritt(1)}
+        dezimal={pd.feld === "kg"}
+        minus={() => padPlus(-1)}
+        plus={() => padPlus(1)}
+        taste={padTaste}
+        weiterText={pd.feld === "kg" ? "Wdh →" : "← kg"}
+        weiter={gewicht && (pd.feld === "kg" || pd.feld === "wdh") ? () => padOeffnen(pd.i, pd.k, pd.feld === "kg" ? "wdh" : "kg") : undefined}
+        okText={s.fertig ? "OK" : "✓ Satz " + (pd.k + 1)}
+        ok={() => {
+          setPad(null)
+          if (!s.fertig) abhaken(pd.i, pd.k)
+        }}
+        schliessen={() => setPad(null)}
+        zusatz={sch && sch.length ? <Scheiben liste={sch} klein /> : undefined}
+        pause={pauseBis !== null && rest > 0 ? Math.floor(rest / 60) + ":" + String(rest % 60).padStart(2, "0") : undefined}
+      />
+    )
   }
 
   return (
@@ -286,7 +472,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         </div>
       ) : null}
       {reha && schmerzVor !== null && schmerzVor >= 7 ? <p className="hinweistext warnung">Heute sind die Schmerzen stark. Mach nur die Beweglichkeit und kurzes Gehen, oder leg einen Ruhetag ein. Bleibt es mehrere Tage so, bitte ärztlich abklären.</p> : null}
-      {einheit.art !== "ausdauer" ? <p className="hinweistext">{reha ? "Aufwärmen (5 bis 10 min): in der Wohnung gehen oder locker Rad fahren, bis du dich warm fühlst." : "Aufwärmen (etwa 8 min): locker bewegen, dann für die erste Übung zwei leichte Sätze."}</p> : null}
+      {einheit.art !== "ausdauer" ? <p className="hinweistext">{reha ? "Aufwärmen (5 bis 10 min): in der Wohnung gehen oder locker Rad fahren, bis du dich warm fühlst." : "Aufwärmen (etwa 5 min): locker bewegen. Die Aufwärmsätze mit Gewicht stehen bei den Hauptübungen."}</p> : null}
 
       {plaetze.map((p, i) => {
         const u = p.uebung
@@ -299,6 +485,12 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         const alle = saetze[i].every((s) => s.fertig)
         const zeigeRir = !reha && p.rolle !== "mobil" && p.rolle !== "ausdauer" && u.belastung !== "zeit" && u.belastung !== "distanz"
         const zeigeSchmerz = reha && p.rolle !== "ausdauer"
+        const form = formVon(p, saetze[i].length)
+        const formWaehlbar = satzformVon({ ...v, saetze: saetze[i].length, topsatz: true }, undefined, u.belastung === "gewicht" && !reha && (p.rolle === "haupt" || p.rolle === "neben") && geraet !== "band") === "topsatz"
+        const stange = stangeVon(geraet, ort.gewichte)
+        const offenerSatz = saetze[i].find((x) => !x.fertig)
+        const scheiben = stange && offenerSatz?.last ? scheibenProSeite(offenerSatz.last, stange, ort.gewichte.scheiben) : null
+        const warmups = saetze[i].some((x) => x.fertig) ? [] : aufwaermen(i)
         return (
           <section key={i + u.id} id={"uebung-" + i} className={"uebungskarte" + (alle ? " geschafft" : "") + (i === aktiveUebung && erledigt > 0 ? " dran" : "")}>
             {i === aktiveUebung && erledigt > 0 ? <span className="dranmarke">Jetzt dran</span> : null}
@@ -343,8 +535,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               </button>
             ) : null}
             <div className="vorgabezeile">
-              <span className="vorgabe">{vorgabeText(p)}</span>
-              {v.last !== null && u.belastung === "gewicht" ? <span className="vorgabe gewicht">{lastText(v.last, geraet)}</span> : null}
+              <span className="vorgabe">{form === "topsatz" && !p.plantext ? "1 Topsatz + " + (saetze[i].length - 1) + " Back-off × " + mitte(v) : vorgabeText(p)}</span>
+              {v.last !== null && u.belastung === "gewicht" ? <span className="vorgabe gewicht">{(form === "topsatz" ? "Top " : "") + lastText(v.last, geraet)}</span> : null}
+              {form === "topsatz" && v.last !== null ? <span className="vorgabe gewicht leise">Back-off {lastText(backoffLast(v.last, lasten), geraet)}</span> : null}
               {zeigeRir ? (
                 <button type="button" className="vorgabe tank" onClick={() => setRirHilfe(true)}>
                   {v.rir} im Tank
@@ -353,6 +546,25 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               {v.pause_s > 0 && p.rolle !== "ausdauer" ? <span className="vorgabe leise">Pause {v.pause_s >= 120 ? zahl(v.pause_s / 60) + " min" : v.pause_s + " s"}</span> : null}
             </div>
             <p className="begruendung">{v.begruendung}</p>
+            {formWaehlbar ? (
+              <div className="satzform" role="group" aria-label="Satzform">
+                <button type="button" className={form === "gleich" ? "an" : ""} aria-pressed={form === "gleich"} onClick={() => formWechseln(i, "gleich")}>
+                  Gleiche Sätze
+                </button>
+                <button type="button" className={form === "topsatz" ? "an" : ""} aria-pressed={form === "topsatz"} onClick={() => formWechseln(i, "topsatz")}>
+                  Topsatz + Back-off
+                </button>
+              </div>
+            ) : null}
+            {form === "topsatz" ? <p className="leise klein satzformtext">Satz 1 schwer, danach etwa 10 % leichter. So bleiben die Wiederholungen in allen Sätzen stabil, statt nach dem ersten Satz einzubrechen (Helms et al. 2016).</p> : null}
+            {scheiben && scheiben.length ? (
+              <div className="scheibenzeile">
+                <small>
+                  Je Seite für {zahl(offenerSatz!.last!)} kg (Stange {zahl(stange)} kg)
+                </small>
+                <Scheiben liste={scheiben} />
+              </div>
+            ) : null}
             {geraet === "band" || daten.bandfarben?.[u.id] ? (
               <div className="bandwahl" role="group" aria-label="Bandfarbe">
                 <small>Band</small>
@@ -382,6 +594,30 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               </p>
             ) : null}
 
+            {warmups.length ? (
+              <div className="aufwaermen">
+                <div className="aufwaermkopf">
+                  <b>Aufwärmen</b>
+                  <small>zählt nicht als Arbeitssatz</small>
+                </div>
+                {warmups.map((w, k) => {
+                  const an = warm.indexOf(i + "-" + k) >= 0
+                  const sch = stange ? scheibenProSeite(w.last, stange, ort.gewichte.scheiben) : null
+                  return (
+                    <div key={k} className={"aufwaermsatz" + (an ? " fertig" : "")}>
+                      <span className="aw">
+                        {w.text ? "Leere Stange" : lastText(w.last, geraet)} × {w.wdh}
+                      </span>
+                      {sch && sch.length ? <Scheiben liste={sch} klein /> : <span className="flex" />}
+                      <button type="button" className={"haken klein" + (an ? " an" : "")} onClick={() => warmHaken(i, k, warmups.length)} aria-label={"Aufwärmsatz " + (k + 1) + " erledigt"}>
+                        <Icon name="haken" groesse={16} dick={3} />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
+
             <div className="saetze">
               <div className="satzkopf">
                 <span className="nr">Satz</span>
@@ -394,16 +630,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 <span className="hakenplatz" />
               </div>
               {saetze[i].map((s, k) => (
-                <div key={k} className={"satz" + (s.fertig ? " fertig" : "")}>
-                  <span className="nr">{k + 1}</span>
+                <div key={k} id={"satz-" + i + "-" + k} className={"satz" + (s.fertig ? " fertig" : "") + (pad && pad.i === i && pad.k === k ? " bearbeitet" : "")}>
+                  <span className={"nr" + (s.art === "top" ? " top" : "")}>{s.art === "top" ? "Top" : k + 1}</span>
                   {u.belastung === "distanz" ? <span className="breit leise">{v.last} m</span> : null}
-                  {u.belastung === "gewicht" && !lasten.length ? (
-                    <label className="mini breit">
-                      <input aria-label="Gewicht in kg" inputMode="decimal" placeholder="kg" value={s.last ?? ""} onChange={(e) => {
-                        const n = parseFloat(e.target.value.replace(",", "."))
-                        setSatz(i, k, { last: e.target.value === "" || !isFinite(n) ? null : n })
-                      }} />
-                    </label>
+                  {u.belastung === "gewicht" && geraet !== "band" ? (
+                    <button type="button" className={"feldknopf breit" + (pad && pad.i === i && pad.k === k && pad.feld === "kg" ? " an" : "")} aria-label={"Gewicht Satz " + (k + 1)} onClick={() => padOeffnen(i, k, "kg")}>
+                      {s.last === null ? <span className="leise">kg</span> : zahl(s.last) + " kg"}
+                    </button>
                   ) : u.belastung === "gewicht" ? (
                     <select aria-label="Gewicht" value={s.last ?? ""} onChange={(e) => setSatz(i, k, { last: e.target.value === "" ? null : Number(e.target.value) })}>
                       <option value="">{lasten.length ? "Gewicht" : "frei"}</option>
@@ -415,18 +648,18 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                     </select>
                   ) : null}
                   {u.belastung === "zeit" && p.rolle === "ausdauer" && v.saetze === 1 ? (
-                    <label className="mini">
-                      <input aria-label="Minuten" inputMode="numeric" value={Math.round((s.sekunden || 0) / 60)} onChange={(e) => setSatz(i, k, { sekunden: (Number(e.target.value) || 0) * 60 })} />
-                    </label>
+                    <button type="button" className={"feldknopf" + (pad && pad.i === i && pad.k === k ? " an" : "")} aria-label="Minuten" onClick={() => padOeffnen(i, k, "min")}>
+                      {Math.round((s.sekunden || 0) / 60)}
+                    </button>
                   ) : u.belastung === "zeit" ? (
-                    <label className="mini">
-                      <input aria-label="Sekunden" inputMode="numeric" value={s.sekunden ?? ""} onChange={(e) => setSatz(i, k, { sekunden: Number(e.target.value) || 0 })} />
-                    </label>
+                    <button type="button" className={"feldknopf" + (pad && pad.i === i && pad.k === k ? " an" : "")} aria-label="Sekunden" onClick={() => padOeffnen(i, k, "sek")}>
+                      {s.sekunden ?? 0}
+                    </button>
                   ) : null}
                   {u.belastung === "gewicht" || u.belastung === "wiederholungen" ? (
-                    <label className="mini">
-                      <input aria-label="Wiederholungen" inputMode="numeric" value={s.wdh} onChange={(e) => setSatz(i, k, { wdh: Number(e.target.value) || 0 })} />
-                    </label>
+                    <button type="button" className={"feldknopf" + (pad && pad.i === i && pad.k === k && pad.feld === "wdh" ? " an" : "")} aria-label={"Wiederholungen Satz " + (k + 1)} onClick={() => padOeffnen(i, k, "wdh")}>
+                      {s.wdh}
+                    </button>
                   ) : null}
                   {zeigeRir ? (
                     <label className="mini">
@@ -455,6 +688,23 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                   </button>
                 </div>
               ))}
+              {saetze[i].map((s, k) =>
+                s.fertig && s.unplausibel ? (
+                  <div key={"p" + k} className="pruefhinweis">
+                    <span>
+                      <b>Satz {k + 1} prüfen:</b> {zahl(s.last || 0)} kg × {s.wdh} liegt weit über deinem bisherigen Maximum. Vertippt? Bis du es bestätigst, zählt der Satz nicht für Maximum und Steigerung.
+                    </span>
+                    <span className="pruefknoepfe">
+                      <button type="button" className="knopf klein" onClick={() => padOeffnen(i, k, "kg")}>
+                        Korrigieren
+                      </button>
+                      <button type="button" className="knopf klein leise" onClick={() => setSatz(i, k, { unplausibel: undefined })}>
+                        Stimmt so
+                      </button>
+                    </span>
+                  </div>
+                ) : null,
+              )}
               {anpassungen[i] ? (
                 <p className={"anpassung " + anpassungen[i]!.richtung}>
                   <Sym name={anpassungen[i]!.richtung === "hoch" ? "kurve" : anpassungen[i]!.richtung === "runter" ? "pflaster" : "haken"} groesse={18} />
@@ -483,16 +733,17 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       </button>
       {!vollstaendig && erledigt > 0 ? <p className="hinweistext klein mitte">Noch nicht jede Übung eingetragen. Abschließen geht trotzdem, fehlende Übungen zählen dann nicht für den Fortschritt.</p> : null}
 
-      {pauseBis !== null && rest > 0 ? (
+      {pauseBis !== null && rest > 0 && !pad ? (
         <div className="pausenleiste">
           <div className="pausenring">
             <Icon name="timer" groesse={20} />
           </div>
           <div className="pausentext">
-            <small>{wechsel && !saetze[wechsel.nach]?.some((x) => x.fertig) ? "Wechsel zu " + plaetze[wechsel.nach].uebung.name : "Pause"}</small>
+            <small>{pauseGrund === "Aufwärmpause" ? pauseGrund : wechsel && !saetze[wechsel.nach]?.some((x) => x.fertig) ? "Wechsel zu " + plaetze[wechsel.nach].uebung.name : "Pause"}</small>
             <b>
               {Math.floor(rest / 60)}:{String(rest % 60).padStart(2, "0")}
             </b>
+            {pauseGrund && pauseGrund !== "Aufwärmpause" ? <small className="pausengrund">{pauseGrund}</small> : null}
           </div>
           <button type="button" className="knopf klein leise" onClick={() => pauseSetzen(pauseBis + 30000)}>
             +30 s
@@ -552,6 +803,15 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         ) : null}
       </Blatt>
       <UebungInfoBlatt uebung={info} onClose={() => setInfo(null)} />
+
+      {toast ? (
+        <div className="toast" role="status" onClick={() => setToast(null)}>
+          <Sym name="pokal" groesse={20} farbe="var(--gold)" />
+          <span>{toast}</span>
+        </div>
+      ) : null}
+      {pad ? <div className="zfplatz" aria-hidden="true" /> : null}
+      {pad ? padAnzeige(pad) : null}
     </Seite>
   )
 }

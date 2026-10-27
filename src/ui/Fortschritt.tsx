@@ -12,11 +12,12 @@ import { Blatt, Gruppe, Icon, Seite, Segment, Zeile } from "./ios"
 import { MUSTER_NAME, datumText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym, SymKachel } from "./symbole"
+import Koerpergewicht from "./Koerper"
 
 type Punkt = { datum: string; wert: number }
 
 /** Kraftkurve im Stil des Kraftbuchs: Linie, Punkte, Bestwerte mit Pokal, erster und letzter Wert beschriftet. */
-export function Kurve(props: { punkte: Punkt[]; einheit: string; hoehe?: number; mini?: boolean }) {
+export function Kurve(props: { punkte: Punkt[]; einheit: string; hoehe?: number; mini?: boolean; ohneBestwerte?: boolean }) {
   const p = props.punkte
   const B = 320
   const H = props.hoehe || 150
@@ -34,7 +35,8 @@ export function Kurve(props: { punkte: Punkt[]; einheit: string; hoehe?: number;
   const rekord = p.map((q, i) => {
     const neu = q.wert > lauf
     if (neu) lauf = q.wert
-    return i > 0 && neu
+    // beim Körpergewicht ist „höher“ kein Bestwert
+    return i > 0 && neu && !props.ohneBestwerte
   })
   const pfad = p.map((q, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(q.wert).toFixed(1)).join(" ")
   const flaeche = pfad + ` L${x(p.length - 1).toFixed(1)} ${H - pad.u} L${x(0).toFixed(1)} ${H - pad.u} Z`
@@ -392,20 +394,23 @@ function EinProzent(props: { daten: Daten }) {
   )
 }
 
-export default function Fortschritt(props: { daten: Daten; aendern: (f: (d: Daten) => void) => void; start?: "kraft" | "beweglichkeit" | "prozent" }) {
-  const [reiter, setReiter] = useState<"kraft" | "beweglichkeit" | "prozent">(props.start || "kraft")
+type Reiter = "kraft" | "beweglichkeit" | "prozent" | "koerper"
+
+export default function Fortschritt(props: { daten: Daten; aendern: (f: (d: Daten) => void) => void; start?: Reiter }) {
+  const [reiter, setReiter] = useState<Reiter>(props.start || "kraft")
   return (
     <Seite titel="Fortschritt">
       <Segment
         werte={[
           { id: "kraft", name: "Kraft" },
-          { id: "beweglichkeit", name: "Beweglichkeit" },
+          { id: "beweglichkeit", name: "Mobilität" },
           { id: "prozent", name: "1 %" },
+          { id: "koerper", name: "Gewicht" },
         ]}
         wert={reiter}
         onChange={setReiter}
       />
-      {reiter === "kraft" ? <Kraft daten={props.daten} /> : reiter === "beweglichkeit" ? <Beweglichkeit daten={props.daten} aendern={props.aendern} /> : <EinProzent daten={props.daten} />}
+      {reiter === "kraft" ? <Kraft daten={props.daten} /> : reiter === "beweglichkeit" ? <Beweglichkeit daten={props.daten} aendern={props.aendern} /> : reiter === "koerper" ? <Koerpergewicht daten={props.daten} aendern={props.aendern} /> : <EinProzent daten={props.daten} />}
     </Seite>
   )
 }

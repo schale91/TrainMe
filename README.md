@@ -14,6 +14,8 @@ Auf dem Android-Handy öffnen und installieren. Beim ersten Mal fragt Android, o
 - **Pausentimer im Hintergrund:** Restzeit in der Benachrichtigung und schwebend über anderen Apps, zum Beispiel über YouTube.
 - **Dein Weg und Jahresplan:** Phasen von der Grundlage über Kraft und Schnellkraft bis zur Saison. Eine Zeitleiste zeigt, was geschafft ist, wo du stehst und was als Nächstes kommt.
 - **1-%-Methode, Kraftkurven und Fakten mit Quellen.**
+- **Im Training:** Topsatz mit Back-off-Sätzen, Aufwärmsätze, Scheibenrechner, Zahlenfeld, längere Pause nach knappen Sätzen, Hinweis auf Bestwerte und Tippfehler, Maximum-Vorschlag nach der Einheit, Bildschirm bleibt an.
+- **Körpergewicht:** 7-Tage-Schnitt und Trend pro Woche, eingeordnet nach Ziel.
 
 - **Individuell:** Trainingstage und Minuten je Tag, mehrere Orte mit eigenen Geräten, echten Gewichtsstufen (Kurzhanteln, Scheibenpaare, Kettlebells, Maschinen) und Deckenhöhe, Ziel, Erfahrung, Beschwerden je Gelenk, ausgeschlossene Übungen.
 - **Kraft, Mobilität, Ausdauer:** einzeln anwählbar.
