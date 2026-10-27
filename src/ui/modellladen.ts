@@ -1,11 +1,14 @@
-// Lädt das 3D-Modell der Dehnfigur aus dem TrainMe-Paket (modell/figur.bin), falls es beim Build dabei war. Fehlt
-// es, bleibt die gezeichnete Figur. Wird nur einmal geladen.
+// Lädt das 3D-Modell der Dehnfigur aus dem TrainMe-Paket (modell/figur.bin, in der Lebenswelt trainme-figur.bin),
+// falls es beim Build dabei war. Fehlt es, bleibt die gezeichnete Figur. Wird nur einmal geladen.
 
 import type * as THREE from "three"
 
 let laden: Promise<THREE.Object3D | null> | null = null
 
-export function modellLaden(url = (import.meta.env?.BASE_URL ?? "./") + "modell/figur.bin"): Promise<THREE.Object3D | null> {
+/** Im Lebenswelt-Build liegen alle Dateien flach nebeneinander, das Modell heißt dort trainme-figur.bin */
+const STANDARD = (import.meta.env?.BASE_URL ?? "./") + (import.meta.env?.MODE === "lebenswelt" ? "trainme-figur.bin" : "modell/figur.bin")
+
+export function modellLaden(url = STANDARD): Promise<THREE.Object3D | null> {
   laden ??= (async () => {
     try {
       const antwort = await fetch(url)
