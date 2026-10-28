@@ -114,6 +114,21 @@ jobs:
             --notes "Testversion aus einem offenen Pull Request. Kann Fehler enthalten. Stabile Version: Releases mit Versionsnummer." \
             --prerelease
 
+      # Web-App fürs iPhone (GitHub Pages): gleicher Stand, eigener Kanal ohne APK-Updatehinweis
+      - name: Web-App fürs iPhone bauen
+        if: github.ref == 'refs/heads/main'
+        env:
+          TRAINME_BUILD: ${{ github.run_number }}
+          TRAINME_KANAL: web
+        run: |
+          export TRAINME_VERSION="$VERSION"
+          npx vite build --outDir dist-web
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: dist-web
+
       - name: Release veröffentlichen
         if: github.ref == 'refs/heads/main' && env.SIGNIERT == 'ja'
         env:
@@ -124,3 +139,18 @@ jobs:
             --generate-notes \
             --notes "APK herunterladen, öffnen und installieren (einmalig „Unbekannte Apps installieren“ erlauben). Updates einfach drüber installieren, die Daten bleiben erhalten." \
             --latest
+
+  # Veröffentlicht die Web-App unter https://<besitzer>.github.io/TrainMe/ (Einstellung: Pages, Quelle „GitHub Actions“)
+  web:
+    needs: bauen
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@v4
