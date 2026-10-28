@@ -23,7 +23,8 @@ export function updateBekannt(): UpdateInfo | null {
 
 /** Höchstens alle 6 Stunden online nachsehen, außer jetzt ist ausdrücklich gewünscht. */
 export async function updateSuchen(jetzt = false): Promise<UpdateInfo | null> {
-  if (!__BUILD__ || __KANAL__ === "lokal") return null
+  // Die Web-App (iPhone) lädt beim Öffnen ohnehin den neuesten Stand, eine APK passt dort nicht
+  if (!__BUILD__ || __KANAL__ === "lokal" || __KANAL__ === "web") return null
   const alt = gemerkt()
   if (!jetzt && alt && Date.now() - alt.zeit < ALTER_MS) return alt.info
   const abbruch = new AbortController()
