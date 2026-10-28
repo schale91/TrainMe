@@ -190,7 +190,7 @@ function Sicherung(props: { daten: Daten; ersetzen: (d: Daten) => void; zuruecks
           titel="Sicherung erstellen"
           onClick={() =>
             dateiTeilen("TrainMe-Sicherung-" + heute() + ".json", exportieren(props.daten))
-              .then(() => setMeldung("Sicherung erstellt."))
+              .then((ok) => ok && setMeldung("Sicherung erstellt."))
               .catch((e) => setMeldung("Hat nicht geklappt: " + String(e?.message || e)))
           }
         />
