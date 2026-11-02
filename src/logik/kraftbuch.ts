@@ -8,7 +8,7 @@
 
 import { UEBUNGEN, uebung } from "../daten/uebungen/index"
 import { neuerOrt, neuesProfil } from "./speicher"
-import { idVon } from "./eigenerPlan"
+import { amrapSpanne, idVon } from "./eigenerPlan"
 import { e1rm } from "./progression"
 import type { Beschwerde, Daten, EigenerPlan, Erledigt, Gelenk, Geraet, Ort, PlanTag, PlanUebung, Protokoll, Satz } from "./typen"
 
@@ -205,6 +205,12 @@ function planUebungAus(e: KbUebung): PlanUebung {
   if (gruppe) pu.gruppe = gruppe[1]
   if (e.aufwaermsaetze && e.aufwaermsaetze !== "–") pu.aufwaermsaetze = String(e.aufwaermsaetze)
   if (e.notiz) pu.hinweis = String(e.notiz)
+  // AMRAP ohne Zahl: erwartete Wiederholungen aus Prozent und Reserve statt pauschal 8 bis 12
+  const amrap = amrapSpanne(pu)
+  if (amrap) {
+    pu.wdh_von = amrap.von
+    pu.wdh_bis = amrap.bis
+  }
   return pu
 }
 
