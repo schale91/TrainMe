@@ -79,6 +79,21 @@ export function maximum(daten: Daten, id: string, vor = "9999-12-31"): { kg: num
   return ausVerlauf || ausMax
 }
 
+/** „AMRAP“, „max.“ oder „so viele wie möglich“: Wiederholungen bis kurz vor Schluss statt einer festen Zahl. */
+export const istAmrap = (pu: PlanUebung) => /\bamrap\b|so viele wie m(ö|oe)glich|^max\.?(\s*wdh\.?)?$/i.test(pu.wdh_text || "")
+
+/**
+ * Erwartete Wiederholungen für einen AMRAP-Satz mit Prozent vom Maximum, nach derselben Formel wie das geschätzte
+ * Maximum (Epley mit Reserve): bei 90 % und 1 im Tank etwa 2 bis 3. Ohne Prozentangabe null.
+ */
+export function amrapSpanne(pu: PlanUebung): { von: number; bis: number } | null {
+  if (!istAmrap(pu) || !pu.prozent || pu.zeit) return null
+  const anteil = (pu.prozent[0] + pu.prozent[1]) / 2
+  // auf Hundertstel, damit 75 % nicht an 7,999… scheitert
+  const x = Math.max(1, Math.round((30 * (1 / anteil - 1) - (pu.rir ?? 2)) * 100) / 100)
+  return { von: Math.max(1, Math.floor(x)), bis: Math.max(1, Math.ceil(x)) }
+}
+
 /** Auf vorhandene Lasten abrunden; ohne bekannte Lasten auf 0,5 kg. */
 function runde(x: number, lasten: number[]): number {
   if (lasten.length) return abrunden(x, lasten) ?? lasten[0]
@@ -103,6 +118,9 @@ export function planText(pu: PlanUebung): string {
  */
 export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: number[], datum: string, rolle: Rolle): Vorgabe {
   const rir = pu.rir ?? 2
+  // Ältere Übernahmen haben für AMRAP 8 bis 12 gespeichert: bei hohem Prozentsatz unmöglich
+  const amrap = amrapSpanne(pu)
+  if (amrap) pu = { ...pu, wdh_von: amrap.von, wdh_bis: amrap.bis }
   const mitte = Math.round((pu.wdh_von + pu.wdh_bis) / 2)
   const pause = pu.pause_s ?? (rolle === "haupt" ? 180 : pu.gruppe ? 90 : 120)
   const v: Vorgabe = { saetze: pu.saetze, wdh_von: pu.wdh_von, wdh_bis: pu.wdh_bis, rir, last: null, modell: "rir", pause_s: pause, begruendung: "" }
@@ -130,6 +148,7 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
       v.last = runde(max.kg * anteil, lasten)
       v.begruendung = pz + " von " + kg(max.kg) + " kg (" + (max.quelle === "max" ? "dein Maximum vom " + max.datum.split("-").reverse().join(".") : "geschätzt aus deinen letzten Einheiten") + (basis !== idVon(pu) ? ", " + (planUebung(basis)?.name || basis) : "") + ")."
     } else v.begruendung = pz + " von deinem Maximum. Unter Profil, „Kraftwerte neu einstufen“ kannst du es eintragen, dann rechnet TrainMe das Gewicht aus."
+    if (amrap) v.begruendung += " AMRAP: so viele saubere Wiederholungen wie möglich, " + rir + " im Tank lassen; erwartet " + (amrap.von === amrap.bis ? "etwa " + amrap.von : "etwa " + amrap.von + " bis " + amrap.bis) + ". Trag ein, was du geschafft hast."
     return v
   }
   const verlauf = daten.protokoll.filter((p) => p.uebung === u.id && p.datum < datum).sort((a, b) => (a.datum < b.datum ? -1 : 1))
