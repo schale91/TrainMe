@@ -4,7 +4,7 @@
 // so sind die Hände oben auf Ellbogenhöhe oder knapp darunter. Geprüft mit werkzeuge/messen.html gegen soll.ts.
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
-import { B, H, folge, halte, mit, wdh } from "./basis"
+import { B, BAUCHLAGE, H, folge, halte, mit, wdh } from "./basis"
 import { BAND, BAUCH_LEHNE, BRUST_LEHNE, FAUST, HAMMER, KH, OBERGRIFF, UNTERGRIFF } from "./kraftbasis"
 import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, rad } from "./ziele"
 
@@ -223,4 +223,95 @@ export const KRAFT_HINTERE_SCHULTER: Record<string, Dehnung> = {
   band_pull_apart: auseinander({ hebung: 90, ebene: 72, knick: 6 }, T_ARM, OBERGRIFF, BAND, ["Arme seitlich auseinander, bis sie ein T bilden", "Langsam wieder zusammen, ohne die Spannung ganz zu lösen"], { hilfsmittel: [{ art: "band", von: "hand_l", bis: "hand_r" }] }),
   band_pull_apart_untergriff: auseinander({ hebung: 82, ebene: 72, knick: 6 }, { hebung: 72, ebene: -4, knick: 8 }, UNTERGRIFF, [], ["Arme seitlich nach außen und leicht nach unten", "Langsam wieder zusammen, Handflächen bleiben oben"], { hilfsmittel: [{ art: "band", von: "hand_l", bis: "hand_r" }] }),
   band_pull_apart_diagonal: auseinander({ hebung: 90, ebene: 72, knick: 6 }, T_ARM, OBERGRIFF, [], ["Rechts schräg nach oben, links schräg nach unten auseinander", "Langsam wieder zusammen"], { hilfsmittel: [{ art: "band", von: "hand_l", bis: "hand_r" }] }, [[45, -4, 8], [132, -4, 8]]),
+}
+
+// ---------------------------------------------------------------- Rotatoren
+// Ellbogen 90 Grad gebeugt, Oberarm seitlich am Körper (ein Handtuch dazwischen), der Unterarm dreht um den Oberarm
+// wie an einem Scharnier: 0 Grad = nach vorn, positiv nach außen.
+const rotHaltung = (dreh: number, einarm = true): Haltung => {
+  const e: P3 = [SCHULTER_X + 0.045, -OBERARM + 0.005, 0.0]
+  const h: P3 = [e[0] + Math.sin(rad(dreh)) * UNTERARM, e[1] + 0.01, e[2] + Math.cos(rad(dreh)) * UNTERARM]
+  const ziele: Ziele = {}
+  for (const sx of einarm ? ([-1] as const) : ([1, -1] as const)) {
+    const n = sx === 1 ? "l" : "r"
+    ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+  }
+  return koerper("stand", 0, { schulter_r: [4, 10, -dreh], ellbogen_r: [90, HAMMER], schulter_l: [4, 8, 0], ellbogen_l: [12, 0] }, ziele)
+}
+/** 90/90: Oberarm waagerecht und etwas vor der Körperebene, Ellbogen 90 Grad; der Unterarm dreht von vorn nach oben */
+const rot9090 = (hoch: number, seiten: (1 | -1)[] = [-1]): Haltung => {
+  const e = plus([SCHULTER_X, 0, 0], richtung(90, 15), OBERARM)
+  const vorn = richtung(90, 90 + 15)
+  const h = plus(e, [vorn[0] * Math.cos(rad(hoch)), Math.sin(rad(hoch)), vorn[2] * Math.cos(rad(hoch))], UNTERARM)
+  const ziele: Ziele = {}
+  for (const sx of seiten) {
+    const n = sx === 1 ? "l" : "r"
+    ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+  }
+  const arm: Winkel = { schulter_r: [15, 88, hoch], ellbogen_r: [90, HAMMER] }
+  return koerper("stand", 0, seiten.length === 2 ? { ...arm, schulter_l: [15, 88, hoch], ellbogen_l: [90, HAMMER] } : { ...arm, schulter_l: [4, 8, 0], ellbogen_l: [12, 0] }, ziele)
+}
+/** Cuban Press: Ellbogen seitlich auf Schulterhöhe mit hängenden Unterarmen */
+const cubanHaengend = (): Haltung => {
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    const e = plus([SCHULTER_X, 0, 0], richtung(88, 5), OBERARM)
+    const h = plus(e, [0, -1, 0.05], UNTERARM)
+    ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+  }
+  return koerper("stand", 0, { ...B("schulter", [5, 88, -60]), ...B("ellbogen", [90, OBERGRIFF]) }, ziele)
+}
+const cubanOben = (): Haltung => haltung("stand", 0, { hebung: 168, ebene: 10, knick: 6 }, OBERGRIFF)
+
+// ---------------------------------------------------------------- Y, T, W und Schwimmer in Bauchlage, auf der Schrägbank
+// Bauchlage: die Vorderseite des Rumpfes zeigt zum Boden (z im Rahmen der Schultern), Arme heben heißt hier Ebene < 0.
+const BAUCH: Ziele = {}
+const bauchArm = (a: Arm, w?: Arm): Haltung => {
+  const ziele = armZiele({ ...BAUCH }, a)
+  if (w) {
+    for (const sx of [1, -1] as const) {
+      const n = sx === 1 ? "l" : "r"
+      const e = plus([SCHULTER_X, 0, 0], richtung(w.hebung, w.ebene), OBERARM)
+      const h = plus(e, [0.25, 1, -0.15], UNTERARM / Math.hypot(0.25, 1, 0.15))
+      ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+      ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+    }
+  }
+  // feste Beckenhöhe (gemessen): die Ausgangswinkel der Arme zeigen vor dem Lösen teils in den Boden und würden die
+  // Figur sonst beim Aufsetzen auf den Boden anheben
+  return mit(BAUCHLAGE, { g: { ...BAUCHLAGE.g, ...armWinkel(a, HAMMER), hals: [-5, 0, 0] }, pos: [0, 0.144, 0], boden: false, ziele })
+}
+const Y_BODEN: Arm = { hebung: 150, ebene: -8, knick: 4 }
+const T_BODEN: Arm = { hebung: 90, ebene: -10, knick: 4 }
+const W_BODEN: Arm = { hebung: 65, ebene: -16 }
+const brustArm = (a: Arm, w = false): Haltung => {
+  if (!w) return haltung("brust", 55, a, HAMMER)
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    const e = plus([SCHULTER_X, 0, 0], richtung(60, -25), OBERARM)
+    const h = plus(e, [0.2, 0.9, -0.4], UNTERARM / Math.hypot(0.2, 0.9, 0.4))
+    ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+  }
+  return koerper("brust", 55, { ...B("schulter", [30, 60, 60]), ...B("ellbogen", [90, HAMMER]) }, ziele)
+}
+const BRUST_HAENGT: Arm = { hebung: 55, ebene: 68, knick: 6 }
+export const KRAFT_ROTATOREN: Record<string, Dehnung> = {
+  aussenrotation: wdh("vorn", rotHaltung(-20), rotHaltung(50), 1.2, { aus: 1.8, halten: 0.5, seiten: true, texte: ["Unterarm nach außen drehen, der Ellbogen bleibt am Körper", "Langsam zurück vor den Bauch"], hilfsmittel: [{ art: "bandanker", von: "hand_r", anker: [0.6, 1.0, 0.35] }] }),
+  aussenrotation_kabel: wdh("vorn", rotHaltung(-20), rotHaltung(50), 1.2, { aus: 1.8, halten: 0.5, seiten: true, texte: ["Unterarm nach außen drehen, der Ellbogen bleibt fest an der Seite", "Langsam zurück vor den Bauch"], hilfsmittel: [{ art: "kabel", von: "hand_r", rolle: [0.65, 1.0, 0.35] }] }),
+  innenrotation: wdh("vorn", rotHaltung(45), rotHaltung(-40), 1.2, { aus: 1.8, halten: 1.0, seiten: true, texte: ["Unterarm nach innen vor den Bauch drehen, Ellbogen am Körper", "Langsam zurück nach außen"], hilfsmittel: [{ art: "bandanker", von: "hand_r", anker: [-0.7, 1.0, 0.25] }] }),
+  aussenrotation_90_90: wdh("vorn", rot9090(0), rot9090(88), 1.2, { aus: 2.0, halten: 1.0, seiten: true, texte: ["Unterarm nach oben drehen, bis er senkrecht steht, Ellbogen auf derselben Höhe", "Langsam wieder nach vorn bis etwa waagerecht"], hilfsmittel: [{ art: "bandanker", von: "hand_r", anker: [-0.25, 1.35, 1.2] }] }),
+  cuban_press: folge("vorn", [[haltung("stand", 0, { hebung: 8, ebene: 50, knick: 6 }, OBERGRIFF, [0.17, -0.47, 0.12]), 1.0, "Hanteln vor den Oberschenkeln, Obergriff"], [cubanHaengend(), 1.0, "Ellbogen seitlich hoch, bis die Oberarme waagerecht sind"], [rot9090(88, [1, -1]), 1.0, "Unterarme nach oben drehen in die 90/90-Position"], [cubanOben(), 1.0, "Nach oben drücken, bis die Arme gestreckt sind"], [rot9090(88, [1, -1]), 1.0, "Zurück in die 90/90-Position"], [cubanHaengend(), 1.0, "Unterarme nach unten drehen"]], { hilfsmittel: KH }),
+  prone_trap_raise: wdh("schraeg", haltung("brust", 55, BRUST_HAENGT, HAMMER), haltung("brust", 55, { hebung: 150, ebene: 5, knick: 4 }, HAMMER), 1.4, { aus: 2.0, halten: 1.0, texte: ["Gestreckte Arme schräg nach vorn oben in ein Y, bis in Linie mit dem Körper", "Langsam wieder absenken, Brust bleibt auf der Bank"], hilfsmittel: [...KH, BAUCH_LEHNE] }),
+  ytw_schraegbank: (() => {
+    const u = haltung("brust", 55, BRUST_HAENGT, HAMMER)
+    return folge("schraeg", [[u, 0.8, "Arme hängen senkrecht"], [brustArm({ hebung: 150, ebene: 5, knick: 4 }), 1.2, "Y: schräg nach vorn oben bis auf Kopfhöhe"], [u, 1.2, "Langsam absenken"], [brustArm({ hebung: 90, ebene: 0, knick: 6 }), 1.2, "T: seitlich bis auf Schulterhöhe"], [u, 1.2, "Langsam absenken"], [brustArm({ hebung: 60, ebene: -25 }, true), 1.2, "W: Ellbogen nach hinten, Unterarme nach oben drehen"], [u, 1.2, "Zurück in die Ausgangsposition"]], { hilfsmittel: [...KH, BAUCH_LEHNE] })
+  })(),
+  ytw: folge("schraeg", [[bauchArm({ ...Y_BODEN, ebene: 2 }), 0.8, "Y: Arme schräg nach vorn oben"], [bauchArm(Y_BODEN), 1.0, "Arme einige Zentimeter vom Boden heben"], [bauchArm({ ...T_BODEN, ebene: 2 }), 1.0, "T: Arme seitlich"], [bauchArm(T_BODEN), 1.0, "Anheben, Schulterblätter sanft zusammen"], [bauchArm({ ...W_BODEN, ebene: 2 }, { ...W_BODEN, ebene: 2 }), 1.0, "W: Ellbogen gebeugt, Hände auf Kopfhöhe"], [bauchArm(W_BODEN, W_BODEN), 1.0, "Ellbogen und Hände anheben"]], {}),
+  schwimmer_bauchlage: folge("schraeg", [[bauchArm({ hebung: 168, ebene: -6, knick: 4 }), 1.0, "Arme über dem Kopf einige Zentimeter vom Boden"], [bauchArm({ hebung: 90, ebene: -8, knick: 4 }), 2.0, "In einem großen Bogen seitlich nach unten"], [bauchArm({ hebung: 18, ebene: -40, knick: 30 }), 2.0, "Kurz vor der Hüfte Handflächen nach oben, Handrücken zum unteren Rücken"], [bauchArm({ hebung: 90, ebene: -8, knick: 4 }), 2.0, "Auf demselben Weg zurück"]], {}),
 }

@@ -1366,6 +1366,106 @@ const HINTEN_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   band_pull_apart_diagonal: auseinanderSoll({ vornHebung: [80, 100], vornEbene: [60, 90], endeHebung: [0, 180], endeEbene: [-20, 10], diagonal: true, quelle: ["schulterbreit vor der Brust, Arme gestreckt", "die Arme bilden eine diagonale Linie"] }),
 }
 
+// ---------------------------------------------------------------- Rotatoren, Cuban Press, Y-T-W
+/** Drehung des Unterarms um den Oberarm in der Welt (0 = nach vorn, positiv nach außen) */
+const unterarmDrehung = (m: Punkte, a: "l" | "r") => {
+  const e = p(m, `g:ellbogen_${a}`), h = p(m, `hand_${a}`)
+  const aussen = a === "l" ? h[0] - e[0] : e[0] - h[0]
+  return grad(Math.atan2(aussen, h[2] - e[2]))
+}
+const rotSoll = (start: Bereich, ende: Bereich, q: [string, string]) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "stell dich seitlich dazu"), pr("Ellbogen bleibt am Körper (m)", bleibt(m, ["g:ellbogen_r"]), 0, 0.03, "der Ellbogen bleibt dabei am Körper wie an einem Scharnier")]
+  for (const x of [u, o]) {
+    r.push(pr("Ellbogen 90 Grad (°)", ellbogenWinkel(x, "r"), 78, 102, "beug den Ellbogen auf 90 Grad"))
+    r.push(pr("Oberarm seitlich am Körper (m)", Math.abs(p(x, "g:ellbogen_r")[0]) - Math.abs(p(x, "g:schulter_r")[0]), -0.02, 0.08, "leg den Oberarm seitlich an den Körper, ein Handtuch dazwischen"))
+    r.push(pr("Oberkörper weicht nicht aus (°)", Math.abs(rumpfneigung(x)), 0, 5, "ohne Ausweichen des Oberkörpers"))
+  }
+  r.push(pr("Unterarm am Anfang (°)", unterarmDrehung(u, "r"), start[0], start[1], q[0]))
+  r.push(pr("Unterarm am Ende (°)", unterarmDrehung(o, "r"), ende[0], ende[1], q[1]))
+  return r
+}
+const neunzigSoll = (m: Messung, r: Pruefung[], x: Punkte, a: "l" | "r", hoch: boolean) => {
+  r.push(pr(`Oberarm ${a} waagerecht (°)`, armBeugung(x, a), 78, 100, "Heb den Oberarm seitlich auf Schulterhöhe"))
+  r.push(pr(`Ellbogen ${a} 90 Grad (°)`, ellbogenWinkel(x, a), 78, 102, "der Ellbogen ist 90 Grad gebeugt"))
+  const e = p(x, `g:ellbogen_${a}`), h = p(x, `hand_${a}`)
+  if (hoch) r.push(pr(`Unterarm ${a} senkrecht nach oben (m)`, h[1] - e[1], 0.24, 0.3, "bis er senkrecht steht"))
+  else r.push(pr(`Unterarm ${a} waagerecht nach vorn (m)`, h[1] - e[1], -0.06, 0.06, "der Unterarm zeigt nach vorn"))
+}
+const ROT_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  aussenrotation: rotSoll([-40, 0], [40, 65], ["Der Unterarm zeigt nach vorn bis leicht vor den Bauch", "meist etwa 45 bis 60 Grad nach außen"]),
+  aussenrotation_kabel: rotSoll([-40, 0], [40, 65], ["vor den Bauch", "bis etwa 45 bis 60 Grad nach außen"]),
+  innenrotation: rotSoll([30, 60], [-55, -25], ["Der Unterarm zeigt zunächst nach außen", "Dreh den Unterarm nach innen vor den Bauch"]),
+  aussenrotation_90_90: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    const r = [...ruhig(m), pr("Ellbogen bleibt auf derselben Höhe (m)", bleibt(m, ["g:ellbogen_r"]), 0, 0.03, "der Ellbogen bleibt auf derselben Höhe")]
+    r.push(pr("Oberarm etwas vor der Körperebene (°)", armEbene(u, "r"), 5, 28, "etwas vor der Körperebene, das ist schulterfreundlicher"))
+    neunzigSoll(m, r, u, "r", false)
+    neunzigSoll(m, r, o, "r", true)
+    return r
+  },
+  cuban_press: (m) => {
+    const [unten, haengend, n90, oben] = m.alle
+    const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Stell dich hüftbreit hin")]
+    for (const a of SEITEN) {
+      r.push(pr(`Hand ${a} vor den Oberschenkeln (m)`, amRumpf(unten, `hand_${a}`)[1], -0.55, -0.38, "vor den Oberschenkeln"))
+      r.push(pr(`Oberarm ${a} waagerecht, Unterarm hängt (°)`, armBeugung(haengend, a), 78, 100, "bis die Oberarme waagerecht sind"))
+      r.push(pr(`Unterarm ${a} hängt nach unten (m)`, p(haengend, `g:ellbogen_${a}`)[1] - p(haengend, `hand_${a}`)[1], 0.2, 0.3, "die Unterarme nach unten hängen"))
+      neunzigSoll(m, r, n90, a, true)
+      r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(oben, a), 160, 180, "bis die Arme gestreckt sind"))
+      r.push(pr(`Arm ${a} oben über dem Kopf (°)`, armBeugung(oben, a), 150, 180, "nach oben drücken"))
+    }
+    return r
+  },
+  prone_trap_raise: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    const r = [...ruhig(m), pr("Brust bleibt auf der Bank (m)", bleibt(m, ["g:hals", "g:becken"]), 0, 0.02, "die Brust auf der Bank")]
+    r.push(pr("Bank 30 bis 45 Grad (°)", rumpfneigung(u), 45, 62, "Stell eine Bank auf etwa 30 bis 45 Grad"))
+    for (const a of SEITEN) {
+      r.push(pr(`Arm ${a} hängt unten (°)`, armLot(u, a), 0, 20, "die Arme hängen senkrecht"))
+      r.push(pr(`Arm ${a} oben im Y in Linie mit dem Körper (°)`, armBeugung(o, a), 140, 168, "in ein Y, bis sie etwa in einer Linie mit dem Körper sind"))
+      r.push(pr(`Arm ${a} gestreckt (°)`, ellbogenWinkel(o, a), 162, 180, "Heb die gestreckten Arme"))
+    }
+    return r
+  },
+  ytw_schraegbank: (m) => {
+    const [u, y, t, w] = m.alle
+    const r = [...ruhig(m), pr("Brust bleibt auf der Bank (m)", bleibt(m, ["g:hals", "g:becken"]), 0, 0.02, "die Brust auf der Lehne")]
+    for (const a of SEITEN) {
+      r.push(pr(`Arm ${a} hängt unten (°)`, armLot(u, a), 0, 20, "die Arme hängen senkrecht nach unten"))
+      r.push(pr(`Y: Arm ${a} schräg nach vorn oben (°)`, armBeugung(y, a), 140, 168, "Y: schräg nach vorn oben bis auf Kopfhöhe"))
+      r.push(pr(`T: Arm ${a} seitlich (°)`, armBeugung(t, a), 80, 100, "T: seitlich bis auf Schulterhöhe"))
+      r.push(pr(`T: Arm ${a} in der Ebene (°)`, Math.abs(armEbene(t, a)), 0, 15, "T: seitlich"))
+      r.push(pr(`W: Ellbogen ${a} gebeugt (°)`, ellbogenWinkel(w, a), 70, 115, "W: Ellbogen gebeugt nach hinten"))
+      r.push(pr(`W: Ellbogen ${a} hinter dem Rumpf (m)`, amRumpf(w, `g:ellbogen_${a}`)[2], -0.25, -0.03, "Zieh die Ellbogen nach hinten"))
+    }
+    return r
+  },
+}
+const bodenArme = (x: Punkte) => Math.min(p(x, "hand_l")[1], p(x, "hand_r")[1])
+ROT_SOLL.ytw = (m) => {
+  const [yl, yh, tl, th, wl, wh] = m.alle
+  const r = [...ruhig(m), pr("Becken bleibt liegen (m)", bleibt(m, ["g:becken"]), 0, 0.02, "Leg dich auf den Bauch")]
+  for (const [lieg, hoch, was] of [[yl, yh, "Y"], [tl, th, "T"], [wl, wh, "W"]] as const) r.push(pr(`${was}: Arme heben ab (m)`, bodenArme(hoch) - bodenArme(lieg), 0.03, 0.12, "Heb die Arme einige Zentimeter vom Boden"))
+  for (const a of SEITEN) {
+    r.push(pr(`Y: Arm ${a} schräg nach vorn (°)`, armBeugung(yh, a), 140, 165, "Streck die Arme schräg nach vorn oben in ein Y"))
+    r.push(pr(`T: Arm ${a} seitlich (°)`, armBeugung(th, a), 80, 100, "Streck die Arme seitlich zu einem T"))
+    r.push(pr(`W: Ellbogen ${a} gebeugt (°)`, ellbogenWinkel(wh, a), 70, 120, "Beug die Ellbogen, die Hände sind auf Kopfhöhe"))
+  }
+  return r
+}
+ROT_SOLL.schwimmer_bauchlage = (m) => {
+  const [oben, seite, huefte] = m.alle
+  const r = [...ruhig(m), pr("Becken bleibt liegen (m)", bleibt(m, ["g:becken"]), 0, 0.02, "Leg dich auf den Bauch")]
+  for (const x of m.alle) r.push(pr("Arme schweben über dem Boden (m)", bodenArme(x), 0.06, 0.4, "ohne den Boden zu berühren"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} über dem Kopf (°)`, armBeugung(oben, a), 155, 180, "die Arme sind über dem Kopf ausgestreckt"))
+    r.push(pr(`Arm ${a} seitlich (°)`, armBeugung(seite, a), 78, 102, "in einem großen Bogen seitlich nach unten"))
+    r.push(pr(`Arm ${a} an der Hüfte (°)`, armBeugung(huefte, a), 0, 40, "kurz vor der Hüfte"))
+  }
+  return r
+}
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1482,6 +1582,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...UEBERKOPF_SOLL,
   ...HEBE_SOLL,
   ...HINTEN_SOLL,
+  ...ROT_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

@@ -978,9 +978,10 @@ class Buehne {
           if (n.startsWith("knie_") && (a.ziele[`fuss_${n.slice(-1)}` as ZielPunkt] || a.ziele[`ferse_${n.slice(-1)}` as ZielPunkt])) continue
           ziele[n] = { bezug: za.bezug, pos: [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number] }
         }
-        // Startwert: Mischung der gelösten Enden
+        // Startwert: Mischung der gelösten Enden. Ohne Beckenlage (Figur liegt, kniet oder sitzt auf dem Boden) bleibt
+        // auch die Zwischenhaltung auf dem Boden, sonst stünde sie auf der Grundhöhe des Beckens und schwebte.
         const ml = mische(la, lb, u)
-        liste.push(this.loese({ ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ...(a.drehFrei || b.drehFrei ? { pos: ml.pos, dreh: ml.dreh, drehFrei: true } : {}), ziele, boden: false }))
+        liste.push(this.loese({ ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ...(a.drehFrei || b.drehFrei ? { pos: ml.pos, dreh: ml.dreh, drehFrei: true } : {}), ziele, boden: m.pos ? false : m.boden }))
       }
       zwischenSetzen(la, lb, liste)
     }
@@ -1692,6 +1693,31 @@ export function _durchdringungen(d: Dehnung, haltenS = 8, schritt = 0.5, toleran
       }
       if (tief > toleranz) funde.push({ t, was: h.m.name || h.m.geometry.type, tiefe: tief, hoehe })
     }
+  }
+  return funde
+}
+
+/**
+ * Prüfwerkzeug: schwebt die gezeichnete Figur in der laufenden Animation? Für jedes Bild der kleinste Abstand der
+ * Hautpunkte zum Boden oder zu einem festen Gegenstand (Bank, Rack, Stange, Wand ...). Liefert die Bilder, in denen
+ * dieser Abstand über der Toleranz liegt (bei Sprüngen ist das die Flugphase).
+ */
+export function _schweben(d: Dehnung, haltenS = 8, schritt = 0.5, toleranz = 0.04) {
+  const b = new Buehne(d, haltenS)
+  const funde: { t: number; abstand: number }[] = []
+  const box = new THREE.Box3()
+  for (let t = 0; t < b.laenge(); t += schritt) {
+    b.stelle(t)
+    b.szene.updateMatrixWorld(true)
+    const pk = b.punkte()
+    let ab = Infinity
+    for (const p of pk) ab = Math.min(ab, p.y - MATTE)
+    for (const o of b.fest) o.traverse((x) => {
+      if (!(x as THREE.Mesh).isMesh) return
+      box.setFromObject(x)
+      for (const p of pk) ab = Math.min(ab, box.distanceToPoint(p))
+    })
+    if (ab > toleranz) funde.push({ t, abstand: Math.round(ab * 1000) / 1000 })
   }
   return funde
 }
