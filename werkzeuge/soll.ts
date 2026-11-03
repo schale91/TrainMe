@@ -1168,6 +1168,65 @@ const hangRowSoll = (art: "stange" | "hoch" | "tisch") => (m: Messung): Pruefung
 }
 const HANG_ROW_SOLL: Record<string, (m: Messung) => Pruefung[]> = { rudern_invertiert: hangRowSoll("stange"), rudern_invertiert_erhoeht: hangRowSoll("hoch"), rudern_tisch: hangRowSoll("tisch") }
 
+// ---------------------------------------------------------------- Drücken über Kopf
+interface UKS {
+  basis: "stand" | "sitz" | "boden" | "halbknie"
+  last: "lh" | "kh"
+  griff?: Bereich
+  /** Hand unten am Rumpf entlang (Schlüsselbein bzw. Schulter- und Ohrhöhe) */
+  untenY: Bereich
+  untenZ: Bereich
+  /** Ellbogen unten vor dem Körper (m vor der Schulterebene) */
+  ellVor?: Bereich
+  streckOben: Bereich
+  arme?: ("l" | "r")[]
+  /** Unterarm unten von vorn gesehen senkrecht (Text verlangt es) */
+  lot?: boolean
+  quelle: { unten: string; oben: string; ell?: string; griff?: string; lot?: string }
+}
+const ueberKopfSoll = (k: UKS) => (m: Messung): Pruefung[] => {
+  const u = m.alle[0], o = m.alle.reduce((a, b) => (p(b, "hand_r")[1] + p(b, "hand_l")[1] > p(a, "hand_r")[1] + p(a, "hand_l")[1] ? b : a))
+  const fest = k.basis === "stand" ? ["ferse_l", "ferse_r"] : k.basis === "halbknie" ? ["knie_l", "fuss_r"] : ["g:becken"]
+  const r = [...ruhig(m), pr("Stand bzw. Sitz bleibt (m)", bleibt(m, fest), 0, 0.02, k.basis === "sitz" ? "Füße fest auf dem Boden, Gesäß ganz hinten" : "Stell die Füße hüftbreit")]
+  const aufrecht: Bereich = k.basis === "sitz" ? [-12, 2] : [-6, 6]
+  for (const [x, w] of [[u, "unten"], [o, "oben"]] as const) r.push(pr(`Oberkörper ${w} (°)`, rumpfneigung(x), aufrecht[0], aufrecht[1], k.basis === "sitz" ? "Rücken an der fast senkrechten Lehne" : "der Oberkörper steht senkrecht, ohne nach hinten zu lehnen"))
+  if (k.griff) r.push(pr("Griff / Schulterbreite", griffbreite(u) / schulterbreite(u), k.griff[0], k.griff[1], k.quelle.griff ?? ""))
+  for (const a of k.arme ?? SEITEN) {
+    const h = amRumpf(u, `hand_${a}`)
+    r.push(pr(`Hand ${a} unten am Rumpf entlang (m)`, h[1], k.untenY[0], k.untenY[1], k.quelle.unten))
+    r.push(pr(`Hand ${a} unten vor dem Rumpf (m)`, h[2], k.untenZ[0], k.untenZ[1], k.quelle.unten))
+    if (k.lot ?? k.last === "lh") {
+      const e = p(u, `g:ellbogen_${a}`), hg = p(u, `g:hand_${a}`)
+      r.push(pr(`Unterarm ${a} unten von vorn senkrecht (°)`, grad(Math.atan2(Math.abs(hg[0] - e[0]), hg[1] - e[1])), 0, 12, k.quelle.lot ?? "die Unterarme stehen von vorn betrachtet senkrecht"))
+    }
+    if (k.ellVor) r.push(pr(`Ellbogen ${a} unten vor dem Körper (m)`, amRumpf(u, `g:ellbogen_${a}`)[2], k.ellVor[0], k.ellVor[1], k.quelle.ell ?? ""))
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), k.streckOben[0], k.streckOben[1], k.quelle.oben))
+    r.push(pr(`Hand ${a} oben über der Schulter (m)`, p(o, `hand_${a}`)[1] - p(o, `g:schulter_${a}`)[1], 0.42, 0.6, k.quelle.oben))
+    r.push(pr(`Hand ${a} oben senkrecht über der Schulter (m)`, Math.abs(p(o, `hand_${a}`)[2] - p(o, `g:schulter_${a}`)[2]), 0, 0.07, "senkrecht nach oben"))
+  }
+  if (k.last === "lh" && k.basis === "stand") r.push(pr("Stange oben über dem Mittelfuß (m)", Math.abs(stange(o)[2] - mittelfuss(o)[2]), 0, 0.06, "Oben steht die Stange über dem Mittelfuß"))
+  return r
+}
+const UK_LH: UKS = { basis: "stand", last: "lh", griff: [1.0, 1.35], untenY: [-0.04, 0.08], untenZ: [0.07, 0.17], streckOben: [165, 180], quelle: { unten: "Die Stange liegt auf Höhe des Schlüsselbeins", oben: "die Arme sind gestreckt", griff: "knapp schulterbreit" } }
+const UK_KH: UKS = { basis: "sitz", last: "kh", untenY: [-0.02, 0.18], untenZ: [-0.02, 0.12], ellVor: [0.0, 0.2], streckOben: [155, 180], lot: true, quelle: { unten: "neben den Ohren auf Schulterhöhe", oben: "bis die Arme fast gestreckt sind", ell: "Ellbogen leicht vor dem Körper, nicht ganz seitlich", lot: "Unterarme etwa senkrecht" } }
+const UEBERKOPF_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  schulterdruecken_lh: ueberKopfSoll(UK_LH),
+  push_press: ueberKopfSoll(UK_LH),
+  schulterdruecken_lh_sitzend: ueberKopfSoll({ ...UK_LH, basis: "sitz", streckOben: [155, 178], quelle: { ...UK_LH.quelle, oben: "Streck die Arme oben fast vollständig" } }),
+  schulterdruecken_multipresse: ueberKopfSoll({ ...UK_LH, basis: "sitz", griff: [1.15, 1.55], untenY: [0.0, 0.12], streckOben: [155, 178], quelle: { unten: "bis etwa Kinnhöhe, die Unterarme bleiben ungefähr senkrecht", oben: "bis die Arme fast gestreckt sind", griff: "etwas weiter als schulterbreit" } }),
+  schulterdruecken_kh_sitzend: ueberKopfSoll(UK_KH),
+  schulterdruecken_kh_neutral: ueberKopfSoll({ ...UK_KH, lot: false, untenY: [0.06, 0.22], untenZ: [0.08, 0.22], ellVor: [0.08, 0.25], quelle: { ...UK_KH.quelle, unten: "vor die Schultern", ell: "Halte die Ellbogen die ganze Zeit vor dem Körper" } }),
+  schulterdruecken_kh_stehend: ueberKopfSoll({ ...UK_KH, basis: "stand" }),
+  schulterdruecken_band: ueberKopfSoll({ ...UK_KH, basis: "stand", ellVor: undefined }),
+  schulterdruecken_kabel: ueberKopfSoll(UK_KH),
+  z_press: ueberKopfSoll({ ...UK_LH, basis: "boden", quelle: { ...UK_LH.quelle, oben: "Streck die Arme oben fast ganz" }, streckOben: [160, 180] }),
+  arnold_press_sitzend: ueberKopfSoll({ ...UK_KH, lot: false, untenY: [0.04, 0.2], untenZ: [0.1, 0.24], ellVor: [0.08, 0.3], quelle: { unten: "Hanteln vor den Schultern, Handflächen zu dir", oben: "bis die Arme fast gestreckt sind", ell: "Ellbogen vor dem Körper" } }),
+  schulterdruecken_kh_einarmig: ueberKopfSoll({ ...UK_KH, basis: "stand", arme: ["r"] }),
+  kb_druecken: ueberKopfSoll({ ...UK_KH, basis: "stand", arme: ["r"], lot: false, untenY: [-0.1, 0.04], untenZ: [0.06, 0.2], ellVor: [-0.02, 0.2], quelle: { unten: "Rack-Position, Kugel auf dem Unterarm", oben: "Oben steht der Arm senkrecht neben dem Ohr", ell: "Ellbogen nah am Körper" } }),
+  kb_bottoms_up_druecken: ueberKopfSoll({ ...UK_KH, basis: "stand", arme: ["r"], untenY: [0.04, 0.2], untenZ: [0.04, 0.18], ellVor: [-0.02, 0.18], quelle: { unten: "vor der Schulter, Ellbogen unter der Hand", oben: "Oben steht der Arm gestreckt neben dem Ohr", ell: "der Ellbogen ist unter der Hand", lot: "Der Unterarm steht senkrecht" } }),
+  schulterdruecken_kh_halbkniend: ueberKopfSoll({ ...UK_KH, basis: "halbknie", arme: ["l"] }),
+}
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1281,6 +1340,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...STAND_ROW_SOLL,
   ...WECHSEL_SOLL,
   ...HANG_ROW_SOLL,
+  ...UEBERKOPF_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

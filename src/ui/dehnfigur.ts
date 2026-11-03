@@ -616,8 +616,16 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       const griff = h.an === "hand_l" || h.an === "hand_r" ? k.punkt(h.an === "hand_l" ? "griff_l" : "griff_r").sub(p) : new THREE.Vector3(1, 0, 0)
       const q = griff.lengthSq() > 1e-6 ? griff.normalize() : new THREE.Vector3(1, 0, 0)
       out.push(zylinder(p.clone().addScaledVector(q, -0.06), p.clone().addScaledVector(q, 0.06), 0.012, FARBE.stahl))
-      const mitte = p.clone().add(new THREE.Vector3(0, -0.175, 0))
-      for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), mitte.clone().addScaledVector(q, s * 0.05).add(new THREE.Vector3(0, 0.08, 0)), 0.012, FARBE.stahl))
+      // kopfüber (Bottoms-up): die Kugel zeigt nach oben. Steht der Ellbogen unter der Hand (Rack-Position, über Kopf),
+      // liegt die Kugel auf der Rückseite des Unterarms; sonst hängt sie senkrecht nach unten.
+      const auf = h.kopfueber ? -1 : 1
+      const ell = h.an === "hand_l" || h.an === "hand_r" ? k.punkt(h.an === "hand_l" ? "ellbogen_l" : "ellbogen_r") : undefined
+      const zumEllbogen = ell ? ell.clone().sub(p).normalize() : new THREE.Vector3(0, -1, 0)
+      const unten = !h.kopfueber && zumEllbogen.y < -0.5 ? zumEllbogen : new THREE.Vector3(0, -auf, 0)
+      const mitte = p.clone().addScaledVector(unten, 0.175)
+      // auf dem Unterarm liegt die Kugel außen hinten an, nicht vor dem Gesicht
+      if (unten === zumEllbogen) mitte.add(new THREE.Vector3(Math.sign(p.x || 1) * 0.06, 0, -0.06))
+      for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), mitte.clone().addScaledVector(q, s * 0.05).addScaledVector(unten, -0.08), 0.012, FARBE.stahl))
       out.push(kugel(0.1, FARBE.stahl, [mitte.x, mitte.y, mitte.z]))
     } else if (h.art === "langhantel" || h.art === "sz") out.push(...stange(k, h.art, h.von, h.bis))
     else if (h.art === "latstange") out.push(...latstange(k, h.von, h.bis))
