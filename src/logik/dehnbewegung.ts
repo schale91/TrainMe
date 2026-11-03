@@ -52,7 +52,8 @@ export interface Haltung {
 /** Geräte und Hilfsmittel in der Szene, an Körperpunkten ausgerichtet */
 export type Hilfsmittel =
   | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten" }
-  | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number }
+  /** versatz [seitlich, vorn] in Metern, z. B. damit die Hände auf der Vorderkante einer Box liegen */
+  | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number] }
   | { art: "stab"; von: Punkt; bis: Punkt }
   | { art: "band"; von: Punkt; bis: Punkt }
   | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean }
@@ -60,7 +61,11 @@ export type Hilfsmittel =
   | { art: "stange"; an: Punkt }
   | { art: "hantel"; an: Punkt }
   /** Lang- oder SZ-Stange mit Scheiben, liegt in beiden Händen (oder auf dem Rücken zwischen zwei Punkten) */
-  | { art: "langhantel" | "sz" | "latstange"; von: Punkt; bis: Punkt }
+  | { art: "langhantel" | "sz" | "latstange" | "kabelstange"; von: Punkt; bis: Punkt }
+  /** Dip-Barren: zwei Holme in Höhe des Punkts (Hände in der Ausgangsstellung) */
+  | { art: "barren"; an: Punkt }
+  /** Band an einem festen Anker (Tür, Stange) [seitlich, Höhe, vorn], anderes Ende am Punkt */
+  | { art: "bandanker"; von: Punkt; anker: V3 }
   /** Kabelzug: Seil von der Hand (bzw. Hände-Mitte) zur Rolle an einem festen Punkt [seitlich, Höhe, vorn] */
   | { art: "kabel"; von: Punkt; rolle: V3 }
   /** Verstellbare Bank: Sitz unter dem Punkt in der Höhe, Lehne in Richtung des zweiten Punkts (z. B. Schultern) */

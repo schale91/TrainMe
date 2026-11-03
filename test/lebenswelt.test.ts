@@ -350,7 +350,7 @@ describe("Übungsfiguren", () => {
     expect(k.seiten).toBe(true)
     expect(k.start.boden).toBe(false)
     expect(k.hilfsmittel?.map((h) => h.art).sort()).toEqual(["bank", "hantel"])
-    expect(FIGUREN.trizeps_ueberkopf_seil).toBe("ueberkopfkabel")
+    expect(DEHNUNGEN.trizeps_ueberkopf_seil.hilfsmittel?.some((h) => h.art === "kabel")).toBe(true)
     // Rudergerät, Maschinen und Seitstütz haben keine passende Bewegung: lieber keine Figur
     for (const id of ["rudern_500m", "hip_thrust_maschine", "seitstuetz"]) expect(FIGUREN[id], id).toBeUndefined()
   })
