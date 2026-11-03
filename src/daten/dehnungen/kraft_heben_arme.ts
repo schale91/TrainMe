@@ -4,9 +4,10 @@
 // so sind die Hände oben auf Ellbogenhöhe oder knapp darunter. Geprüft mit werkzeuge/messen.html gegen soll.ts.
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
-import { B, BAUCHLAGE, H, folge, halte, mit, wdh } from "./basis"
+import { B, BAUCHLAGE, H, HUND, folge, halte, mit, wdh } from "./basis"
 import { BAND, BAUCH_LEHNE, BRUST_LEHNE, FAUST, HAMMER, KH, OBERGRIFF, UNTERGRIFF } from "./kraftbasis"
 import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, rad } from "./ziele"
+import { FLACH, WAND_LS_HILFE, liegen, stuetzPaar, wandPaar } from "./kraft_druecken"
 
 type P3 = [number, number, number]
 const richtung = (hebung: number, ebene: number): P3 => [Math.sin(rad(hebung)) * Math.cos(rad(ebene)), -Math.cos(rad(hebung)), Math.sin(rad(hebung)) * Math.sin(rad(ebene))]
@@ -351,3 +352,62 @@ const hangPull = (high: boolean): Dehnung => {
 }
 const LH_STANGE: Hilfsmittel[] = [{ art: "langhantel", von: "hand_l", bis: "hand_r" }]
 export const KRAFT_HANG_PULL: Record<string, Dehnung> = { shrug_explosiv: hangPull(false), high_pull_lh: hangPull(true) }
+
+// ---------------------------------------------------------------- Schulterblatt: Liegestütz, Wand, Plus, Serratus
+// Die Arme bleiben gestreckt, nur die Schulterblätter gleiten zusammen (die Brust sinkt zwischen die Schultern) bzw.
+// um den Brustkorb nach vorn (der obere Rücken wird leicht rund). Der Körper darf sich dafür als Ganzes bewegen.
+const blatt = (h: Haltung, wert: number, weg: [number, number] = [0, 0], schulter?: number[]): Haltung => {
+  // die Ellbogenziele der Ausgangslage gelten nur dort; mit verschobenem Körper bleiben nur Hände, Knie und Füße fest
+  const ziele = Object.fromEntries(Object.entries(h.ziele ?? {}).filter(([n]) => !n.startsWith("ellbogen_") && !n.startsWith("knie_")))
+  // weg: Startwert für die Verschiebung des Beckens (y, z), wenn die Schulterblätter den Körper von der Stütze schieben
+  const pos = h.pos ? ([h.pos[0], h.pos[1] + weg[0], h.pos[2] + weg[1]] as [number, number, number]) : h.pos
+  return { ...h, g: { ...h.g, ...B("schulterblatt", [0, wert]), ...B("ellbogen", [3, 90]), ...(schulter ? B("schulter", schulter) : {}) }, pos, beckenFrei: true, drehFrei: true, ziele }
+}
+const SB_LS = stuetzPaar({ hand: 0.15 })
+const PLUS_LS = stuetzPaar({ hand: 0.2 })
+const SB_WAND = wandPaar()
+/**
+ * Serratus liegend: Arme senkrecht über den Schultern und gestreckt; das Schulterblatt löst sich vom Untergrund und die
+ * Hände gehen dabei einige Zentimeter höher (Hände als feste Punkte, gemessen an der liegenden Figur)
+ */
+const serratusLiegend = (hoch: boolean): Haltung => {
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) ziele[sx === 1 ? "hand_l" : "hand_r"] = { pos: [sx * 0.124, hoch ? 1.108 : 1.048, -0.37] }
+  return liegen(FLACH, ziele, { ...B("schulter", [90, 6, 0]), ...B("ellbogen", [3, HAMMER]), ...B("schulterblatt", [0, hoch ? 28 : -8]) })
+}
+/** Serratus am Kabel: Arm gestreckt nach vorn auf Schulterhöhe, das Schulterblatt gleitet zurück bzw. um den Brustkorb nach vorn */
+const serratusKabel = (vor: boolean): Haltung => ({ ...koerper("stand", 0, { schulter_r: [90, 4, 0], ellbogen_r: [5, HAMMER], schulter_l: [4, 8, 0], ellbogen_l: [12, 0], schulterblatt_r: [0, vor ? 24 : -14] }, { hand_r: { pos: [-0.14, 1.315, vor ? 0.54 : 0.48] } }), beckenFrei: false })
+export const KRAFT_SCHULTERBLATT: Record<string, Dehnung> = {
+  schulterblatt_liegestuetz: wdh("seite", blatt(SB_LS.o, -18), blatt(SB_LS.o, 24), 1.2, { aus: 1.2, halten: 1.0, texte: ["Schulterblätter zusammen, die Brust sinkt zwischen die Schultern", "Vom Boden wegdrücken, oberer Rücken leicht rund"] }),
+  liegestuetz_plus: folge("seite", [[PLUS_LS.o, 1.0, "Hoher Liegestütz, Körper gerade"], [PLUS_LS.u, 1.6, "Brust knapp über den Boden senken"], [PLUS_LS.o, 1.2, "Hochdrücken, bis die Arme gestreckt sind"], [blatt(PLUS_LS.o, 34), 1.0, "Plus: Schulterblätter um den Brustkorb nach vorn"]], {}),
+  schulterblatt_liegestuetz_wand: wdh("seite", blatt(SB_WAND.o, -12, [0, 0.02]), blatt(SB_WAND.o, 20, [0, -0.05], [74, 40, 0]), 1.2, { aus: 1.2, halten: 1.0, texte: ["Brust ein Stück zur Wand, Schulterblätter zusammen", "Von der Wand wegdrücken, oberer Rücken leicht rund"], hilfsmittel: [WAND_LS_HILFE] }),
+  serratus_punch_liegend: wdh("seite", serratusLiegend(false), serratusLiegend(true), 1.0, { aus: 1.4, halten: 1.0, texte: ["Hanteln weiter nach oben drücken, Schulterblätter lösen sich", "Langsam zurücksinken, Arme bleiben gestreckt"], hilfsmittel: [...KH, { art: "bank", unter: "bws", hoehe: 0.45 }] }),
+  serratus_punch_kabel: wdh("schraeg", serratusKabel(false), serratusKabel(true), 1.0, { aus: 1.4, halten: 1.0, seiten: true, texte: ["Arm nach vorn wie ein langsamer Boxschlag, Schulterblatt um den Brustkorb", "Langsam zurück, das Schulterblatt gleitet nach hinten"], hilfsmittel: [{ art: "kabel", von: "hand_r", rolle: [-0.15, 1.25, -0.8] }] }),
+}
+
+// ---------------------------------------------------------------- Pike-Liegestütz
+// Umgekehrtes V: Hände etwas breiter als schulterbreit am Boden, Füße möglichst nah bei fast gestreckten Beinen, Gesäß
+// hoch. Unten senkt sich der Kopf vor den Händen zum Boden (Kopf und Hände bilden ein Dreieck), die Ellbogen zeigen
+// schräg nach hinten. Erhöht: Füße auf der Box, die Hüfte fast über den Schultern.
+const PIKE_HAND_Z = 0.5
+const pike = (unten: boolean, fuesseHoch = 0): Haltung => {
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    ziele[`hand_${n}`] = { pos: [sx * 0.2, 0.055, PIKE_HAND_Z] }
+    if (fuesseHoch) {
+      ziele[`fuss_${n}`] = { pos: [sx * 0.1, fuesseHoch + 0.065, -0.2] }
+    } else ziele[`fuss_${n}`] = { pos: [sx * 0.1, 0.112, -0.42] }
+    // unten: Unterarm von der Hand schräg nach hinten oben, der Ellbogen hinter den Händen; Schultern und Kopf
+    // kommen dadurch vor die Hände zum Boden
+    if (unten) ziele[`ellbogen_${n}`] = { pos: [sx * 0.27, 0.24, PIKE_HAND_Z - 0.07] }
+  }
+  // Rumpf vom Becken schräg nach vorn unten zu den Händen (umgekehrtes V: etwa 135 Grad), erhöht fast senkrecht
+  const kipp = fuesseHoch ? 165 : unten ? 145 : 135
+  const huefte = fuesseHoch ? 75 : 80
+  return mit(HUND, { dreh: [kipp, 0, 0], g: { ...HUND.g, lws: [0, 0, 0], bws: [0, 0, 0], ...B("huefte", [huefte, 4, 0]), ...B("knie", [4]), ...B("schulter", [unten ? 140 : 175, 14, 0]), ...B("ellbogen", [unten ? 90 : 3, 90]), ...B("hand", [unten ? 70 : 85, 0]), ...B("zehen", [40]) }, pos: [0, fuesseHoch ? 0.95 : 0.8, unten ? (fuesseHoch ? 0.62 : 0.3) : 0.05], boden: false, beckenFrei: true, ziele })
+}
+export const KRAFT_PIKE: Record<string, Dehnung> = {
+  pike_liegestuetz: wdh("seite", pike(false), pike(true), 1.8, { aus: 1.2, texte: ["Kopf vor den Händen zum Boden senken, Ellbogen schräg nach hinten", "Kraftvoll zurückdrücken, bis die Arme gestreckt sind"] }),
+  pike_liegestuetz_erhoeht: wdh("seite", pike(false, 0.5), pike(true, 0.5), 1.8, { aus: 1.2, texte: ["Kopf vor die Hände zum Boden senken", "Hochdrücken, bis die Arme gestreckt sind"], hilfsmittel: [{ art: "box", unter: "fuss_l", hoehe: 0.5, versatz: [-0.1, -0.05] }] }),
+}

@@ -518,7 +518,8 @@ const wandLinie = (theta: number) => {
   const vorn = Math.max(schulter[1] + 0.19 * u[1] + 0.12 * f[1], schulter[1] - 0.1 * u[1] + 0.15 * f[1])
   return { knie, becken, schulter, vorn }
 }
-const wandLiegestuetz = (): Dehnung => {
+/** Liegestütz an der Wand: obere Haltung (Arme gestreckt) und untere (Brust zur Wand) */
+export const wandPaar = (): { o: Haltung; u: Haltung } => {
   const x = 0.2, dx = x - SCHULTER_X
   const o = wandLinie(16)
   // Handgelenk auf Schulterhöhe, Arm waagerecht gestreckt; die Handfläche liegt darüber an der Wand
@@ -559,7 +560,12 @@ const wandLiegestuetz = (): Dehnung => {
       { pos: [0, l.becken[0], l.becken[1]], boden: false, ziele },
     )
   }
-  return wdh("seite", haltung(o, 16, true), haltung(u, (a + b) / 2, false), 1.6, { aus: 1.2, texte: ["Brust zur Wand, Körper gerade wie ein Brett", "Zurückdrücken, bis die Arme gestreckt sind"], hilfsmittel: [{ art: "wand", an: "hand_l", richtung: "vorn", abstand: 0.05 }] })
+  return { o: haltung(o, 16, true), u: haltung(u, (a + b) / 2, false) }
+}
+export const WAND_LS_HILFE: Hilfsmittel = { art: "wand", an: "hand_l", richtung: "vorn", abstand: 0.05 }
+const wandLiegestuetz = (): Dehnung => {
+  const { o, u } = wandPaar()
+  return wdh("seite", o, u, 1.6, { aus: 1.2, texte: ["Brust zur Wand, Körper gerade wie ein Brett", "Zurückdrücken, bis die Arme gestreckt sind"], hilfsmittel: [WAND_LS_HILFE] })
 }
 
 export const KRAFT_DRUECKEN: Record<string, Dehnung> = {

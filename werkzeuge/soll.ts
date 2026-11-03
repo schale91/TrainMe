@@ -1536,6 +1536,76 @@ const zugExplosivSoll = (high: boolean) => (m: Messung): Pruefung[] => {
 SHRUG_SOLL.shrug_explosiv = zugExplosivSoll(false)
 SHRUG_SOLL.high_pull_lh = zugExplosivSoll(true)
 
+// ---------------------------------------------------------------- Schulterblatt
+const SB_SOLL: Record<string, (m: Messung) => Pruefung[]> = {}
+const blattLsSoll = (wand: boolean) => (m: Messung): Pruefung[] => {
+  const [zu, vor] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Hände bleiben (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.02, wand ? "die Hände an der Wand" : "Hände unter den Schultern")]
+  for (const x of [zu, vor]) {
+    for (const a of SEITEN) r.push(pr(`Arm ${a} bleibt gestreckt (°)`, ellbogenWinkel(x, a), 160, 180, "Die Arme bleiben gestreckt"))
+    r.push(pr("Körper gerade (°)", koerperLinie(x), 160, 185, "Körper gerade von Kopf bis Fuß, die Hüfte sinkt nicht ab"))
+  }
+  // die Brust sinkt zwischen die Schultern bzw. Richtung Wand, nur wenige Zentimeter
+  const weg = wand ? p(zu, "bws")[2] - p(vor, "bws")[2] : p(vor, "bws")[1] - p(zu, "bws")[1]
+  r.push(pr("Weg der Brust (m)", Math.abs(weg), 0.02, 0.09, "Der Bewegungsweg ist klein, nur wenige Zentimeter"))
+  return r
+}
+SB_SOLL.schulterblatt_liegestuetz = blattLsSoll(false)
+SB_SOLL.schulterblatt_liegestuetz_wand = blattLsSoll(true)
+SB_SOLL.liegestuetz_plus = (m) => {
+  const [o, u, plus] = m.alle
+  const r = [...ruhig(m), pr("Hände bleiben (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.02, "hohe Liegestützposition")]
+  r.push(pr("Hände etwas breiter als schulterbreit", griffbreite(o) / schulterbreite(o), 1.05, 1.5, "Hände etwas breiter als schulterbreit"))
+  r.push(pr("Brust unten knapp über dem Boden (m)", p(u, "bws")[1] - 0.12, 0.05, 0.2, "bis die Brust knapp über dem Boden ist"))
+  for (const a of SEITEN) {
+    r.push(pr(`Ellbogen ${a} unten etwa 45 Grad (°)`, abspreizen(u, a), 30, 60, "Ellbogen etwa 45 Grad vom Körper"))
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "bis die Arme gestreckt sind"))
+    r.push(pr(`Arm ${a} im Plus gestreckt (°)`, ellbogenWinkel(plus, a), 160, 180, "noch weiter vom Boden weg"))
+  }
+  r.push(pr("Plus: Brust noch höher (m)", p(plus, "bws")[1] - p(o, "bws")[1], 0.015, 0.08, "Drück dich noch weiter vom Boden weg"))
+  for (const x of m.alle) r.push(pr("Körper gerade (°)", koerperLinie(x), 160, 185, "Bauch und Gesäß fest"))
+  return r
+}
+const serratusSoll = (kabel: boolean) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const arme = kabel ? (["r"] as const) : SEITEN
+  const r = [...ruhig(m)]
+  for (const a of arme) {
+    for (const x of [u, o]) r.push(pr(`Arm ${a} gestreckt (°)`, ellbogenWinkel(x, a), 160, 180, "Der Arm bleibt gestreckt"))
+    const weg = kabel ? p(o, `hand_${a}`)[2] - p(u, `hand_${a}`)[2] : p(o, `hand_${a}`)[1] - p(u, `hand_${a}`)[1]
+    r.push(pr(`Hand ${a} geht mit dem Schulterblatt (m)`, weg, 0.03, 0.12, kabel ? "bis das Schulterblatt ganz um den Brustkorb nach vorn geschoben ist" : "die Bewegung ist nur wenige Zentimeter"))
+    if (kabel) r.push(pr("Arm auf Schulterhöhe (m)", Math.abs(p(o, "hand_r")[1] - p(o, "g:schulter_r")[1]), 0, 0.08, "streck den Arm nach vorn auf Schulterhöhe"))
+    else r.push(pr(`Arm ${a} senkrecht über der Schulter (°)`, Math.abs(armLot(u, a) - 180), 0, 15, "Streck die Arme senkrecht über die Schultern zur Decke"))
+  }
+  if (kabel) r.push(pr("Oberkörper ruhig (°)", Math.abs(rumpfneigung(o) - rumpfneigung(u)), 0, 4, "Bauch fest"))
+  return r
+}
+SB_SOLL.serratus_punch_liegend = serratusSoll(false)
+SB_SOLL.serratus_punch_kabel = serratusSoll(true)
+
+// ---------------------------------------------------------------- Pike-Liegestütz
+const pikeSoll = (erhoeht: boolean) => (m: Messung): Pruefung[] => {
+  const [o, u] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Hände und Füße bleiben (m)", bleibt(m, ["hand_l", "hand_r", "fuss_l", "fuss_r"]), 0, 0.02, "Hände etwas breiter als schulterbreit")]
+  r.push(pr("Hände etwas breiter als schulterbreit", griffbreite(o) / schulterbreite(o), 1.05, 1.6, "Hände etwas breiter als schulterbreit"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "bis die Arme gestreckt sind"))
+    if (!erhoeht) r.push(pr(`Bein ${a} fast gestreckt (°)`, kniewinkel(o, a), 150, 180, "mit fast gestreckten Beinen"))
+    r.push(pr(`Ellbogen ${a} unten schräg nach hinten (m)`, p(u, `hand_${a}`)[2] - p(u, `g:ellbogen_${a}`)[2], 0.02, 0.2, "Die Ellbogen zeigen schräg nach hinten"))
+  }
+  r.push(pr("Gesäß hoch (m)", p(o, "g:becken")[1] - (p(o, "g:schulter_l")[1] + p(o, "g:schulter_r")[1]) / 2, erhoeht ? 0.25 : 0.2, 0.7, erhoeht ? "bis die Hüfte fast über den Schultern steht" : "ein umgekehrtes V, Gesäß hoch"))
+  if (erhoeht) {
+    r.push(pr("Hüfte fast über den Schultern (m)", Math.abs(p(o, "g:becken")[2] - (p(o, "g:schulter_l")[2] + p(o, "g:schulter_r")[2]) / 2), 0, 0.2, "bis die Hüfte fast über den Schultern steht"))
+    r.push(pr("Füße auf der Box (m)", p(o, "fuss_l")[1], 0.5, 0.64, "Leg die Füße auf die Box"))
+  }
+  r.push(pr("Kopf unten Richtung Boden (m)", p(u, "kopf")[1], 0.08, 0.26, "senk den Kopf Richtung Boden"))
+  r.push(pr("Kopf vor den Händen (m)", p(u, "kopf")[2] - p(u, "hand_l")[2], -0.03, 0.2, "vor den Händen, sodass Kopf und Hände ein Dreieck bilden"))
+  r.push(pr("Gesäß bleibt hoch (m)", p(u, "g:becken")[1], 0.6, 1.1, "Halte das Gesäß während des ganzen Satzes hoch"))
+  return r
+}
+SB_SOLL.pike_liegestuetz = pikeSoll(false)
+SB_SOLL.pike_liegestuetz_erhoeht = pikeSoll(true)
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1654,6 +1724,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...HINTEN_SOLL,
   ...ROT_SOLL,
   ...SHRUG_SOLL,
+  ...SB_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
