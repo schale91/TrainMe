@@ -4,8 +4,8 @@
 // so sind die Hände oben auf Ellbogenhöhe oder knapp darunter. Geprüft mit werkzeuge/messen.html gegen soll.ts.
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
-import { B, H, folge, halte, wdh } from "./basis"
-import { BAND, FAUST, HAMMER, KH, OBERGRIFF } from "./kraftbasis"
+import { B, H, folge, halte, mit, wdh } from "./basis"
+import { BAND, BAUCH_LEHNE, BRUST_LEHNE, FAUST, HAMMER, KH, OBERGRIFF, UNTERGRIFF } from "./kraftbasis"
 import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, rad } from "./ziele"
 
 type P3 = [number, number, number]
@@ -33,7 +33,7 @@ const armZiele = (ziele: Ziele, a: Arm, seiten: (1 | -1)[] = [1, -1], hand?: P3)
   }
   return ziele
 }
-type Basis = "stand" | "sitz" | "schwung"
+type Basis = "stand" | "sitz" | "schwung" | "vorgebeugt" | "sitzvor" | "brust"
 const STAND_ZIELE: Ziele = {
   ferse_l: { pos: [0.1, 0.022, -0.05] },
   fuss_l: { pos: [0.11, 0.034, 0.07] },
@@ -46,7 +46,31 @@ const SITZ_ZIELE: Ziele = {
   ferse_r: { pos: [-0.16, 0.022, 0.42] },
   fuss_r: { pos: [-0.17, 0.034, 0.54] },
 }
+/** vorgebeugt: Becken und Füße so, dass die Schultern über den Füßen liegen (wie beim Rudern) */
+const vorgebeugt = (kipp: number, knie: number, arme: Winkel, ziele: Ziele): Haltung => {
+  const schien = knie * 0.5
+  const knieY = 0.076 + 0.47 * Math.cos(rad(schien)), knieZ = 0.012 + 0.47 * Math.sin(rad(schien))
+  const ober = rad(schien - knie)
+  const hy = knieY + 0.383 * Math.cos(ober), hz = knieZ + 0.383 * Math.sin(ober)
+  const sz = hz + Math.sin(rad(kipp)) * 0.352
+  const dz = -0.05 - sz
+  const fuesse: Ziele = {
+    ferse_l: { pos: [0.1, 0.022, -0.05 + dz] },
+    fuss_l: { pos: [0.11, 0.034, 0.07 + dz] },
+    ferse_r: { pos: [-0.1, 0.022, -0.05 + dz] },
+    fuss_r: { pos: [-0.11, 0.034, 0.07 + dz] },
+  }
+  return H({ ...B("huefte", [kipp + schien, 6, 0]), ...B("knie", [knie]), ...B("fuss", [schien, 0]), ...FAUST, hals: [-kipp * 0.4, 0, 0], ...arme }, [kipp, 0, 0], { pos: [0, hy + 0.003, hz + dz], boden: false, ziele: { ...fuesse, ...ziele } })
+}
 const koerper = (b: Basis, vor: number, arme: Winkel, ziele: Ziele): Haltung => {
+  if (b === "vorgebeugt") return vorgebeugt(vor, 22, arme, ziele)
+  if (b === "sitzvor")
+    return H({ ...B("huefte", [90 + vor, 4, 0]), ...B("knie", [80]), ...B("fuss", [4, 0]), ...FAUST, hals: [-30, 0, 0], ...arme }, [vor, 0, 0], {
+      pos: [0, 0.555, 0],
+      boden: false,
+      ziele: { ferse_l: { pos: [0.07, 0.022, 0.42] }, fuss_l: { pos: [0.07, 0.034, 0.54] }, ferse_r: { pos: [-0.07, 0.022, 0.42] }, fuss_r: { pos: [-0.07, 0.034, 0.54] }, ...ziele },
+    })
+  if (b === "brust") return mit(BRUST_LEHNE, { dreh: [vor, 0, 0], g: { ...BRUST_LEHNE.g, ...B("huefte", [2 + vor - 50, 6, 0]), ...arme }, ziele: { ...BRUST_LEHNE.ziele, ...ziele } })
   if (b === "sitz") return H({ ...B("huefte", [86 + vor, 8, 0]), ...B("knie", [86]), ...B("fuss", [4, 0]), ...FAUST, ...arme }, [vor, 0, 0], { pos: [0, 0.555, 0], boden: false, ziele: { ...SITZ_ZIELE, ...ziele } })
   const knie = b === "schwung" ? 16 : 6
   return H({ ...B("huefte", [vor + knie * 0.6, 6, 0]), ...B("knie", [knie]), ...B("fuss", [knie * 0.5, 0]), ...FAUST, ...arme }, [vor, 0, 0], { pos: [0, 0.93, 0], boden: false, beckenFrei: true, ziele: { ...STAND_ZIELE, ...ziele } })
@@ -136,4 +160,67 @@ export const KRAFT_HEBEN_ARME: Record<string, Dehnung> = {
   frontheben_kh: front(KH, { hebung: 92, ebene: 85, knick: 8 }),
   frontheben_scheibe: front([{ art: "hantelscheibe", an: "haende" }], { hebung: 105, ebene: 88 }, 90, [SCHEIBE_UNTEN, SCHEIBE_OBEN], { texte: ["Scheibe nach vorn bis auf Augenhöhe heben", "Langsam absenken, ohne an die Oberschenkel zu schlagen"] }),
   frontheben_kabel: wdh("seite", haltung("stand", 2, FRONT_UNTEN, HAMMER, undefined, true), haltung("stand", 2, { hebung: 90, ebene: 85, knick: 20 }, HAMMER, undefined, true), 1.2, { aus: 2.2, halten: 0.4, seiten: true, texte: ["Arm nach vorn bis auf Schulterhöhe heben", "Langsam absenken, bis die Hand vor der Hüfte ist"], hilfsmittel: [{ art: "kabel", von: "hand_r", rolle: [-0.05, 0.12, -0.55] }] }),
+}
+
+// ---------------------------------------------------------------- Hintere Schulter
+// Im Rahmen der Schultern hängt ein senkrechter Arm bei vorgeneigtem Rumpf (Neigung k) mit Hebung k nach vorn;
+// oben ist der Oberarm in einer Linie mit dem Rücken (Hebung 90, Ebene 0).
+const REVERSE_TEXTE: [string, string] = ["Arme mit leicht gebeugten Ellbogen seitlich heben, bis sie in Linie mit dem Rücken sind", "Langsam wieder unter die Schultern absenken"]
+const reverse = (b: Basis, kipp: number, hilfsmittel: Hilfsmittel[], oben: Arm = { hebung: 88, ebene: 0, knick: 18 }, extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("schraeg", haltung(b, kipp, { hebung: kipp, ebene: b === "brust" ? 68 : 90, knick: 10 }, HAMMER), haltung(b, kipp, oben, HAMMER), 1.2, { aus: 2.2, halten: 0.5, texte: REVERSE_TEXTE, hilfsmittel, ...extra })
+/** vor dem Körper gekreuzt bzw. gestreckt auf Schulterhöhe */
+const VORN_GEKREUZT: P3 = [-0.05, -0.02, 0.44]
+const VORN_SCHULTERBREIT: Arm = { hebung: 90, ebene: 88, knick: 8 }
+const T_ARM: Arm = { hebung: 88, ebene: -4, knick: 10 }
+const auseinander = (vorn: Arm | P3, ende: Arm, dreh: number, hilfsmittel: Hilfsmittel[], texte: [string, string], extra: Partial<Dehnung> = {}, endHand?: [P3, P3]): Dehnung => {
+  const start = Array.isArray(vorn) ? haltung("stand", 2, VORN_SCHULTERBREIT, dreh, vorn as P3) : haltung("stand", 2, vorn, dreh)
+  let ziel = haltung("stand", 2, ende, dreh)
+  if (endHand) {
+    const z: Ziele = {}
+    for (const [i, sx] of [1, -1].entries()) {
+      const n = sx === 1 ? "l" : "r", h = endHand[i]
+      const p = armPunkte({ hebung: h[0], ebene: h[1], knick: h[2] })
+      z[`ellbogen_${n}`] = { pos: [sx * p.e[0], p.e[1], p.e[2]], bezug: "schultern" }
+      z[`hand_${n}`] = { pos: [sx * p.h[0], p.h[1], p.h[2]], bezug: "schultern" }
+    }
+    ziel = koerper("stand", 2, armWinkel(ende, dreh), z)
+  }
+  return wdh("vorn", start, ziel, 1.2, { aus: 2.0, halten: 0.6, texte, hilfsmittel, ...extra })
+}
+/** Face Pull: oben Ellbogen auf Schulterhöhe seitlich und etwas hinten, Unterarme senkrecht nach oben, Hände neben den Ohren */
+const facePullEnde = (b: Basis): Haltung => {
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    const e = plus([SCHULTER_X, 0, 0], richtung(88, -12), OBERARM)
+    const h = plus(e, [-0.03, 1, 0], UNTERARM)
+    ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+  }
+  return koerper(b, 0, { ...B("schulter", [0, 88, 60]), ...B("ellbogen", [95, HAMMER]) }, ziele)
+}
+const facePull = (b: Basis, hilfsmittel: Hilfsmittel[], extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("schraeg", haltung(b, 0, { hebung: 100, ebene: 86, knick: 6 }, HAMMER), facePullEnde(b), 1.2, {
+    aus: 2.0,
+    halten: 1.0,
+    texte: ["Zum Gesicht ziehen, Seilenden auseinander, Ellbogen hoch und nach außen", "Langsam zurück, bis die Arme gestreckt sind"],
+    hilfsmittel,
+    ...extra,
+  })
+/** Seil: beide Enden laufen von den Händen zur Rolle */
+const SEIL_STIRN = (z: number, y = 1.6): Hilfsmittel[] => [{ art: "kabel", von: "hand_l", rolle: [0, y, z] }, { art: "kabel", von: "hand_r", rolle: [0, y, z] }]
+const BAND_ANKER = (y: number, z = 1.3): Hilfsmittel[] => [{ art: "bandanker", von: "hand_l", anker: [0.12, y, z] }, { art: "bandanker", von: "hand_r", anker: [-0.12, y, z] }]
+export const KRAFT_HINTERE_SCHULTER: Record<string, Dehnung> = {
+  reverse_flye_kh_vorgebeugt: reverse("vorgebeugt", 80, KH),
+  reverse_flye_kh_sitzend: reverse("sitzvor", 62, [...KH, { art: "bank", unter: "gesaess", hoehe: 0.45 }], { hebung: 86, ebene: 0, knick: 12 }, { texte: ["Arme seitlich heben, bis sie etwa waagerecht sind, Schultern tief", "Langsam wieder unter die Knie senken"] }),
+  reverse_flye_brustgestuetzt: reverse("brust", 55, [...KH, BAUCH_LEHNE], { hebung: 88, ebene: 0, knick: 12 }, { texte: ["Arme seitlich heben, bis die Oberarme in Linie mit dem Oberkörper sind", "Langsam wieder absenken"] }),
+  reverse_flye_kabel: auseinander(VORN_GEKREUZT, T_ARM, HAMMER, [{ art: "kabel", von: "hand_l", rolle: [-0.9, 1.45, 0.6] }, { art: "kabel", von: "hand_r", rolle: [0.9, 1.45, 0.6] }], ["In einem weiten Bogen seitlich nach hinten auseinander", "Langsam zurück vor den Körper, bis sich die Kabel kreuzen"]),
+  reverse_flye_kabel_einarmig: wdh("vorn", haltung("stand", 2, VORN_SCHULTERBREIT, HAMMER, [-0.06, -0.02, 0.43], true), haltung("stand", 2, T_ARM, HAMMER, undefined, true), 1.2, { aus: 2.0, halten: 0.5, seiten: true, texte: ["Arm im Bogen nach außen, bis er in Linie mit der Schulter ist", "Langsam zurück über die Körpermitte"], hilfsmittel: [{ art: "kabel", von: "hand_r", rolle: [0.8, 1.45, 0.4] }] }),
+  reverse_flye_band: auseinander(VORN_SCHULTERBREIT, T_ARM, HAMMER, BAND_ANKER(1.4), ["Arme in einem weiten Bogen seitlich auseinander", "Langsam wieder nach vorn, ohne dass das Band zurückschnellt"]),
+  face_pull: facePull("stand", SEIL_STIRN(1.15)),
+  face_pull_sitzend: facePull("sitz", SEIL_STIRN(1.0, 1.15), { texte: ["Zum Gesicht ziehen, Ellbogen hoch und nach außen", "Langsam zurück, aufrecht sitzen bleiben"] }),
+  face_pull_band: facePull("stand", BAND_ANKER(1.6, 1.15), { halten: 2.0 }),
+  band_pull_apart: auseinander({ hebung: 90, ebene: 72, knick: 6 }, T_ARM, OBERGRIFF, BAND, ["Arme seitlich auseinander, bis sie ein T bilden", "Langsam wieder zusammen, ohne die Spannung ganz zu lösen"], { hilfsmittel: [{ art: "band", von: "hand_l", bis: "hand_r" }] }),
+  band_pull_apart_untergriff: auseinander({ hebung: 82, ebene: 72, knick: 6 }, { hebung: 72, ebene: -4, knick: 8 }, UNTERGRIFF, [], ["Arme seitlich nach außen und leicht nach unten", "Langsam wieder zusammen, Handflächen bleiben oben"], { hilfsmittel: [{ art: "band", von: "hand_l", bis: "hand_r" }] }),
+  band_pull_apart_diagonal: auseinander({ hebung: 90, ebene: 72, knick: 6 }, T_ARM, OBERGRIFF, [], ["Rechts schräg nach oben, links schräg nach unten auseinander", "Langsam wieder zusammen"], { hilfsmittel: [{ art: "band", von: "hand_l", bis: "hand_r" }] }, [[45, -4, 8], [132, -4, 8]]),
 }
