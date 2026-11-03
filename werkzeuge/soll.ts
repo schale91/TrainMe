@@ -167,7 +167,99 @@ const HIGHBAR: KB = {
   quelle: { stand: "Füße etwa schulterbreit", zehen: "Zehen 15 bis 30 Grad nach außen", tiefe: "Hüftfalte mindestens auf Höhe der Knie", rumpf: "Oberkörper bleibt relativ aufrecht", griff: "etwas weiter als schulterbreit" },
 }
 
+// ---------------------------------------------------------------- Kreuzheben und Hüftbeugen
+const obenUnten = (m: Messung) => {
+  const hoch = (x: Punkte) => p(x, "g:becken")[1]
+  return { o: m.alle.reduce((a, b) => (hoch(b) > hoch(a) ? b : a)), u: m.alle.reduce((a, b) => (hoch(b) < hoch(a) ? b : a)) }
+}
+const grund = (m: Messung, o: Punkte): Pruefung[] => [
+  pr("Füße bleiben stehen (m)", Math.max(...m.alle.map((x) => fersenWandern({ start: o, ziel: x, alle: [] }))), 0, 0.02, "Füße fest am Boden"),
+  pr("Restfehler der Zielpunkte (m)", Math.max(...m.alle.map((x) => p(x, "_rest")[0])), 0, 0.02, "Zielpunkte erreicht"),
+  pr("Verschiebung durch Boden oder Gerät (m)", Math.max(...m.alle.map((x) => Math.hypot(...p(x, "_schub")))), 0, 0.015, "Figur steht frei"),
+  pr("Knie gestreckt oben (°)", Math.min(kniewinkel(o, "l"), kniewinkel(o, "r")), 160, 180, "oben aufrecht stehen"),
+  pr("Rumpf aufrecht oben (°)", Math.abs(rumpfneigung(o)), 0, 10, "aufrecht stehen, nicht überstrecken"),
+]
+interface KH_ {
+  stand: Bereich
+  zehen: Bereich
+  griff: Bereich
+  /** Stange unten: Höhe der Mitte */
+  stangeY: Bereich
+  quelle: Record<string, string>
+  /** Hüfte über Knie unten (m) */
+  huefteKnie?: Bereich
+  /** Hüfte unter der Schulter unten (m) */
+  huefteSchulter?: Bereich
+}
+const heben = (k: KH_) => (m: Messung): Pruefung[] => {
+  const { o, u } = obenUnten(m)
+  const sb = schulterbreite(o), q = (n: string, d: string) => k.quelle[n] ?? d
+  const sm = mitte(p(u, "g:schulter_l"), p(u, "g:schulter_r")), st = stange(u)
+  return [
+    ...grund(m, o),
+    pr("Fußbreite / Schulterbreite", fussbreite(o) / sb, ...k.stand, q("stand", "hüftbreit")),
+    pr("Zehen nach außen (°)", (fusswinkel(o, "l") + fusswinkel(o, "r")) / 2, ...k.zehen, q("zehen", "Zehen leicht nach außen")),
+    pr("Griff / Schulterbreite", griffbreite(o) / sb, ...k.griff, q("griff", "Griff schulterbreit")),
+    pr("Stange unten Höhe (m)", st[1], ...k.stangeY, q("stangeY", "Hantel liegt am Boden")),
+    pr("Stange über Mittelfuß unten (m)", st[2] - mittelfuss(u)[2], -0.03, 0.06, q("mittelfuss", "Stange über der Fußmitte, 2 bis 3 cm vor dem Schienbein")),
+    pr("Schultern vor der Stange unten (m)", sm[2] - st[2], -0.02, 0.08, q("schulter", "Schultern leicht vor der Stange, Arme hängen senkrecht")),
+    pr("Hüfte über Knie unten (m)", hueftUeberKnie(u), ...(k.huefteKnie ?? [0.0, 0.4]), q("huefte", "Hüfte höher als die Knie")),
+    pr("Hüfte unter Schulter unten (m)", sm[1] - (p(u, "g:huefte_l")[1] + p(u, "g:huefte_r")[1]) / 2, ...(k.huefteSchulter ?? [0.02, 0.4]), q("huefte2", "Hüfte tiefer als die Schultern")),
+    pr("Stange vor den Oberschenkeln oben (m)", stange(o)[1], 0.65, 0.9, "oben hängt die Stange vor den Oberschenkeln"),
+  ]
+}
+interface HG {
+  /** Rumpfneigung unten */
+  rumpf: Bereich
+  /** kleinster Kniewinkel unten (innen, 180 gestreckt) */
+  knie: Bereich
+  stangeY?: Bereich
+  stand?: Bereich
+  last?: "ruecken"
+  quelle: Record<string, string>
+}
+const hinge = (k: HG) => (m: Messung): Pruefung[] => {
+  const o = m.start, u = m.ziel
+  const q = (n: string, d: string) => k.quelle[n] ?? d
+  const r: Pruefung[] = [
+    ...grund(m, o).filter((x) => !x.was.startsWith("Knie gestreckt")),
+    pr("Rumpfneigung unten (°)", rumpfneigung(u), ...k.rumpf, q("rumpf", "Oberkörper neigt sich nach vorn")),
+    pr("Kniewinkel unten (°)", Math.min(kniewinkel(u, "l"), kniewinkel(u, "r")), ...k.knie, q("knie", "Knie locker gebeugt")),
+    pr("Kniewinkel oben (°)", Math.min(kniewinkel(o, "l"), kniewinkel(o, "r")), 145, 178, q("knie", "Knie locker gebeugt")),
+    pr("Knie bleiben im Winkel (°)", Math.abs(kniewinkel(o, "l") - kniewinkel(u, "l")), 0, 22, "Knie bleiben im gleichen leichten Winkel"),
+    pr("Hüfte hinter der Ferse unten (m)", (p(u, "ferse_l")[2] + p(u, "ferse_r")[2]) / 2 - p(u, "g:becken")[2], 0.03, 0.4, "Hüfte nach hinten schieben"),
+    pr("Schienbein fast senkrecht unten (m)", knieVorKnoechel(u), -0.04, 0.12, "Schienbeine fast senkrecht"),
+  ]
+  if (k.stand) r.push(pr("Fußbreite / Schulterbreite", fussbreite(o) / schulterbreite(o), ...k.stand, "hüftbreit"))
+  if (k.stangeY) {
+    r.push(pr("Stange unten Höhe (m)", stange(u)[1], ...k.stangeY, q("stangeY", "Stange am Bein entlang nach unten")))
+    r.push(pr("Stange nah am Bein unten (m)", stange(u)[2] - (p(u, "g:knie_l")[2] + p(u, "g:knie_r")[2]) / 2, -0.05, 0.1, "die Stange gleitet an den Beinen entlang"))
+  }
+  if (k.last === "ruecken") {
+    const s = amRumpf(u, "stange")
+    r.push(pr("Stange hinter der Schulter unten (m)", -s[2], 0.03, 0.1, "Stange auf dem oberen Rücken"))
+  }
+  return r
+}
+const KLASSISCH_Q = { stand: "Stell dich hüftbreit hin", zehen: "Zehen leicht nach außen", griff: "Greif die Stange schulterbreit, die Arme hängen direkt außen an den Beinen", huefte: "Hüfte höher als die Knie" }
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  kreuzheben_lh: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.2, 0.26], quelle: KLASSISCH_Q }),
+  kreuzheben_reset: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.2, 0.26], quelle: KLASSISCH_Q }),
+  kreuzheben_defizit: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.2, 0.26], huefteKnie: [-0.1, 0.4], quelle: { ...KLASSISCH_Q, huefte: "Hüfte und Knie tiefer als beim normalen Kreuzheben" } }),
+  kreuzheben_pause: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.2, 0.26], quelle: KLASSISCH_Q }),
+  kreuzheben_sumo: heben({ stand: [1.6, 2.4], zehen: [30, 45], griff: [0.7, 1.05], stangeY: [0.2, 0.26], huefteKnie: [-0.05, 0.3], quelle: { stand: "deutlich breiter als schulterbreit", zehen: "Zehen 30 bis 45 Grad nach außen", griff: "schulterbreit innerhalb der Beine", huefte: "Hüfte senken, bis die Brust aufrecht ist" } }),
+  kreuzheben_gegenstand: heben({ stand: [1.6, 2.4], zehen: [30, 45], griff: [0.7, 1.05], stangeY: [0.2, 0.26], huefteKnie: [-0.05, 0.3], quelle: { stand: "Sumo mit weitem Stand", griff: "Griff innen" } }),
+  rack_pull: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.42, 0.6], quelle: { ...KLASSISCH_Q, stangeY: "Stange knapp unter oder über den Knien" } }),
+  kreuzheben_gestreckt: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.2, 0.26], huefteKnie: [0.15, 0.6], huefteSchulter: [-0.12, 0.3], quelle: { ...KLASSISCH_Q, huefte: "Hüfte deutlich höher als beim klassischen Kreuzheben", huefte2: "Oberkörper mit geradem Rücken nach vorn gekippt, bis du die Stange greifen kannst" } }),
+  kb_kreuzheben: heben({ stand: [0.8, 1.2], zehen: [5, 25], griff: [0, 0.6], stangeY: [0.22, 0.32], huefteKnie: [-0.05, 0.4], quelle: { stand: "etwas breiter als hüftbreit", stangeY: "Kettlebell zwischen den Füßen", griff: "Griff mit beiden Händen" } }),
+  rdl_lh: hinge({ rumpf: [55, 90], knie: [138, 172], stangeY: [0.3, 0.56], stand: [0.55, 0.9], quelle: { rumpf: "Oberkörper neigt sich nach vorn, Rücken gerade", knie: "Knie locker gebeugt", stangeY: "so tief bis zur starken Dehnung, meist etwa Mitte Schienbein" } }),
+  rdl_kh: hinge({ rumpf: [55, 90], knie: [138, 172], stangeY: [0.3, 0.56], stand: [0.55, 0.9], quelle: { stangeY: "bis zur deutlichen Dehnung, meist bis Mitte Schienbein" } }),
+  rdl_kabel: hinge({ rumpf: [50, 90], knie: [138, 172], stand: [0.55, 0.9], quelle: {} }),
+  good_morning_lh: hinge({ rumpf: [65, 95], knie: [140, 172], last: "ruecken", stand: [0.55, 0.9], quelle: { rumpf: "bis der Oberkörper fast waagerecht ist", knie: "Knie leicht gebeugt" } }),
+  good_morning_band: hinge({ rumpf: [55, 90], knie: [140, 172], stand: [0.55, 0.9], quelle: {} }),
+  hip_hinge_stab: hinge({ rumpf: [45, 85], knie: [140, 172], stand: [0.55, 0.9], quelle: {} }),
+
   kniebeuge_lh: kniebeuge(HIGHBAR),
   pausenkniebeuge_lh: kniebeuge(HIGHBAR),
   tempo_kniebeuge_lh: kniebeuge(HIGHBAR),
