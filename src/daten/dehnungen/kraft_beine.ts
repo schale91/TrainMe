@@ -10,27 +10,27 @@ import { FAUST, HAMMER, KH, OBERGRIFF } from "./kraftbasis"
 
 // ---------------------------------------------------------------- Arme und Last
 /** Stange auf dem oberen Rücken: Hände knapp außerhalb der Schultern hinter dem Nacken */
-const ARME_RUECKEN: Winkel = { ...B("schulter", [-6, 62, 70]), ...B("ellbogen", [118, OBERGRIFF]), ...FAUST }
+export const ARME_RUECKEN: Winkel = { ...B("schulter", [-6, 62, 70]), ...B("ellbogen", [118, OBERGRIFF]), ...FAUST }
 /** Front Rack: Ellbogen hoch, Stange vorn auf den Schultern */
 const ARME_FRONT: Winkel = { ...B("schulter", [92, 18, 0]), ...B("ellbogen", [150, -60]), ...FAUST }
 /** Hantel eng vor der Brust (Goblet) */
-const ARME_GOBLET: Winkel = { ...B("schulter", [26, 6, 0]), ...B("ellbogen", [138, HAMMER]), ...FAUST }
+export const ARME_GOBLET: Winkel = { ...B("schulter", [26, 6, 0]), ...B("ellbogen", [138, HAMMER]), ...FAUST }
 /** Kurzhanteln hängen neben dem Körper */
-const ARME_SEITE: Winkel = { ...B("schulter", [2, 8, 0]), ...B("ellbogen", [6, HAMMER]), ...FAUST }
+export const ARME_SEITE: Winkel = { ...B("schulter", [2, 8, 0]), ...B("ellbogen", [6, HAMMER]), ...FAUST }
 /** Arme zum Ausgleich nach vorn */
-const ARME_VOR: Winkel = { ...B("schulter", [88, 6, 0]), ...B("ellbogen", [4, 90]) }
+export const ARME_VOR: Winkel = { ...B("schulter", [88, 6, 0]), ...B("ellbogen", [4, 90]) }
 const ARME_HOCH: Winkel = { ...B("schulter", [172, 16, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST }
 
 /** Mit Langhantel schräg von vorn, sonst verdecken die Scheiben in der Seitenansicht die Figur */
-const ansicht = (hilfsmittel: Hilfsmittel[]): Dehnung["ansicht"] => (hilfsmittel.some((h) => h.art === "langhantel") ? "schraeg" : "seite")
-const STANGE_RUECKEN: Hilfsmittel[] = [{ art: "langhantel", von: "hand_l", bis: "hand_r" }]
-const RACK: Hilfsmittel = { art: "rack", an: "becken", haken: 1.4, ablage: 0.62 }
+export const ansicht = (hilfsmittel: Hilfsmittel[]): Dehnung["ansicht"] => (hilfsmittel.some((h) => h.art === "langhantel") ? "schraeg" : "seite")
+export const STANGE_RUECKEN: Hilfsmittel[] = [{ art: "langhantel", von: "hand_l", bis: "hand_r" }]
+export const RACK: Hilfsmittel = { art: "rack", an: "becken", haken: 1.4, ablage: 0.62 }
 
 // ---------------------------------------------------------------- Kniebeuge
 /** Tief: Oberschenkel etwa waagerecht, Knie über den Zehen, Rücken gerade vorgeneigt, Füße flach */
 const tief = (kipp: number, w: Winkel = {}, breit = 12): Haltung =>
   H({ ...B("huefte", [90 + kipp, breit, -breit / 2]), ...B("knie", [120]), ...B("fuss", [30, 0]), hals: [-kipp / 2, 0, 0], ...w }, [kipp, 0, 0])
-const stand = (w: Winkel = {}, breit = 12): Haltung => mit(STAND, { g: { ...B("huefte", [0, breit, -breit / 2]), ...w } })
+export const stand = (w: Winkel = {}, breit = 12): Haltung => mit(STAND, { g: { ...B("huefte", [0, breit, -breit / 2]), ...w } })
 const kniebeuge = (arme: Winkel, kipp: number, hilfsmittel: Hilfsmittel[], extra: Partial<Dehnung> = {}, breit = 12): Dehnung =>
   wdh(ansicht(hilfsmittel), stand(arme, breit), tief(kipp, arme, breit), 2.0, { aus: 1.5, texte: ["Kontrolliert in die Hocke", "Kraftvoll aufstehen"], hilfsmittel, ...extra })
 
@@ -75,8 +75,8 @@ const kreuzhebenEinbein = (hilfsmittel: Hilfsmittel[], arme: Winkel): Dehnung =>
 
 // ---------------------------------------------------------------- Wandsitzen, Stuhl
 const WANDSITZ: Haltung = H({ ...B("huefte", [90, 8, 0]), ...B("knie", [90]), ...B("fuss", [0, 0]), ...B("schulter", [4, 10, 0]), ...B("ellbogen", [20, 0]) }, [0, 0, 0], { pos: [0, 0.52, 0], boden: false })
-const WAND_HINTEN: Hilfsmittel = { art: "wand", an: "ruecken", richtung: "hinten" }
-const STUHL: Hilfsmittel = { art: "stuhl", unter: "gesaess", hoehe: 0.45 }
+export const WAND_HINTEN: Hilfsmittel = { art: "wand", an: "ruecken", richtung: "hinten" }
+export const STUHL: Hilfsmittel = { art: "stuhl", unter: "gesaess", hoehe: 0.45 }
 const AUFSTEHEN_VOR: Haltung = H({ ...B("huefte", [110, 8, 0]), ...B("knie", [95]), ...B("fuss", [10, 0]), ...ARME_VERSCHRAENKT }, [30, 0, 0], { pos: [0, 0.58, 0.06], boden: false })
 const aufstehen = (sitz: Haltung, vor: Haltung, oben: Haltung, extra: Partial<Dehnung> = {}): Dehnung =>
   folge("seite", [[vor, 1.0, "Oberkörper nach vorn, Füße unter die Knie"], [oben, 1.4, "Aufstehen"], [oben, 0.8, "Kurz stehen"], [vor, 1.6, "Langsam hinsetzen"], [sitz, 0.8, "Sitzen"]], { hilfsmittel: [STUHL], ...extra })
