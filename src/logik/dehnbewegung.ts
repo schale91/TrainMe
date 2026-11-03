@@ -68,7 +68,7 @@ export interface Ziel {
 /** Geräte und Hilfsmittel in der Szene, an Körperpunkten ausgerichtet */
 export type Hilfsmittel =
   /** abstand: Lücke zwischen Punkt und Wand (Meter, sonst 3 cm), z. B. für einen Ball dazwischen */
-  | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten"; abstand?: number; ebene?: number }
+  | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten"; abstand?: number; ebene?: number; breite?: number; x?: number }
   /** versatz [seitlich, vorn] in Metern, z. B. damit die Hände auf der Vorderkante einer Box liegen */
   | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number]; quer?: boolean }
   | { art: "stab"; von: Punkt; bis: Punkt }

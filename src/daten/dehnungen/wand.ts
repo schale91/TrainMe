@@ -70,6 +70,77 @@ const flHaltung = (y: number, beuge: number): Haltung =>
     ziele: { ...fuss(1, 0.1, FL_Z - 0.05, 8), ...fuss(-1, 0.1, FL_Z - 0.05, 8), hand_l: { pos: [0.17, y, WAND - 0.07] } },
   })
 
+
+// ---------------------------------------------------------------- Rückenlage mit den Beinen an der Wand
+// Rücken am Boden (Becken 11,8 cm hoch, gemessen), Kopf von der Wand weg (-z). Die Beine zeigen an der Wand nach oben:
+// Knöchel auf der Beinachse, die Ferse liegt hinten (zur Wand) an.
+const LIEGT_Y = 0.118
+const HUEFTE_Y = LIEGT_Y - 0.003
+const ARME_LOCKER_LIEGEND: Winkel = { ...B("schulter", [8, 25, 0]), ...B("ellbogen", [10, 0]) }
+/** Bein von der Hüfte (x, z) in Richtung (dx, dy, dz) gestreckt an die Wand: Knie und Ferse als Zielpunkte */
+const beinAnWand = (s: 1 | -1, hz: number, dir: P3): Ziele => {
+  const l = Math.hypot(...dir), d: P3 = [dir[0] / l, dir[1] / l, dir[2] / l]
+  const h: P3 = [s * 0.078, HUEFTE_Y, hz]
+  const at = (k: number): P3 => [h[0] + d[0] * k, h[1] + d[1] * k, h[2] + d[2] * k]
+  // Rückseite des Beins zeigt zur Wand (+z): senkrecht zur Beinachse in der Ebene y-z
+  const hinten: P3 = [0, -d[2], d[1]]
+  const knoechel = at(0.853)
+  const ferse: P3 = [knoechel[0] + hinten[0] * 0.062 - d[0] * 0.054, knoechel[1] + hinten[1] * 0.062 - d[1] * 0.054, knoechel[2] + hinten[2] * 0.062 - d[2] * 0.054]
+  // Fuß rechtwinklig zum Bein, die Zehen zeigen von der Wand weg (Fußsohle zur Decke)
+  const vorn: P3 = [0, d[2], -d[1]]
+  const ballen: P3 = [ferse[0] + vorn[0] * 0.115 + d[0] * 0.012, ferse[1] + vorn[1] * 0.115 + d[1] * 0.012, ferse[2] + vorn[2] * 0.115 + d[2] * 0.012]
+  const n = s === 1 ? "l" : "r"
+  return { [`knie_${n}`]: { pos: at(0.383) }, [`ferse_${n}`]: { pos: ferse }, [`fuss_${n}`]: { pos: ballen } }
+}
+/** Hüfte so weit von der Wand, dass die Ferse des um neig Grad zur Wand geneigten Beins die Wand berührt */
+const hueftZFuerBein = (neig: number) => WAND - 0.06 - (0.853 - 0.054) * Math.sin((neig * Math.PI) / 180) - 0.062 * Math.cos((neig * Math.PI) / 180)
+const liegtVorWand = (hz: number, ziele: Ziele, w: Winkel): Haltung =>
+  H({ ...ARME_LOCKER_LIEGEND, ...B("fuss", [0, 0]), ...w }, [-90, 0, 0], { pos: [0, LIEGT_Y, hz - 0.01], boden: false, ziele })
+const BW_NEIG = 6
+const BW_HZ = hueftZFuerBein(BW_NEIG)
+const bwRichtung = (spreiz = 0): P3 => [Math.sin((spreiz * Math.PI) / 180), Math.cos((BW_NEIG * Math.PI) / 180) * Math.cos((spreiz * Math.PI) / 180), Math.sin((BW_NEIG * Math.PI) / 180)]
+const BEINE_WAND = liegtVorWand(BW_HZ, { ...beinAnWand(1, BW_HZ, bwRichtung()), ...beinAnWand(-1, BW_HZ, [-bwRichtung()[0], bwRichtung()[1], bwRichtung()[2]]) }, { ...B("huefte", [84, 2, 0]), ...B("knie", [2]) })
+/** Ausgangsstellung: Knie angewinkelt, Füße flach an der Wand */
+const BEINE_WAND_START = liegtVorWand(
+  BW_HZ,
+  { ferse_l: { pos: [0.09, 0.62, WAND - 0.035] }, ferse_r: { pos: [-0.09, 0.62, WAND - 0.035] } },
+  { ...B("huefte", [80, 3, 0]), ...B("knie", [50]), ...B("fuss", [10, 0]) },
+)
+const GRAETSCHE_WAND = (spreiz: number) => {
+  const r = bwRichtung(spreiz)
+  return liegtVorWand(BW_HZ, { ...beinAnWand(1, BW_HZ, r), ...beinAnWand(-1, BW_HZ, [-r[0], r[1], r[2]]) }, { ...B("huefte", [80, spreiz, 0]), ...B("knie", [2]) })
+}
+
+
+// ---------------------------------------------------------------- Figur 4 an der Wand
+// Rückenlage, ein Fuß flach an der Wand mit Hüfte und Knie etwa im rechten Winkel (Schienbein waagerecht, Sohle zur
+// Wand), der andere Knöchel liegt auf diesem Knie, das Knie zeigt nach außen. Danach rutscht das Gesäß näher heran.
+const F4_KNIE_Y = HUEFTE_Y + 0.383
+const F4_KNOECHEL_Z = WAND - 0.074
+/** Fuß des Wandbeins (rechts) flach an der Wand: Ferse unter, Ballen über dem Knöchel */
+const F4_FUSS: Ziele = { ferse_r: { pos: [-0.09, F4_KNIE_Y - 0.062, F4_KNOECHEL_Z + 0.054] }, fuss_r: { pos: [-0.09, F4_KNIE_Y + 0.058, F4_KNOECHEL_Z + 0.042] } }
+const F4_VIER: Winkel = { huefte_l: [60, 75, 180], knie_l: [105] }
+const figur4 = (naeher: number): Haltung =>
+  liegtVorWand(F4_KNOECHEL_Z - 0.47 + naeher, naeher ? F4_FUSS : { ...F4_FUSS, knie_r: { pos: [-0.085, F4_KNIE_Y, F4_KNOECHEL_Z - 0.47] } }, { huefte_r: [90, 4, 0], knie_r: [90], fuss_r: [0, 0], ...F4_VIER })
+
+
+// ---------------------------------------------------------------- Beinrückseite im Türrahmen
+// Rückenlage im Türrahmen: das rechte Bein liegt gestreckt an der Wand neben der Öffnung, das linke Bein liegt lang
+// durch die Öffnung am Boden. Die Wand endet 6 cm rechts der Körpermitte.
+const TUER_WAND: Hilfsmittel = { art: "wand", an: "becken", richtung: "vorn", ebene: WAND, breite: 0.8, x: -0.46 }
+const TR_NEIG = 4
+const TR_HZ = hueftZFuerBein(TR_NEIG)
+const beinBoden = (s: 1 | -1, hz: number): Ziele => {
+  const n = s === 1 ? "l" : "r"
+  // gestreckt durch die Tür: Ferse liegt am Boden 0,8 m vor der Hüfte
+  return { [`ferse_${n}`]: { pos: [s * 0.1, 0.03, hz + 0.86] }, [`knie_${n}`]: { pos: [s * 0.09, 0.1, hz + 0.38] } }
+}
+const tuerrahmen = (gebeugt: boolean): Haltung => {
+  const r = bwRichtung()
+  const rechts = gebeugt ? { ferse_r: { pos: [-0.09, 0.62, WAND - 0.06] as P3 } } : beinAnWand(-1, TR_HZ, [-r[0] * 0, r[1], Math.sin((TR_NEIG * Math.PI) / 180)])
+  return liegtVorWand(TR_HZ, { ...rechts, ...beinBoden(1, TR_HZ) }, { huefte_r: [84, 0, 0], knie_r: [gebeugt ? 50 : 2], huefte_l: [0, 3, 0], knie_l: [2], fuss_l: [-20, 0] })
+}
+
 export const WAND_UEBUNGEN: Record<string, Dehnung> = {
   knie_zur_wand: wdh("seite", KZW_START, KZW_ZIEL, 2.5, { halten: 2, seiten: true, texte: ["Linkes Knie über die zweite Zehe zur Wand, Ferse bleibt am Boden", "Zurück"], hilfsmittel: [WAND_VORN] }),
   grosszehe_dehnen_wand: halte("seite", GZ_START, GZ_ZIEL, { seiten: true, hilfsmittel: [WAND_VORN], hinweis: "Großzehe nach oben an der Wand, der Ballen bleibt am Boden, Knie langsam nach vorn." }),
@@ -77,6 +148,13 @@ export const WAND_UEBUNGEN: Record<string, Dehnung> = {
   waden_pnf_wand: halte("seite", WADE_START, WADE_ZIEL, { seiten: true, hilfsmittel: [WAND_VORN], hinweis: "Ballen halb kräftig in den Boden drücken, dann lösen und die Hüfte weiter zur Wand." }),
   soleus_dehnen_wand: halte("seite", SOLEUS_START, SOLEUS_ZIEL, { seiten: true, hilfsmittel: [WAND_VORN], hinweis: "Beide Knie gebeugt, hinteres Knie nach vorn unten, Ferse bleibt am Boden." }),
   waden_dehnen_zehen_wand: halte("seite", ZEHEN_START, ZEHEN_ZIEL, { seiten: true, hilfsmittel: [WAND_VORN], hinweis: "Ferse vor der Wand, Ballen an der Wand, Knie gestreckt, Körper zur Wand lehnen." }),
+  beine_an_wand: halte("seite", BEINE_WAND_START, BEINE_WAND, { hilfsmittel: [WAND_VORN], hinweis: "Gesäß nah an der Wand, die Beine liegen gestreckt und geschlossen an ihr, der ganze Körper wird schwer." }),
+  graetsche_wand: halte("schraeg", GRAETSCHE_WAND(4), GRAETSCHE_WAND(36), { hilfsmittel: [WAND_VORN], hinweis: "Gesäß an der Wand, die gestreckten Beine gleiten an der Wand zur Seite." }),
+  figur4_wand: halte("seite", figur4(0), figur4(0.09), { seiten: true, hilfsmittel: [WAND_VORN], hinweis: "Fuß an der Wand, Außenknöchel auf dem Knie, Knie nach außen; mit dem Gesäß näher zur Wand rutschen." }),
+  beinrueckseite_dehnen_tuerrahmen: halte("seite_links", tuerrahmen(true), tuerrahmen(false), {
+    hilfsmittel: [TUER_WAND],
+    hinweis: "Rechtes Bein gestreckt am Türrahmen, das linke Bein liegt lang durch die Tür am Boden. Danach die Seite wechseln.",
+  }),
   fingerlaufen_wand: wdh("seite", flHaltung(1.12, 95), flHaltung(1.68, 5), 6, { halten: 2, aus: 3, seiten: true, texte: ["Fingerspitzen an der Wand nach oben laufen lassen", "Langsam wieder nach unten"], hilfsmittel: [WAND_VORN] }),
 }
 void (null as unknown as P3)

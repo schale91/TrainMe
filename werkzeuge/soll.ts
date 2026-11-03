@@ -816,7 +816,46 @@ const wandSoll = (k: WS) => (m: Messung): Pruefung[] => {
   return r
 }
 const fersAm = (x: Punkte, a: "l" | "r") => p(x, `ferse_${a}`)[1]
+const beineWandSoll = (spreiz: Bereich) => (m: Messung): Pruefung[] => {
+  const z = m.ziel
+  const r = [...ruhig(m)]
+  for (const a of SEITEN) {
+    r.push(pr(`Ferse ${a} an der Wand (m)`, WAND_Z - p(z, `ferse_${a}`)[2], 0.0, 0.06, "Die Beine liegen an der Wand"))
+    r.push(pr(`Bein ${a} gestreckt (°)`, kniewinkel(z, a), 168, 180, "Die Beine liegen gestreckt"))
+  }
+  r.push(pr("Gesäß nah an der Wand (m)", WAND_Z - p(z, "g:huefte_l")[2], 0.08, 0.25, "Rück mit dem Gesäß so nah an die Wand"))
+  r.push(pr("Rücken am Boden (m)", p(z, "g:becken")[1], 0.08, 0.16, "Rückenlage"))
+  r.push(pr("Beine gespreizt (m)", Math.abs(p(z, "ferse_l")[0] - p(z, "ferse_r")[0]), spreiz[0], spreiz[1], spreiz[0] > 0.3 ? "Lass die Beine zur Seite auseinandergleiten" : "gestreckt und geschlossen"))
+  return r
+}
 const WAND_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  beine_an_wand: beineWandSoll([0, 0.25]),
+  beinrueckseite_dehnen_tuerrahmen: (m) => {
+    const z = m.ziel
+    return [
+      ...ruhig(m),
+      pr("Rechte Ferse an der Wand (m)", WAND_Z - p(z, "ferse_r")[2], 0, 0.06, "Leg das rechte Bein gestreckt an die Wand"),
+      pr("Rechtes Knie gestreckt (°)", kniewinkel(z, "r"), 168, 180, "Das Knie bleibt gestreckt"),
+      pr("Linkes Bein lang am Boden (m)", Math.max(p(z, "ferse_l")[1], p(z, "g:knie_l")[1] - 0.06), 0, 0.06, "das linke Bein liegt lang am Boden"),
+      pr("Linkes Knie gestreckt (°)", kniewinkel(z, "l"), 165, 180, "das linke Bein liegt lang"),
+      pr("Linkes Bein durch die Öffnung (m)", p(z, "ferse_l")[2] - WAND_Z, 0.4, 0.85, "lang durch die Türöffnung"),
+      pr("Gesäß nah an der Wand (m)", WAND_Z - p(z, "g:huefte_r")[2], 0.08, 0.25, "Rutsch mit dem Gesäß so nah an die Wand"),
+    ]
+  },
+  figur4_wand: (m) => {
+    const s0 = m.start, z = m.ziel
+    return [
+      ...ruhig(m),
+      pr("Fuß flach an der Wand (m)", Math.max(WAND_Z - p(s0, "ferse_r")[2], WAND_Z - p(z, "ferse_r")[2]), 0, 0.05, "Stell den Fuß an die Wand"),
+      pr("Fuß bleibt an der Wand (m)", bleibt(m, ["ferse_r", "fuss_r"]), 0, 0.02, "der Fuß bleibt an der Wand"),
+      pr("Hüfte etwa rechtwinklig (m)", Math.abs(p(s0, "g:knie_r")[2] - p(s0, "g:huefte_r")[2]), 0, 0.06, "Hüfte und Knie etwa im rechten Winkel"),
+      pr("Knie etwa rechtwinklig (°)", kniewinkel(s0, "r"), 80, 100, "Hüfte und Knie etwa im rechten Winkel"),
+      pr("Gesäß eine Oberschenkellänge von der Wand (m)", WAND_Z - p(s0, "g:huefte_r")[2], 0.45, 0.65, "etwa eine Oberschenkellänge von der Wand"),
+      pr("Gesäß rutscht näher (m)", p(z, "g:huefte_r")[2] - p(s0, "g:huefte_r")[2], 0.05, 0.15, "Rutsch mit dem Gesäß ein Stück näher an die Wand"),
+      pr("Knöchel auf dem Knie (m)", abstand(p(z, "g:fuss_l"), p(z, "g:knie_r")), 0, 0.15, "Leg den Außenknöchel auf das Knie"),
+    ]
+  },
+  graetsche_wand: beineWandSoll([0.8, 1.4]),
   knie_zur_wand: wandSoll({ extra: (_m, s, z) => [
     pr("Fußspitze eine Handbreit vor der Wand (m)", WAND_Z - (p(s, "fuss_l")[2] + 0.1), 0.06, 0.14, "den Fuß etwa eine Handbreit vor der Wand"),
     pr("Ferse bleibt am Boden (m)", Math.max(fersAm(s, "l"), fersAm(z, "l")), 0, 0.04, "Die Ferse bleibt fest am Boden"),

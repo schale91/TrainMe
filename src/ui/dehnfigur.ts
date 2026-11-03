@@ -385,7 +385,9 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
         if (n[2]) mitte.z = h.ebene + (n[2] * dicke) / 2
         if (n[0]) mitte.x = h.ebene + (n[0] * dicke) / 2
       }
-      const gr: [number, number, number] = n[0] ? [dicke, 2.4, 1.6] : [1.6, 2.4, dicke]
+      // breite und x: nur ein Stück Wand (Türrahmen, Wandkante), Mitte bei x
+      if (h.x !== undefined) mitte.x = h.x
+      const gr: [number, number, number] = n[0] ? [dicke, 2.4, h.breite ?? 1.6] : [h.breite ?? 1.6, 2.4, dicke]
       out.push(kiste(mitte, gr, FARBE.wand))
     } else if (h.art === "bank" || h.art === "stuhl" || h.art === "box") {
       const p = k.punkt(h.unter)
@@ -887,7 +889,7 @@ class Buehne {
           // Ellbogen und Knie folgen dazwischen der Hand und dem Fuß: gerade gemischt läge der Punkt innerhalb der
           // Kette und wäre mit den Gliedlängen nicht erreichbar
           if (n.startsWith("ellbogen_") && a.ziele[`hand_${n.slice(-1)}` as ZielPunkt]) continue
-          if (n.startsWith("knie_") && a.ziele[`fuss_${n.slice(-1)}` as ZielPunkt]) continue
+          if (n.startsWith("knie_") && (a.ziele[`fuss_${n.slice(-1)}` as ZielPunkt] || a.ziele[`ferse_${n.slice(-1)}` as ZielPunkt])) continue
           ziele[n] = { bezug: za.bezug, pos: [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number] }
         }
         // Startwert: Mischung der gelösten Enden
@@ -1109,7 +1111,10 @@ class Buehne {
       const seite = Math.sign(w.position[achse] - becken[achse]) || 1
       const flaeche = w.position[achse] - (seite * dicke) / 2
       let tief = 0
-      for (const pk of lagen) for (const p of pk) tief = Math.max(tief, seite * (p[achse] - flaeche))
+      // nur Punkte vor der Wandfläche zählen (Türrahmen, Wandkante: daneben ist frei)
+      const quer = achse === "x" ? "z" : "x"
+      const halb = gr[quer] / 2
+      for (const pk of lagen) for (const p of pk) if (Math.abs(p[quer] - w.position[quer]) <= halb && p.y <= w.position.y + gr.y / 2) tief = Math.max(tief, seite * (p[achse] - flaeche))
       this.wandVersatz = Math.max(this.wandVersatz, tief)
       if (tief > 0.003) {
         w.position[achse] += seite * (tief + 0.002)
