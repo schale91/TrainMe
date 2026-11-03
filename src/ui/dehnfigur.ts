@@ -32,6 +32,7 @@ const FARBE = {
   holz: "#b08a63",
   polster: "#3b4458",
   metall: "#a3acb8",
+  scheibe: "#d9534f",
   wand: "#e4e8ee",
   band: "#e8623c",
   rolle: "#3d6fd6",
@@ -201,6 +202,8 @@ class Koerper {
       for (const [dz, l] of [[-0.021, 0.045], [-0.007, 0.06], [0.008, 0.063], [0.022, 0.056]] as [number, number][]) finger.add(kapsel(0.0085, l, FARBE.haut, [0, -l / 2, dz]))
       hand.add(kapsel(0.01, 0.04, FARBE.haut, [-0.006 * s, -0.055, 0.04], [rad(32), 0, 0]))
       marke("hand_" + seite, hand, [0, -0.09, 0])
+      // Richtung des Griffs in der Faust (zum Daumen): danach liegt die Kurzhantel in der Hand
+      marke("griff_" + seite, hand, [0, -0.09, 0.1])
     }
 
     // ---------- Beine
@@ -368,10 +371,26 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
     } else if (h.art === "stange") {
       const p = k.punkt(h.an)
       out.push(zylinder(new THREE.Vector3(-0.7, p.y + 0.02, p.z), new THREE.Vector3(0.7, p.y + 0.02, p.z), 0.016, FARBE.metall))
+    } else if (h.art === "kabel") {
+      // Kabelturm: Säule hinter der Rolle, Rolle als kleine Scheibe
+      const [x, y, z] = h.rolle
+      const hinten = z >= 0 ? 0.08 : -0.08
+      out.push(kiste(new THREE.Vector3(x, 1.1, z + hinten), [0.12, 2.2, 0.12], FARBE.polster))
+      out.push(zylinder(new THREE.Vector3(x - 0.03, y, z), new THREE.Vector3(x + 0.03, y, z), 0.035, FARBE.metall))
     }
     for (let i = vorher; i < out.length; i++) out[i].name = h.art
   }
   return out
+}
+
+const andereSeite = <T extends string>(p: T): T => (p.endsWith("_l") ? p.slice(0, -2) + "_r" : p.endsWith("_r") ? p.slice(0, -2) + "_l" : p) as T
+
+/** Hilfsmittel für die gespiegelte Seite: links und rechts getauscht, Kabelrolle auf der anderen Seite */
+function gespiegeltesHilfsmittel(h: Hilfsmittel): Hilfsmittel {
+  if (h.art === "hantel") return { ...h, an: andereSeite(h.an) }
+  if (h.art === "kabel") return { ...h, von: andereSeite(h.von), rolle: [-h.rolle[0], h.rolle[1], h.rolle[2]] }
+  if (h.art === "stab" || h.art === "band" || h.art === "langhantel" || h.art === "sz") return { ...h, von: andereSeite(h.von), bis: andereSeite(h.bis) }
+  return h
 }
 
 /** Bewegliche Hilfsmittel, folgen den Händen (Stab, Band, Kurzhantel). */
@@ -384,9 +403,23 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       out.push(zylinder(a.clone().addScaledVector(d, -0.25), b.clone().addScaledVector(d, 0.25), 0.012, FARBE.holz))
     } else if (h.art === "band") out.push(zylinder(k.punkt(h.von), k.punkt(h.bis), 0.008, FARBE.band))
     else if (h.art === "hantel") {
+      // Kurzhantel quer in der Faust: Griff mit zwei Scheiben
       const p = k.punkt(h.an)
-      out.push(zylinder(p.clone().add(new THREE.Vector3(-0.1, 0, 0)), p.clone().add(new THREE.Vector3(0.1, 0, 0)), 0.04, FARBE.polster))
-    }
+      const griff = h.an === "hand_l" || h.an === "hand_r" ? k.punkt(h.an === "hand_l" ? "griff_l" : "griff_r").sub(p) : new THREE.Vector3(1, 0, 0)
+      const q = griff.lengthSq() > 1e-6 ? griff.normalize() : new THREE.Vector3(1, 0, 0)
+      out.push(zylinder(p.clone().addScaledVector(q, -0.09), p.clone().addScaledVector(q, 0.09), 0.014, FARBE.metall))
+      for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), p.clone().addScaledVector(q, s * 0.1), 0.05, FARBE.polster))
+    } else if (h.art === "langhantel" || h.art === "sz") {
+      // Stange durch beide Hände, Scheiben außen (Langhantel 2,2 m, SZ-Stange 1,2 m)
+      const a = k.punkt(h.von), b = k.punkt(h.bis)
+      const m = a.clone().add(b).multiplyScalar(0.5)
+      const d = b.clone().sub(a).normalize()
+      const halb = h.art === "langhantel" ? 1.1 : 0.6
+      out.push(zylinder(m.clone().addScaledVector(d, -halb), m.clone().addScaledVector(d, halb), 0.014, FARBE.metall))
+      // Scheiben etwas kleiner als echt (45 cm), damit sie die Figur in der Seitenansicht nicht verdecken
+      const r = h.art === "langhantel" ? 0.17 : 0.1
+      for (const s of [-1, 1]) out.push(zylinder(m.clone().addScaledVector(d, s * (halb - 0.32)), m.clone().addScaledVector(d, s * (halb - 0.22)), r, FARBE.scheibe))
+    } else if (h.art === "kabel") out.push(zylinder(k.punkt(h.von), new THREE.Vector3(...h.rolle), 0.005, FARBE.metall))
   }
   return out
 }
@@ -731,7 +764,8 @@ class Buehne {
       this.skelett.stelle((n) => this.gelenkOrt(n))
     } else if (this.skelett) this.skelett.gruppe.visible = false
     for (const o of this.beweglich) this.szene.remove(o)
-    this.beweglich = beweglicheHilfsmittel(this.koerper, this.d.hilfsmittel || [])
+    // Zweite Seite: was die rechte Hand hielt, hält jetzt die linke
+    this.beweglich = beweglicheHilfsmittel(this.koerper, (this.d.hilfsmittel || []).map((h) => (st.gespiegelt ? gespiegeltesHilfsmittel(h) : h)))
     for (const o of this.beweglich) this.szene.add(o)
     return st
   }
