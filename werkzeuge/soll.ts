@@ -840,6 +840,73 @@ const LAT_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   latzug_einarmig: latSoll({ ...LZ_ENG, rueck: [0, 14], untenY: [-0.18, -0.03], einarm: true, quelle: { ...LZ_ENG.quelle, rueck: "mit fixierten Oberschenkeln sitzen", unten: "bis der Griff neben der Brust ist", ellbogen: "den Ellbogen nah am Körper nach unten zur Hüfte" } }),
 }
 
+// ---------------------------------------------------------------- Überzug
+/** Winkel zwischen Oberarm und Rumpfachse (0 = am Rumpf nach unten, 180 = in Verlängerung über dem Kopf) */
+const armBeugung = (m: Punkte, a: "l" | "r") => {
+  const b = p(m, "g:becken"), h = p(m, "g:hals"), s = p(m, `g:schulter_${a}`), e = p(m, `g:ellbogen_${a}`)
+  const ab: V = [b[0] - h[0], b[1] - h[1], b[2] - h[2]], oa: V = [e[0] - s[0], e[1] - s[1], e[2] - s[2]]
+  return grad(Math.acos((ab[0] * oa[0] + ab[1] * oa[1] + ab[2] * oa[2]) / (Math.hypot(...ab) * Math.hypot(...oa))))
+}
+/** Höhe der Hand über der Schulter in Grad (Welt, 90 = senkrecht nach oben) */
+const armHoehe = (m: Punkte, a: "l" | "r") => {
+  const s = p(m, `g:schulter_${a}`), h = p(m, `hand_${a}`)
+  return grad(Math.atan2(h[1] - s[1], Math.hypot(h[0] - s[0], h[2] - s[2])))
+}
+interface UZ {
+  art: "stand" | "einarm" | "knie" | "liegend"
+  ellbogen: Bereich
+  /** Start und Ende als Beugung des Oberarms gegen den Rumpf */
+  start: Bereich
+  ende: Bereich
+  quelle: { start: string; ende: string; ellbogen: string }
+}
+const ueberSoll = (k: UZ) => (m: Messung): Pruefung[] => {
+  const s = m.start, z = m.ziel
+  const arme = k.art === "einarm" ? (["r"] as const) : SEITEN
+  const r = [...ruhig(m)]
+  if (k.art !== "knie") r.push(pr("Füße bleiben stehen (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, k.art === "liegend" ? "die Füße fest am Boden" : "Stand fest"))
+  else r.push(pr("Knie bleiben (m)", bleibt(m, ["knie_l", "knie_r"]), 0, 0.03, "Knie dich vor den Turm"))
+  if (k.art === "stand" || k.art === "einarm") {
+    for (const [x, w] of [[s, "oben"], [z, "unten"]] as const) r.push(pr(`Oberkörper vorgeneigt ${w} (°)`, rumpfneigung(x), 15, 35, "der Oberkörper ist etwa 20 bis 30 Grad nach vorn geneigt"))
+    for (const a of arme) r.push(pr(`Arm ${a} oben schräg nach oben (°)`, armHoehe(s, a), 20, 65, "die Arme sind schräg nach oben gestreckt"))
+  }
+  if (k.art === "knie") r.push(pr("Oberkörper richtet sich auf (°)", rumpfneigung(s) - rumpfneigung(z), 8, 30, "während sich der Oberkörper leicht aufrichtet"))
+  if (k.art === "liegend") r.push(pr("Rücken auf der Bank (°)", Math.abs(Math.abs(rumpfneigung(s)) - 90), 0, 10, "Leg dich auf eine Flachbank"))
+  for (const a of arme) {
+    r.push(pr(`Arm ${a} am Anfang (°)`, armBeugung(s, a), k.start[0], k.start[1], k.quelle.start))
+    r.push(pr(`Arm ${a} am Ende (°)`, armBeugung(z, a), k.ende[0], k.ende[1], k.quelle.ende))
+    if (k.art !== "knie") for (const [x, w] of [[s, "Anfang"], [z, "Ende"]] as const) r.push(pr(`Ellbogen ${a} ${w} (°)`, ellbogenWinkel(x, a), k.ellbogen[0], k.ellbogen[1], k.quelle.ellbogen))
+    if (k.art !== "knie") r.push(pr(`Ellbogenwinkel ${a} bleibt (°)`, Math.abs(ellbogenWinkel(s, a) - ellbogenWinkel(z, a)), 0, 12, "halte diesen Winkel während des ganzen Satzes"))
+    else r.push(pr(`Ellbogen ${a} am Anfang leicht gebeugt (°)`, ellbogenWinkel(s, a), 145, 178, k.quelle.ellbogen))
+  }
+  if (k.art === "stand") for (const a of SEITEN) {
+    const h = p(z, `hand_${a}`), hu = p(z, `g:huefte_${a}`), kn = p(z, `g:knie_${a}`)
+    r.push(pr(`Hand ${a} unten an den Oberschenkeln (m)`, h[1] - (hu[1] + kn[1]) / 2, -0.15, 0.15, "bis zu den Oberschenkeln"))
+    r.push(pr(`Hand ${a} unten vor dem Oberschenkel (m)`, h[2] - (hu[2] + kn[2]) / 2, -0.02, 0.18, "bis zu den Oberschenkeln"))
+  }
+  if (k.art === "einarm") {
+    const h = p(z, "hand_r"), hu = p(z, "g:huefte_r")
+    r.push(pr("Hand unten neben der Hüfte (m)", Math.abs(h[1] - hu[1]), 0, 0.15, "bis neben die Hüfte"))
+    r.push(pr("Hand unten etwas hinter der Hüfte (m)", hu[2] - h[2], 0.0, 0.15, "und etwas dahinter"))
+  }
+  if (k.art === "knie") for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} am Anfang in Verlängerung des Rumpfes (°)`, armBeugung(s, a), 160, 185, "bis die Arme über dem Kopf in Verlängerung des Rumpfes sind"))
+    const kopf = p(z, "g:kopf"), h = p(z, `hand_${a}`)
+    r.push(pr(`Hand ${a} am Ende an Stirn oder Hals (m)`, Math.hypot(h[0] - kopf[0], h[1] - kopf[1], h[2] - kopf[2]), 0, 0.22, "bis zur Stirn oder zum Hals"))
+  }
+  return r
+}
+const UZ_STAND: UZ = { art: "stand", ellbogen: [145, 176], start: [140, 172], ende: [0, 35], quelle: { start: "die Arme sind schräg nach oben gestreckt", ende: "in einem Bogen nach unten bis zu den Oberschenkeln", ellbogen: "die Ellbogen sind leicht gebeugt und bleiben so" } }
+const UEBER_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  ueberzug_kabel_gestreckt: ueberSoll(UZ_STAND),
+  ueberzug_band: ueberSoll({ ...UZ_STAND, quelle: { ...UZ_STAND.quelle, ellbogen: "mit leicht gebeugten Ellbogen" } }),
+  ueberzug_kabel_einarmig: ueberSoll({ ...UZ_STAND, art: "einarm", ende: [0, 25], quelle: { ...UZ_STAND.quelle, ende: "bis neben die Hüfte und etwas dahinter" } }),
+  ueberzug_kabel_kniend: ueberSoll({ art: "knie", ellbogen: [145, 178], start: [160, 185], ende: [55, 140], quelle: { start: "Arme über dem Kopf in Verlängerung des Rumpfes", ende: "in einem Bogen nach unten bis zur Stirn oder zum Hals", ellbogen: "die Ellbogen sind leicht gebeugt" } }),
+  ueberzug_kh: ueberSoll({ art: "liegend", ellbogen: [145, 176], start: [75, 100], ende: [155, 185], quelle: { start: "die Arme sind über der Brust", ende: "bis die Oberarme etwa neben den Ohren sind", ellbogen: "Beuge die Ellbogen leicht und halte diesen Winkel" } }),
+  ueberzug_sz: ueberSoll({ art: "liegend", ellbogen: [80, 105], start: [65, 100], ende: [155, 185], quelle: { start: "die Stange ist über dem Gesicht", ende: "bis die Oberarme neben den Ohren sind", ellbogen: "Beuge die Ellbogen auf etwa 90 Grad" } }),
+  ueberzug_kabel_liegend: ueberSoll({ art: "liegend", ellbogen: [145, 178], start: [155, 185], ende: [30, 100], quelle: { start: "mit gestreckten Armen hinter dem Kopf in der Dehnung", ende: "in einem Bogen über das Gesicht bis über die Brust oder zur Hüfte", ellbogen: "Ellbogen leicht gebeugt" } }),
+}
+
 // ---------------------------------------------------------------- Rudern vorgebeugt
 interface RW {
   neig: Bereich
@@ -987,6 +1054,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...ZUG_SOLL,
   ...ROW_SOLL,
   ...LAT_SOLL,
+  ...UEBER_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

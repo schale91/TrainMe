@@ -4,8 +4,9 @@
 // werkzeuge/soll.ts.
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
-import { B, H, folge, halte, wdh } from "./basis"
-import { FAUST, HAMMER, KH, LH, OBERGRIFF, UNTERGRIFF } from "./kraftbasis"
+import { B, H, KNIESTAND, folge, halte, mit, wdh } from "./basis"
+import { FAUST, FLACHBANK, HAMMER, KH, LH, OBERGRIFF, SZ, UNTERGRIFF, kabelstange } from "./kraftbasis"
+import { FLACH, liegen } from "./kraft_druecken"
 import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, ellbogenKreis, rad } from "./ziele"
 
 type P3 = [number, number, number]
@@ -189,6 +190,87 @@ const latSitz = (l: Lat, griff: Hilfsmittel[], extra: Partial<Dehnung> = {}): De
 const LAT_STANGE: Hilfsmittel = { art: "latstange", von: "hand_l", bis: "hand_r" }
 const LAT_WEIT: Lat = { griff: 0.25, dreh: OBERGRIFF, rueck: 15, unten: [-0.07, 0.15], weit: true }
 
+
+// ---------------------------------------------------------------- Überzug
+// Arme mit gleichbleibend leicht gebeugten Ellbogen im Bogen von schräg oben bis zu den Oberschenkeln (stehend),
+// von der Verlängerung des Rumpfes bis zur Stirn (kniend) bzw. liegend zwischen über der Brust und hinter dem Kopf.
+/** Hand im Rahmen der Schultern bei Beugung phi des Arms (0 = am Rumpf nach unten, 90 = nach vorn, 180 = über Kopf) */
+const armBogen = (x: number, phi: number, lang: number): P3 => {
+  const l = Math.sqrt(Math.max(0, lang * lang - (x - SCHULTER_X) ** 2))
+  return [x, -Math.cos(rad(phi)) * l, Math.sin(rad(phi)) * l]
+}
+const LEICHT = ARM_FAUST * 0.98
+const armZiele = (ziele: Ziele, x: number, phi: number, lang = LEICHT, seiten: (1 | -1)[] = [1, -1], ellbogen?: P3) => {
+  for (const sx of seiten) {
+    const n = sx === 1 ? "l" : "r"
+    const h = armBogen(x, phi, lang)
+    ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+    if (ellbogen) {
+      const e = ellbogenKreis([SCHULTER_X, 0, 0], h, ellbogen)
+      ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    }
+  }
+  return ziele
+}
+const UZ_KIPP = 25, UZ_KNIE = 14
+const ueberStand = (phi: number, einarm = false): Haltung => {
+  const k = rowKoerper({ kipp: UZ_KIPP, knie: UZ_KNIE } as Row)
+  const dz = -0.05 - k.sz
+  const ziele: Ziele = {
+    ferse_l: { pos: [0.1, 0.022, -0.1 + dz] },
+    fuss_l: { pos: [0.12, 0.034, 0.02 + dz] },
+    ferse_r: { pos: [-0.1, 0.022, -0.1 + dz] },
+    fuss_r: { pos: [-0.12, 0.034, 0.02 + dz] },
+  }
+  armZiele(ziele, einarm ? 0.12 : 0.15, phi, einarm ? LEICHT - 0.012 : LEICHT, einarm ? [-1] : [1, -1], [1, 0, phi > 90 ? 0.3 : -0.3])
+  const frei: Winkel = einarm ? { schulter_l: [4, 8, 0], ellbogen_l: [12, 0] } : {}
+  return H(
+    { ...B("huefte", [UZ_KIPP + UZ_KNIE * 0.5, 6, 0]), ...B("knie", [UZ_KNIE]), ...B("fuss", [UZ_KNIE * 0.5, 0]), ...B("schulter", [phi, 10, 0]), ...B("ellbogen", [20, einarm ? HAMMER : OBERGRIFF]), ...FAUST, hals: [-10, 0, 0], ...frei },
+    [UZ_KIPP, 0, 0],
+    { pos: [0, k.hy + 0.003, k.hz + dz], boden: false, ziele },
+  )
+}
+/** stehend: Start schräg oben (im Rumpf 160 Grad, in der Welt etwa 45 Grad über waagerecht), Ende an den Oberschenkeln */
+const UZ_OBEN = 160, UZ_UNTEN = 22
+const UZ_TEXTE: [string, string] = ["Im Bogen nach unten bis zu den Oberschenkeln, Ellbogen bleiben leicht gebeugt", "Langsam nach oben, bis du seitlich am Rücken die Dehnung spürst"]
+const ueberzugStand = (hilfsmittel: Hilfsmittel[], extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("seite", ueberStand(UZ_OBEN), ueberStand(UZ_UNTEN), 1.4, { aus: 2.0, halten: 0.4, texte: UZ_TEXTE, hilfsmittel, ...extra })
+/** kniend: Oberkörper vorgeneigt, Arme in Verlängerung des Rumpfes; Ende Hände vor der Stirn, Rumpf leicht aufgerichtet */
+const ueberKnie = (kipp: number, ziehen: boolean): Haltung => {
+  const ziele: Ziele = {}
+  if (ziehen)
+    for (const sx of [1, -1] as const) {
+      const n = sx === 1 ? "l" : "r"
+      const h: P3 = [0.06, 0.15, 0.17]
+      ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+      const e = ellbogenKreis([SCHULTER_X, 0, 0], h, [0.5, -0.4, 1])
+      ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    }
+  else armZiele(ziele, 0.12, 172)
+  return mit(KNIESTAND, { dreh: [kipp, 0, 0], g: { ...B("huefte", [kipp, 4, 0]), ...B("schulter", ziehen ? [100, 30, 0] : [170, 8, 0]), ...B("ellbogen", [ziehen ? 110 : 20, HAMMER]), ...FAUST, hals: [-kipp * 0.3, 0, 0] }, ziele })
+}
+/** liegend auf der Flachbank: Rücken auf der Bank, Kopf am Ende, Füße fest am Boden */
+const ueberLiegend = (phi: number, ellbogen: "leicht" | "rechtwinklig", x: number, dreh: number, lage = FLACH): Haltung => {
+  const ziele: Ziele = {}
+  if (ellbogen === "leicht") armZiele(ziele, x, phi, LEICHT, [1, -1], [1, 0, 0])
+  else
+    for (const sx of [1, -1] as const) {
+      const n = sx === 1 ? "l" : "r"
+      // Oberarm in Richtung phi, Unterarm im rechten Winkel Richtung Kopf
+      const o: P3 = [SCHULTER_X + 0.01, -Math.cos(rad(phi)) * OBERARM, Math.sin(rad(phi)) * OBERARM]
+      const u = 0.29
+      const h: P3 = [x, o[1] + Math.sin(rad(phi)) * u, o[2] + Math.cos(rad(phi)) * u]
+      ziele[`ellbogen_${n}`] = { pos: [sx * o[0], o[1], o[2]], bezug: "schultern" }
+      ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+    }
+  return liegen(lage, ziele, { ...B("schulter", [phi, 6, 0]), ...B("ellbogen", [ellbogen === "leicht" ? 20 : 90, dreh]) })
+}
+/** Flachbank, der Kopf liegt am Ende: die Bank endet an den Schultern, Kopf und Arme sind hinten frei */
+const FLACHBANK_KOPF: Hilfsmittel = FLACHBANK
+/** SZ-Überzug: Kopf ganz am Ende der Bank, damit die Unterarme hinter dem Kopf frei unter die Bankhöhe gehen; Füße weiter vorn */
+const SZ_BANK: Hilfsmittel = { art: "bank", unter: "bws", hoehe: 0.45, versatz: [0, 0.2] }
+const SZ_LAGE = { ...FLACH, fersenZ: 0.58 }
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -222,6 +304,36 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
   latzug_untergriff: latSitz({ griff: 0.18, dreh: UNTERGRIFF, rueck: 12, unten: [-0.08, 0.15] }, [LAT_STANGE], { texte: ["Ellbogen nah am Körper nach unten, Stange zur oberen Brust", "Kontrolliert bis zur vollen Streckung"] }),
   latzug_maschine: latSitz({ griff: 0.22, dreh: HAMMER, rueck: 4, unten: [0.0, 0.12] }, [{ art: "kabelstange", von: "hand_l", bis: "hand_r" }], { texte: ["Ellbogen zu den Rippen, Hände auf Schulterhöhe", "Langsam zurück, bis die Arme gestreckt sind"] }),
   latzug_einarmig: latSitz({ griff: 0.15, dreh: HAMMER, rueck: 6, unten: [-0.1, 0.13], einarm: true }, [], { seiten: true, texte: ["Schulter nach unten, Ellbogen nah am Körper zur Hüfte", "Langsam zurück in die volle Dehnung"] }),
+  // Überzug
+  ueberzug_kabel_gestreckt: ueberzugStand([kabelstange(), { art: "kabel", von: "haende", rolle: [0, 2.15, 0.95] }]),
+  ueberzug_band: ueberzugStand([{ art: "bandanker", von: "hand_l", anker: [0.12, 2.05, 1.0] }, { art: "bandanker", von: "hand_r", anker: [-0.12, 2.05, 1.0] }]),
+  ueberzug_kabel_einarmig: wdh("seite", ueberStand(UZ_OBEN, true), ueberStand(-8, true), 1.4, {
+    aus: 2.0,
+    halten: 0.4,
+    seiten: true,
+    texte: ["Im Bogen bis neben die Hüfte und etwas dahinter", "Langsam zurück, bis du oben die Dehnung spürst"],
+    hilfsmittel: [{ art: "kabel", von: "hand_r", rolle: [-0.15, 2.15, 0.95] }],
+  }),
+  ueberzug_kabel_kniend: wdh("seite", ueberKnie(48, false), ueberKnie(30, true), 1.4, {
+    aus: 2.0,
+    texte: ["Seil im Bogen bis zur Stirn, Oberkörper richtet sich leicht auf", "Langsam zurück in die tiefe Dehnung"],
+    hilfsmittel: [kabelstange(), { art: "kabel", von: "haende", rolle: [0, 2.15, 0.85] }],
+  }),
+  ueberzug_kh: wdh("seite", ueberLiegend(88, "leicht", 0.05, HAMMER), ueberLiegend(172, "leicht", 0.05, HAMMER), 2.2, {
+    aus: 1.6,
+    texte: ["Hantel im Bogen hinter den Kopf senken, bis die Oberarme neben den Ohren sind", "Im selben Bogen zurück über die Brust"],
+    hilfsmittel: [{ art: "hantel", an: "haende" }, FLACHBANK_KOPF],
+  }),
+  ueberzug_sz: wdh("seite", ueberLiegend(80, "rechtwinklig", 0.1, OBERGRIFF, SZ_LAGE), ueberLiegend(168, "rechtwinklig", 0.1, OBERGRIFF, SZ_LAGE), 2.2, {
+    aus: 1.6,
+    texte: ["Mit 90 Grad im Ellbogen hinter den Kopf senken, Oberarme neben die Ohren", "Mit dem Rücken zurück bis über die Stirn"],
+    hilfsmittel: [...SZ, SZ_BANK],
+  }),
+  ueberzug_kabel_liegend: wdh("seite", ueberLiegend(170, "leicht", 0.15, OBERGRIFF), ueberLiegend(80, "leicht", 0.15, OBERGRIFF), 1.6, {
+    aus: 2.2,
+    texte: ["Im Bogen über das Gesicht bis über die Brust ziehen", "Langsam hinter den Kopf zurück in die Dehnung"],
+    hilfsmittel: [kabelstange(), { art: "kabel", von: "haende", rolle: [0, 0.15, -1.45] }, FLACHBANK_KOPF],
+  }),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),
