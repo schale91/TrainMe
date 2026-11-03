@@ -118,3 +118,26 @@ export const ellbogenKreis = (s: P3, h: P3, wohin: P3, ober = OBERARM, unter = U
   const w = norm(minus(wohin, plus([0, 0, 0], u, punkt(wohin, u))))
   return plus(mitte, w, r)
 }
+/**
+ * Ellbogen zwischen Schulter s und Hand h so, dass der Oberarm um spreiz Grad vom Rumpf abgespreizt ist (gesehen
+ * senkrecht auf die Rumpfebene x-y im Rahmen der Schultern; 0 = am Rumpf nach unten, 90 = waagerecht zur Seite).
+ * Von den beiden Lösungen auf dem Kreis gilt die mit dem Ellbogen weiter hinten (kleineres z).
+ */
+export const ellbogenSpreiz = (s: P3, h: P3, spreiz: number, ober = OBERARM, unter = UNTERARM): P3 => {
+  const sh = minus(h, s)
+  const d = Math.min(ober + unter - 0.001, Math.max(Math.abs(ober - unter) + 0.001, Math.hypot(...sh)))
+  const u = norm(sh)
+  const a = (d * d + ober * ober - unter * unter) / (2 * d)
+  const r = Math.sqrt(Math.max(0, ober * ober - a * a))
+  const mitte = plus(s, u, a)
+  const e1 = norm(Math.abs(u[2]) < 0.9 ? minus([0, 0, 1], plus([0, 0, 0], u, u[2])) : minus([1, 0, 0], plus([0, 0, 0], u, u[0])))
+  const e2: P3 = [u[1] * e1[2] - u[2] * e1[1], u[2] * e1[0] - u[0] * e1[2], u[0] * e1[1] - u[1] * e1[0]]
+  let best: P3 = mitte, fehler = Infinity
+  for (let i = 0; i < 360; i += 2) {
+    const w = (i * Math.PI) / 180
+    const p = plus(plus(mitte, e1, r * Math.cos(w)), e2, r * Math.sin(w))
+    const f = Math.abs((Math.atan2(Math.abs(p[0] - s[0]), s[1] - p[1]) * 180) / Math.PI - spreiz) + Math.max(0, p[2] - h[2]) * 100
+    if (f < fehler) [best, fehler] = [p, f]
+  }
+  return best
+}

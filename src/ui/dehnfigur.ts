@@ -406,6 +406,7 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       out.push(m)
     } else if (h.art === "ball") {
       const p = k.punkt(h.unter)
+      if (h.versatz) p.add(new THREE.Vector3(h.versatz[0], 0, h.versatz[1]))
       const m = new THREE.Mesh(new THREE.SphereGeometry(0.32, 32, 24), mat(FARBE.ball, 0.4))
       m.position.set(p.x, 0.32, p.z)
       m.castShadow = true

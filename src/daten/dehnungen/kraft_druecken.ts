@@ -7,9 +7,9 @@
 // (im Liegen nach oben).
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
-import { B, H, folge, wdh } from "./basis"
+import { B, H, folge, halte, wdh } from "./basis"
 import { FAUST, FLACHBANK, HAMMER, KH, KH_R, LH, OBERGRIFF, UNTERGRIFF } from "./kraftbasis"
-import { HUEFTE_X, KNOECHEL_Y, KNOECHEL_Z, OBER, OBERARM, SCHULTER_X, UNTER, UNTERARM, type Ziele, beinStart, ellbogenKreis, fuesse, rad } from "./ziele"
+import { HUEFTE_X, KNOECHEL_Y, KNOECHEL_Z, OBER, OBERARM, SCHULTER_X, UNTER, UNTERARM, type Ziele, beinStart, ellbogenKreis, ellbogenSpreiz, fuss, fuesse, rad } from "./ziele"
 
 type P3 = [number, number, number]
 const DRUECKEN: [string, string] = ["Langsam zur Brust senken", "Kraftvoll hochdrücken"]
@@ -233,6 +233,8 @@ interface Stuetz {
   dreh?: number
   /** nur diese Hand stützt */
   einarmig?: "l" | "r"
+  /** Slider Flys: halber Handabstand unten */
+  handUnten?: number
   /** Handflächenmarke über der Stützfläche, wenn der Unterarm stark schräg steht (Finger sonst im Boden) */
   palme?: number
 }
@@ -265,20 +267,22 @@ const stuetzPaar = (k: Stuetz) => {
   const palmeZ = handgelenkZ - HANDGELENK[2]
   // unten: Brust knapp über dem Boden (bzw. der Stützfläche der Hände)
   const u = suche((l) => l.brust[0] - (hh + (k.brustUnten ?? 0.05)), dreh, art)
-  const haltung = (l: Linie, gestreckt: boolean, x0 = 0, hub = 0): Haltung => {
+  const haltung = (l: Linie, gestreckt: boolean, x0 = 0, hub = 0, handX = k.hand, ell = gestreckt ? 4 : 95): Haltung => {
     const z = (p: YZ): P3 => [0, p[0], p[1] + dz]
     const ziele: Ziele = {}
     for (const s of [1, -1] as const) {
       const n = s === 1 ? "l" : "r"
       if (k.einarmig && k.einarmig !== n) continue
       const schulter: P3 = [x0 + s * SCHULTER_X, l.schulter[0], l.schulter[1] + dz]
-      const hand: P3 = [s * k.hand, palmeY + hub, palmeZ]
-      const gelenk: P3 = [s * k.hand, palmeY + hub + HANDGELENK[1], handgelenkZ]
+      const hand: P3 = [s * handX, palmeY + hub, palmeZ]
+      const gelenk: P3 = [s * handX, palmeY + hub + HANDGELENK[1], handgelenkZ]
       // Ellbogen nach hinten oben, mit aussen weiter zur Seite
       // unten: zu den Füßen hin (entlang des Rumpfs), etwas nach oben und mit aussen zur Seite
       const wohin: P3 = gestreckt ? [s, 0, -0.2] : [s * (k.aussen ?? 0.8), 0.4 - Math.sin(rad(l.beta)), -Math.cos(rad(l.beta))]
       ziele[`hand_${n}`] = { pos: hand }
-      ziele[`ellbogen_${n}`] = { pos: ellbogenKreis(schulter, gelenk, wohin, OBERARM, UNTERARM_GELENK) }
+      // Slider: gestreckte Lage, aber Ellbogen leicht gebeugt nach außen hinten
+      const leicht = gestreckt && ell > 10
+      ziele[`ellbogen_${n}`] = { pos: ellbogenKreis(schulter, gelenk, leicht ? [s, 0.3, -0.6] : wohin, OBERARM, UNTERARM_GELENK) }
     }
     const fx = k.fuss ?? 0.1
     for (const s of [1, -1] as const) {
@@ -290,10 +294,20 @@ const stuetzPaar = (k: Stuetz) => {
       if (art === "zehen") ziele[`fuss_${n}`] = { pos: [s * fx, dreh[0], dreh[1] + dz] }
     }
     const b = z(l.becken)
-    return H(stuetzWinkel(k, gestreckt ? 4 : 95), [90 - l.beta, 0, 0], { pos: [x0, b[1], b[2]], boden: false, ziele })
+    return H(stuetzWinkel(k, ell), [90 - l.beta, 0, 0], { pos: [x0, b[1], b[2]], boden: false, ziele })
   }
   // Flugphase (explosiv): Körper 7 cm höher, Hände 6 cm über dem Boden
   const flug = () => haltung(suche((l) => l.schulter[0] - obenSY - 0.07, dreh, art), true, 0, 0.06)
+  // Slider Flys: unten gleiten die Hände bei leicht gebeugten Armen seitlich auseinander
+  const hu = k.handUnten
+  if (hu) {
+    // Schulter bis Handgelenk bei 160 Grad im Ellbogen
+    const reich = Math.sqrt(OBERARM ** 2 + UNTERARM_GELENK ** 2 + 2 * OBERARM * UNTERARM_GELENK * Math.cos(rad(28)))
+    const hoehe = (x: number) => palmeY + HANDGELENK[1] + Math.sqrt(reich ** 2 - (x - SCHULTER_X) ** 2)
+    const ol = suche((l) => l.schulter[0] - hoehe(k.hand), dreh, art)
+    const ul = suche((l) => l.schulter[0] - hoehe(hu), dreh, art)
+    return { o: haltung(ol, true, 0, 0, k.hand, 22), u: haltung(ul, true, 0, 0, hu, 22), flug, linien: { o: ol, u: ul, dz }, palmeZ }
+  }
   return { o: haltung(o, true), u: haltung(u, false, k.seitlich ?? 0), flug, linien: { o, u, dz }, palmeZ }
 }
 const LS_TEXTE: [string, string] = ["Brust zum Boden senken", "Hochdrücken"]
@@ -372,6 +386,182 @@ const DIP_STEHEN: Haltung = H(
 const HOLME: Hilfsmittel = { art: "barren", an: "hand_r", breit: DIP_HAND }
 const DIP_TEXTE: [string, string] = ["Vorgeneigt absenken, bis die Oberarme waagerecht sind", "Hochdrücken"]
 
+
+// ---------------------------------------------------------------- Flys im Liegen
+// Der Ellbogenwinkel bleibt gleich (leicht gebeugt, 160 Grad). Oben sind die Hände über der Brust kurz vor der
+// Berührung, unten liegen die Oberarme auf Höhe des Oberkörpers, die Hände etwas höher als die Ellbogen.
+const FLY_BEUGE = 20
+const FLY_D = Math.sqrt(OBERARM ** 2 + UNTERARM ** 2 + 2 * OBERARM * UNTERARM * Math.cos(rad(FLY_BEUGE)))
+/** Arme oben zusammen: Hände bei ±x über der Brust (y zum Becken versetzt), senkrecht in der Welt */
+const flyZu = (kipp: number, y = -0.05, x = 0.07): Ziele => {
+  const u = oben(kipp)
+  const dx = x - SCHULTER_X
+  const l = -y * u[1] + Math.sqrt(Math.max(0, y * y * u[1] * u[1] - (dx * dx + y * y - FLY_D * FLY_D)))
+  const hand: P3 = [x, y + u[1] * l, u[2] * l]
+  return armZiele(hand, ellbogenKreis(S_L, hand, [1, 0, -0.4]), "beide")
+}
+/** Arme offen: Oberarm seitlich auf Höhe des Oberkörpers (tief: unter ihn, bis zum Boden), Unterarm um FLY_BEUGE nach oben */
+const flyAuf = (tief = 0, zumBecken = 10): Ziele => {
+  const a = rad(zumBecken), d = Math.asin(Math.min(0.9, tief / OBERARM))
+  const ell: P3 = [SCHULTER_X + OBERARM * Math.cos(a) * Math.cos(d), -OBERARM * Math.sin(a) * Math.cos(d), -OBERARM * Math.sin(d)]
+  const w = rad(FLY_BEUGE) - d
+  const hand: P3 = [ell[0] + UNTERARM * Math.cos(a) * Math.cos(w), ell[1] - UNTERARM * Math.sin(a) * Math.cos(w), ell[2] + UNTERARM * Math.sin(w)]
+  return armZiele(hand, ell, "beide")
+}
+const FLY_W_ZU: Winkel = { ...B("schulter", [88, 10, 0]), ...B("ellbogen", [FLY_BEUGE, HAMMER]) }
+const FLY_W_AUF: Winkel = { ...B("schulter", [6, 80, 0]), ...B("ellbogen", [FLY_BEUGE, HAMMER]) }
+const flysLiegend = (l: Lage, hilfsmittel: Hilfsmittel[], y = -0.05, tief = 0, extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("schraeg", liegen(l, flyZu(l.kipp, y), FLY_W_ZU), liegen(l, flyAuf(tief), FLY_W_AUF), 2.2, {
+    aus: 1.6,
+    texte: ["Arme im weiten Bogen öffnen, Ellbogenwinkel bleibt", "Im gleichen Bogen über der Brust zusammenführen"],
+    hilfsmittel: [...hilfsmittel, ...(l.geraet ?? bankGeraet(l))],
+    ...extra,
+  })
+const zweiKabel = (hoehe: number, z = -0.25): Hilfsmittel[] => [
+  { art: "kabel", von: "hand_l", rolle: [0.95, hoehe, z] },
+  { art: "kabel", von: "hand_r", rolle: [-0.95, hoehe, z] },
+]
+
+// ---------------------------------------------------------------- Im Stand: leichte Schrittstellung
+/** Linker Fuß vorn, rechter hinten mit leicht angehobener Ferse, Knie leicht gebeugt, Oberkörper um kipp vorgeneigt */
+const schritt = (kipp: number, arme: Ziele, w: Winkel, rechtsVorn = false): Haltung => {
+  const vorn = rechtsVorn ? -1 : 1
+  const ziele: Ziele = { ...fuss(vorn as 1 | -1, 0.12, 0.1, 10), ...fuss(-vorn as 1 | -1, 0.12, -0.3, 10, 0.03), ...arme }
+  return H(
+    { [`huefte_${rechtsVorn ? "r" : "l"}`]: [22, 4, -4, 4], [`knie_${rechtsVorn ? "r" : "l"}`]: [16], [`huefte_${rechtsVorn ? "l" : "r"}`]: [-8, 4, -4, 4], [`knie_${rechtsVorn ? "l" : "r"}`]: [12], ...FAUST, ...w },
+    [kipp, 0, 0],
+    { pos: [0, 0.91, -0.06], boden: false, ziele },
+  )
+}
+/** Hand im Rahmen der Schultern, Ellbogen auf dem Kreis in Richtung wohin (Rahmen); arm: beide oder eine Seite */
+const armRahmen = (hand: P3, wohin: P3, arm: Arm = "beide", unter = UNTERARM): Ziele => armZiele(hand, ellbogenKreis(S_L, hand, wohin, OBERARM, unter), arm)
+/** Konstanter Ellbogenwinkel: Hand im Abstand FLY_D von der Schulter, Richtung (Rahmen) */
+const flyHand = (richtung: P3): P3 => {
+  const l = Math.hypot(...richtung)
+  return [SCHULTER_X + (FLY_D * richtung[0]) / l, (FLY_D * richtung[1]) / l, (FLY_D * richtung[2]) / l]
+}
+/** Hände zusammen vor dem Körper in Höhe y (Rahmen), Abstand der Hände 2·x */
+const flyVorn = (y: number, x = 0.06): P3 => {
+  const dx = x - SCHULTER_X
+  return [x, y, Math.sqrt(FLY_D * FLY_D - dx * dx - y * y)]
+}
+const crossover = (auf: P3, zu: P3, kipp: number, hoehe: number, texte: [string, string]): Dehnung =>
+  wdh(
+    "schraeg",
+    schritt(kipp, armRahmen(auf, [0, -0.6, -1]), { ...B("schulter", [10, 70, 0]), ...B("ellbogen", [FLY_BEUGE, HAMMER]) }),
+    schritt(kipp, armRahmen(zu, [1, -0.6, 0]), { ...B("schulter", [70, 10, 0]), ...B("ellbogen", [FLY_BEUGE, HAMMER]) }),
+    1.4,
+    { aus: 2.2, halten: 1.0, texte, hilfsmittel: zweiKabel(hoehe) },
+  )
+/** Hand neben der Brust, Ellbogen 45 bis 60 Grad nach hinten außen (Drücken im Stand) */
+const DRUECK_NEBEN: P3 = [0.2, -0.12, 0.06]
+const DRUECK_VORN = (x = 0.06): P3 => {
+  const dx = x - SCHULTER_X
+  return [x, -0.1, Math.sqrt(0.492 ** 2 - dx * dx - 0.01)]
+}
+const druckStand = (arm: Arm, hilfsmittel: Hilfsmittel[], rechtsVorn = false, extra: Partial<Dehnung> = {}): Dehnung => {
+  const frei: Winkel = arm === "r" ? { schulter_l: [8, 10, 0], ellbogen_l: [20, 0] } : {}
+  return wdh(
+    "schraeg",
+    schritt(8, armZiele(DRUECK_NEBEN, ellbogenSpreiz(S_L, DRUECK_NEBEN, 52), arm), { ...B("schulter", [20, 50, 0]), ...B("ellbogen", [110, OBERGRIFF]), ...frei }, rechtsVorn),
+    schritt(8, armRahmen(DRUECK_VORN(arm === "beide" ? 0.06 : -0.06), [1, -0.5, 0], arm), { ...B("schulter", [80, 6, 0]), ...B("ellbogen", [10, OBERGRIFF]), ...frei }, rechtsVorn),
+    1.4,
+    { aus: 2.0, texte: ["Nach vorn drücken, bis die Arme fast gestreckt sind", "Langsam zurück neben die Brust"], hilfsmittel, ...(arm !== "beide" ? { seiten: true } : {}), ...extra },
+  )
+}
+/** Aufrechter Stand, Hände im Rahmen der Schultern */
+const aufrecht = (arme: Ziele, w: Winkel): Haltung =>
+  H({ ...B("huefte", [0, 4, -4, 4]), ...B("knie", [4]), ...w }, [2, 0, 0], { pos: [0, 0.93, 0], boden: false, ziele: { ...fuesse(0.12, 12), ...arme } })
+
+// ---------------------------------------------------------------- Kurzhanteldrücken auf dem Gymnastikball
+// Schultern und oberer Rücken liegen auf dem Ball, Knie, Hüfte und Schultern bilden eine Linie, die Knie stehen über
+// den Fersen (Schienbein senkrecht). Die Neigung der Linie ergibt sich aus der Höhe des Balls (65 cm).
+const BALL_R = 0.32
+const ballBruecke = (() => {
+  const knieY = KNOECHEL_Y + 0.022 + UNTER
+  const lage = (phi: number) => {
+    const k = -(90 - phi)
+    const hy = knieY + OBER * Math.sin(rad(phi))
+    const by = hy + 0.003
+    const s = dreheYZ(k, SCHULTER_LOKAL)
+    const sy = by + s[0], sz = s[1]
+    // Auflage am oberen Rücken: 8 cm unter den Schultern, Haut 7,7 cm hinter dem Schultergelenk
+    const u: YZ = [Math.cos(rad(k)), Math.sin(rad(k))], n: YZ = [-Math.sin(rad(k)), Math.cos(rad(k))]
+    // Auflage mit 5 cm Luft gerechnet: die Haut am Schulterblatt steht weiter hinten als am Brustwirbel
+    const c: YZ = [sy - 0.08 * u[0] - 0.127 * n[0], sz - 0.08 * u[1] - 0.127 * n[1]]
+    return { k, by, mitte: [c[0] - BALL_R * n[0], c[1] - BALL_R * n[1]] as YZ, knieZ: OBER * Math.cos(rad(phi)) }
+  }
+  let a = 0, b = 60
+  for (let i = 0; i < 40; i++) {
+    const m = (a + b) / 2
+    if (lage(m).mitte[0] > BALL_R) b = m
+    else a = m
+  }
+  return lage((a + b) / 2)
+})()
+const BALL_LAGE: Lage = { kipp: ballBruecke.k, y: ballBruecke.by, fersenZ: ballBruecke.knieZ - KNOECHEL_Z, breit: 0.11, geraet: [{ art: "ball", unter: "becken", versatz: [0, ballBruecke.mitte[1]] }] }
+
+
+// ---------------------------------------------------------------- Liegestütz an der Wand
+// Gerade Linie vom Knöchel (fest) bis zur Schulter, um theta gegen die Senkrechte zur Wand geneigt. Oben liegen die
+// Hände auf Schulterhöhe flach an der Wand (Finger nach oben), die Arme gestreckt; unten stoppt die Nase kurz vor der Wand.
+const wandLinie = (theta: number) => {
+  const u: YZ = [Math.cos(rad(theta)), Math.sin(rad(theta))]
+  const f: YZ = [-Math.sin(rad(theta)), Math.cos(rad(theta))]
+  const a: YZ = [KNOECHEL_Y + 0.022, 0]
+  const knie: YZ = [a[0] + UNTER * u[0], a[1] + UNTER * u[1]]
+  const huefte: YZ = [a[0] + (OBER + UNTER) * u[0], a[1] + (OBER + UNTER) * u[1]]
+  const ho = dreheYZ(theta, HUEFTE_LOKAL), so = dreheYZ(theta, SCHULTER_LOKAL)
+  const becken: YZ = [huefte[0] - ho[0], huefte[1] - ho[1]]
+  const schulter: YZ = [becken[0] + so[0], becken[1] + so[1]]
+  // vorderster Punkt zur Wand: Nase oder Brust
+  const vorn = Math.max(schulter[1] + 0.19 * u[1] + 0.12 * f[1], schulter[1] - 0.1 * u[1] + 0.15 * f[1])
+  return { knie, becken, schulter, vorn }
+}
+const wandLiegestuetz = (): Dehnung => {
+  const x = 0.2, dx = x - SCHULTER_X
+  const o = wandLinie(16)
+  // Handgelenk auf Schulterhöhe, Arm waagerecht gestreckt; die Handfläche liegt darüber an der Wand
+  // Handgelenk knapp unter Schulterhöhe (die Handfläche liegt auf Schulterhöhe), Arm gestreckt
+  const gy = o.schulter[0] - 0.05
+  const gz = o.schulter[1] + Math.sqrt((OBERARM + UNTERARM_GELENK + 0.012) ** 2 - dx * dx - 0.05 ** 2)
+  const wand = gz + 0.016
+  let a = 16, b = 60
+  for (let i = 0; i < 40; i++) {
+    const m = (a + b) / 2
+    if (wandLinie(m).vorn > wand - 0.005) b = m
+    else a = m
+  }
+  const u = wandLinie((a + b) / 2)
+  const haltung = (l: ReturnType<typeof wandLinie>, theta: number, gestreckt: boolean): Haltung => {
+    const ziele: Ziele = { ...fuss(1, 0.1, KNOECHEL_Z * -1 + 0.0, 8), ...fuss(-1, 0.1, -KNOECHEL_Z, 8) }
+    if (!gestreckt) {
+      // unten hebt die Ferse leicht ab: nur der Ballen bleibt
+      delete ziele.ferse_l
+      delete ziele.ferse_r
+    }
+    for (const s of [1, -1] as const) {
+      const n = s === 1 ? "l" : "r"
+      ziele[`hand_${n}`] = { pos: [s * x, gy + 0.088, wand - 0.016] }
+      ziele[`knie_${n}`] = { pos: [s * HUEFTE_X + s * 0.01, l.knie[0], l.knie[1]] }
+      if (!gestreckt) {
+        // im Rahmen des Rumpfs rechnen (y den Rumpf hinauf, z zur Brust), damit der Oberarm 45 bis 50 Grad abgespreizt ist
+        const c = Math.cos(rad(theta)), sn = Math.sin(rad(theta))
+        const hin = (p: P3): P3 => [p[0], p[1] * c + p[2] * sn, -p[1] * sn + p[2] * c]
+        const her = (p: P3): P3 => [p[0], p[1] * c - p[2] * sn, p[1] * sn + p[2] * c]
+        const e = ellbogenSpreiz(hin([s * SCHULTER_X, l.schulter[0], l.schulter[1]]), hin([s * x, gy, gz]), 48, OBERARM, UNTERARM_GELENK)
+        ziele[`ellbogen_${n}`] = { pos: her(e) }
+      }
+    }
+    return H(
+      { ...B("schulter", [gestreckt ? 80 : 40, 20, 0]), ...B("ellbogen", [gestreckt ? 4 : 100, 90]), ...B("hand", [80, 0]), ...B("huefte", [0, 3, 0]), ...B("fuss", [-theta, 0]) },
+      [theta, 0, 0],
+      { pos: [0, l.becken[0], l.becken[1]], boden: false, ziele },
+    )
+  }
+  return wdh("seite", haltung(o, 16, true), haltung(u, (a + b) / 2, false), 1.6, { aus: 1.2, texte: ["Brust zur Wand, Körper gerade wie ein Brett", "Zurückdrücken, bis die Arme gestreckt sind"], hilfsmittel: [{ art: "wand", an: "hand_l", richtung: "vorn", abstand: 0.05 }] })
+}
+
 export const KRAFT_DRUECKEN: Record<string, Dehnung> = {
   // Langhantel flach
   bankdruecken_lh: bank(LH_BANK, [...LH, RACK]),
@@ -403,6 +593,7 @@ export const KRAFT_DRUECKEN: Record<string, Dehnung> = {
   floor_press_kh_einarmig: bank({ ...FLOOR_KH, einarmig: true }, KH_R, { halten: 0.6, texte: ["Senken, bis der Oberarm den Boden berührt", "Hochdrücken"] }),
   // Liegestütze
   liegestuetz: liegestuetz(LS),
+  liegestuetz_wand: wandLiegestuetz(),
   liegestuetz_gewicht: liegestuetz(LS, { hilfsmittel: [{ art: "hantelscheibe", an: "bws", hoch: 0.03 }] }),
   liegestuetz_band: liegestuetz(LS, { texte: ["Gegen das Band senken", "Gegen den Bandwiderstand hochdrücken"] }),
   liegestuetz_explosiv: (() => {
@@ -425,6 +616,48 @@ export const KRAFT_DRUECKEN: Record<string, Dehnung> = {
     const p = stuetzPaar(LS)
     return folge("schraeg", [[p.o, 0.6, "Liegestütz oben"], [knieZumEllbogen(p.u, "r"), 1.4, "Senken, rechtes Knie zum Ellbogen"], [p.o, 1.0, "Hochdrücken"], [knieZumEllbogen(p.u, "l"), 1.4, "Senken, linkes Knie zum Ellbogen"], [p.o, 1.0, "Hochdrücken"]])
   })(),
+  kh_druecken_gymnastikball: bank({ ...KH_BANK, griffUnten: 0.26, unten: [-0.02, 0.1], lage: BALL_LAGE }, KH, { texte: ["Hanteln neben die Brust senken, Hüfte bleibt oben", "Hochdrücken"] }),
+  kabel_brustdruecken_bank: bank({ ...KH_BANK, griff: 0.15 }, zweiKabel(0.12, -0.37), { texte: ["Griffe neben die Brust", "Nach oben und leicht zur Mitte drücken"] }),
+  // Flys
+  flys_kh: flysLiegend(FLACH, KH),
+  flys_kh_schraeg: flysLiegend(SCHRAEG30, KH, 0.0),
+  flys_kh_boden: flysLiegend(BODEN, KH, -0.05, 0.07, { halten: 0.6 }),
+  kabel_flys_flachbank: flysLiegend(FLACH, zweiKabel(0.12, -0.37)),
+  kabel_flys_schraegbank: flysLiegend(SCHRAEG30, zweiKabel(0.12, -0.3), 0.0),
+  kabel_crossover_oben: crossover(flyHand([0.75, 0.55, -0.25]), flyVorn(-0.3), 15, 2.0, ["Im Bogen nach vorn unten vor den Bauchnabel", "Langsam zurück in die Dehnung"]),
+  kabel_crossover_mehrere_hoehen: crossover(flyHand([0.75, 0.55, -0.25]), flyVorn(-0.3), 15, 2.0, ["Satz 1 von oben: vor den Bauch zusammenführen", "Langsam öffnen"]),
+  kabel_flys_mitte: crossover(flyHand([1, 0, -0.25]), flyVorn(-0.1), 12, 1.35, ["Im waagerechten Bogen vor der Brust zusammenführen", "Langsam zurück in die Dehnung"]),
+  band_flys: (() => {
+    const d = crossover(flyHand([1, 0, -0.25]), flyVorn(-0.1), 6, 1.35, ["Im Bogen vor der Brust zusammenführen", "Langsam zurück, Band nicht schnappen lassen"])
+    return { ...d, hilfsmittel: [{ art: "bandanker", von: "hand_l", anker: [0.25, 1.3, -0.5] }, { art: "bandanker", von: "hand_r", anker: [-0.25, 1.3, -0.5] }] }
+  })(),
+  kabel_crossover_unten: crossover(flyHand([0.6, -0.75, 0.1]), flyVorn(0.12), 3, 0.2, ["Im Bogen nach vorn oben bis Kinnhöhe", "Langsam nach unten außen öffnen"]),
+  kabel_flys_einarmig: wdh(
+    "vorn",
+    aufrecht(armRahmen(flyHand([1, 0, -0.25]), [0, -0.6, -1], "r"), { schulter_r: [10, 80, 0], ellbogen_r: [FLY_BEUGE, HAMMER], schulter_l: [4, 12, 0], ellbogen_l: [10, 0], ...FAUST }),
+    // rechte Hand über die Körpermitte hinaus nach links (im Rahmen der linken Seite gerechnet und gespiegelt)
+    aufrecht(armRahmen([-0.1, -0.06, Math.sqrt(FLY_D ** 2 - 0.227 ** 2 - 0.0036)], [1, -0.6, 0], "r"), { schulter_r: [80, -10, 0], ellbogen_r: [FLY_BEUGE, HAMMER], schulter_l: [4, 12, 0], ellbogen_l: [10, 0], ...FAUST }),
+    1.2,
+    { aus: 1.8, halten: 0.8, seiten: true, texte: ["Griff im Bogen vor die Brust, über die Mitte hinaus", "Langsam zurück"], hilfsmittel: [{ art: "kabel", von: "hand_r", rolle: [-0.95, 1.35, -0.1] }] },
+  ),
+  // Drücken im Stand
+  kabel_brustdruecken_stehend: druckStand("beide", zweiKabel(1.3, -0.45)),
+  band_brustdruecken: druckStand("beide", [{ art: "bandanker", von: "hand_l", anker: [0.3, 1.3, -0.7] }, { art: "bandanker", von: "hand_r", anker: [-0.3, 1.3, -0.7] }]),
+  kabel_drueck_einarmig: druckStand("r", [{ art: "kabel", von: "hand_r", rolle: [-0.4, 1.3, -0.7] }], false),
+  svend_press: wdh(
+    "schraeg",
+    aufrecht(armRahmen([0.03, -0.1, 0.2], [1, -0.4, -0.3]), { ...B("schulter", [30, 0, 0]), ...B("ellbogen", [110, 0]), ...B("finger", [0, 0]) }),
+    aufrecht(armRahmen(flyVorn(-0.1, 0.03), [1, -0.4, 0]), { ...B("schulter", [86, -6, 0]), ...B("ellbogen", [8, 0]), ...B("finger", [0, 0]) }),
+    1.6,
+    { aus: 1.6, halten: 1.0, texte: ["Scheibe zusammenpressen, Arme nach vorn strecken", "Unter Druck zurück zur Brust"], hilfsmittel: [{ art: "hantelscheibe", an: "haende" }] },
+  ),
+  brust_isometrisch: halte(
+    "schraeg",
+    aufrecht({}, { ...B("schulter", [4, 10, 0]), ...B("ellbogen", [10, 0]) }),
+    aufrecht({ hand_l: { pos: [0.035, -0.1, 0.2], bezug: "schultern" }, hand_r: { pos: [-0.035, -0.1, 0.2], bezug: "schultern" }, ellbogen_l: { pos: [0.3, -0.1, 0.11], bezug: "schultern" }, ellbogen_r: { pos: [-0.3, -0.1, 0.11], bezug: "schultern" } }, { ...B("schulter", [40, 70, 0]), ...B("ellbogen", [100, 0]), ...B("finger", [0, 0]) }),
+    { ein: 1.5, aus: 1.5 },
+  ),
+  slider_flys: liegestuetz({ hand: 0.16, art: "knie", handUnten: 0.42, palme: 0.072 }, { ein: 2.0, aus: 1.6, texte: ["Hände langsam seitlich auseinandergleiten lassen", "Mit der Brust wieder zusammenziehen"], hilfsmittel: [{ art: "gleitscheibe", an: "hand_l" }, { art: "gleitscheibe", an: "hand_r" }] }),
   // Dips
   dips_brust: wdh("seite", DIP_OBEN, DIP_UNTEN, 2.0, { aus: 1.3, texte: DIP_TEXTE, hilfsmittel: [HOLME] }),
   dips_gewicht: wdh("seite", DIP_OBEN, DIP_UNTEN, 2.0, { aus: 1.3, texte: DIP_TEXTE, hilfsmittel: [HOLME] }),

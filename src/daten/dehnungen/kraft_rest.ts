@@ -16,8 +16,6 @@ const SCHRAEG_BEINE: Winkel = { ...B("huefte", [32, 14, 0]), ...B("knie", [84]),
 const schraeg = (w: Winkel, kipp = -50): Haltung => H({ ...SCHRAEG_BEINE, ...FAUST, ...w }, [kipp, 0, 0], { pos: [0, 0.56, 0], boden: false })
 const BRUST_LEHNE: Haltung = mit(STAND, { dreh: [48, 0, 0], g: { ...B("huefte", [40, 10, 0]), ...B("knie", [20]), ...B("fuss", [10, 0]), hals: [-30, 0, 0] } })
 const BAUCH_LEHNE: Hilfsmittel = { art: "schraegbank", unter: "becken", lehne: "kopf", hoehe: 0.45, bauch: true }
-const LS_UNTEN: Haltung = mit(PLANK, { dreh: [88, 0, 0], g: { ...B("schulter", [30, 32, 0]), ...B("ellbogen", [98, 90]) } })
-const KNIE: Winkel = { ...B("knie", [95]), ...B("fuss", [-60, 0]) }
 const LINKS_FREI: Winkel = { schulter_l: [4, 12, 0], ellbogen_l: [10, 0] }
 const seitUnten: Winkel = { schulter_r: [6, 8, 0], ellbogen_r: [14, HAMMER], ...FAUST }
 const seitOben: Winkel = { schulter_r: [10, 86, 0], ellbogen_r: [14, HAMMER], ...FAUST }
@@ -60,51 +58,6 @@ export const KRAFT_REST: Record<string, Dehnung> = {
     hilfsmittel: [kabelstange(), ...kabel("haende", [0, 0.12, 1.4])],
   }),
   // ------------------------------------------------------------ Brust und Liegestütz
-  kabel_flys_einarmig: wdh("vorn", mit(STAND, { g: { schulter_r: [4, 80, 0], ellbogen_r: [20, HAMMER], ...LINKS_FREI, ...FAUST } }), mit(STAND, { g: { schulter_r: [90, -10, 0], ellbogen_r: [16, HAMMER], ...LINKS_FREI, ...FAUST } }), 1.2, {
-    aus: 2.0,
-    seiten: true,
-    texte: ["Arm im Bogen vor die Brust führen", "Langsam öffnen"],
-    hilfsmittel: kabel("hand_r", [-0.95, 1.3, -0.2]),
-  }),
-  slider_flys: wdh("seite", mit(PLANK, { g: { ...KNIE } }), mit(PLANK, { dreh: [84, 0, 0], g: { ...KNIE, ...B("schulter", [70, 60, 0]), ...B("ellbogen", [10, 90]) } }), 2.0, {
-    aus: 1.6,
-    texte: ["Hände auf den Gleitscheiben langsam nach außen", "Zurück unter die Schultern ziehen"],
-    hilfsmittel: [{ art: "gleitscheibe", an: "hand_l" }, { art: "gleitscheibe", an: "hand_r" }],
-  }),
-  schraegbankdruecken_kh_einarmig: wdh("schraeg", schraeg({ schulter_r: [130, 12, 0], ellbogen_r: [6, OBERGRIFF], schulter_l: [20, 20, 0], ellbogen_l: [40, 0] }), schraeg({ schulter_r: [40, 60, 0], ellbogen_r: [100, OBERGRIFF], schulter_l: [20, 20, 0], ellbogen_l: [40, 0] }), 2.0, {
-    aus: 1.4,
-    seiten: true,
-    texte: ["Hantel langsam zur Brust senken", "Hochdrücken, Rumpf dreht nicht mit"],
-    hilfsmittel: [SCHRAEGBANK, ...KH_R],
-  }),
-  kh_druecken_gymnastikball: wdh(
-    "seite",
-    H({ ...B("huefte", [0, 8, 0]), ...B("knie", [90]), ...B("fuss", [0, 0]), ...B("schulter", [90, 12, 0]), ...B("ellbogen", [6, OBERGRIFF]), ...FAUST, hals: [20, 0, 0] }, [-90, 0, 0], { pos: [0, 0.5, 0], boden: false }),
-    H({ ...B("huefte", [0, 8, 0]), ...B("knie", [90]), ...B("fuss", [0, 0]), ...B("schulter", [24, 58, 0]), ...B("ellbogen", [100, OBERGRIFF]), ...FAUST, hals: [20, 0, 0] }, [-90, 0, 0], { pos: [0, 0.5, 0], boden: false }),
-    2.0,
-    { aus: 1.4, texte: ["Schultern auf dem Ball, Hanteln zur Brust senken", "Hochdrücken, Becken bleibt oben"], hilfsmittel: [{ art: "ball", unter: "bws" }, ...KH] },
-  ),
-  kabel_brustdruecken_bank: wdh("schraeg", banklage({ ...B("schulter", [90, 12, 0]), ...B("ellbogen", [6, OBERGRIFF]) }), banklage({ ...B("schulter", [24, 58, 0]), ...B("ellbogen", [100, OBERGRIFF]) }), 2.0, {
-    aus: 1.4,
-    texte: ["Griffe langsam zur Brust", "Gegen den Zug hochdrücken"],
-    hilfsmittel: [FLACHBANK, ...kabel("hand_l", [0.95, 0.12, 0]), ...kabel("hand_r", [-0.95, 0.12, 0])],
-  }),
-  liegestuetz_archer: wdh("vorn", mit(PLANK, { g: { ...B("schulter", [78, 30, 0]) } }), mit(LS_UNTEN, { dreh: [88, 0, -6], g: { schulter_l: [70, 70, 0], ellbogen_l: [4, 90], schulter_r: [30, 32, 0], ellbogen_r: [98, 90] } }), 2.0, {
-    aus: 1.4,
-    seiten: true,
-    texte: ["Zur einen Hand senken, der andere Arm bleibt gestreckt", "Hochdrücken"],
-  }),
-  liegestuetz_einarmig: wdh("vorn", mit(PLANK, { g: { schulter_l: [-30, 20, 0], ellbogen_l: [90, 0], ...B("huefte", [0, 16, 0]) } }), mit(LS_UNTEN, { g: { schulter_l: [-30, 20, 0], ellbogen_l: [90, 0], schulter_r: [30, 20, 0], ellbogen_r: [98, 90], ...B("huefte", [0, 16, 0]) } }), 2.0, {
-    aus: 1.4,
-    seiten: true,
-    texte: ["Auf einem Arm senken, Füße breit", "Hochdrücken"],
-  }),
-  pseudo_planche_liegestuetz: wdh("seite", mit(PLANK, { g: { ...B("schulter", [44, 4, 0]), ...B("hand", [80, 0]) } }), mit(LS_UNTEN, { g: { ...B("schulter", [-6, 20, 0]), ...B("ellbogen", [100, 90]) } }), 2.0, {
-    aus: 1.4,
-    texte: ["Weit nach vorn gelehnt senken, Hände an der Hüfte", "Hochdrücken"],
-  }),
-  liegestuetz_spiderman: folge("schraeg", [[PLANK, 0.6, "Liegestütz oben"], [mit(LS_UNTEN, { g: { huefte_r: [80, 40, 0], knie_r: [110] } }), 1.4, "Senken, Knie zum Ellbogen"], [PLANK, 1.0, "Hochdrücken"], [mit(LS_UNTEN, { g: { huefte_l: [80, 40, 0], knie_l: [110] } }), 1.4, "Andere Seite"], [PLANK, 1.0]]),
-  liegestuetz_t: folge("vorn", [[PLANK, 0.6, "Liegestütz oben"], [LS_UNTEN, 1.2, "Senken"], [PLANK, 0.8, "Hochdrücken"], [mit(PLANK, { dreh: [78, 0, 70], g: { schulter_l: [0, 170, 0], ellbogen_l: [4, 0] } }), 1.0, "Zur Seite aufdrehen, Arm zur Decke"], [PLANK, 1.0]], { seiten: true }),
   // ------------------------------------------------------------ Handstand
   handstand_halten_wand: halte("seite", mit(PLANK, { dreh: [120, 0, 0] }), HANDSTAND, { ein: 2, aus: 2, hinweis: "Arme gestreckt, Körper als Linie, Rücken zur Wand.", hilfsmittel: [WAND_HANDSTAND] }),
   handstand_liegestuetz: wdh("seite", HANDSTAND, HANDSTAND_UNTEN, 2.0, { aus: 1.4, texte: ["Kopf kontrolliert zum Boden senken", "Hochdrücken"], hilfsmittel: [WAND_HANDSTAND] }),
