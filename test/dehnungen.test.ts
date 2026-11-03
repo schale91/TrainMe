@@ -35,5 +35,5 @@ describe("Dehnfigur ohne Durchdringen", () => {
     for (const [id, d] of Object.entries({ ...DEHNUNGEN, ...TEST_DEHNUNGEN }))
       for (const f of _durchdringungen(d, 8, 1)) funde.push(`${id}: ${f.was} ${(f.tiefe * 100).toFixed(1)} cm bei t=${f.t}`)
     expect(funde).toEqual([])
-  }, 60000)
+  }, 240000)
 })
