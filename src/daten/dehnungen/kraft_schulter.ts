@@ -6,7 +6,7 @@
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { B, BAUCHLAGE, H, HALBKNIESTAND, HUND, LANGSITZ, PLANK, STAND, STUHLSITZ, folge, halte, mit, wdh } from "./basis"
-import { BAND, FAUST, FLACHBANK, HAMMER, KH, KH_R, LH, OBERGRIFF, UNTERGRIFF, banklage, kabel, kabelstange } from "./kraftbasis"
+import { BAND, FAUST, FLACHBANK, HAMMER, KH, KH_R, LH, OBERGRIFF, UNTERGRIFF, banklage, kabel, kabelstange, BAUCH_LEHNE, BRUST_LEHNE } from "./kraftbasis"
 
 const LEHNE: Hilfsmittel = { art: "schraegbank", unter: "gesaess", lehne: "bws", hoehe: 0.45 }
 const SITZ: Haltung = mit(STUHLSITZ, { g: { ...B("ellbogen", [0, 0]) } })
@@ -50,8 +50,6 @@ const reverseVorgebeugt = (basis: Haltung, hilfsmittel: Hilfsmittel[]): Dehnung 
     hilfsmittel,
   })
 /** Bauchlage auf der Schrägbank: Brust an der Lehne, Füße am Boden */
-const BRUST_LEHNE: Haltung = mit(STAND, { dreh: [48, 0, 0], g: { ...B("huefte", [40, 10, 0]), ...B("knie", [20]), ...B("fuss", [10, 0]), hals: [-30, 0, 0] } })
-const BAUCH_LEHNE: Hilfsmittel = { art: "schraegbank", unter: "becken", lehne: "kopf", hoehe: 0.45, bauch: true }
 
 // ---------------------------------------------------------------- Face Pull, Pull-Apart
 const ARME_VOR: Winkel = { ...B("schulter", [90, 4, 0]), ...B("ellbogen", [6, OBERGRIFF]), ...FAUST }

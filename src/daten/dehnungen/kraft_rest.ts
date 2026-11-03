@@ -4,7 +4,7 @@
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { B, H, PLANK, RUECKENLAGE, SEITLAGE, STAND, STUHLSITZ, folge, halte, mit, wdh } from "./basis"
-import { FAUST, HAMMER, KH, KH_R, OBERGRIFF, SZ, SZ_GRIFF, UNTERGRIFF, banklage, kabel, kabelstange } from "./kraftbasis"
+import { FAUST, HAMMER, KH, KH_R, OBERGRIFF, SZ, SZ_GRIFF, UNTERGRIFF, banklage, kabel, kabelstange, BAUCH_LEHNE, BRUST_LEHNE } from "./kraftbasis"
 import { latzug } from "./kraft"
 import { dreh, golf } from "./kraft_rumpf"
 
@@ -13,9 +13,7 @@ const curlStand = (dreh_: number, beuge: number, w: Winkel = {}): Haltung => mit
 const FLACHBANK: Hilfsmittel = { art: "bank", unter: "bws", hoehe: 0.45 }
 const SCHRAEGBANK: Hilfsmittel = { art: "schraegbank", unter: "gesaess", lehne: "bws", hoehe: 0.45 }
 const SCHRAEG_BEINE: Winkel = { ...B("huefte", [32, 14, 0]), ...B("knie", [84]), ...B("fuss", [6, 0]), hals: [5, 0, 0] }
-const schraeg = (w: Winkel, kipp = -50): Haltung => H({ ...SCHRAEG_BEINE, ...FAUST, ...w }, [kipp, 0, 0], { pos: [0, 0.56, 0], boden: false })
-const BRUST_LEHNE: Haltung = mit(STAND, { dreh: [48, 0, 0], g: { ...B("huefte", [40, 10, 0]), ...B("knie", [20]), ...B("fuss", [10, 0]), hals: [-30, 0, 0] } })
-const BAUCH_LEHNE: Hilfsmittel = { art: "schraegbank", unter: "becken", lehne: "kopf", hoehe: 0.45, bauch: true }
+const schraeg = (w: Winkel, kipp = -50): Haltung => H({ ...SCHRAEG_BEINE, ...FAUST, ...w }, [kipp, 0, 0], { pos: [0, 0.585, 0], boden: false })
 const LINKS_FREI: Winkel = { schulter_l: [4, 12, 0], ellbogen_l: [10, 0] }
 const seitUnten: Winkel = { schulter_r: [6, 8, 0], ellbogen_r: [14, HAMMER], ...FAUST }
 const seitOben: Winkel = { schulter_r: [10, 86, 0], ellbogen_r: [14, HAMMER], ...FAUST }

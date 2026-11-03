@@ -451,6 +451,24 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
         out.push(zylinder(new THREE.Vector3(sx, p.y - 0.055, p.z - 0.35), new THREE.Vector3(sx, p.y - 0.055, p.z + 0.35), 0.02, FARBE.stahl))
         for (const dz of [-0.3, 0.3]) out.push(kiste(new THREE.Vector3(sx, (p.y - 0.05) / 2, p.z + dz), [0.05, p.y - 0.05, 0.05], FARBE.stahl))
       }
+    } else if (h.art === "schraegbank" && h.bauch) {
+      // Bauchlage auf der Schrägbank: die Lehne liegt an der Vorderseite des Rumpfs (Brust und Bauch, 12 cm vor der
+      // Linie Becken–Kopf), der Sitz unter ihrem unteren Ende
+      const b = k.punkt("becken"), kp = k.punkt("kopf")
+      const u = new THREE.Vector3(0, kp.y - b.y, kp.z - b.z).normalize()
+      const vorn = new THREE.Vector3(0, -u.z, u.y)
+      // oberes Ende an der Brust unter den Schultern (das Kinn ragt darüber): darüber hängen die Arme frei nach unten
+      const mitte = b.clone().addScaledVector(u, -0.08).addScaledVector(vorn, 0.205)
+      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.66, 0.07), mat(FARBE.polster, 0.8))
+      lehne.position.copy(mitte)
+      lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), u)
+      lehne.castShadow = lehne.receiveShadow = true
+      out.push(lehne)
+      const unten = mitte.clone().addScaledVector(u, -0.33)
+      const sitzY = Math.min(h.hoehe, Math.max(0.12, unten.y - 0.04))
+      out.push(kiste(new THREE.Vector3(b.x, sitzY - 0.04, unten.z + 0.12), [0.3, 0.08, 0.36], FARBE.polster))
+      out.push(kiste(new THREE.Vector3(b.x, (sitzY - 0.08) / 2, unten.z + 0.1), [0.08, sitzY - 0.08, 0.08], FARBE.stahl))
+      out.push(kiste(new THREE.Vector3(b.x, 0.03, unten.z + 0.1), [0.5, 0.06, 0.08], FARBE.stahl))
     } else if (h.art === "schraegbank") {
       // Verstellbare Hantelbank wie ATX MBX-610: Sitz, Lehne im Winkel des Rückens, schwarzer Rahmen
       const p = k.punkt(h.unter)
@@ -461,7 +479,8 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const d = new THREE.Vector3(0, r.y - h.hoehe, r.z - p.z).normalize()
       // Lehne liegt hinter dem Rücken: von der Sitzkante aus entlang des Rückens, um ihre Dicke nach hinten versetzt
       const hinten = new THREE.Vector3(0, d.z, -d.y).multiplyScalar(h.bauch ? -1 : 1)
-      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.86, 0.07), mat(FARBE.polster, 0.8))
+      // Lehne 24 cm breit: hängende Arme (Schrägbank-Curl) laufen seitlich an ihr vorbei
+      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.86, 0.07), mat(FARBE.polster, 0.8))
       lehne.position.set(p.x, h.hoehe, p.z - 0.06).addScaledVector(d, 0.45).addScaledVector(hinten, 0.08)
       lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)
       lehne.castShadow = lehne.receiveShadow = true
