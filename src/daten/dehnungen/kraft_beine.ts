@@ -4,7 +4,7 @@
 // Winkel im Raum: Oberschenkel = Hüftbeugung - Kippung des Beckens; Unterschenkel = Oberschenkel - Kniebeugung;
 // Fuß flach, wenn Anziehen = -Unterschenkel.
 
-import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
+import type { Dehnung, Haltung, Hilfsmittel, Winkel, Ziel, ZielPunkt } from "../../logik/dehnbewegung"
 import { ARME_VERSCHRAENKT, B, H, STAND, STUHLSITZ, folge, halte, mit, wdh } from "./basis"
 import { FAUST, HAMMER, KH, OBERGRIFF } from "./kraftbasis"
 
@@ -26,13 +26,34 @@ export const ansicht = (hilfsmittel: Hilfsmittel[]): Dehnung["ansicht"] => (hilf
 export const STANGE_RUECKEN: Hilfsmittel[] = [{ art: "langhantel", von: "hand_l", bis: "hand_r" }]
 export const RACK: Hilfsmittel = { art: "rack", an: "becken", haken: 1.4, ablage: 0.62 }
 
-// ---------------------------------------------------------------- Kniebeuge
-/** Tief: Oberschenkel etwa waagerecht, Knie über den Zehen, Rücken gerade vorgeneigt, Füße flach */
-const tief = (kipp: number, w: Winkel = {}, breit = 12): Haltung =>
-  H({ ...B("huefte", [90 + kipp, breit, -breit / 2]), ...B("knie", [120]), ...B("fuss", [30, 0]), hals: [-kipp / 2, 0, 0], ...w }, [kipp, 0, 0])
+// ---------------------------------------------------------------- Zielpunkte
+type Ziele = Partial<Record<ZielPunkt, Ziel>>
+const FUSSLAENGE = 0.12
+export const FERSE_Y = 0.022
+export const SPITZE_Y = 0.034
+/**
+ * Füße fest am Boden: Fersen im Abstand 2·breit (Meter, Mitte zu Mitte), Zehen um winkel Grad nach außen, Fersen bei z.
+ * Das Knie zeigt dabei von selbst über die Zehen.
+ */
+export const fuesse = (breit = 0.17, winkel = 22, z = -0.05): Ziele => {
+  const r = (winkel * Math.PI) / 180
+  const dx = FUSSLAENGE * Math.sin(r), dz = FUSSLAENGE * Math.cos(r)
+  // Marken der Figur bei flach stehendem Fuß: Ferse 2,2 cm, Fußspitze 3,4 cm über dem Boden
+  return {
+    ferse_l: { pos: [breit, FERSE_Y, z] },
+    fuss_l: { pos: [breit + dx, SPITZE_Y, z + dz] },
+    ferse_r: { pos: [-breit, FERSE_Y, z] },
+    fuss_r: { pos: [-breit - dx, SPITZE_Y, z + dz] },
+  }
+}
+/** Stange auf dem oberen Trapez (High Bar): 4 cm über und 6 cm hinter der Schultermitte, Hände im Abstand 2·griff */
+export const stangeHinten = (griff = 0.26, hoch = 0.04, hinten = 0.06): Ziele => ({
+  hand_l: { pos: [griff, hoch, -hinten], bezug: "schultern" },
+  hand_r: { pos: [-griff, hoch, -hinten], bezug: "schultern" },
+})
+
+// ---------------------------------------------------------------- Stand (Kniebeugen: kraft_kniebeuge.ts)
 export const stand = (w: Winkel = {}, breit = 12): Haltung => mit(STAND, { g: { ...B("huefte", [0, breit, -breit / 2]), ...w } })
-const kniebeuge = (arme: Winkel, kipp: number, hilfsmittel: Hilfsmittel[], extra: Partial<Dehnung> = {}, breit = 12): Dehnung =>
-  wdh(ansicht(hilfsmittel), stand(arme, breit), tief(kipp, arme, breit), 2.0, { aus: 1.5, texte: ["Kontrolliert in die Hocke", "Kraftvoll aufstehen"], hilfsmittel, ...extra })
 
 // ---------------------------------------------------------------- Split Squat, Ausfallschritt (links vorn)
 const splitOben = (w: Winkel = {}): Haltung => H({ huefte_l: [28, 6, 0], knie_l: [10], fuss_l: [-18, 0], huefte_r: [-24, 6, 0], knie_r: [6], fuss_r: [-30, 0], zehen_r: [45], ...w })
@@ -83,48 +104,7 @@ const aufstehen = (sitz: Haltung, vor: Haltung, oben: Haltung, extra: Partial<De
 
 export const KRAFT_BEINE: Record<string, Dehnung> = {
   // Kniebeuge mit der Stange im Rack
-  kniebeuge_lh: kniebeuge(ARME_RUECKEN, 40, [...STANGE_RUECKEN, RACK]),
-  kniebeuge_multipresse: kniebeuge(ARME_RUECKEN, 36, [...STANGE_RUECKEN, RACK]),
-  kniebeuge_lh_lowbar: kniebeuge(ARME_RUECKEN, 50, [...STANGE_RUECKEN, RACK]),
-  pausenkniebeuge_lh: kniebeuge(ARME_RUECKEN, 40, [...STANGE_RUECKEN, RACK], { halten: 2, texte: ["In die Hocke, unten 1 bis 3 s Pause", "Aufstehen"] }),
-  tempo_kniebeuge_lh: kniebeuge(ARME_RUECKEN, 40, [...STANGE_RUECKEN, RACK], { ein: 4, texte: ["Langsam in die Hocke (3 bis 5 s)", "Aufstehen"] }),
-  frontkniebeuge_lh: kniebeuge(ARME_FRONT, 22, [...STANGE_RUECKEN, RACK]),
-  ueberkopf_kniebeuge: kniebeuge(ARME_HOCH, 26, STANGE_RUECKEN, {}, 18),
-  zercher_kniebeuge: kniebeuge({ ...B("schulter", [36, 8, 0]), ...B("ellbogen", [130, -70]), ...FAUST }, 26, [{ art: "langhantel", von: "ellbogen_l", bis: "ellbogen_r" }]),
-  pin_squat: folge(
-    "schraeg",
-    [
-      [tief(40, ARME_RUECKEN), 1.0, "Stange liegt unten auf den Ablagen"],
-      [stand(ARME_RUECKEN), 1.4, "Aus dem toten Punkt aufstehen"],
-      [tief(40, ARME_RUECKEN), 2.0, "Zurück, Stange auf die Ablagen"],
-    ],
-    { hilfsmittel: [...STANGE_RUECKEN, { art: "rack", an: "becken", haken: 1.4, ablage: 0.95 }] },
-  ),
-  box_squat_lh: kniebeuge(ARME_RUECKEN, 34, [...STANGE_RUECKEN, RACK, { art: "box", unter: "gesaess", hoehe: 0.45 }], { halten: 0.8, texte: ["Nach hinten auf die Box setzen", "Aufstehen"] }, 20),
-  eineinhalb_kniebeuge: folge(
-    "schraeg",
-    [
-      [tief(40, ARME_RUECKEN), 2.0, "In die Hocke"],
-      [H({ ...B("huefte", [65, 12, -6]), ...B("knie", [70]), ...B("fuss", [20, 0]), ...ARME_RUECKEN }, [25, 0, 0]), 1.0, "Halb hoch"],
-      [tief(40, ARME_RUECKEN), 1.0, "Wieder ganz tief"],
-      [stand(ARME_RUECKEN), 1.4, "Ganz aufstehen"],
-    ],
-    { hilfsmittel: [...STANGE_RUECKEN, RACK] },
-  ),
-  fersen_kniebeuge_lh: kniebeuge(ARME_RUECKEN, 28, [...STANGE_RUECKEN, RACK, { art: "kissen", unter: "ferse_l" }, { art: "kissen", unter: "ferse_r" }]),
-  fersen_kniebeuge_kh: kniebeuge(ARME_SEITE, 24, [...KH, { art: "kissen", unter: "ferse_l" }, { art: "kissen", unter: "ferse_r" }]),
-  cyclist_squat: kniebeuge(ARME_SEITE, 18, [...KH, { art: "kissen", unter: "ferse_l" }, { art: "kissen", unter: "ferse_r" }], {}, 3),
   // Kurzhantel und Körpergewicht
-  goblet: kniebeuge(ARME_GOBLET, 30, [{ art: "hantel", an: "haende" }], {}, 18),
-  kb_frontkniebeuge: kniebeuge({ ...B("schulter", [40, 20, 0]), ...B("ellbogen", [140, HAMMER]), ...FAUST }, 28, KH),
-  frontkniebeuge_kh: kniebeuge({ ...B("schulter", [40, 20, 0]), ...B("ellbogen", [140, HAMMER]), ...FAUST }, 28, KH),
-  kh_kniebeuge: kniebeuge(ARME_SEITE, 36, KH),
-  sumo_kniebeuge: kniebeuge({ ...B("schulter", [4, 4, 0]), ...B("ellbogen", [6, HAMMER]), ...FAUST }, 26, [{ art: "hantel", an: "haende" }], {}, 34),
-  band_kniebeuge: kniebeuge(ARME_FRONT, 30, [{ art: "band", von: "fuss_l", bis: "hand_l" }, { art: "band", von: "fuss_r", bis: "hand_r" }]),
-  kniebeuge_kg: kniebeuge(ARME_VOR, 36, []),
-  box_kniebeuge: kniebeuge(ARME_VOR, 34, [{ art: "box", unter: "gesaess", hoehe: 0.45 }], { halten: 0.6, texte: ["Nach hinten auf die Box setzen", "Aufstehen"] }, 16),
-  ball_wandkniebeuge: wdh("seite", mit(STAND, { g: ARME_VOR }), mit(WANDSITZ, { g: ARME_VOR }), 2.0, { aus: 1.5, texte: ["Am Ball nach unten rollen", "Aufstehen"], hilfsmittel: [WAND_HINTEN] }),
-  wandsitzen: halte("seite", mit(STAND, { g: B("schulter", [4, 10, 0]) }), WANDSITZ, { ein: 2, aus: 2, hilfsmittel: [WAND_HINTEN] }),
   wandsitzen_einbeinig: halte("seite", mit(STAND, { g: B("schulter", [4, 10, 0]) }), mit(WANDSITZ, { g: { huefte_r: [90, 8, 0], knie_r: [6] } }), { ein: 2, aus: 2, seiten: true, hilfsmittel: [WAND_HINTEN] }),
   // Knie
   sissy_squat: wdh("seite", mit(STAND, { g: { ...B("schulter", [80, 10, 0]), ...B("fuss", [-30, 0]), ...B("zehen", [40]) } }), H({ ...B("huefte", [0, 6, 0]), ...B("knie", [100]), ...B("fuss", [10, 0]), ...B("zehen", [50]), ...B("schulter", [100, 10, 0]) }, [-35, 0, 0]), 2.0, {
@@ -136,8 +116,6 @@ export const KRAFT_BEINE: Record<string, Dehnung> = {
     aus: 2.0,
     texte: ["Mit gestreckter Hüfte nach hinten lehnen", "Zurück in den Kniestand"],
   }),
-  spanish_squat: kniebeuge(ARME_VOR, 6, [{ art: "bandanker", von: "knie_l", anker: [0.2, 0.45, 0.9] }, { art: "bandanker", von: "knie_r", anker: [-0.2, 0.45, 0.9] }], { texte: ["Senkrecht nach unten sitzen, Band hält die Knie", "Aufstehen"] }, 14),
-  spanish_squat_iso: halte("seite", stand(ARME_VOR, 14), tief(6, ARME_VOR, 14), { ein: 2, aus: 2, hilfsmittel: [{ art: "bandanker", von: "knie_l", anker: [0.2, 0.45, 0.9] }, { art: "bandanker", von: "knie_r", anker: [-0.2, 0.45, 0.9] }] }),
   terminale_knieextension: wdh("seite", H({ huefte_l: [20, 6, 0], knie_l: [30], fuss_l: [-10, 0], huefte_r: [-8, 6, 0], knie_r: [10], fuss_r: [-6, 0], ...ARME_SEITE }), H({ huefte_l: [6, 6, 0], knie_l: [2], fuss_l: [-4, 0], huefte_r: [-8, 6, 0], knie_r: [10], fuss_r: [-6, 0], ...ARME_SEITE }), 1.0, {
     aus: 1.4,
     halten: 1,

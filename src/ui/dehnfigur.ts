@@ -9,7 +9,7 @@
 import * as THREE from "three"
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { clone as skelettKlon } from "three/examples/jsm/utils/SkeletonUtils.js"
-import { POS_GRUND, standZu, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand } from "../logik/dehnbewegung"
+import { POS_GRUND, mische, standZu, zwischenDa, zwischenSetzen, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand, type Winkel, type Ziel, type ZielPunkt } from "../logik/dehnbewegung"
 import { LOCKER, Modellfigur, NACKT, RASTER } from "./modellfigur"
 
 /** Geriggtes Modell, das statt der gezeichneten Figur gezeigt wird (falls geladen). */
@@ -256,6 +256,8 @@ class Koerper {
       const s = seite === "l" ? 1 : -1
       const g = (n: string, i: number) => v((n + "_" + seite) as keyof typeof w, i)
       setz("huefte_" + seite, new THREE.Euler(rad(-g("huefte", 0)), rad(-s * g("huefte", 2)), rad(s * g("huefte", 1)), "ZXY"))
+      // waagerechtes Öffnen (positiv nach außen) um die Senkrechte des Beckens: Knie auch bei gebeugter Hüfte zur Seite
+      if (g("huefte", 3)) this.k["huefte_" + seite].quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rad(s * g("huefte", 3))))
       setz("knie_" + seite, new THREE.Euler(rad(g("knie", 0)), 0, 0))
       setz("fuss_" + seite, new THREE.Euler(rad(-g("fuss", 0)), 0, rad(-s * g("fuss", 1)), "XZY"))
       setz("zehen_" + seite, new THREE.Euler(rad(-g("zehen", 0)), 0, 0))
@@ -321,6 +323,32 @@ class Koerper {
 
 const MATTE = 0.006
 
+const KEIN_MODELL = {}
+const LOESUNGEN = new WeakMap<object, WeakMap<Haltung, Haltung>>()
+
+/** Lineares Gleichungssystem (klein, dicht) mit Gauß-Elimination und Pivotsuche */
+function loeseGleichung(A: number[][], b: number[]): number[] {
+  const n = b.length
+  const M = A.map((z, i) => [...z, b[i]])
+  for (let c = 0; c < n; c++) {
+    let p = c
+    for (let i = c + 1; i < n; i++) if (Math.abs(M[i][c]) > Math.abs(M[p][c])) p = i
+    ;[M[c], M[p]] = [M[p], M[c]]
+    const piv = M[c][c] || 1e-12
+    for (let i = c + 1; i < n; i++) {
+      const f = M[i][c] / piv
+      for (let k = c; k <= n; k++) M[i][k] -= f * M[c][k]
+    }
+  }
+  const x = new Array(n).fill(0)
+  for (let i = n - 1; i >= 0; i--) {
+    let s = M[i][n]
+    for (let k = i + 1; k < n; k++) s -= M[i][k] * x[k]
+    x[i] = s / (M[i][i] || 1e-12)
+  }
+  return x
+}
+
 // ---------------------------------------------------------------- Hilfsmittel
 function zylinder(a: THREE.Vector3, b: THREE.Vector3, r: number, farbe: string): THREE.Mesh {
   const d = b.clone().sub(a)
@@ -350,7 +378,8 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const p = k.punkt(h.an)
       const n = { vorn: [0, 0, 1], hinten: [0, 0, -1], links: [1, 0, 0], rechts: [-1, 0, 0], unten: [0, -1, 0] }[h.richtung]
       const dicke = 0.08
-      const mitte = new THREE.Vector3(p.x + n[0] * (0.03 + dicke / 2), 1.2, p.z + n[2] * (0.03 + dicke / 2))
+      const ab = h.abstand ?? 0.03
+      const mitte = new THREE.Vector3(p.x + n[0] * (ab + dicke / 2), 1.2, p.z + n[2] * (ab + dicke / 2))
       const gr: [number, number, number] = n[0] ? [dicke, 2.4, 1.6] : [1.6, 2.4, dicke]
       out.push(kiste(mitte, gr, FARBE.wand))
     } else if (h.art === "bank" || h.art === "stuhl" || h.art === "box") {
@@ -383,6 +412,7 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       out.push(m)
     } else if (h.art === "kissen") {
       const p = k.punkt(h.unter)
+      if (h.versatz) p.add(new THREE.Vector3(h.versatz[0], 0, h.versatz[1]))
       out.push(kiste(new THREE.Vector3(p.x, 0.03, p.z), [0.3, 0.05, 0.25], FARBE.polster))
     } else if (h.art === "tuer") {
       const p = k.punkt(h.an)
@@ -544,6 +574,12 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       // körperfernen Seite (in Richtung vom Becken zum Fuß)
       const r = 0.32
       const p = k.punkt(h.an)
+      if (h.hinter) {
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), mat(FARBE.ball, 0.4))
+        ball.position.set(p.x, p.y, p.z - 0.34)
+        out.push(ball)
+        continue
+      }
       const hh = Math.min(2 * r, Math.max(0, p.y - 0.04))
       const weg = Math.sqrt(Math.max(0, r * r - (hh - r) * (hh - r)))
       const d = p.clone().sub(k.punkt("becken")).setY(0)
@@ -712,10 +748,18 @@ class Buehne {
   mitte = new THREE.Vector3()
   abstand = 3
 
+  d: Dehnung
+  /** Größter Restfehler des Lösers je Haltung (Meter), für die Prüfung */
+  restfehler = 0
+  /** Verschiebung durch Ausweichen im letzten Bild (Boden, Gegenstände) */
+  schub = new THREE.Vector3()
+  schubWas = new Set<string>()
+
   constructor(
-    readonly d: Dehnung,
+    d: Dehnung,
     readonly haltenS?: number,
   ) {
+    this.d = d
     const s = this.szene
     s.add(new THREE.HemisphereLight("#ffffff", "#9b8a7a", 0.95))
     const sonne = new THREE.DirectionalLight("#fff6ea", 2.1)
@@ -751,6 +795,10 @@ class Buehne {
       })
       s.add(this.modell.modell)
     }
+
+    // Zielpunkte (Füße am Boden, Hände an der Stange) in Winkel umrechnen, an der angezeigten Figur
+    this.d = this.loeseDehnung(d)
+    d = this.d
 
     // Hilfsmittel an der Zielhaltung ausrichten, Kamera auf den ganzen Ablauf
     const box = new THREE.Box3()
@@ -792,7 +840,159 @@ class Buehne {
   skelett: Skelett | null = null
 
   /** Ort eines Gelenks bzw. einer Endmarke an der gezeigten Figur */
-  private gelenkOrt(name: string): THREE.Vector3 {
+  /** Gelöste Haltungen, gemeinsam für alle Figuren mit demselben Modell */
+  private get geloest(): WeakMap<Haltung, Haltung> {
+    const schluessel: object = vorlage ?? KEIN_MODELL
+    let m = LOESUNGEN.get(schluessel)
+    if (!m) LOESUNGEN.set(schluessel, (m = new WeakMap()))
+    return m
+  }
+
+  private loeseDehnung(d: Dehnung): Dehnung {
+    const l = (h: Haltung | undefined) => (h ? this.loese(h) : h)
+    if (!d.start.ziele && !d.ziel?.ziele && !d.schritte?.some((x) => x.h.ziele)) return d
+    const neu: Dehnung = { ...d, start: l(d.start)!, ziel: l(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: l(x.h)! })) }
+    // Zwischenhaltungen für jeden Übergang zwischen zwei Haltungen mit Zielpunkten
+    const paare: [Haltung, Haltung][] = []
+    if (d.art === "folge" && d.schritte?.length) d.schritte.forEach((x, i) => paare.push([d.schritte![(i + d.schritte!.length - 1) % d.schritte!.length].h, x.h]))
+    else if (d.ziel) paare.push([d.start, d.ziel])
+    for (const [a, b] of paare) {
+      if (!a.ziele || !b.ziele || a === b) continue
+      const la = this.loese(a), lb = this.loese(b)
+      if (zwischenDa(la, lb)) continue
+      const liste: Haltung[] = []
+      for (let k = 1; k < 6; k++) {
+        const u = k / 6
+        const m = mische(a, b, u)
+        const ziele: Haltung["ziele"] = {}
+        for (const [n, za] of Object.entries(a.ziele) as [ZielPunkt, Ziel][]) {
+          const zb = b.ziele[n]
+          if (!zb || (zb.bezug ?? "welt") !== (za.bezug ?? "welt")) continue
+          ziele[n] = { bezug: za.bezug, pos: [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number] }
+        }
+        // Startwert: Mischung der gelösten Enden
+        liste.push(this.loese({ ...m, g: mische(la, lb, u).g, ziele, boden: false }))
+      }
+      zwischenSetzen(la, lb, liste)
+    }
+    return neu
+  }
+
+  /**
+   * Winkel der Beine und Arme so bestimmen, dass die Zielpunkte erreicht werden (Levenberg-Marquardt mit
+   * numerischer Ableitung, gemessen an der angezeigten Figur).
+   */
+  private loese(h: Haltung): Haltung {
+    if (!h.ziele) return h
+    const fertig = this.geloest.get(h)
+    if (fertig) return fertig
+    const ziele = h.ziele
+    const g: Winkel = {}
+    for (const [k, w] of Object.entries(h.g)) if (w) g[k as keyof Winkel] = [...w]
+    const params: [keyof Winkel, number][] = []
+    const nutze = (n: keyof Winkel, i: number[]) => {
+      const w = g[n] ?? []
+      for (const j of i) {
+        while (w.length <= j) w.push(0)
+        params.push([n, j])
+      }
+      g[n] = w
+    }
+    for (const s of ["l", "r"] as Seite[]) {
+      if (ziele[`fuss_${s}`] || ziele[`ferse_${s}`] || ziele[`knie_${s}`]) {
+        nutze(`huefte_${s}`, [0, 1, 2, 3])
+        nutze(`knie_${s}`, [0])
+        nutze(`fuss_${s}`, [0, 1])
+      }
+      if (ziele[`hand_${s}`] || ziele[`ellbogen_${s}`]) {
+        nutze(`schulter_${s}`, [0, 1, 2])
+        nutze(`ellbogen_${s}`, [0])
+        if (ziele[`hand_${s}`] && ziele[`ellbogen_${s}`]) nutze(`hand_${s}`, [0])
+      }
+    }
+    const start = params.map(([n, i]) => g[n]![i])
+    const setze = (x: number[]) => x.forEach((v, j) => (g[params[j][0]]![params[j][1]] = v))
+    const roh: Haltung = { ...h, g, ziele: undefined, boden: false, pos: h.pos ?? POS_GRUND }
+    const welt = (z: Ziel): THREE.Vector3 => {
+      const v = new THREE.Vector3(...z.pos)
+      if (!z.bezug || z.bezug === "welt") return v
+      if (z.bezug === "schultern") {
+        const m = this.gelenkOrt("schulter_l").add(this.gelenkOrt("schulter_r")).multiplyScalar(0.5)
+        return v.applyQuaternion(this.koerper.k.bws.getWorldQuaternion(new THREE.Quaternion())).add(m)
+      }
+      const knochen = z.bezug === "becken" ? this.koerper.becken : this.koerper.k[z.bezug]
+      return v.applyQuaternion(knochen.getWorldQuaternion(new THREE.Quaternion())).add(this.gelenkOrt(z.bezug))
+    }
+    const reste = (x: number[]): number[] => {
+      setze(x)
+      this.koerper.stelle(roh)
+      this.modell?.uebernehmen(false)
+      const r: number[] = []
+      for (const [n, z] of Object.entries(ziele) as [ZielPunkt, Ziel][]) {
+        const ist = n.startsWith("knie_") || n.startsWith("ellbogen_") ? this.gelenkOrt(n) : this.koerper.punkt(n)
+        const d = ist.sub(welt(z))
+        r.push(d.x * 10, d.y * 10, d.z * 10)
+      }
+      // Knie über den Zehen: Knie in der senkrechten Ebene durch Knöchel und Fußrichtung
+      for (const s of ["l", "r"] as Seite[]) {
+        const fs = ziele[`fuss_${s}`], fe = ziele[`ferse_${s}`]
+        if (!fs || !fe || ziele[`knie_${s}`]) continue
+        const richtung = welt(fs).sub(welt(fe)).setY(0).normalize()
+        const quer = new THREE.Vector3(richtung.z, 0, -richtung.x)
+        // erst mit gebeugtem Knie sinnvoll: gestreckt liegt das Knie auf der Linie Hüfte–Knöchel
+        const beuge = Math.min(1, Math.max(0, (g[`knie_${s}`]?.[0] ?? 0) / 50))
+        r.push(this.gelenkOrt(`knie_${s}`).sub(this.gelenkOrt(`fuss_${s}`)).dot(quer) * 7 * beuge)
+      }
+      // sanft beim Startwert bleiben
+      x.forEach((v, j) => r.push((v - start[j]) * 0.002))
+      return r
+    }
+    let x = [...start]
+    let r = reste(x)
+    let kosten = r.reduce((a, b) => a + b * b, 0)
+    let lambda = 0.01
+    for (let it = 0; it < 80 && kosten > 1e-7; it++) {
+      const J: number[][] = []
+      const schritt = 0.25
+      for (let j = 0; j < x.length; j++) {
+        const y = [...x]
+        y[j] += schritt
+        const rj = reste(y)
+        J.push(rj.map((v, i) => (v - r[i]) / schritt))
+      }
+      // (JᵀJ + λ·diag) Δ = -Jᵀr
+      const n = x.length
+      const A = Array.from({ length: n }, (_, a) => Array.from({ length: n }, (_, b) => J[a].reduce((s2, v, i) => s2 + v * J[b][i], 0)))
+      const bvec = Array.from({ length: n }, (_, a) => -J[a].reduce((s2, v, i) => s2 + v * r[i], 0))
+      let besser = false
+      for (let versuch = 0; versuch < 6 && !besser; versuch++) {
+        const M = A.map((zeile, a) => zeile.map((v, b) => v + (a === b ? lambda * (A[a][a] + 1e-6) : 0)))
+        const delta = loeseGleichung(M, bvec)
+        const neu = x.map((v, j) => v + Math.max(-25, Math.min(25, delta[j])))
+        const rn = reste(neu)
+        const kn = rn.reduce((a, b) => a + b * b, 0)
+        if (kn < kosten) {
+          x = neu
+          r = rn
+          kosten = kn
+          lambda = Math.max(1e-4, lambda / 3)
+          besser = true
+        } else lambda *= 4
+      }
+      if (!besser) break
+    }
+    setze(x)
+    // Restfehler der Zielpunkte in Metern
+    const rest = reste(x)
+    let groesster = 0
+    for (let i = 0; i + 2 < Object.keys(ziele).length * 3; i += 3) groesster = Math.max(groesster, Math.hypot(rest[i], rest[i + 1], rest[i + 2]) / 10)
+    this.restfehler = Math.max(this.restfehler, groesster)
+    const fertigH: Haltung = { ...h, g: Object.fromEntries(Object.entries(g).map(([k, w]) => [k, (w as number[]).map((v) => Math.round(v * 10) / 10)])) as Winkel, ziele: undefined }
+    this.geloest.set(h, fertigH)
+    return fertigH
+  }
+
+  gelenkOrt(name: string): THREE.Vector3 {
     if (name.startsWith("@")) return this.koerper.punkt(name.slice(1) as Punkt)
     const m = this.modell?.gelenkPunkt(name)
     if (m) return m
@@ -876,12 +1076,36 @@ class Buehne {
           const v = herausschieben(h, q.copy(p).add(c).add(schritt), becken.clone().add(c))
           if (v && (!groesster || v.lengthSq() > groesster.lengthSq())) groesster = v
         }
-        if (groesster) schritt.add(groesster)
+        if (groesster) {
+          schritt.add(groesster)
+          this.schubWas.add(`${h.m.name || "?"}@${pk.length ? "" : ""}${groesster.toArray().map((x) => x.toFixed(2)).join(",")}`)
+        }
       }
       if (schritt.lengthSq() < 1e-6) break
       c.add(schritt)
     }
     return c
+  }
+
+  /** Eine Haltung direkt zeigen (Werkzeug): mit Zielpunkten gelöst, Gegenstände wie im Ablauf */
+  stelleHaltung(h: Haltung) {
+    const g = this.loese(h)
+    this.koerper.wurzel.position.set(0, 0, 0)
+    this.koerper.stelle(g)
+    this.modell?.uebernehmen(g.boden !== false)
+    this.schub.set(0, 0, 0)
+    if (this.fest.length || g.boden === false) {
+      const c = this.ausweichen()
+      this.schub.copy(c)
+      if (c.lengthSq() > 1e-8) {
+        this.koerper.wurzel.position.copy(c)
+        this.koerper.wurzel.updateMatrixWorld(true)
+        if (this.modell) {
+          this.modell.modell.position.add(c)
+          this.modell.modell.updateMatrixWorld(true)
+        }
+      }
+    }
   }
 
   stelle(t: number): Stand {
@@ -890,8 +1114,10 @@ class Buehne {
     this.koerper.stelle(st.haltung, st.atem)
     this.modell?.uebernehmen(st.haltung.boden !== false)
     // Nur nötig mit Gegenständen oder ohne Bodenkontakt (sonst steht die Figur schon auf dem Boden)
+    this.schub.set(0, 0, 0)
     if (this.fest.length || st.haltung.boden === false) {
       const c = this.ausweichen()
+      this.schub.copy(c)
       if (c.lengthSq() > 1e-8) {
         this.koerper.wurzel.position.copy(c)
         this.koerper.wurzel.updateMatrixWorld(true)
@@ -1193,4 +1419,23 @@ export function _durchdringungen(d: Dehnung, haltenS = 8, schritt = 0.5, toleran
     }
   }
   return funde
+}
+
+/**
+ * Messung (Werkzeug): Weltkoordinaten der Gelenke und Marken der Figur in einer Haltung, so wie sie gezeichnet wird
+ * (mit Modell, Bodenkontakt und Ausweichen vor Gegenständen). Für die Prüfung gegen die Ausführung der Übung.
+ */
+export function _messen(d: Dehnung, h: Haltung): Record<string, [number, number, number]> {
+  const b = new Buehne({ ...d, seiten: false }, 8)
+  b.schubWas.clear()
+  b.stelleHaltung(h)
+  b.szene.updateMatrixWorld(true)
+  const aus: Record<string, [number, number, number]> = {}
+  const v = (p: THREE.Vector3): [number, number, number] => [Math.round(p.x * 1000) / 1000, Math.round(p.y * 1000) / 1000, Math.round(p.z * 1000) / 1000]
+  for (const [a, z] of KETTE) for (const n of [a, z]) if (!aus["g:" + n]) aus["g:" + n] = v(b.gelenkOrt(n))
+  for (const n of Object.keys(b.koerper.marken)) aus[n] = v(b.koerper.punkt(n as Punkt))
+  aus["_rest"] = [Math.round(b.restfehler * 1000) / 1000, 0, 0]
+  aus["_schub"] = v(b.schub)
+  ;(aus as Record<string, unknown>)["_was"] = [...b.schubWas]
+  return aus
 }
