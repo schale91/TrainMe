@@ -1606,6 +1606,25 @@ const pikeSoll = (erhoeht: boolean) => (m: Messung): Pruefung[] => {
 SB_SOLL.pike_liegestuetz = pikeSoll(false)
 SB_SOLL.pike_liegestuetz_erhoeht = pikeSoll(true)
 
+const wallSlideSoll = (m: Messung): Pruefung[] => {
+  const [w, o] = [m.start, m.ziel]
+  const WAND_HINTEN = -0.5
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "die Füße etwa eine Fußlänge vor der Wand")]
+  r.push(pr("Füße eine Fußlänge vor der Wand (m)", p(w, "ferse_l")[2] - WAND_HINTEN, 0.18, 0.35, "die Füße etwa eine Fußlänge vor der Wand"))
+  for (const a of SEITEN) r.push(pr(`Knie ${a} leicht gebeugt (°)`, kniewinkel(w, a), 150, 178, "Knie leicht gebeugt"))
+  for (const x of [w, o]) {
+    for (const [n, q] of [["gesaess", "Gesäß"], ["bws", "oberer Rücken"], ["kopf", "Hinterkopf"]] as const) r.push(pr(`${q} an der Wand (m)`, p(x, n)[2] - WAND_HINTEN, 0, 0.05, "Gesäß, oberer Rücken und Hinterkopf berühren die Wand"))
+    for (const a of SEITEN) r.push(pr(`Unterarm ${a} an der Wand (m)`, Math.max(p(x, `g:ellbogen_${a}`)[2], p(x, `hand_${a}`)[2]) - WAND_HINTEN, 0, 0.07, "ohne dass die Arme die Wand verlassen"))
+  }
+  for (const a of SEITEN) {
+    r.push(pr(`W: Ellbogen ${a} auf Schulterhöhe (m)`, p(w, `g:ellbogen_${a}`)[1] - p(w, `g:schulter_${a}`)[1], -0.06, 0.05, "die Ellbogen sind etwa 90 Grad gebeugt auf Schulterhöhe"))
+    r.push(pr(`W: Ellbogen ${a} 90 Grad (°)`, ellbogenWinkel(w, a), 75, 105, "etwa 90 Grad gebeugt"))
+    r.push(pr(`Arm ${a} oben weiter nach oben (m)`, p(o, `hand_${a}`)[1] - p(w, `hand_${a}`)[1], 0.12, 0.4, "Schieb die Arme langsam an der Wand nach oben, so weit es geht"))
+  }
+  return r
+}
+SB_SOLL.wall_slide = wallSlideSoll
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
