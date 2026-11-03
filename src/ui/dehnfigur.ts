@@ -866,7 +866,8 @@ class Buehne {
     return m
   }
 
-  private loeseDehnung(d: Dehnung): Dehnung {
+  private loeseDehnung(d0: Dehnung): Dehnung {
+    const d = this.festHalten(d0)
     const l = (h: Haltung | undefined) => (h ? this.loese(h) : h)
     if (!d.start.ziele && !d.ziel?.ziele && !d.schritte?.some((x) => x.h.ziele)) return d
     const neu: Dehnung = { ...d, start: l(d.start)!, ziel: l(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: l(x.h)! })) }
@@ -898,6 +899,40 @@ class Buehne {
       zwischenSetzen(la, lb, liste)
     }
     return neu
+  }
+
+  /**
+   * d.fest: die genannten Punkte bleiben in allen Phasen an ihrer Lage in der Zielhaltung (z. B. die Hand an der Wand,
+   * der Standfuß am Boden). Dafür bekommen alle anderen Haltungen diese Punkte als Zielpunkte.
+   */
+  private festHalten(d: Dehnung): Dehnung {
+    if (!d.fest?.length) return d
+    const ziel = d.ziel || d.schritte?.[Math.floor((d.schritte.length - 1) / 2)]?.h || d.start
+    const gz = this.loese(ziel)
+    this.koerper.wurzel.position.set(0, 0, 0)
+    this.koerper.stelle(gz)
+    this.modell?.uebernehmen(gz.boden !== false)
+    const orte: Partial<Record<ZielPunkt, Ziel>> = {}
+    for (const n of d.fest) {
+      const v = n.startsWith("knie_") || n.startsWith("ellbogen_") ? this.gelenkOrt(n) : this.koerper.punkt(n)
+      orte[n] = { pos: [v.x, v.y, v.z] }
+    }
+    // Absenken der Zielhaltung auf den Boden: die anderen Haltungen ohne eigene Lage bekommen denselben Versatz
+    const b = this.gelenkOrt("becken"), g0 = gz.pos ?? POS_GRUND
+    const versatz: [number, number, number] = gz.pos && gz.boden === false ? [0, 0, 0] : [b.x - g0[0], b.y - g0[1], b.z - g0[2]]
+    const mitFest = (h: Haltung): Haltung => {
+      if (h === ziel) return h
+      const p = h.pos ?? POS_GRUND
+      const pos: [number, number, number] = h.pos && h.boden === false ? p : [p[0] + versatz[0], p[1] + versatz[1], p[2] + versatz[2]]
+      return { ...h, ziele: { ...h.ziele, ...orte }, boden: false, pos }
+    }
+    const neu = new Map<Haltung, Haltung>()
+    const m = (h: Haltung | undefined) => {
+      if (!h) return h
+      if (!neu.has(h)) neu.set(h, mitFest(h))
+      return neu.get(h)!
+    }
+    return { ...d, start: m(d.start)!, ziel: m(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: m(x.h)! })) }
   }
 
   /**
@@ -1096,6 +1131,12 @@ class Buehne {
     const gesamt = this.laenge() / (this.d.seiten ? 2 : 1)
     const becken = this.koerper.becken.getWorldPosition(new THREE.Vector3())
     const lagen: THREE.Vector3[][] = []
+    // Zielhaltung zuerst: an ihr liegt der Kontakt, die anderen Phasen dürfen die Wand nicht weiter wegdrücken
+    const ziel = this.d.ziel || this.d.schritte?.[Math.floor((this.d.schritte.length - 1) / 2)]?.h || this.d.start
+    this.koerper.wurzel.position.set(0, 0, 0)
+    this.koerper.stelle(ziel)
+    this.modell?.uebernehmen(ziel.boden !== false)
+    lagen.push(this.punkte())
     for (let i = 0; i <= 24; i++) {
       const st = standZu(this.d, (i / 24) * gesamt * 0.999, this.haltenS)
       this.koerper.wurzel.position.set(0, 0, 0)
@@ -1114,8 +1155,13 @@ class Buehne {
       // nur Punkte vor der Wandfläche zählen (Türrahmen, Wandkante: daneben ist frei)
       const quer = achse === "x" ? "z" : "x"
       const halb = gr[quer] / 2
-      for (const pk of lagen) for (const p of pk) if (Math.abs(p[quer] - w.position[quer]) <= halb && p.y <= w.position.y + gr.y / 2) tief = Math.max(tief, seite * (p[achse] - flaeche))
-      this.wandVersatz = Math.max(this.wandVersatz, tief)
+      let tiefZiel = 0
+      lagen.forEach((pk, i) => {
+        for (const p of pk) if (Math.abs(p[quer] - w.position[quer]) <= halb && p.y <= w.position.y + gr.y / 2) tief = Math.max(tief, seite * (p[achse] - flaeche))
+        if (i === 0) tiefZiel = Math.max(0, tief)
+      })
+      // gemessen wird nur, was über den Hautkontakt der Zielhaltung hinausgeht
+      this.wandVersatz = Math.max(this.wandVersatz, tief - tiefZiel)
       if (tief > 0.003) {
         w.position[achse] += seite * (tief + 0.002)
         this.festBasis.set(w, w.position.clone())

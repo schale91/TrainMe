@@ -162,6 +162,8 @@ export interface Dehnung {
   halten?: number
   /** beide Seiten nacheinander (gespiegelt) */
   seiten?: boolean
+  /** Punkte, die in allen Phasen dort bleiben, wo sie in der Zielhaltung sind (Hand an der Wand, Standfuß am Boden) */
+  fest?: ZielPunkt[]
   hilfsmittel?: Hilfsmittel[]
   /** Kurzer Hinweis unter der Figur */
   hinweis?: string

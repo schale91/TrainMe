@@ -69,7 +69,8 @@ const aufstehen = (sitz: Haltung, vor: Haltung, oben: Haltung, extra: Partial<De
 export const KRAFT_BEINE: Record<string, Dehnung> = {
   // Kniebeuge mit der Stange im Rack
   // Kurzhantel und Körpergewicht
-  wandsitzen_einbeinig: halte("seite", mit(STAND, { g: B("schulter", [4, 10, 0]) }), mit(WANDSITZ, { g: { huefte_r: [90, 8, 0], knie_r: [6] } }), { ein: 2, aus: 2, seiten: true, hilfsmittel: [WAND_HINTEN] }),
+  // aus dem normalen Wandsitz (beide Füße) das rechte Bein gestreckt abheben
+  wandsitzen_einbeinig: halte("seite", WANDSITZ, mit(WANDSITZ, { g: { huefte_r: [90, 8, 0], knie_r: [6] } }), { ein: 2, aus: 2, seiten: true, hilfsmittel: [WAND_HINTEN] }),
   // Knie
   sissy_squat: wdh("seite", mit(STAND, { g: { ...B("schulter", [80, 10, 0]), ...B("fuss", [-30, 0]), ...B("zehen", [40]) } }), H({ ...B("huefte", [0, 6, 0]), ...B("knie", [100]), ...B("fuss", [10, 0]), ...B("zehen", [50]), ...B("schulter", [100, 10, 0]) }, [-35, 0, 0]), 2.0, {
     aus: 1.6,
