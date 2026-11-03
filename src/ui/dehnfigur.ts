@@ -413,7 +413,7 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const r = k.punkt(h.lehne)
       const d = new THREE.Vector3(0, r.y - h.hoehe, r.z - p.z).normalize()
       // Lehne liegt hinter dem Rücken: von der Sitzkante aus entlang des Rückens, um ihre Dicke nach hinten versetzt
-      const hinten = new THREE.Vector3(0, d.z, -d.y)
+      const hinten = new THREE.Vector3(0, d.z, -d.y).multiplyScalar(h.bauch ? -1 : 1)
       const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.86, 0.07), mat(FARBE.polster, 0.8))
       lehne.position.set(p.x, h.hoehe, p.z - 0.06).addScaledVector(d, 0.45).addScaledVector(hinten, 0.08)
       lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)
