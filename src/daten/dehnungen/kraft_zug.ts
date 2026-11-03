@@ -369,6 +369,68 @@ const erSchritt = (kipp: number): ER => ({
 const einarmRow = (e: ER, bank: Hilfsmittel, texte: [string, string], tempo = 1.2): Dehnung =>
   wdh("seite", einarmRudern(e, false), einarmRudern(e, true), tempo, { aus: tempo + 0.8, halten: 0.4, seiten: true, texte, hilfsmittel: [...KH_R, bank] })
 
+
+// ---------------------------------------------------------------- Kabelrudern im Sitzen
+// Gesäß auf dem Sitz, Füße fest auf der Plattform, Knie leicht gebeugt. Vorn sind die Arme gestreckt (der Oberkörper
+// darf sich leicht nach vorn neigen), hinten ist der Griff am Bauch bzw. die Stange an der unteren Brust und die
+// Ellbogen sind hinter dem Körper.
+interface KR {
+  /** Neigung vorn und hinten (positiv nach vorn) */
+  vor: [number, number]
+  griff: number
+  dreh: number
+  /** Hand hinten im Rahmen der Schultern */
+  hinten: [number, number]
+  /** Ellbogen hinten: Richtung */
+  ellbogen: P3
+  einarm?: boolean
+  /** nur die Schulterblätter: Arme bleiben gestreckt */
+  schulterblatt?: boolean
+}
+const KR_PLATTFORM = 0.12
+const KR_FUESSE: Ziele = {
+  ferse_l: { pos: [0.13, KR_PLATTFORM + 0.022, 0.68] },
+  fuss_l: { pos: [0.14, KR_PLATTFORM + 0.034, 0.8] },
+  ferse_r: { pos: [-0.13, KR_PLATTFORM + 0.022, 0.68] },
+  fuss_r: { pos: [-0.14, KR_PLATTFORM + 0.034, 0.8] },
+}
+const krHaltung = (k: KR, gezogen: boolean): Haltung => {
+  const vor = gezogen ? k.vor[1] : k.vor[0]
+  const ziele: Ziele = { ...KR_FUESSE }
+  for (const sx of k.einarm ? ([-1] as const) : ([1, -1] as const)) {
+    const n = sx === 1 ? "l" : "r"
+    if (gezogen && !k.schulterblatt) {
+      const h: P3 = [k.griff, k.hinten[0], k.hinten[1]]
+      ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+      const e = ellbogenKreis([SCHULTER_X, 0, 0], h, k.ellbogen)
+      ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    } else {
+      // Arme waagerecht nach vorn (im leicht geneigten Rumpf etwas nach oben), gestreckt
+      // Schulterblätter zusammen: nur die Winkel der Schulterblätter ändern sich, die Arme bleiben gestreckt
+      if (k.schulterblatt && gezogen) continue
+      const h = armBogen(k.griff, 90 + vor - 8, ARM_FAUST * 0.99)
+      ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+    }
+  }
+  if (k.einarm) ziele.hand_l = { pos: [0.1, 0.62, 0.24] }
+  const arme: Winkel = gezogen && !k.schulterblatt ? { ...B("schulter", [-20, 20, 0]), ...B("ellbogen", [100, k.dreh]) } : { ...B("schulter", [82, 8, 0]), ...B("ellbogen", [6, k.dreh]) }
+  const blatt: Winkel = k.schulterblatt ? B("schulterblatt", [0, gezogen ? -20 : 18]) : gezogen ? B("schulterblatt", [0, -12]) : B("schulterblatt", [0, 10])
+  const frei: Winkel = k.einarm ? { schulter_l: [30, 10, 0], ellbogen_l: [50, 0] } : {}
+  return H({ ...B("huefte", [84, 8, 0]), ...B("knie", [40]), ...B("fuss", [10, 0]), ...FAUST, ...arme, ...blatt, ...frei }, [vor, 0, 0], { pos: [0, 0.55, 0], boden: false, ziele })
+}
+const KR_ROLLE: P3 = [0, 0.32, 1.05]
+const KR_SITZ: Hilfsmittel = { art: "bank", unter: "gesaess", hoehe: 0.45, versatz: [0, -0.3] }
+const KR_PLATTE: Hilfsmittel = { art: "box", unter: "fuss_l", hoehe: KR_PLATTFORM, versatz: [-0.14, -0.05] }
+const kabelRow = (k: KR, griff: Hilfsmittel[], texte: [string, string], extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("seite", krHaltung(k, false), krHaltung(k, true), 1.2, {
+    aus: 2.0,
+    halten: 0.5,
+    texte,
+    hilfsmittel: [...griff, { art: "kabel", von: k.einarm ? "hand_r" : "haende", rolle: k.einarm ? [-0.12, KR_ROLLE[1], KR_ROLLE[2]] : KR_ROLLE }, KR_SITZ, KR_PLATTE],
+    ...extra,
+  })
+const KR_V: KR = { vor: [12, 0], griff: 0.06, dreh: HAMMER, hinten: [-0.32, 0.14], ellbogen: [0.15, 0, -1] }
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -443,6 +505,12 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
   rudern_kh: einarmRow(ER_KNIE, { art: "bank", unter: "knie_l", hoehe: EINARM_BANK_Y, versatz: [0, 0.1] }, ["Ellbogen nah am Körper zur Hüfte, ohne aufzudrehen", "Langsam senken, bis der Arm gestreckt ist"]),
   rudern_kh_schwer: einarmRow(erSchritt(80), { art: "bank", unter: "hand_l", hoehe: SCHRITT_HOCH }, ["Kraftvoll zur Hüfte, Rücken bleibt gerade", "Kontrolliert bis zur vollen Streckung"], 1.0),
   rudern_kroc: einarmRow(erSchritt(66), { art: "bank", unter: "hand_l", hoehe: SCHRITT_HOCH }, ["Kraftvoll zur Hüfte, leichter Schwung erlaubt", "In voller Länge absenken"], 0.9),
+  // Kabelrudern im Sitzen
+  rudern_kabel: kabelRow(KR_V, [], ["Zum Bauch ziehen, Ellbogen nah am Körper, Brust offen", "Kontrolliert nach vorn, Schulterblätter gleiten auseinander"]),
+  rudern_kabel_streng: kabelRow({ ...KR_V, vor: [0, 0] }, [], ["Oberkörper bleibt senkrecht, zum Bauch, eine Sekunde halten", "Langsam nach vorn, nur die Schulterblätter gleiten mit"], { halten: 1.0 }),
+  rudern_kabel_weit: kabelRow({ vor: [6, 0], griff: 0.26, dreh: OBERGRIFF, hinten: [-0.2, 0.14], ellbogen: [1, -0.25, -0.5] }, [kabelstange()], ["Zur unteren Brust, Ellbogen etwa 60 bis 75 Grad abgespreizt", "Kontrolliert nach vorn, bis die Arme gestreckt sind"]),
+  rudern_kabel_einarmig: kabelRow({ ...KR_V, vor: [10, 0], griff: 0.15, hinten: [-0.34, 0.1], einarm: true }, [], ["Ellbogen nah am Körper zur Hüfte, ohne aufzudrehen", "Langsam zurück in die Dehnung"], { seiten: true }),
+  rudern_schulterblatt: kabelRow({ ...KR_V, vor: [2, 2], schulterblatt: true }, [], ["Nur die Schulterblätter zusammenziehen, Arme bleiben gestreckt", "Schulterblätter langsam nach vorn gleiten lassen"], { halten: 2.0 }),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),

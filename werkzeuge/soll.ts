@@ -995,6 +995,51 @@ const einarmRowSoll = (art: "knie" | "schwer" | "kroc") => (m: Messung): Pruefun
 }
 const EINARM_SOLL: Record<string, (m: Messung) => Pruefung[]> = { rudern_kh: einarmRowSoll("knie"), rudern_kh_schwer: einarmRowSoll("schwer"), rudern_kroc: einarmRowSoll("kroc") }
 
+// ---------------------------------------------------------------- Kabelrudern im Sitzen
+interface KRS {
+  vorn: Bereich
+  hinten: Bereich
+  untenY: Bereich
+  einarm?: boolean
+  weit?: boolean
+  schulterblatt?: boolean
+  quelle: { vorn: string; hinten: string; unten: string }
+}
+const kabelRowSoll = (k: KRS) => (m: Messung): Pruefung[] => {
+  const s = m.start, z = m.ziel
+  const r = [...ruhig(m), pr("Sitz und Füße bleiben (m)", bleibt(m, ["g:becken", "ferse_l", "ferse_r"]), 0, 0.02, "die Füße stehen fest auf der Plattform")]
+  r.push(pr("Oberkörper vorn (°)", rumpfneigung(s), k.vorn[0], k.vorn[1], k.quelle.vorn))
+  r.push(pr("Oberkörper hinten (°)", rumpfneigung(z), k.hinten[0], k.hinten[1], k.quelle.hinten))
+  for (const a of SEITEN) r.push(pr(`Knie ${a} leicht gebeugt (°)`, kniewinkel(s, a), 120, 172, "die Knie sind leicht gebeugt"))
+  for (const a of k.einarm ? (["r"] as const) : SEITEN) {
+    r.push(pr(`Arm ${a} vorn gestreckt (°)`, ellbogenWinkel(s, a), 160, 180, "die Arme sind gestreckt"))
+    if (k.schulterblatt) {
+      r.push(pr(`Arm ${a} bleibt gestreckt (°)`, ellbogenWinkel(z, a), 160, 180, "die Ellbogen bleiben gestreckt"))
+      r.push(pr(`Hand ${a} geht mit den Schulterblättern zurück (m)`, p(s, `hand_${a}`)[2] - p(z, `hand_${a}`)[2], 0.03, 0.12, "Zieh nun nur die Schulterblätter nach hinten zusammen"))
+      continue
+    }
+    const h = amRumpf(z, `hand_${a}`)
+    r.push(pr(`Hand ${a} hinten am Rumpf entlang (m)`, h[1], k.untenY[0], k.untenY[1], k.quelle.unten))
+    r.push(pr(`Hand ${a} hinten nah am Rumpf (m)`, h[2], 0.03, 0.2, k.quelle.unten))
+    r.push(pr(`Ellbogen ${a} hinter dem Körper (m)`, amRumpf(z, `g:ellbogen_${a}`)[2], -0.25, -0.02, "bis die Ellbogen hinter dem Körper sind"))
+    if (k.weit) r.push(pr(`Ellbogen ${a} abgespreizt (°)`, abspreizen(z, a), 55, 80, "die Ellbogen gehen etwa 60 bis 75 Grad vom Körper abgespreizt nach hinten"))
+    else r.push(pr(`Ellbogen ${a} nah am Körper (m)`, Math.abs(p(z, `g:ellbogen_${a}`)[0]) - Math.abs(p(z, `g:schulter_${a}`)[0]), -0.1, 0.07, "die Ellbogen gehen nah am Körper nach hinten"))
+  }
+  if (k.einarm) {
+    r.push(pr("Freie Hand auf dem Oberschenkel (m)", Math.min(...m.alle.map((x) => abstand(p(x, "hand_l"), p(x, "oberschenkel_l")))), 0, 0.12, "die freie Hand liegt auf dem Oberschenkel"))
+    r.push(pr("Oberkörper dreht nicht auf (m)", Math.abs(p(z, "g:schulter_l")[2] - p(z, "g:schulter_r")[2]), 0, 0.07, "ohne den Oberkörper aufzudrehen"))
+  }
+  return r
+}
+const KRS_V: KRS = { vorn: [3, 18], hinten: [-6, 5], untenY: [-0.38, -0.24], quelle: { vorn: "er darf sich in der Dehnung leicht nach vorn neigen", hinten: "Richte den Oberkörper auf", unten: "Zieh den Griff zum Bauch" } }
+const KABEL_ROW_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  rudern_kabel: kabelRowSoll(KRS_V),
+  rudern_kabel_streng: kabelRowSoll({ ...KRS_V, vorn: [-4, 4], hinten: [-4, 4], quelle: { ...KRS_V.quelle, vorn: "richte den Oberkörper senkrecht auf, er bewegt sich während des ganzen Satzes nicht", hinten: "der Oberkörper bewegt sich nicht" } }),
+  rudern_kabel_weit: kabelRowSoll({ ...KRS_V, vorn: [-4, 10], untenY: [-0.26, -0.12], weit: true, quelle: { ...KRS_V.quelle, vorn: "Richte den Oberkörper auf", unten: "Zieh die Stange zur unteren Brust" } }),
+  rudern_kabel_einarmig: kabelRowSoll({ ...KRS_V, untenY: [-0.42, -0.26], einarm: true, quelle: { ...KRS_V.quelle, unten: "Zieh den Ellbogen nah am Körper nach hinten zur Hüfte" } }),
+  rudern_schulterblatt: kabelRowSoll({ ...KRS_V, vorn: [-4, 6], hinten: [-4, 6], schulterblatt: true, quelle: { ...KRS_V.quelle, vorn: "der Oberkörper ist aufrecht", hinten: "ohne den Oberkörper zu bewegen" } }),
+}
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1103,6 +1148,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...UEBER_SOLL,
   ...BRUST_ROW_SOLL,
   ...EINARM_SOLL,
+  ...KABEL_ROW_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
