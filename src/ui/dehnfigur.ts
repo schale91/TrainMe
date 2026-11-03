@@ -380,11 +380,20 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const dicke = 0.08
       const ab = h.abstand ?? 0.03
       const mitte = new THREE.Vector3(p.x + n[0] * (ab + dicke / 2), 1.2, p.z + n[2] * (ab + dicke / 2))
-      const gr: [number, number, number] = n[0] ? [dicke, 2.4, 1.6] : [1.6, 2.4, dicke]
+      // feste Wandfläche in der Welt (z bei vorn/hinten, x bei links/rechts): Zielpunkte liegen genau auf ihr
+      if (h.ebene !== undefined) {
+        if (n[2]) mitte.z = h.ebene + (n[2] * dicke) / 2
+        if (n[0]) mitte.x = h.ebene + (n[0] * dicke) / 2
+      }
+      // breite und x: nur ein Stück Wand (Türrahmen, Wandkante), Mitte bei x
+      if (h.x !== undefined) mitte.x = h.x
+      const gr: [number, number, number] = n[0] ? [dicke, 2.4, h.breite ?? 1.6] : [h.breite ?? 1.6, 2.4, dicke]
       out.push(kiste(mitte, gr, FARBE.wand))
     } else if (h.art === "bank" || h.art === "stuhl" || h.art === "box") {
       const p = k.punkt(h.unter)
       if (h.versatz) p.add(new THREE.Vector3(h.versatz[0], 0, h.versatz[1]))
+      // Sitzen am Ende der Bank: die Bank reicht nach hinten, die Oberschenkel liegen vorn frei über der Kante
+      else if (h.art === "bank" && !h.quer && h.unter === "gesaess") p.add(new THREE.Vector3(0, 0, -0.42))
       const gr: [number, number, number] = h.art === "bank" ? [0.3, h.hoehe, 1.1] : h.art === "stuhl" ? [0.42, h.hoehe, 0.42] : [0.45, h.hoehe, 0.4]
       if (h.art === "bank") {
         // Hantelbank: Polster oben, schwarzes Gestell mit zwei Füßen; quer: Bank steht quer zur Blickrichtung (Hip Thrust)
@@ -400,7 +409,8 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       } else out.push(kiste(new THREE.Vector3(p.x, h.hoehe / 2, p.z), gr, h.art === "box" ? FARBE.box : FARBE.polster))
       if (h.art === "stuhl") out.push(kiste(new THREE.Vector3(p.x, h.hoehe + 0.22, p.z - 0.2), [0.42, 0.44, 0.03], FARBE.polster))
     } else if (h.art === "rolle") {
-      const p = k.punkt(h.unter)
+      // bei: feste Lage [x, z] in der Welt (der Körper rollt über die liegende Rolle)
+      const p = h.bei ? new THREE.Vector3(h.bei[0], 0, h.bei[1]) : k.punkt(h.unter)
       const d = h.laengs ? new THREE.Vector3(0, 0, 0.45) : new THREE.Vector3(0.45, 0, 0)
       const m = zylinder(new THREE.Vector3(p.x, 0.075 + MATTE, p.z).sub(d), new THREE.Vector3(p.x, 0.075 + MATTE, p.z).add(d), 0.075, FARBE.rolle)
       out.push(m)
@@ -418,6 +428,12 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
     } else if (h.art === "tuer") {
       const p = k.punkt(h.an)
       for (const dz of [-0.04, 0.04]) out.push(kiste(new THREE.Vector3(p.x + (p.x >= 0 ? 0.04 : -0.04), 1.05, p.z + dz), [0.06, 2.1, 0.06], FARBE.wand))
+    } else if (h.art === "tisch") {
+      // Tisch: Kante an den Händen, Platte 4 cm dick, 0,8 m tief zum Kopf hin, Beine an den hinteren und vorderen Ecken
+      const p = k.punkt(h.an)
+      const oben = p.y + 0.035
+      out.push(kiste(new THREE.Vector3(0, oben - 0.02, p.z - 0.38), [1.2, 0.04, 0.8], FARBE.holz))
+      for (const sx of [-0.55, 0.55]) for (const dz of [-0.05, -0.72]) out.push(kiste(new THREE.Vector3(sx, (oben - 0.04) / 2, p.z + dz), [0.05, oben - 0.04, 0.05], FARBE.holz))
     } else if (h.art === "stange") {
       const p = k.punkt(h.an)
       out.push(zylinder(new THREE.Vector3(-0.7, p.y + 0.02, p.z), new THREE.Vector3(0.7, p.y + 0.02, p.z), 0.016, FARBE.metall))
@@ -425,7 +441,7 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       // Latzug-Turm wie ATX LMSW-700: schwarzer Rahmen, Gewichtsblock dahinter, obere Rolle am Ausleger
       const [x, y, z] = h.rolle
       const weg = z >= 0 ? 1 : -1
-      const pz = z + weg * 0.12
+      const pz = z + weg * (h.turm ?? 0.12)
       out.push(kiste(new THREE.Vector3(x, 1.12, pz), [0.09, 2.24, 0.09], FARBE.stahl))
       out.push(kiste(new THREE.Vector3(x, 0.45, pz + weg * 0.26), [0.26, 0.9, 0.16], FARBE.stahl))
       for (const dx of [-0.07, 0.07]) out.push(zylinder(new THREE.Vector3(x + dx, 0.9, pz + weg * 0.26), new THREE.Vector3(x + dx, 2.1, pz + weg * 0.26), 0.008, FARBE.metall))
@@ -442,6 +458,43 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
         out.push(zylinder(new THREE.Vector3(sx, p.y - 0.055, p.z - 0.35), new THREE.Vector3(sx, p.y - 0.055, p.z + 0.35), 0.02, FARBE.stahl))
         for (const dz of [-0.3, 0.3]) out.push(kiste(new THREE.Vector3(sx, (p.y - 0.05) / 2, p.z + dz), [0.05, p.y - 0.05, 0.05], FARBE.stahl))
       }
+    } else if (h.art === "schraegbank" && h.kante) {
+      // Helms-Rudern: obere Kante der Lehne an der Brust (unter den Schultern), die Lehne fällt im Winkel von etwa
+      // 40 Grad vor dem Körper nach vorn ab, der Sitz an ihrem unteren Ende
+      const b = k.punkt("becken"), kp = k.punkt("kopf")
+      const u = new THREE.Vector3(0, kp.y - b.y, kp.z - b.z).normalize()
+      const vorn = new THREE.Vector3(0, -u.z, u.y)
+      const kante = b.clone().addScaledVector(u, 0.27).addScaledVector(vorn, 0.155)
+      const d = new THREE.Vector3(0, -Math.sin(rad(40)), Math.cos(rad(40)))
+      const n = new THREE.Vector3(0, Math.cos(rad(40)), Math.sin(rad(40)))
+      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.8, 0.07), mat(FARBE.polster, 0.8))
+      lehne.position.copy(kante).addScaledVector(d, 0.4).addScaledVector(n, -0.04)
+      lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)
+      lehne.castShadow = lehne.receiveShadow = true
+      out.push(lehne)
+      const unten = kante.clone().addScaledVector(d, 0.8)
+      const sitzY = Math.min(h.hoehe, Math.max(0.12, unten.y))
+      out.push(kiste(new THREE.Vector3(b.x, sitzY - 0.04, unten.z + 0.2), [0.3, 0.08, 0.36], FARBE.polster))
+      for (const dz of [0.0, 0.3]) out.push(kiste(new THREE.Vector3(b.x, (sitzY - 0.08) / 2, unten.z + dz), [0.08, sitzY - 0.08, 0.08], FARBE.stahl))
+      out.push(kiste(new THREE.Vector3(b.x, 0.03, unten.z + 0.15), [0.5, 0.06, 0.4], FARBE.stahl))
+    } else if (h.art === "schraegbank" && h.bauch) {
+      // Bauchlage auf der Schrägbank: die Lehne liegt an der Vorderseite des Rumpfs (Brust und Bauch, 12 cm vor der
+      // Linie Becken–Kopf), der Sitz unter ihrem unteren Ende
+      const b = k.punkt("becken"), kp = k.punkt("kopf")
+      const u = new THREE.Vector3(0, kp.y - b.y, kp.z - b.z).normalize()
+      const vorn = new THREE.Vector3(0, -u.z, u.y)
+      // oberes Ende an der Brust unter den Schultern (das Kinn ragt darüber): darüber hängen die Arme frei nach unten
+      const mitte = b.clone().addScaledVector(u, -0.08).addScaledVector(vorn, 0.205)
+      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.66, 0.07), mat(FARBE.polster, 0.8))
+      lehne.position.copy(mitte)
+      lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), u)
+      lehne.castShadow = lehne.receiveShadow = true
+      out.push(lehne)
+      const unten = mitte.clone().addScaledVector(u, -0.33)
+      const sitzY = Math.min(h.hoehe, Math.max(0.12, unten.y - 0.04))
+      out.push(kiste(new THREE.Vector3(b.x, sitzY - 0.04, unten.z + 0.12), [0.3, 0.08, 0.36], FARBE.polster))
+      out.push(kiste(new THREE.Vector3(b.x, (sitzY - 0.08) / 2, unten.z + 0.1), [0.08, sitzY - 0.08, 0.08], FARBE.stahl))
+      out.push(kiste(new THREE.Vector3(b.x, 0.03, unten.z + 0.1), [0.5, 0.06, 0.08], FARBE.stahl))
     } else if (h.art === "schraegbank") {
       // Verstellbare Hantelbank wie ATX MBX-610: Sitz, Lehne im Winkel des Rückens, schwarzer Rahmen
       const p = k.punkt(h.unter)
@@ -452,7 +505,8 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const d = new THREE.Vector3(0, r.y - h.hoehe, r.z - p.z).normalize()
       // Lehne liegt hinter dem Rücken: von der Sitzkante aus entlang des Rückens, um ihre Dicke nach hinten versetzt
       const hinten = new THREE.Vector3(0, d.z, -d.y).multiplyScalar(h.bauch ? -1 : 1)
-      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.86, 0.07), mat(FARBE.polster, 0.8))
+      // Lehne 24 cm breit: hängende Arme (Schrägbank-Curl) laufen seitlich an ihr vorbei
+      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.86, 0.07), mat(FARBE.polster, 0.8))
       lehne.position.set(p.x, h.hoehe, p.z - 0.06).addScaledVector(d, 0.45).addScaledVector(hinten, 0.08)
       lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)
       lehne.castShadow = lehne.receiveShadow = true
@@ -532,7 +586,7 @@ const andereSeite = <T extends string>(p: T): T => (p.endsWith("_l") ? p.slice(0
 
 /** Hilfsmittel für die gespiegelte Seite: links und rechts getauscht, Kabelrolle auf der anderen Seite */
 function gespiegeltesHilfsmittel(h: Hilfsmittel): Hilfsmittel {
-  if (h.art === "hantel" || h.art === "gymnastikball" || h.art === "gleitscheibe") return { ...h, an: andereSeite(h.an) }
+  if (h.art === "hantel" || h.art === "kettlebell" || h.art === "gymnastikball" || h.art === "gleitscheibe") return { ...h, an: andereSeite(h.an) }
   if (h.art === "kabel") return { ...h, von: andereSeite(h.von), rolle: [-h.rolle[0], h.rolle[1], h.rolle[2]] }
   if (h.art === "bandanker") return { ...h, von: andereSeite(h.von), anker: [-h.anker[0], h.anker[1], h.anker[2]] }
   if (h.art === "stab" || h.art === "band" || h.art === "langhantel" || h.art === "sz" || h.art === "latstange" || h.art === "kabelstange") return { ...h, von: andereSeite(h.von), bis: andereSeite(h.bis) }
@@ -555,6 +609,16 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       const q = griff.lengthSq() > 1e-6 ? griff.normalize() : new THREE.Vector3(1, 0, 0)
       out.push(zylinder(p.clone().addScaledVector(q, -0.09), p.clone().addScaledVector(q, 0.09), 0.014, FARBE.metall))
       for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), p.clone().addScaledVector(q, s * 0.1), 0.05, FARBE.polster))
+    } else if (h.art === "kettlebell") {
+      // Kettlebell: Griff quer in der Faust, die Kugel (Durchmesser etwa 20 cm) senkrecht darunter; steht sie am Boden,
+      // liegt die Handfläche etwa 28 cm hoch
+      const p = k.punkt(h.an)
+      const griff = h.an === "hand_l" || h.an === "hand_r" ? k.punkt(h.an === "hand_l" ? "griff_l" : "griff_r").sub(p) : new THREE.Vector3(1, 0, 0)
+      const q = griff.lengthSq() > 1e-6 ? griff.normalize() : new THREE.Vector3(1, 0, 0)
+      out.push(zylinder(p.clone().addScaledVector(q, -0.06), p.clone().addScaledVector(q, 0.06), 0.012, FARBE.stahl))
+      const mitte = p.clone().add(new THREE.Vector3(0, -0.175, 0))
+      for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), mitte.clone().addScaledVector(q, s * 0.05).add(new THREE.Vector3(0, 0.08, 0)), 0.012, FARBE.stahl))
+      out.push(kugel(0.1, FARBE.stahl, [mitte.x, mitte.y, mitte.z]))
     } else if (h.art === "langhantel" || h.art === "sz") out.push(...stange(k, h.art, h.von, h.bis))
     else if (h.art === "latstange") out.push(...latstange(k, h.von, h.bis))
     else if (h.art === "kabelstange") {
@@ -754,6 +818,8 @@ class Buehne {
   d: Dehnung
   /** Größter Restfehler des Lösers je Haltung (Meter), für die Prüfung */
   restfehler = 0
+  /** wie weit eine Wand weichen musste, weil eine Phase in sie hineinragte (Kontakt der Zielhaltung geht verloren) */
+  wandVersatz = 0
   /** Zielpunkt mit dem größten Restfehler */
   restWo = ""
   /** Verschiebung durch Ausweichen im letzten Bild (Boden, Gegenstände) */
@@ -803,7 +869,9 @@ class Buehne {
     }
 
     // Zielpunkte (Füße am Boden, Hände an der Stange) in Winkel umrechnen, an der angezeigten Figur
+    const d0 = d
     this.d = this.loeseDehnung(d)
+    this.zuordnen(d0, this.d)
     d = this.d
 
     // Hilfsmittel an der Zielhaltung ausrichten, Kamera auf den ganzen Ablauf
@@ -813,10 +881,31 @@ class Buehne {
     const ziel = d.ziel || d.schritte?.[Math.floor((d.schritte.length - 1) / 2)]?.h || d.start
     this.koerper.stelle(ziel)
     this.modell?.uebernehmen(ziel.boden !== false)
-    this.fest = festeHilfsmittel(this.koerper, d.hilfsmittel || [])
+    const alleH = d.hilfsmittel || []
+    const ausr = d.ausrichten ?? []
+    this.fest = festeHilfsmittel(this.koerper, alleH.filter((_, i) => ausr[i] === undefined))
+    // Geräte, die an einem anderen Schritt stehen (Bank am Sitzen, Box an der Landung)
+    for (const s of new Set(ausr.filter((x): x is number => x !== undefined))) {
+      const h = d.schritte?.[s]?.h ?? (s === 0 ? d.start : ziel)
+      this.koerper.stelle(h)
+      this.modell?.uebernehmen(h.boden !== false)
+      this.fest.push(...festeHilfsmittel(this.koerper, alleH.filter((_, i) => ausr[i] === s)))
+    }
+    this.koerper.stelle(ziel)
+    this.modell?.uebernehmen(ziel.boden !== false)
     for (const o of this.fest) s.add(o)
     for (const o of this.fest) this.festBasis.set(o, o.position.clone())
     this.sitzAnpassen(ziel)
+    this.wandAnpassen()
+    // Mit festen Punkten auf einem Gerät (Rolle, Ball, Kissen): die Figur auf das Gerät setzen und die Bodenkontakte neu lösen
+    if (d0.fest?.length && this.fest.length) {
+      const neu = this.aufGeraetSetzen(d0)
+      if (neu) {
+        this.d = neu
+        this.zuordnen(d0, neu)
+        d = neu
+      }
+    }
     for (const u of proben) {
       this.stelle(u * gesamt)
       if (this.modell) this.modell.umriss(box)
@@ -854,7 +943,8 @@ class Buehne {
     return m
   }
 
-  private loeseDehnung(d: Dehnung): Dehnung {
+  private loeseDehnung(d0: Dehnung): Dehnung {
+    const d = this.festHalten(d0)
     const l = (h: Haltung | undefined) => (h ? this.loese(h) : h)
     if (!d.start.ziele && !d.ziel?.ziele && !d.schritte?.some((x) => x.h.ziele)) return d
     const neu: Dehnung = { ...d, start: l(d.start)!, ziel: l(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: l(x.h)! })) }
@@ -877,15 +967,102 @@ class Buehne {
           // Ellbogen und Knie folgen dazwischen der Hand und dem Fuß: gerade gemischt läge der Punkt innerhalb der
           // Kette und wäre mit den Gliedlängen nicht erreichbar
           if (n.startsWith("ellbogen_") && a.ziele[`hand_${n.slice(-1)}` as ZielPunkt]) continue
-          if (n.startsWith("knie_") && a.ziele[`fuss_${n.slice(-1)}` as ZielPunkt]) continue
+          if (n.startsWith("knie_") && (a.ziele[`fuss_${n.slice(-1)}` as ZielPunkt] || a.ziele[`ferse_${n.slice(-1)}` as ZielPunkt])) continue
           ziele[n] = { bezug: za.bezug, pos: [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number] }
         }
         // Startwert: Mischung der gelösten Enden
-        liste.push(this.loese({ ...m, g: mische(la, lb, u).g, ziele, boden: false }))
+        const ml = mische(la, lb, u)
+        liste.push(this.loese({ ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ...(a.drehFrei || b.drehFrei ? { pos: ml.pos, dreh: ml.dreh, drehFrei: true } : {}), ziele, boden: false }))
       }
       zwischenSetzen(la, lb, liste)
     }
     return neu
+  }
+
+  /**
+   * d.fest: die genannten Punkte bleiben in allen Phasen an ihrer Lage in der Zielhaltung (z. B. die Hand an der Wand,
+   * der Standfuß am Boden). Dafür bekommen alle anderen Haltungen diese Punkte als Zielpunkte.
+   */
+  /** Originalhaltungen einer Dehnung auf die gelösten abbilden (Messwerkzeug: stelleHaltung) */
+  private zuordnung = new Map<Haltung, Haltung>()
+  private zuordnen(a: Dehnung, b: Dehnung) {
+    this.zuordnung.set(a.start, b.start)
+    if (a.ziel && b.ziel) this.zuordnung.set(a.ziel, b.ziel)
+    a.schritte?.forEach((x, i) => b.schritte?.[i] && this.zuordnung.set(x.h, b.schritte[i].h))
+  }
+  /** feste Punkte aus der Zielhaltung (vor dem Ausweichen), für das Nachsetzen auf ein Gerät */
+  private festOrte?: Partial<Record<ZielPunkt, Ziel>>
+  /**
+   * Liegt die Figur auf einem Gerät (Rolle, Ball, Kissen), hebt es sie an und die Bodenkontakte schweben. Hier wird
+   * jede Haltung um ihren Versatz angehoben und mit den festen Punkten neu gelöst, damit Hände und Füße am Boden bleiben.
+   */
+  private aufGeraetSetzen(d0: Dehnung): Dehnung | undefined {
+    const haltungen: Haltung[] = [this.d.start, ...(this.d.ziel ? [this.d.ziel] : []), ...(this.d.schritte?.map((x) => x.h) ?? [])]
+    const versatz = new Map<Haltung, THREE.Vector3>()
+    let groesster = 0
+    for (const h of haltungen) {
+      this.koerper.wurzel.position.set(0, 0, 0)
+      this.koerper.stelle(h)
+      this.modell?.uebernehmen(h.boden !== false)
+      const c = this.ausweichen()
+      // Lage des Beckens nach dem Absetzen auf den Boden plus Versatz durch das Gerät
+      versatz.set(h, this.gelenkOrt("becken").add(c))
+      groesster = Math.max(groesster, c.length())
+    }
+    if (groesster < 0.01 || !this.festOrte) return undefined
+    const anheben = (orig: Haltung, geloest: Haltung): Haltung => {
+      const b = versatz.get(geloest)!
+      return { ...orig, pos: [b.x, b.y, b.z], boden: false }
+    }
+    const d1: Dehnung = {
+      ...d0,
+      start: anheben(d0.start, this.d.start),
+      ziel: d0.ziel && this.d.ziel ? anheben(d0.ziel, this.d.ziel) : d0.ziel,
+      schritte: d0.schritte?.map((x, i) => ({ ...x, h: anheben(x.h, this.d.schritte![i].h) })),
+    }
+    const orte = this.festOrte
+    this.festOrteVorgabe = orte
+    const neu = this.loeseDehnung(d1)
+    this.festOrteVorgabe = undefined
+    return neu
+  }
+  private festOrteVorgabe?: Partial<Record<ZielPunkt, Ziel>>
+  private festHalten(d: Dehnung): Dehnung {
+    if (!d.fest?.length) return d
+    const ziel = d.ziel || d.schritte?.[Math.floor((d.schritte.length - 1) / 2)]?.h || d.start
+    // beim Nachsetzen auf ein Gerät: die schon bestimmten Orte für alle Haltungen, auch die Zielhaltung
+    if (this.festOrteVorgabe) {
+      const orte = this.festOrteVorgabe
+      // das Becken bleibt auf der angehobenen Lage (sonst sänke es zurück ins Gerät)
+      const m = (h: Haltung | undefined) => (h ? { ...h, ziele: { ...h.ziele, ...orte }, boden: false, beckenFrei: false, drehFrei: true } : h)
+      return { ...d, start: m(d.start)!, ziel: m(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: m(x.h)! })) }
+    }
+    const gz = this.loese(ziel)
+    this.koerper.wurzel.position.set(0, 0, 0)
+    this.koerper.stelle(gz)
+    this.modell?.uebernehmen(gz.boden !== false)
+    const orte: Partial<Record<ZielPunkt, Ziel>> = {}
+    for (const n of d.fest) {
+      const v = n.startsWith("knie_") || n.startsWith("ellbogen_") ? this.gelenkOrt(n) : this.koerper.punkt(n)
+      orte[n] = { pos: [v.x, v.y, v.z] }
+    }
+    this.festOrte = orte
+    // Absenken der Zielhaltung auf den Boden: die anderen Haltungen ohne eigene Lage bekommen denselben Versatz
+    const b = this.gelenkOrt("becken"), g0 = gz.pos ?? POS_GRUND
+    const versatz: [number, number, number] = gz.pos && gz.boden === false ? [0, 0, 0] : [b.x - g0[0], b.y - g0[1], b.z - g0[2]]
+    const mitFest = (h: Haltung): Haltung => {
+      if (h === ziel) return h
+      const p = h.pos ?? POS_GRUND
+      const pos: [number, number, number] = h.pos && h.boden === false ? p : [p[0] + versatz[0], p[1] + versatz[1], p[2] + versatz[2]]
+      return { ...h, ziele: { ...h.ziele, ...orte }, boden: false, pos, beckenFrei: true }
+    }
+    const neu = new Map<Haltung, Haltung>()
+    const m = (h: Haltung | undefined) => {
+      if (!h) return h
+      if (!neu.has(h)) neu.set(h, mitFest(h))
+      return neu.get(h)!
+    }
+    return { ...d, start: m(d.start)!, ziel: m(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: m(x.h)! })) }
   }
 
   /**
@@ -920,9 +1097,20 @@ class Buehne {
         if (ziele[`hand_${s}`] && ziele[`ellbogen_${s}`]) nutze(`hand_${s}`, [0])
       }
     }
-    const start = params.map(([n, i]) => g[n]![i])
-    const setze = (x: number[]) => x.forEach((v, j) => (g[params[j][0]]![params[j][1]] = v))
-    const roh: Haltung = { ...h, g, ziele: undefined, boden: false, pos: h.pos ?? POS_GRUND }
+    // Becken verschiebbar: drei weitere Unbekannte in Zentimetern (damit die Schrittweite zu den Winkeln passt)
+    const pos: [number, number, number] = [...(h.pos ?? POS_GRUND)] as [number, number, number]
+    const nPos = h.beckenFrei ? 3 : 0
+    // Neigung des Beckens verstellbar: drei weitere Unbekannte in Grad
+    const dreh: [number, number, number] = [...(h.dreh ?? [0, 0, 0])] as [number, number, number]
+    const nDreh = h.drehFrei ? 3 : 0
+    const start = [...params.map(([n, i]) => g[n]![i]), ...pos.slice(0, nPos).map((v) => v * 100), ...dreh.slice(0, nDreh)]
+    const setze = (x: number[]) =>
+      x.forEach((v, j) => {
+        if (j < params.length) g[params[j][0]]![params[j][1]] = v
+        else if (j < params.length + nPos) pos[j - params.length] = v / 100
+        else dreh[j - params.length - nPos] = v
+      })
+    const roh: Haltung = { ...h, g, ziele: undefined, boden: false, pos, dreh }
     const welt = (z: Ziel): THREE.Vector3 => {
       const v = new THREE.Vector3(...z.pos)
       if (!z.bezug || z.bezug === "welt") return v
@@ -954,7 +1142,7 @@ class Buehne {
         r.push(this.gelenkOrt(`knie_${s}`).sub(this.gelenkOrt(`fuss_${s}`)).dot(quer) * 7 * beuge)
       }
       // sanft beim Startwert bleiben
-      x.forEach((v, j) => r.push((v - start[j]) * 0.002))
+      x.forEach((v, j) => r.push((v - start[j]) * (j < params.length ? 0.002 : 0.004)))
       return r
     }
     let x = [...start]
@@ -1003,7 +1191,13 @@ class Buehne {
     }
     if (groesster > this.restfehler) this.restWo = wo
     this.restfehler = Math.max(this.restfehler, groesster)
-    const fertigH: Haltung = { ...h, g: Object.fromEntries(Object.entries(g).map(([k, w]) => [k, (w as number[]).map((v) => Math.round(v * 10) / 10)])) as Winkel, ziele: undefined }
+    const fertigH: Haltung = {
+      ...h,
+      g: Object.fromEntries(Object.entries(g).map(([k, w]) => [k, (w as number[]).map((v) => Math.round(v * 10) / 10)])) as Winkel,
+      ziele: undefined,
+      ...(nPos ? { pos: pos.map((v) => Math.round(v * 1000) / 1000) as [number, number, number], boden: false } : {}),
+      ...(nDreh ? { dreh: dreh.map((v) => Math.round(v * 10) / 10) as [number, number, number] } : {}),
+    }
     this.geloest.set(h, fertigH)
     return fertigH
   }
@@ -1074,6 +1268,54 @@ class Buehne {
     }
   }
 
+  /**
+   * Wände stehen an der Zielhaltung. Ragt in einer anderen Phase ein Körperteil hinein, rückt die Wand um dieses Maß
+   * weg, statt die Figur samt Füßen über den Boden zu schieben.
+   */
+  private wandAnpassen() {
+    const waende = this.fest.filter((o) => o.name === "wand") as THREE.Mesh[]
+    if (!waende.length) return
+    const gesamt = this.laenge() / (this.d.seiten ? 2 : 1)
+    const becken = this.koerper.becken.getWorldPosition(new THREE.Vector3())
+    const lagen: THREE.Vector3[][] = []
+    // Zielhaltung zuerst: an ihr liegt der Kontakt, die anderen Phasen dürfen die Wand nicht weiter wegdrücken
+    const ziel = this.d.ziel || this.d.schritte?.[Math.floor((this.d.schritte.length - 1) / 2)]?.h || this.d.start
+    this.koerper.wurzel.position.set(0, 0, 0)
+    this.koerper.stelle(ziel)
+    this.modell?.uebernehmen(ziel.boden !== false)
+    lagen.push(this.punkte())
+    for (let i = 0; i <= 24; i++) {
+      const st = standZu(this.d, (i / 24) * gesamt * 0.999, this.haltenS)
+      this.koerper.wurzel.position.set(0, 0, 0)
+      this.koerper.stelle(st.haltung)
+      this.modell?.uebernehmen(st.haltung.boden !== false)
+      lagen.push(this.punkte())
+    }
+    for (const w of waende) {
+      const bb = w.geometry.boundingBox ?? (w.geometry.computeBoundingBox(), w.geometry.boundingBox!)
+      const gr = bb.getSize(new THREE.Vector3())
+      const achse = gr.x < gr.z ? "x" : "z"
+      const dicke = Math.min(gr.x, gr.z)
+      const seite = Math.sign(w.position[achse] - becken[achse]) || 1
+      const flaeche = w.position[achse] - (seite * dicke) / 2
+      let tief = 0
+      // nur Punkte vor der Wandfläche zählen (Türrahmen, Wandkante: daneben ist frei)
+      const quer = achse === "x" ? "z" : "x"
+      const halb = gr[quer] / 2
+      let tiefZiel = 0
+      lagen.forEach((pk, i) => {
+        for (const p of pk) if (Math.abs(p[quer] - w.position[quer]) <= halb && p.y <= w.position.y + gr.y / 2) tief = Math.max(tief, seite * (p[achse] - flaeche))
+        if (i === 0) tiefZiel = Math.max(0, tief)
+      })
+      // gemessen wird nur, was über den Hautkontakt der Zielhaltung hinausgeht
+      this.wandVersatz = Math.max(this.wandVersatz, tief - tiefZiel)
+      if (tief > 0.003) {
+        w.position[achse] += seite * (tief + 0.002)
+        this.festBasis.set(w, w.position.clone())
+      }
+    }
+  }
+
   /** Figur aus Boden und festen Gegenständen schieben. Liefert den Versatz (Welt). */
   private ausweichen(): THREE.Vector3 {
     const c = new THREE.Vector3()
@@ -1081,6 +1323,10 @@ class Buehne {
     const pk = this.punkte()
     const becken = this.koerper.becken.getWorldPosition(new THREE.Vector3())
     const q = new THREE.Vector3()
+    // Stangen und Kanten, die die Hände greifen (Rack, Barren, Tischkante): die Faust umschließt sie, Hände zählen dort nicht als Eindringen
+    const haende = [this.koerper.punkt("hand_l"), this.koerper.punkt("hand_r")]
+    const ohneHaende = pk.filter((p) => haende.every((h) => p.distanceTo(h) > 0.11))
+    const gegriffen = (h: Hindernis) => /^(rack|barren|stange|tisch)$/.test(h.m.name)
     for (let runde = 0; runde < 8; runde++) {
       const schritt = new THREE.Vector3()
       let min = Infinity
@@ -1088,7 +1334,7 @@ class Buehne {
       if (min < MATTE - 0.002) schritt.y = MATTE - min
       for (const h of hin) {
         let groesster: THREE.Vector3 | null = null
-        for (const p of pk) {
+        for (const p of gegriffen(h) ? ohneHaende : pk) {
           const v = herausschieben(h, q.copy(p).add(c).add(schritt), becken.clone().add(c))
           if (v && (!groesster || v.lengthSq() > groesster.lengthSq())) groesster = v
         }
@@ -1105,7 +1351,7 @@ class Buehne {
 
   /** Eine Haltung direkt zeigen (Werkzeug): mit Zielpunkten gelöst, Gegenstände wie im Ablauf */
   stelleHaltung(h: Haltung) {
-    const g = this.loese(h)
+    const g = this.zuordnung.get(h) ?? this.loese(h)
     this.koerper.wurzel.position.set(0, 0, 0)
     this.koerper.stelle(g)
     this.modell?.uebernehmen(g.boden !== false)
@@ -1424,9 +1670,12 @@ export function _durchdringungen(d: Dehnung, haltenS = 8, schritt = 0.5, toleran
     let unten = 0
     for (const p of pk) unten = Math.max(unten, MATTE - p.y)
     if (unten > toleranz) funde.push({ t, was: "Boden", tiefe: unten, hoehe: 0 })
+    // wie beim Ausweichen: die Faust umschließt Stangen (Rack, Barren), dort zählen die Hände nicht
+    const haende = [b.koerper.punkt("hand_l"), b.koerper.punkt("hand_r")]
+    const ohneHaende = pk.filter((p) => haende.every((hd) => p.distanceTo(hd) > 0.11))
     for (const h of b.hindernisse()) {
       let tief = 0, hoehe = 0
-      for (const p of pk) {
+      for (const p of /^(rack|barren|stange|tisch)$/.test(h.m.name) ? ohneHaende : pk) {
         const v = herausschieben(h, p, becken)
         if (v && v.length() > tief) {
           tief = v.length()
@@ -1454,6 +1703,7 @@ export function _messen(d: Dehnung, h: Haltung): Record<string, [number, number,
   for (const n of Object.keys(b.koerper.marken)) aus[n] = v(b.koerper.punkt(n as Punkt))
   aus["_rest"] = [Math.round(b.restfehler * 1000) / 1000, 0, 0]
   ;(aus as Record<string, unknown>)["_restWo"] = b.restWo
+  aus["_wand"] = [Math.round(b.wandVersatz * 1000) / 1000, 0, 0]
   aus["_schub"] = v(b.schub)
   aus["_tief"] = v(b.tiefsterPunkt)
   ;(aus as Record<string, unknown>)["_was"] = [...b.schubWas]

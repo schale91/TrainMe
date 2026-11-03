@@ -43,6 +43,10 @@ export type Winkel = Partial<Record<Gelenk, number[]>>
 export interface Haltung {
   /** Lage des Beckens; ohne pos steht die Figur und wird auf den Boden gesetzt */
   pos?: V3
+  /** Löser darf die Lage des Beckens mit verschieben (feste Punkte: der Körper bewegt sich um den Standfuß) */
+  beckenFrei?: boolean
+  /** Löser darf die Neigung des Beckens (dreh) anpassen, etwa um auf einem Gerät liegend Hände oder Füße am Boden zu halten */
+  drehFrei?: boolean
   dreh?: V3
   g: Winkel
   /** false: Höhe kommt aus pos (z. B. Sitzen auf der Bank), sonst sitzt der tiefste Punkt auf dem Boden */
@@ -68,15 +72,19 @@ export interface Ziel {
 /** Geräte und Hilfsmittel in der Szene, an Körperpunkten ausgerichtet */
 export type Hilfsmittel =
   /** abstand: Lücke zwischen Punkt und Wand (Meter, sonst 3 cm), z. B. für einen Ball dazwischen */
-  | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten"; abstand?: number }
+  | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten"; abstand?: number; ebene?: number; breite?: number; x?: number }
   /** versatz [seitlich, vorn] in Metern, z. B. damit die Hände auf der Vorderkante einer Box liegen */
   | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number]; quer?: boolean }
   | { art: "stab"; von: Punkt; bis: Punkt }
   | { art: "band"; von: Punkt; bis: Punkt }
-  | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean; versatz?: [number, number] }
+  | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean; versatz?: [number, number]; bei?: [number, number] }
   | { art: "tuer"; an: Punkt }
   | { art: "stange"; an: Punkt }
+  /** Stabiler Tisch: die Hände greifen die Kante, die Platte reicht zum Kopf hin (-z) */
+  | { art: "tisch"; an: Punkt }
   | { art: "hantel"; an: Punkt }
+  /** Kettlebell: Griff in der Faust, die Kugel hängt darunter */
+  | { art: "kettlebell"; an: Punkt }
   /** Lang- oder SZ-Stange mit Scheiben, liegt in beiden Händen (oder auf dem Rücken zwischen zwei Punkten) */
   | { art: "langhantel" | "sz" | "latstange" | "kabelstange"; von: Punkt; bis: Punkt }
   /** Dip-Barren: zwei Holme in Höhe des Punkts (Hände in der Ausgangsstellung), breit: halber Abstand (Standard 27 cm) */
@@ -84,9 +92,11 @@ export type Hilfsmittel =
   /** Band an einem festen Anker (Tür, Stange) [seitlich, Höhe, vorn], anderes Ende am Punkt */
   | { art: "bandanker"; von: Punkt; anker: V3 }
   /** Kabelzug: Seil von der Hand (bzw. Hände-Mitte) zur Rolle an einem festen Punkt [seitlich, Höhe, vorn] */
-  | { art: "kabel"; von: Punkt; rolle: V3 }
+  /** turm: Abstand des Turms hinter der Rolle (Standard 0,12 m), die Rolle hängt dann an einem Ausleger */
+  | { art: "kabel"; von: Punkt; rolle: V3; turm?: number }
   /** Verstellbare Bank: Sitz unter dem Punkt in der Höhe, Lehne in Richtung des zweiten Punkts (z. B. Schultern); bauch: Brust liegt auf der Lehne */
-  | { art: "schraegbank"; unter: Punkt; lehne: Punkt; hoehe: number; bauch?: boolean }
+  /** kante: Helms-Rudern, man steht hinter der Bank, nur die Brust liegt an der oberen Kante, die Lehne fällt nach vorn ab */
+  | { art: "schraegbank"; unter: Punkt; lehne: Punkt; hoehe: number; bauch?: boolean; kante?: boolean }
   /** Wand-Rack hinter dem Punkt (oder bei z), mit Ablagen und J-Hooks in der Höhe */
   | { art: "rack"; an: Punkt; z?: number; ablage?: number; haken?: number }
   /** Medizinball in den Händen */
@@ -162,7 +172,11 @@ export interface Dehnung {
   halten?: number
   /** beide Seiten nacheinander (gespiegelt) */
   seiten?: boolean
+  /** Punkte, die in allen Phasen dort bleiben, wo sie in der Zielhaltung sind (Hand an der Wand, Standfuß am Boden) */
+  fest?: ZielPunkt[]
   hilfsmittel?: Hilfsmittel[]
+  /** je Hilfsmittel (gleiche Reihenfolge) der Schritt, an dessen Haltung es steht; ohne Angabe die Zielhaltung */
+  ausrichten?: (number | undefined)[]
   /** Kurzer Hinweis unter der Figur */
   hinweis?: string
   /** Anzeige für Hin und Zurück bei Wiederholungen, z. B. ["Hochcurlen", "Langsam ablassen"] */

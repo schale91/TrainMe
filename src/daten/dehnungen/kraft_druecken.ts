@@ -15,7 +15,7 @@ type P3 = [number, number, number]
 const DRUECKEN: [string, string] = ["Langsam zur Brust senken", "Kraftvoll hochdrücken"]
 
 // ---------------------------------------------------------------- Liegen auf der Bank
-interface Lage {
+export interface Lage {
   /** Neigung des Beckens: -90 flach liegend, -60 auf der Schrägbank (Rücken 30 Grad) */
   kipp: number
   /** Höhe des Beckens */
@@ -32,7 +32,7 @@ interface Lage {
   geraet?: Hilfsmittel[]
 }
 /** Flachbank: Füße etwas breiter als hüftbreit, Fersen etwa unter den Knien */
-const FLACH: Lage = { kipp: -90, y: 0.56, fersenZ: 0.3, breit: 0.2 }
+export const FLACH: Lage = { kipp: -90, y: 0.56, fersenZ: 0.3, breit: 0.2 }
 /** Hüftgelenk im Rahmen der Welt aus Becken und Kippung */
 const huefte = (l: Lage): [number, number] => [l.y + Math.cos(rad(l.kipp)) * -0.01 + Math.sin(rad(l.kipp)) * 0.003, Math.sin(rad(l.kipp)) * -0.01 + Math.cos(rad(l.kipp)) * -0.003]
 const beineLage = (l: Lage): { w: Winkel; z: Ziele } => {
@@ -69,7 +69,7 @@ const armeUnten = (x: number, y: number, z: number, kipp: number, arm: Arm = "be
 }
 const ARM_OBEN = (dreh: number): Winkel => ({ ...B("schulter", [90, 12, 0]), ...B("ellbogen", [6, dreh]) })
 const ARM_UNTEN = (dreh: number): Winkel => ({ ...B("schulter", [20, 60, 0]), ...B("ellbogen", [100, dreh]) })
-const liegen = (l: Lage, arme: Ziele, w: Winkel): Haltung => {
+export const liegen = (l: Lage, arme: Ziele, w: Winkel): Haltung => {
   const b = beineLage(l)
   return H({ ...b.w, ...FAUST, hals: [8, 0, 0], ...w }, [l.kipp, 0, 0], { pos: [0, l.y, 0], boden: false, ziele: { ...b.z, ...arme } })
 }
@@ -210,7 +210,7 @@ const suche = (bed: (l: Linie) => number, dreh: YZ, art: "zehen" | "knie", von =
   }
   return linie((a + b) / 2, dreh, art)
 }
-interface Stuetz {
+export interface Stuetz {
   /** halber Handabstand */
   hand: number
   /** Höhe der Stützfläche der Hände (Box, Erhöhung) */
@@ -252,7 +252,7 @@ const stuetzWinkel = (k: Stuetz, ell: number): Winkel => ({
   hals: [-5, 0, 0],
 })
 /** Ober- und Unterhaltung eines Liegestützes aus der Ausführung */
-const stuetzPaar = (k: Stuetz) => {
+export const stuetzPaar = (k: Stuetz) => {
   const art = k.art ?? "zehen"
   const hh = k.handHoch ?? 0
   const palmeY = hh + (k.palme ?? PALME_Y)

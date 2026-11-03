@@ -34,3 +34,19 @@ export const FLACHBANK: Hilfsmittel = { art: "bank", unter: "bws", hoehe: 0.45 }
 /** Oberes Kabel des Latzug-Turms vor dem Körper */
 export const ROLLE_OBEN: V3 = [0, 2.1, 0.42]
 export const kabelstange = (): Hilfsmittel => ({ art: "kabelstange", von: "hand_l", bis: "hand_r" })
+
+/**
+ * Bauchlage auf der Schrägbank (Lehne etwa 40 Grad): Brust und Bauch liegen auf der Lehne, der Körper bildet mit
+ * den Beinen eine schräge Linie, die Zehen drücken hinten gegen den Boden, das Kinn ragt über das obere Ende.
+ */
+export const BRUST_LEHNE: Haltung = H(
+  { ...B("huefte", [2, 6, 0]), ...B("knie", [4]), ...B("fuss", [-30, 0]), ...B("zehen", [40]), hals: [-30, 0, 0], ...FAUST },
+  [50, 0, 0],
+  {
+    // Knöchel auf der Körperlinie 0,85 m hinter der Hüfte, die Zehenspitzen am Boden (Ballenmarke 11 cm hoch)
+    pos: [0, 0.73, 0],
+    boden: false,
+    ziele: { fuss_l: { pos: [0.1, 0.112, -0.62] }, fuss_r: { pos: [-0.1, 0.112, -0.62] } },
+  },
+)
+export const BAUCH_LEHNE: Hilfsmittel = { art: "schraegbank", unter: "becken", lehne: "kopf", hoehe: 0.45, bauch: true }

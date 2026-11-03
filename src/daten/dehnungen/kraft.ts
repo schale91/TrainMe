@@ -124,8 +124,8 @@ const SCHRAEG: Winkel = { ...B("huefte", [50, 8, 0]), ...B("knie", [88]), ...B("
 const schraegbankCurl = (dreh: number): Dehnung =>
   wdh(
     "seite",
-    H({ ...SCHRAEG, ...B("ellbogen", [6, dreh]) }, [-45, 0, 0], { pos: [0, 0.56, 0], boden: false }),
-    H({ ...SCHRAEG, ...B("ellbogen", [132, dreh]) }, [-45, 0, 0], { pos: [0, 0.56, 0], boden: false }),
+    H({ ...SCHRAEG, ...B("ellbogen", [6, dreh]) }, [-45, 0, 0], { pos: [0, 0.585, 0], boden: false }),
+    H({ ...SCHRAEG, ...B("ellbogen", [132, dreh]) }, [-45, 0, 0], { pos: [0, 0.585, 0], boden: false }),
     1.4,
     { aus: 2.6, texte: ["Hochcurlen, Oberarme bleiben hinten", "Langsam ganz ablassen"], hilfsmittel: [...KH, { art: "schraegbank", unter: "gesaess", lehne: "bws", hoehe: 0.45 }] },
   )

@@ -4,7 +4,7 @@
 import type { Dehnung, Haltung, Hilfsmittel, V3, Winkel } from "../../logik/dehnbewegung"
 import { B, H, HALBKNIESTAND, KNIESTAND, LANGSITZ, PLANK, STAND, folge, halte, mit, wdh } from "./basis"
 import { latzug } from "./kraft"
-import { FAUST, FLACHBANK, HAMMER, KH, KH_R, LH, OBERGRIFF, ROLLE_OBEN, SZ, UNTERGRIFF, banklage, kabel, kabelstange } from "./kraftbasis"
+import { FAUST, FLACHBANK, HAMMER, KH, KH_R, LH, OBERGRIFF, ROLLE_OBEN, SZ, UNTERGRIFF, banklage, kabel, kabelstange, BAUCH_LEHNE, BRUST_LEHNE } from "./kraftbasis"
 
 // ---------------------------------------------------------------- Klimmzug an der Stange des Wand-Racks (2,12 m)
 const BEINE_HANG: Winkel = { ...B("huefte", [12, 4, 0]), ...B("knie", [45]), ...B("fuss", [-20, 0]) }
@@ -33,8 +33,6 @@ const rudern = (kipp: number, dreh: number, hilfsmittel: Hilfsmittel[], extra: P
   wdh("schraeg", mit(vorgebeugt(kipp), { g: ruderUnten(kipp, dreh) }), mit(vorgebeugt(kipp), { g: ruderOben(dreh) }), 1.2, { aus: 2.0, texte: ["Zum Bauch ziehen, Schulterblätter zusammen", "Langsam ablassen"], hilfsmittel, ...extra })
 
 /** Bauchlage auf der Schrägbank */
-const BRUST_LEHNE: Haltung = mit(STAND, { dreh: [48, 0, 0], g: { ...B("huefte", [40, 10, 0]), ...B("knie", [20]), ...B("fuss", [10, 0]), hals: [-30, 0, 0], ...FAUST } })
-const BAUCH_LEHNE: Hilfsmittel = { art: "schraegbank", unter: "becken", lehne: "kopf", hoehe: 0.45, bauch: true }
 
 /** Einarmig mit Knie und Hand auf der Bank: Oberkörper waagerecht, rechter Arm zieht */
 const KNIE_BANK: Winkel = { huefte_l: [86, 4, 0], knie_l: [90], fuss_l: [-60, 0], huefte_r: [80, 10, 0], knie_r: [12], fuss_r: [8, 0], schulter_l: [84, 6, 0], ellbogen_l: [4, 90], hand_l: [80, 0], hals: [-30, 0, 0], ...FAUST }
