@@ -10,6 +10,7 @@ import { FUSS_GOLF } from "./fuss_golf"
 import { TEST_DEHNUNGEN } from "./tests"
 import { KRAFT } from "./kraft"
 import { KRAFT_TRIZEPS } from "./kraft_trizeps"
+import { KRAFT_BRUST } from "./kraft_brust"
 
-export const DEHNUNGEN: Record<string, Dehnung> = { ...RUECKEN, ...SCHULTER, ...HUEFTE_A, ...HUEFTE_B, ...BEINE, ...FUSS_GOLF, ...KRAFT, ...KRAFT_TRIZEPS }
+export const DEHNUNGEN: Record<string, Dehnung> = { ...RUECKEN, ...SCHULTER, ...HUEFTE_A, ...HUEFTE_B, ...BEINE, ...FUSS_GOLF, ...KRAFT, ...KRAFT_TRIZEPS, ...KRAFT_BRUST }
 export { TEST_DEHNUNGEN }

@@ -74,6 +74,8 @@ export type Hilfsmittel =
   | { art: "rack"; an: Punkt; z?: number; ablage?: number; haken?: number }
   /** Medizinball in den Händen */
   | { art: "medizinball"; an: Punkt }
+  /** Hantelscheibe (5 kg, schwarz) in den Händen, zwischen den Handflächen */
+  | { art: "hantelscheibe"; an: Punkt }
 
 export type Punkt =
   | "hand_l"

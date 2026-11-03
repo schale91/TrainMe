@@ -526,7 +526,13 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       out.push(zylinder(m.clone().addScaledVector(d, -0.25), m.clone().addScaledVector(d, 0.25), 0.014, FARBE.stahl))
     } else if (h.art === "bandanker") out.push(zylinder(k.punkt(h.von), new THREE.Vector3(...h.anker), 0.008, FARBE.band))
     else if (h.art === "kabel") out.push(zylinder(k.punkt(h.von), new THREE.Vector3(...h.rolle), 0.005, FARBE.metall))
-    else if (h.art === "medizinball") {
+    else if (h.art === "hantelscheibe") {
+      // zwischen den Handflächen: Achse von Hand zu Hand
+      const a = k.punkt("hand_l"), b = k.punkt("hand_r")
+      const m = h.an === "haende" ? a.clone().add(b).multiplyScalar(0.5) : k.punkt(h.an)
+      const d = b.clone().sub(a).normalize()
+      out.push(zylinder(m.clone().addScaledVector(d, -0.02), m.clone().addScaledVector(d, 0.02), 0.13, FARBE.stahl))
+    } else if (h.art === "medizinball") {
       // 10-kg-Ball, etwa 35 cm, zwischen den Händen
       const m = new THREE.Mesh(new THREE.SphereGeometry(0.17, 28, 20), mat(FARBE.box, 0.35))
       m.position.copy(k.punkt(h.an))
