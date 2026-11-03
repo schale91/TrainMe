@@ -68,8 +68,15 @@ const NEUTRAL: Zug = { griff: 0.16, dreh: HAMMER, ellbogen: [0, -1, -0.5] }
 const WEIT: Zug = { griff: 0.25, dreh: OBERGRIFF, ellbogen: [1, -0.9, -0.15] }
 /** L-Sitz: Beine gestreckt waagerecht nach vorn */
 const L_SITZ: Winkel = { ...B("huefte", [92, 3, 0]), ...B("knie", [2]), ...B("fuss", [10, 0]) }
-/** Füße auf der Box: unten im tiefen Hockstand, oben hilft das Bein */
-const BOX: Hilfsmittel = { art: "box", unter: "fuss_l", hoehe: 0.5, versatz: [-0.09, 0.05] }
+/** Box unter der Stange: im Hang berühren die Zehen die Box */
+const BOX_HOCH = 0.2
+const BOX: Hilfsmittel = { art: "box", unter: "fuss_l", hoehe: BOX_HOCH, versatz: [-0.1, 0.06] }
+/** schulterbreit im Obergriff */
+const SCHULTERBREIT: Zug = { griff: 0.17, dreh: OBERGRIFF, ellbogen: [0.2, -1, -0.6] }
+const BOX_HANG: Haltung = (() => {
+  const h = hang(SCHULTERBREIT, { ...B("huefte", [14, 3, 0]), ...B("knie", [22]), ...B("fuss", [-30, 0]) })
+  return { ...h, ziele: { ...h.ziele, fuss_l: { pos: [0.1, BOX_HOCH + 0.08, 0.06] }, fuss_r: { pos: [-0.1, BOX_HOCH + 0.08, 0.06] } } }
+})()
 
 /** Schulterblatt-Klimmzug: Schultern locker zu den Ohren; oben ziehen sie nach unten und heben den Körper an */
 const SB_UNTEN = hang({ ...OBER, griff: 0.15 }, B("schulterblatt", [18, 0]), 0.02)
@@ -672,11 +679,10 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
   latzug_kniend: latKnie({ ...LAT_WEIT, griff: 0.22, unten: [-0.08, 0.15], ell: [0.6, -1, -0.3] }, 10, [LAT_STANGE, { art: "kabel", von: "haende", rolle: [0, 2.15, 0.45] }], ["Schulterblätter nach unten, Stange zur oberen Brust", "Kontrolliert nach oben, bis die Arme gestreckt sind"]),
   latzug_kniend_einarmig: latKnie({ griff: 0.14, dreh: HAMMER, rueck: 0, unten: [-0.1, 0.13], einarm: true }, 4, [{ art: "kabel", von: "hand_r", rolle: [-0.14, 2.15, 0.4] }], ["Ellbogen nah am Körper zur Hüfte, Hand neben die Brust", "Langsam zurück in die volle Dehnung"], { seiten: true }),
   latzug_band: latKnie({ griff: 0.2, dreh: OBERGRIFF, rueck: 0, unten: [-0.1, 0.12] }, 2, [{ art: "bandanker", von: "hand_l", anker: [0.1, 2.1, 0.3] }, { art: "bandanker", von: "hand_r", anker: [-0.1, 2.1, 0.3] }], ["Schulterblätter nach unten, Ellbogen zu den Rippen", "Langsam zurück, bis die Arme wieder lang sind"]),
-  klimmzug_box: wdh(
-    "schraeg",
-    hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),
-    oben(OBER, { ...B("huefte", [30, 6, 0]), ...B("knie", [30]), ...B("fuss", [10, 0]) }),
-    1.4,
-    { aus: 2.0, texte: ["Hochziehen, die Beine helfen nur so viel wie nötig", "Kontrolliert ablassen"], hilfsmittel: [RACK, BOX] },
-  ),
+  // Box unter der Stange: im Hang berühren die Zehen die Box bei leicht gebeugten Knien, die Beine helfen nur beim Abdrücken
+  klimmzug_box: wdh("schraeg", BOX_HANG, oben(SCHULTERBREIT, { ...B("huefte", [-6, 3, 0]), ...B("knie", [14]), ...B("fuss", [-25, 0]) }), 1.4, {
+    aus: 2.0,
+    texte: ["Schulterblätter nach unten, ziehen und nur so viel mit den Beinen abdrücken wie nötig", "Langsam absenken, die Beine helfen so wenig wie möglich"],
+    hilfsmittel: [RACK, BOX],
+  }),
 }
