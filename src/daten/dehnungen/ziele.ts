@@ -90,3 +90,31 @@ export const haendeSchultern = (x: number, y: number, z: number): Ziele => ({
   hand_l: { pos: [x, y, z], bezug: "schultern" },
   hand_r: { pos: [-x, y, z], bezug: "schultern" },
 })
+
+// ---------------------------------------------------------------- Arme
+/** Schultergelenk bis Ellbogen und Ellbogen bis Handfläche (gestreckte Hand) */
+export const OBERARM = 0.22
+export const UNTERARM = 0.28
+type P3 = [number, number, number]
+const plus = (a: P3, b: P3, f = 1): P3 => [a[0] + b[0] * f, a[1] + b[1] * f, a[2] + b[2] * f]
+const minus = (a: P3, b: P3): P3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+const punkt = (a: P3, b: P3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+const norm = (a: P3): P3 => {
+  const l = Math.hypot(...a) || 1
+  return [a[0] / l, a[1] / l, a[2] / l]
+}
+/**
+ * Ellbogen zwischen Schulter s und Hand h: Schnitt der Kugeln um beide Punkte (Oberarm, Unterarm), auf dem Kreis der
+ * Punkt, der am weitesten in Richtung wohin liegt (z. B. nach unten: Unterarm senkrecht unter der Stange).
+ * ober und unter sind die Längen, unter verkürzt sich bei abgeknickter Hand (Liegestütz).
+ */
+export const ellbogenKreis = (s: P3, h: P3, wohin: P3, ober = OBERARM, unter = UNTERARM): P3 => {
+  const sh = minus(h, s)
+  const d = Math.min(ober + unter - 0.001, Math.max(Math.abs(ober - unter) + 0.001, Math.hypot(...sh)))
+  const u = norm(sh)
+  const a = (d * d + ober * ober - unter * unter) / (2 * d)
+  const r = Math.sqrt(Math.max(0, ober * ober - a * a))
+  const mitte = plus(s, u, a)
+  const w = norm(minus(wohin, plus([0, 0, 0], u, punkt(wohin, u))))
+  return plus(mitte, w, r)
+}

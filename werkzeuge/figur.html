@@ -31,7 +31,9 @@
     const cap = document.createElement("div")
     try {
       const ziel = d.ziel || (d.schritte && d.schritte[Math.floor(d.schritte.length / 2)].h) || d.start
-      const dd = t === "z" ? { ...d, art: "halten", start: ziel, ziel, seiten: false } : d
+      const d0 = t === "z" ? { ...d, art: "halten", start: ziel, ziel, seiten: false } : d
+      // ?ansicht=seite: andere Kamera zum Prüfen
+      const dd = q.get("ansicht") ? { ...d0, ansicht: q.get("ansicht") } : d0
       const st = standbild(c, dd, t === "z" ? 0 : t, 8)
       cap.textContent = id + (t === "z" ? "" : " t=" + t + " " + st.text)
     } catch (e) { cap.textContent = id + " FEHLER " + e.message }

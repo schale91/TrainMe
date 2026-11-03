@@ -435,8 +435,10 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
     } else if (h.art === "barren") {
       // Dip-Barren: zwei Holme längs, Pfosten zum Boden
       const p = k.punkt(h.an)
-      for (const sx of [-0.27, 0.27]) {
-        out.push(zylinder(new THREE.Vector3(sx, p.y - 0.03, p.z - 0.35), new THREE.Vector3(sx, p.y - 0.03, p.z + 0.35), 0.02, FARBE.stahl))
+      const breit = h.breit ?? 0.27
+      for (const sx of [-breit, breit]) {
+        // die Faust liegt oben auf dem Holm (Handflächenmarke in der Faust)
+        out.push(zylinder(new THREE.Vector3(sx, p.y - 0.055, p.z - 0.35), new THREE.Vector3(sx, p.y - 0.055, p.z + 0.35), 0.02, FARBE.stahl))
         for (const dz of [-0.3, 0.3]) out.push(kiste(new THREE.Vector3(sx, (p.y - 0.05) / 2, p.z + dz), [0.05, p.y - 0.05, 0.05], FARBE.stahl))
       }
     } else if (h.art === "schraegbank") {
@@ -566,7 +568,7 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       const a = k.punkt("hand_l"), b = k.punkt("hand_r")
       const inHand = h.an === "haende" || h.an === "hand_l" || h.an === "hand_r"
       // in den Händen zwischen den Handflächen, sonst flach auf dem Körper (z. B. auf dem Rücken im Stütz)
-      const m = h.an === "haende" ? a.clone().add(b).multiplyScalar(0.5) : inHand ? k.punkt(h.an) : k.punkt(h.an).add(new THREE.Vector3(0, 0.09, 0))
+      const m = h.an === "haende" ? a.clone().add(b).multiplyScalar(0.5) : inHand ? k.punkt(h.an) : k.punkt(h.an).add(new THREE.Vector3(0, h.hoch ?? 0.09, 0))
       const d = inHand ? b.clone().sub(a).normalize() : new THREE.Vector3(0, 1, 0)
       out.push(zylinder(m.clone().addScaledVector(d, -0.02), m.clone().addScaledVector(d, 0.02), 0.13, FARBE.stahl))
     } else if (h.art === "gymnastikball") {
@@ -751,6 +753,8 @@ class Buehne {
   d: Dehnung
   /** Größter Restfehler des Lösers je Haltung (Meter), für die Prüfung */
   restfehler = 0
+  /** Zielpunkt mit dem größten Restfehler */
+  restWo = ""
   /** Verschiebung durch Ausweichen im letzten Bild (Boden, Gegenstände) */
   schub = new THREE.Vector3()
   schubWas = new Set<string>()
@@ -869,6 +873,10 @@ class Buehne {
         for (const [n, za] of Object.entries(a.ziele) as [ZielPunkt, Ziel][]) {
           const zb = b.ziele[n]
           if (!zb || (zb.bezug ?? "welt") !== (za.bezug ?? "welt")) continue
+          // Ellbogen und Knie folgen dazwischen der Hand und dem Fuß: gerade gemischt läge der Punkt innerhalb der
+          // Kette und wäre mit den Gliedlängen nicht erreichbar
+          if (n.startsWith("ellbogen_") && a.ziele[`hand_${n.slice(-1)}` as ZielPunkt]) continue
+          if (n.startsWith("knie_") && a.ziele[`fuss_${n.slice(-1)}` as ZielPunkt]) continue
           ziele[n] = { bezug: za.bezug, pos: [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number] }
         }
         // Startwert: Mischung der gelösten Enden
@@ -986,7 +994,13 @@ class Buehne {
     // Restfehler der Zielpunkte in Metern
     const rest = reste(x)
     let groesster = 0
-    for (let i = 0; i + 2 < Object.keys(ziele).length * 3; i += 3) groesster = Math.max(groesster, Math.hypot(rest[i], rest[i + 1], rest[i + 2]) / 10)
+    const namen = Object.keys(ziele)
+    let wo = ""
+    for (let i = 0; i + 2 < namen.length * 3; i += 3) {
+      const d = Math.hypot(rest[i], rest[i + 1], rest[i + 2]) / 10
+      if (d > groesster) [groesster, wo] = [d, namen[i / 3]]
+    }
+    if (groesster > this.restfehler) this.restWo = wo
     this.restfehler = Math.max(this.restfehler, groesster)
     const fertigH: Haltung = { ...h, g: Object.fromEntries(Object.entries(g).map(([k, w]) => [k, (w as number[]).map((v) => Math.round(v * 10) / 10)])) as Winkel, ziele: undefined }
     this.geloest.set(h, fertigH)
@@ -1438,8 +1452,33 @@ export function _messen(d: Dehnung, h: Haltung): Record<string, [number, number,
   for (const [a, z] of KETTE) for (const n of [a, z]) if (!aus["g:" + n]) aus["g:" + n] = v(b.gelenkOrt(n))
   for (const n of Object.keys(b.koerper.marken)) aus[n] = v(b.koerper.punkt(n as Punkt))
   aus["_rest"] = [Math.round(b.restfehler * 1000) / 1000, 0, 0]
+  ;(aus as Record<string, unknown>)["_restWo"] = b.restWo
   aus["_schub"] = v(b.schub)
   aus["_tief"] = v(b.tiefsterPunkt)
   ;(aus as Record<string, unknown>)["_was"] = [...b.schubWas]
+  // Vorderseite des Rumpfs im Rahmen der Schultern: je 2,5 cm den Rumpf hinauf (von -0,30 bis +0,05) die vorderste
+  // Hautstelle nahe der Mitte (|x| < 7 cm), damit sich prüfen lässt, ob eine Last die Brust berührt
+  const mitteS = b.gelenkOrt("schulter_l").add(b.gelenkOrt("schulter_r")).multiplyScalar(0.5)
+  const inv = b.koerper.k.bws.getWorldQuaternion(new THREE.Quaternion()).invert()
+  const brust = Array.from({ length: 15 }, () => -1)
+  // Hände und Unterarme gehören nicht zur Brust
+  const arm = (["l", "r"] as const).flatMap((s) => [b.gelenkOrt(`ellbogen_${s}`), b.gelenkOrt(`hand_${s}`), b.koerper.punkt(`hand_${s}`)])
+  const nahArm = (q: THREE.Vector3) => {
+    for (let i = 0; i < arm.length; i += 3) {
+      const [e, w, h] = [arm[i], arm[i + 1], arm[i + 2]]
+      if (q.distanceTo(h) < 0.1 || q.distanceTo(w) < 0.08) return true
+      const d = w.clone().sub(e), t = Math.max(0, Math.min(1, q.clone().sub(e).dot(d) / d.lengthSq()))
+      if (q.distanceTo(e.clone().addScaledVector(d, t)) < 0.06) return true
+    }
+    return false
+  }
+  for (const q of b.punkte()) {
+    if (nahArm(q)) continue
+    const l = q.sub(mitteS).applyQuaternion(inv)
+    if (Math.abs(l.x) > 0.07) continue
+    const i = Math.round((l.y + 0.3) / 0.025)
+    if (i >= 0 && i < 15) brust[i] = Math.max(brust[i], Math.round(l.z * 1000) / 1000)
+  }
+  ;(aus as Record<string, unknown>)["_brust"] = brust
   return aus
 }

@@ -79,8 +79,8 @@ export type Hilfsmittel =
   | { art: "hantel"; an: Punkt }
   /** Lang- oder SZ-Stange mit Scheiben, liegt in beiden Händen (oder auf dem Rücken zwischen zwei Punkten) */
   | { art: "langhantel" | "sz" | "latstange" | "kabelstange"; von: Punkt; bis: Punkt }
-  /** Dip-Barren: zwei Holme in Höhe des Punkts (Hände in der Ausgangsstellung) */
-  | { art: "barren"; an: Punkt }
+  /** Dip-Barren: zwei Holme in Höhe des Punkts (Hände in der Ausgangsstellung), breit: halber Abstand (Standard 27 cm) */
+  | { art: "barren"; an: Punkt; breit?: number }
   /** Band an einem festen Anker (Tür, Stange) [seitlich, Höhe, vorn], anderes Ende am Punkt */
   | { art: "bandanker"; von: Punkt; anker: V3 }
   /** Kabelzug: Seil von der Hand (bzw. Hände-Mitte) zur Rolle an einem festen Punkt [seitlich, Höhe, vorn] */
@@ -96,8 +96,8 @@ export type Hilfsmittel =
   | { art: "gymnastikball"; an: Punkt; hinter?: boolean }
   /** Gleitscheibe am Boden unter dem Punkt (Fuß, Ferse) */
   | { art: "gleitscheibe"; an: Punkt }
-  /** Hantelscheibe (5 kg, schwarz) in den Händen, zwischen den Handflächen */
-  | { art: "hantelscheibe"; an: Punkt }
+  /** Hantelscheibe (5 kg, schwarz) in den Händen, zwischen den Handflächen, sonst flach auf dem Körper (hoch: Mitte über dem Punkt, Standard 9 cm) */
+  | { art: "hantelscheibe"; an: Punkt; hoch?: number }
 
 export type Punkt =
   | "hand_l"
