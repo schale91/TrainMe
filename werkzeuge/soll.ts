@@ -971,6 +971,30 @@ const BRUST_ROW_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   rudern_helms: rowSoll({ neig: [42, 62], knie: [150, 176], griff: [0.9, 1.45], obenY: [-0.28, -0.12], quelle: { neig: "Bank auf etwa 30 bis 45 Grad, die Brust an der Kante der Lehne", knie: "die Knie sind leicht gebeugt", griff: "je eine Kurzhantel mit neutralem Griff", oben: "zum unteren Brustkorb" } }),
 }
 
+// ---------------------------------------------------------------- Einarmiges Rudern mit Abstützen (rechts zieht)
+const einarmRowSoll = (art: "knie" | "schwer" | "kroc") => (m: Messung): Pruefung[] => {
+  const s = m.start, z = m.ziel
+  const stuetz = art === "knie" ? ["knie_l", "hand_l", "ferse_r"] : ["hand_l", "ferse_l", "ferse_r"]
+  const r = [...ruhig(m), pr("Abstützen bleibt (m)", bleibt(m, stuetz), 0, 0.02, art === "knie" ? "linke Hand und linkes Knie auf der Bank" : "die freie Hand stützt sich fest ab")]
+  const neig: Bereich = art === "knie" ? [78, 95] : art === "schwer" ? [72, 90] : [58, 77]
+  const q = art === "knie" ? "Der Rücken ist gerade und etwa waagerecht" : art === "schwer" ? "bis der Oberkörper fast waagerecht ist" : "etwa 15 bis 30 Grad über der Waagerechten"
+  for (const [x, w] of [[s, "unten"], [z, "oben"]] as const) r.push(pr(`Oberkörperneigung ${w} (°)`, rumpfneigung(x), neig[0], neig[1], q))
+  if (art === "knie") {
+    r.push(pr("Knie auf der Bank (m)", p(s, "knie_l")[1], 0.45, 0.56, "Stütz dich mit dem linken Knie auf einer Flachbank ab"))
+    r.push(pr("Hand auf der Bank (m)", p(s, "hand_l")[1], 0.45, 0.53, "mit der linken Hand auf einer Flachbank"))
+    r.push(pr("Rechter Fuß am Boden (m)", p(s, "ferse_r")[1], 0.0, 0.04, "das rechte Bein steht seitlich daneben"))
+  } else r.push(pr("Füße versetzt (m)", Math.abs(p(s, "ferse_l")[2] - p(s, "ferse_r")[2]), 0.25, 0.8, "ein Fuß vorn, ein Fuß hinten"))
+  const sh = p(s, "g:schulter_r"), h = p(s, "hand_r")
+  r.push(pr("Arm unten gestreckt (°)", ellbogenWinkel(s, "r"), 160, 180, "der Arm hängt gestreckt"))
+  r.push(pr("Arm hängt senkrecht (°)", grad(Math.atan2(Math.hypot(h[0] - sh[0], h[2] - sh[2]), sh[1] - h[1])), 0, 12, "der Arm hängt gestreckt"))
+  r.push(pr("Hand oben an der Hüfte (m)", amRumpf(z, "hand_r")[1], -0.42, -0.24, "Zieh die Hantel zur Hüfte"))
+  r.push(pr("Ellbogen oben hinter dem Rumpf (m)", amRumpf(z, "g:ellbogen_r")[2], -0.25, -0.02, "der Ellbogen geht nach hinten"))
+  r.push(pr("Ellbogen nah am Körper (m)", Math.abs(p(z, "g:ellbogen_r")[0]) - Math.abs(p(z, "g:schulter_r")[0]), -0.1, 0.08, "der Ellbogen geht nah am Körper nach hinten"))
+  r.push(pr("Oberkörper dreht nicht auf (m)", Math.abs(p(z, "g:schulter_l")[1] - p(z, "g:schulter_r")[1]), 0, 0.07, "ohne den Oberkörper aufzudrehen"))
+  return r
+}
+const EINARM_SOLL: Record<string, (m: Messung) => Pruefung[]> = { rudern_kh: einarmRowSoll("knie"), rudern_kh_schwer: einarmRowSoll("schwer"), rudern_kroc: einarmRowSoll("kroc") }
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1078,6 +1102,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...LAT_SOLL,
   ...UEBER_SOLL,
   ...BRUST_ROW_SOLL,
+  ...EINARM_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

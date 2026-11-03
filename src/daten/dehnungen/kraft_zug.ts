@@ -306,6 +306,69 @@ const brustRudern = (b: BR, gezogen: boolean): Haltung => {
 const brustRow = (b: BR, texte: [string, string], extra: Partial<Dehnung> = {}): Dehnung =>
   wdh("seite", brustRudern(b, false), brustRudern(b, true), 1.2, { aus: 2.0, halten: 0.6, texte, hilfsmittel: b.einarm ? [...KH_R, BAUCH_LEHNE] : [...KH, BAUCH_LEHNE], ...extra })
 
+
+// ---------------------------------------------------------------- Einarmiges Kurzhantelrudern mit Abstützen
+// Rechts zieht, links stützt. Kniend: linkes Knie und linke Hand auf der Flachbank, das rechte Bein steht seitlich
+// daneben, der Rücken ist etwa waagerecht. Schwer und Kroc: Schrittstellung neben der Bank, die freie Hand stützt.
+interface ER {
+  kipp: number
+  ziele: Ziele
+  /** Beine und Stützarm als Ausgangswinkel */
+  w: Winkel
+  pos: P3
+  /** Hand oben im Rahmen der Schultern (zur Hüfte) */
+  oben: [number, number]
+  /** Neigung des Beckens frei (kniend auf der Bank) */
+  drehFrei?: boolean
+}
+const einarmRudern = (e: ER, gezogen: boolean): Haltung => {
+  const ziele: Ziele = { ...e.ziele }
+  const h: P3 = gezogen ? [0.17, e.oben[0], e.oben[1]] : haengend(0.16, e.kipp)
+  ziele.hand_r = { pos: [-h[0], h[1], h[2]], bezug: "schultern" }
+  if (gezogen) {
+    const el = ellbogenKreis([SCHULTER_X, 0, 0], h, [0.1, 0.1, -1])
+    ziele.ellbogen_r = { pos: [-el[0], el[1], el[2]], bezug: "schultern" }
+  }
+  return H(
+    { ...e.w, schulter_r: gezogen ? [-15, 12, 0] : [e.kipp, 6, 0], ellbogen_r: [gezogen ? 100 : 6, HAMMER], ...FAUST, hals: [-e.kipp * 0.35, 0, 0] },
+    [e.kipp, 0, 0],
+    { pos: e.pos, boden: false, beckenFrei: true, drehFrei: e.drehFrei, ziele },
+  )
+}
+const EINARM_BANK_Y = 0.45
+const ER_KNIE: ER = {
+  kipp: 86,
+  drehFrei: true,
+  oben: [-0.32, 0.04],
+  pos: [0.02, 0.9, 0],
+  w: { huefte_l: [86, 2, 0], knie_l: [92], fuss_l: [-60, 0], huefte_r: [62, 14, 0], knie_r: [14], fuss_r: [10, 0], schulter_l: [86, 6, 0], ellbogen_l: [6, 90], hand_l: [80, 0] },
+  ziele: {
+    knie_l: { pos: [0.11, EINARM_BANK_Y + 0.05, 0.0] },
+    // Schienbein liegt auf der Bank
+    fuss_l: { pos: [0.11, EINARM_BANK_Y + 0.04, -0.56] },
+    hand_l: { pos: [0.15, EINARM_BANK_Y + 0.03, 0.5] },
+    ferse_r: { pos: [-0.3, 0.022, -0.02] },
+    fuss_r: { pos: [-0.32, 0.034, 0.1] },
+  },
+}
+const SCHRITT_HOCH = 0.5
+const erSchritt = (kipp: number): ER => ({
+  kipp,
+  oben: [-0.32, 0.04],
+  pos: [0, 0.9, 0],
+  w: { huefte_l: [kipp + 15, 6, 0], knie_l: [25], fuss_l: [12, 0], huefte_r: [kipp - 15, 10, 0], knie_r: [10], fuss_r: [-4, 0], schulter_l: [kipp, 6, 0], ellbogen_l: [6, 90], hand_l: [80, 0] },
+  ziele: {
+    ferse_l: { pos: [0.1, 0.022, 0.18] },
+    fuss_l: { pos: [0.1, 0.034, 0.3] },
+    ferse_r: { pos: [-0.17, 0.022, -0.42] },
+    fuss_r: { pos: [-0.18, 0.034, -0.3] },
+    // die Bank steht längs links neben dem Körper
+    hand_l: { pos: [0.4, SCHRITT_HOCH + 0.03, kipp > 75 ? 0.5 : 0.42] },
+  },
+})
+const einarmRow = (e: ER, bank: Hilfsmittel, texte: [string, string], tempo = 1.2): Dehnung =>
+  wdh("seite", einarmRudern(e, false), einarmRudern(e, true), tempo, { aus: tempo + 0.8, halten: 0.4, seiten: true, texte, hilfsmittel: [...KH_R, bank] })
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -376,6 +439,10 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
   }),
   rudern_kh_brust: brustRow({ oben: [-0.22, -0.01], ellbogen: [0.35, 0.3, -1], kipp: 60 }, ["Zu den unteren Rippen, Schulterblätter zusammen", "Langsam senken, Schulterblätter gehen auseinander"]),
   rudern_kh_brust_einarmig: brustRow({ oben: [-0.3, 0.0], ellbogen: [0.1, 0, -1], einarm: true, kipp: 60 }, ["Zur Hüfte ziehen, Ellbogen streicht am Körper vorbei", "Langsam in die volle Dehnung"], { seiten: true }),
+  // Einarmig mit Abstützen
+  rudern_kh: einarmRow(ER_KNIE, { art: "bank", unter: "knie_l", hoehe: EINARM_BANK_Y, versatz: [0, 0.1] }, ["Ellbogen nah am Körper zur Hüfte, ohne aufzudrehen", "Langsam senken, bis der Arm gestreckt ist"]),
+  rudern_kh_schwer: einarmRow(erSchritt(80), { art: "bank", unter: "hand_l", hoehe: SCHRITT_HOCH }, ["Kraftvoll zur Hüfte, Rücken bleibt gerade", "Kontrolliert bis zur vollen Streckung"], 1.0),
+  rudern_kroc: einarmRow(erSchritt(66), { art: "bank", unter: "hand_l", hoehe: SCHRITT_HOCH }, ["Kraftvoll zur Hüfte, leichter Schwung erlaubt", "In voller Länge absenken"], 0.9),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),
