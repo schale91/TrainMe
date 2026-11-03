@@ -457,14 +457,22 @@ export function specFuer(name: string): string {
   return 'stehen'
 }
 
-/** Name, unter dem eine Übung eine eigene Figur hat (Name oder Zweitname), oder null, wenn es keine gibt. */
-export function figurName(namen: string[]): string | null {
-  for (const n of namen) {
-    const r = n.replace(/^[A-Z]\d+:\s*/, '')
-    if (REGELN.some(([re]) => re.test(r))) return n
+const GERAETE: Eq[] = ['bar', 'sz', 'db', 'cable', 'band', 'none', 'latbar', 'plate', 'rope']
+
+/**
+ * Fester Schlüssel aus der Übungstabelle ("bewegung" oder "bewegung:gerät") oder sonst ein Übungsname, der über
+ * die Namensregeln zugeordnet wird (Kraftbuch der Lebenswelt). Ein festes Gerät gilt vor dem Gerät am Ort.
+ */
+function aufloesen(uebung: string, geraet: string): [string, Eq] {
+  const [k, e] = uebung.split(':')
+  if (SPECS[k] && !/\s/.test(uebung)) {
+    if (e && GERAETE.includes(e as Eq)) return [k, e as Eq]
+    return [k, ausruestung(SPECS[k], '', geraet)]
   }
-  return null
+  const specKey = specFuer(uebung)
+  return [specKey, ausruestung(SPECS[specKey], uebung, geraet)]
 }
+
 function ausruestung(spec: Spec, name: string, geraet: string): Eq {
   if (!spec.flex) return spec.eq
   if (geraet && GERAET_EQ[geraet]) return GERAET_EQ[geraet]
@@ -747,9 +755,8 @@ function schleife(ms: number) {
  * bei "Bewegung reduzieren" ein Standbild. Abmelden passiert von selbst, sobald die Canvas aus dem Dokument fällt.
  */
 export function zeige(canvas: HTMLCanvasElement, uebung: string, geraet = '', farbe = '#2f6fe4'): [string, string] {
-  const specKey = specFuer(uebung)
-  const spec = SPECS[specKey]
-  const key = [specKey, ausruestung(spec, uebung, geraet), farbe].join('|')
+  const [specKey, eq] = aufloesen(uebung, geraet)
+  const key = [specKey, eq, farbe].join('|')
   const fenster = canvas.ownerDocument.defaultView ?? window
   const still = !!fenster.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   const e: Eintrag = { canvas, key, sichtbar: true, start: performance.now() / 1000 - Math.random() * 0.8, still }
@@ -777,8 +784,8 @@ export const _intern = {
   misch,
   /** Standbild an Stelle u (0 = Start, 1 = Umkehrpunkt) */
   standbild(canvas: HTMLCanvasElement, uebung: string, u: number, geraet = '') {
-    const specKey = specFuer(uebung)
-    const e: Eintrag = { canvas, key: [specKey, ausruestung(SPECS[specKey], uebung, geraet), '#2f6fe4'].join('|'), sichtbar: true, start: 0, still: true }
+    const [specKey, eq] = aufloesen(uebung, geraet)
+    const e: Eintrag = { canvas, key: [specKey, eq, '#2f6fe4'].join('|'), sichtbar: true, start: 0, still: true }
     const sz = szeneFuer(e.key)
     const r = studio()
     r.setSize(canvas.width, canvas.height, false)
