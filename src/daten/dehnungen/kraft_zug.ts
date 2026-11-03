@@ -5,7 +5,7 @@
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { B, H, KNIESTAND, folge, halte, mit, wdh } from "./basis"
-import { FAUST, FLACHBANK, HAMMER, KH, LH, OBERGRIFF, SZ, UNTERGRIFF, kabelstange } from "./kraftbasis"
+import { BAUCH_LEHNE, BRUST_LEHNE, FAUST, FLACHBANK, HAMMER, KH, KH_R, LH, OBERGRIFF, SZ, UNTERGRIFF, kabelstange } from "./kraftbasis"
 import { FLACH, liegen } from "./kraft_druecken"
 import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, ellbogenKreis, rad } from "./ziele"
 
@@ -271,6 +271,41 @@ const FLACHBANK_KOPF: Hilfsmittel = FLACHBANK
 const SZ_BANK: Hilfsmittel = { art: "bank", unter: "bws", hoehe: 0.45, versatz: [0, 0.2] }
 const SZ_LAGE = { ...FLACH, fersenZ: 0.58 }
 
+
+// ---------------------------------------------------------------- Rudern mit Brustauflage (Schrägbank)
+// Die Brust liegt auf der Lehne; unten hängen die Arme gestreckt senkrecht, oben ist die Hantel an den unteren
+// Rippen bzw. an der Hüfte, die Ellbogen gehen nach hinten (Helms: leicht nach außen, sonst nach hinten oben).
+const LEHNE_KIPP = 50
+/** senkrecht nach unten hängender Arm im Rahmen der Schultern */
+const haengend = (x: number, kipp: number, lang = ARM_FAUST * 0.99): P3 => {
+  const l = Math.sqrt(lang * lang - (x - SCHULTER_X) ** 2)
+  return [x, -Math.cos(rad(kipp)) * l, Math.sin(rad(kipp)) * l]
+}
+interface BR {
+  oben: [number, number]
+  ellbogen: P3
+  einarm?: boolean
+  /** Neigung des Oberkörpers gegen die Senkrechte (Bank 30 Grad = 60) */
+  kipp?: number
+}
+const brustRudern = (b: BR, gezogen: boolean): Haltung => {
+  const ziele: Ziele = { ...BRUST_LEHNE.ziele }
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    const zieht = gezogen && (!b.einarm || sx === -1)
+    const h: P3 = zieht ? [0.17, b.oben[0], b.oben[1]] : haengend(0.19, b.kipp ?? LEHNE_KIPP)
+    ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+    if (zieht) {
+      const e = ellbogenKreis([SCHULTER_X, 0, 0], h, b.ellbogen)
+      ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    }
+  }
+  const k = b.kipp ?? LEHNE_KIPP
+  return mit(BRUST_LEHNE, { dreh: [k, 0, 0], g: { ...BRUST_LEHNE.g, ...B("huefte", [2 + k - LEHNE_KIPP, 6, 0]), ...B("schulter", gezogen ? [-10, 25, 0] : [k, 8, 0]), ...B("ellbogen", [gezogen ? 100 : 6, HAMMER]) }, ziele })
+}
+const brustRow = (b: BR, texte: [string, string], extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("seite", brustRudern(b, false), brustRudern(b, true), 1.2, { aus: 2.0, halten: 0.6, texte, hilfsmittel: b.einarm ? [...KH_R, BAUCH_LEHNE] : [...KH, BAUCH_LEHNE], ...extra })
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -334,6 +369,13 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
     texte: ["Im Bogen über das Gesicht bis über die Brust ziehen", "Langsam hinter den Kopf zurück in die Dehnung"],
     hilfsmittel: [kabelstange(), { art: "kabel", von: "haende", rolle: [0, 0.15, -1.45] }, FLACHBANK_KOPF],
   }),
+  // Rudern mit Brustauflage
+  rudern_helms: rudern({ kipp: 48, knie: 18, breit: 0.1, griff: 0.19, dreh: HAMMER, oben: [-0.2, 0.03] }, [...KH, { art: "schraegbank", unter: "becken", lehne: "kopf", hoehe: 0.45, bauch: true, kante: true }], {
+    halten: 0.6,
+    texte: ["Zum unteren Brustkorb, Ellbogen nach hinten und leicht nach außen", "Langsam bis zur vollen Streckung senken"],
+  }),
+  rudern_kh_brust: brustRow({ oben: [-0.22, -0.01], ellbogen: [0.35, 0.3, -1], kipp: 60 }, ["Zu den unteren Rippen, Schulterblätter zusammen", "Langsam senken, Schulterblätter gehen auseinander"]),
+  rudern_kh_brust_einarmig: brustRow({ oben: [-0.3, 0.0], ellbogen: [0.1, 0, -1], einarm: true, kipp: 60 }, ["Zur Hüfte ziehen, Ellbogen streicht am Körper vorbei", "Langsam in die volle Dehnung"], { seiten: true }),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),

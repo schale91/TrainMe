@@ -91,7 +91,8 @@ export type Hilfsmittel =
   /** turm: Abstand des Turms hinter der Rolle (Standard 0,12 m), die Rolle hängt dann an einem Ausleger */
   | { art: "kabel"; von: Punkt; rolle: V3; turm?: number }
   /** Verstellbare Bank: Sitz unter dem Punkt in der Höhe, Lehne in Richtung des zweiten Punkts (z. B. Schultern); bauch: Brust liegt auf der Lehne */
-  | { art: "schraegbank"; unter: Punkt; lehne: Punkt; hoehe: number; bauch?: boolean }
+  /** kante: Helms-Rudern, man steht hinter der Bank, nur die Brust liegt an der oberen Kante, die Lehne fällt nach vorn ab */
+  | { art: "schraegbank"; unter: Punkt; lehne: Punkt; hoehe: number; bauch?: boolean; kante?: boolean }
   /** Wand-Rack hinter dem Punkt (oder bei z), mit Ablagen und J-Hooks in der Höhe */
   | { art: "rack"; an: Punkt; z?: number; ablage?: number; haken?: number }
   /** Medizinball in den Händen */

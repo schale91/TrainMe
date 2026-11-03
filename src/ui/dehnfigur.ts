@@ -452,6 +452,25 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
         out.push(zylinder(new THREE.Vector3(sx, p.y - 0.055, p.z - 0.35), new THREE.Vector3(sx, p.y - 0.055, p.z + 0.35), 0.02, FARBE.stahl))
         for (const dz of [-0.3, 0.3]) out.push(kiste(new THREE.Vector3(sx, (p.y - 0.05) / 2, p.z + dz), [0.05, p.y - 0.05, 0.05], FARBE.stahl))
       }
+    } else if (h.art === "schraegbank" && h.kante) {
+      // Helms-Rudern: obere Kante der Lehne an der Brust (unter den Schultern), die Lehne fällt im Winkel von etwa
+      // 40 Grad vor dem Körper nach vorn ab, der Sitz an ihrem unteren Ende
+      const b = k.punkt("becken"), kp = k.punkt("kopf")
+      const u = new THREE.Vector3(0, kp.y - b.y, kp.z - b.z).normalize()
+      const vorn = new THREE.Vector3(0, -u.z, u.y)
+      const kante = b.clone().addScaledVector(u, 0.27).addScaledVector(vorn, 0.155)
+      const d = new THREE.Vector3(0, -Math.sin(rad(40)), Math.cos(rad(40)))
+      const n = new THREE.Vector3(0, Math.cos(rad(40)), Math.sin(rad(40)))
+      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.8, 0.07), mat(FARBE.polster, 0.8))
+      lehne.position.copy(kante).addScaledVector(d, 0.4).addScaledVector(n, -0.04)
+      lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)
+      lehne.castShadow = lehne.receiveShadow = true
+      out.push(lehne)
+      const unten = kante.clone().addScaledVector(d, 0.8)
+      const sitzY = Math.min(h.hoehe, Math.max(0.12, unten.y))
+      out.push(kiste(new THREE.Vector3(b.x, sitzY - 0.04, unten.z + 0.2), [0.3, 0.08, 0.36], FARBE.polster))
+      for (const dz of [0.0, 0.3]) out.push(kiste(new THREE.Vector3(b.x, (sitzY - 0.08) / 2, unten.z + dz), [0.08, sitzY - 0.08, 0.08], FARBE.stahl))
+      out.push(kiste(new THREE.Vector3(b.x, 0.03, unten.z + 0.15), [0.5, 0.06, 0.4], FARBE.stahl))
     } else if (h.art === "schraegbank" && h.bauch) {
       // Bauchlage auf der Schrägbank: die Lehne liegt an der Vorderseite des Rumpfs (Brust und Bauch, 12 cm vor der
       // Linie Becken–Kopf), der Sitz unter ihrem unteren Ende
