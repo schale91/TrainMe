@@ -18,7 +18,8 @@ export const FESTE_PUNKTE: Record<string, ZielPunkt[]> = {
   tfl_dehnen_stehend: ["hand_l", ...FUESSE],
   // Frontal zur Wand, beide Hände stützen
   beinpendel_seitlich: [...HAENDE, ...FUSS_L],
-  hip_airplane: ["hand_l", ...FUSS_L],
+  // die Hand stützt nur anfangs leicht: beim Aufdrehen des Beckens löst sie sich
+  hip_airplane: FUSS_L,
   wandlauf: HAENDE,
   // Knie seitlich an die Wand: das Standbein bleibt
   abduktion_wand_isometrisch: FUSS_L,
@@ -37,6 +38,5 @@ export const FESTE_PUNKTE: Record<string, ZielPunkt[]> = {
   wandengel: FUESSE,
   kinn_einziehen_wand: FUESSE,
   // Handstand: die Hände bleiben am Boden
-  handstand_halten_wand: HAENDE,
   handstand_liegestuetz: HAENDE,
 }

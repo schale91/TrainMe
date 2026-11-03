@@ -5,6 +5,7 @@
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { B, H, folge, halte, wdh } from "./basis"
+import { stuetzPaar } from "./kraft_druecken"
 import { FUSSLAENGE, type Ziele, fuss } from "./ziele"
 
 type P3 = [number, number, number]
@@ -180,6 +181,59 @@ const slideHaltung = (ebene: number, oben: boolean, ab = 0): Haltung => {
 /** Faszienrolle zwischen Wand und Unterarmen (Durchmesser 15 cm) */
 const ROLLE_D = 0.15
 
+
+// ---------------------------------------------------------------- Handstand an der Wand (Bauch zur Wand)
+// Die Wand steht hinter der Ausgangslage (Fläche bei z = -WAND). Aus dem Liegestütz mit den Füßen an der Wand laufen
+// die Füße die Wand hoch und die Hände zur Wand, bis die Hände eine Handbreit vor ihr stehen und der Bauch sie fast
+// berührt; Arme gestreckt, Körper als Linie.
+const WAND_HINTEN_FEST: Hilfsmittel = { art: "wand", an: "becken", richtung: "hinten", ebene: -WAND }
+const verschiebe = (h: Haltung, dz: number): Haltung => ({
+  ...h,
+  pos: h.pos ? [h.pos[0], h.pos[1], h.pos[2] + dz] : h.pos,
+  ziele: h.ziele ? Object.fromEntries(Object.entries(h.ziele).map(([n, z]) => [n, { ...z, pos: [z!.pos[0], z!.pos[1], z!.pos[2] + dz] }])) : h.ziele,
+})
+const HS_STUETZ = stuetzPaar({ hand: 0.17 })
+/** Liegestütz, Kopf von der Wand weg, die Zehen an der Wand */
+const HS_START = (() => {
+  const fz = HS_STUETZ.o.ziele!.fuss_l!.pos[2]
+  return verschiebe(HS_STUETZ.o, -WAND + 0.09 - fz)
+})()
+/** Handstand: Handflächen 17 cm vor der Wand (Finger zur Wand), Schultern senkrecht darüber, Körper gestreckt */
+const HS_PALME_Z = -WAND + 0.17
+const HS_SCHULTER_Y = 0.055 + 0.016 + 0.411
+/** Zwischenschritt: Füße auf Hüfthöhe an der Wand, Hände weit vor ihr, Körper im rechten Winkel (L) */
+const HS_L_HAND_Z = -WAND + 1.09
+const HS_L: Haltung = H(
+  { ...B("huefte", [95, 4, 0]), ...B("knie", [4]), ...B("fuss", [-20, 0]), ...B("schulter", [170, 10, 0]), ...B("ellbogen", [4, 90]), ...B("hand", [80, 0]), hals: [-25, 0, 0] },
+  [155, 0, 0],
+  {
+    pos: [0, HS_SCHULTER_Y + 0.37 * Math.cos((25 * Math.PI) / 180), HS_L_HAND_Z + 0.088 - 0.37 * Math.sin((25 * Math.PI) / 180)],
+    boden: false,
+    ziele: { hand_l: { pos: [0.17, 0.055, HS_L_HAND_Z] }, hand_r: { pos: [-0.17, 0.055, HS_L_HAND_Z] }, fuss_l: { pos: [0.1, 0.92, -WAND + 0.1] }, fuss_r: { pos: [-0.1, 0.92, -WAND + 0.1] } },
+  },
+)
+/** Zwischenschritt: Füße höher an der Wand, Hände näher */
+const HS_M_HAND_Z = -WAND + 0.6
+const HS_M: Haltung = H(
+  { ...B("huefte", [40, 4, 0]), ...B("knie", [4]), ...B("fuss", [-30, 0]), ...B("schulter", [172, 10, 0]), ...B("ellbogen", [4, 90]), ...B("hand", [80, 0]), hals: [-25, 0, 0] },
+  [165, 0, 0],
+  {
+    pos: [0, HS_SCHULTER_Y + 0.37 * Math.cos((15 * Math.PI) / 180), HS_M_HAND_Z + 0.088 - 0.37 * Math.sin((15 * Math.PI) / 180)],
+    boden: false,
+    ziele: { hand_l: { pos: [0.17, 0.055, HS_M_HAND_Z] }, hand_r: { pos: [-0.17, 0.055, HS_M_HAND_Z] }, fuss_l: { pos: [0.1, 1.45, -WAND + 0.11] }, fuss_r: { pos: [-0.1, 1.45, -WAND + 0.11] } },
+  },
+)
+const HANDSTAND_WAND: Haltung = H(
+  { ...B("huefte", [2, 4, 0]), ...B("knie", [2]), ...B("fuss", [-35, 0]), ...B("schulter", [176, 10, 0]), ...B("ellbogen", [4, 90]), ...B("hand", [80, 0]), hals: [-25, 0, 0] },
+  // kopfüber, die Bauchseite zeigt zur Wand (-z)
+  [180, 0, 0],
+  {
+    pos: [0, HS_SCHULTER_Y + 0.37, HS_PALME_Z + 0.088],
+    boden: false,
+    ziele: { hand_l: { pos: [0.17, 0.055, HS_PALME_Z] }, hand_r: { pos: [-0.17, 0.055, HS_PALME_Z] } },
+  },
+)
+
 export const WAND_UEBUNGEN: Record<string, Dehnung> = {
   knie_zur_wand: wdh("seite", KZW_START, KZW_ZIEL, 2.5, { halten: 2, seiten: true, texte: ["Linkes Knie über die zweite Zehe zur Wand, Ferse bleibt am Boden", "Zurück"], hilfsmittel: [WAND_VORN] }),
   grosszehe_dehnen_wand: halte("seite", GZ_START, GZ_ZIEL, { seiten: true, hilfsmittel: [WAND_VORN], hinweis: "Großzehe nach oben an der Wand, der Ballen bleibt am Boden, Knie langsam nach vorn." }),
@@ -201,6 +255,20 @@ export const WAND_UEBUNGEN: Record<string, Dehnung> = {
   wall_slide_rolle: wdh("seite", slideHaltung(WAND - ROLLE_D, false), slideHaltung(WAND - ROLLE_D, true), 2.5, { aus: 2.5, texte: ["Rolle mit den Unterarmen nach oben rollen, bis die Arme ein Y bilden", "Kontrolliert zurück"], hilfsmittel: [WAND_VORN] }),
   wall_slide_faszienrolle: wdh("seite", slideHaltung(WAND - ROLLE_D, false), slideHaltung(WAND - ROLLE_D, true), 2.5, { aus: 2.5, texte: ["Rolle nach oben rollen, die Arme gehen in ein Y", "Langsam zurück, Druck bleibt"], hilfsmittel: [WAND_VORN] }),
   wall_slide_abheben: folge("seite", [[slideHaltung(WAND, false), 1.0, "Unterarme an der Wand"], [slideHaltung(WAND, true), 2.5, "Nach oben in die Y-Position schieben"], [slideHaltung(WAND, true), 0.3, "Oben"], [slideHaltung(WAND, true, 0.04), 1.2, "Unterarme oben einige Zentimeter abheben"], [slideHaltung(WAND, true), 0.8, "Wieder anlegen"], [slideHaltung(WAND, false), 2.5, "Kontrolliert nach unten gleiten"]], { hilfsmittel: [WAND_VORN] }),
+  handstand_halten_wand: folge(
+    "seite",
+    [
+      [HS_START, 1.5, "Liegestütz, Füße an der Wand", true],
+      [HS_L, 2.5, "Füße die Wand hoch, Hände zur Wand"],
+      [HS_M, 2.0, "Weiter hochlaufen"],
+      [HANDSTAND_WAND, 2.0, "Hände eine Handbreit vor der Wand, Bauch fast an der Wand"],
+      [HANDSTAND_WAND, 10, "Halten: Arme gestreckt, Körper als Linie"],
+      [HS_M, 2.0, "Hände weg von der Wand"],
+      [HS_L, 2.0, "Füße herunter"],
+      [HS_START, 2],
+    ],
+    { hilfsmittel: [WAND_HINTEN_FEST] },
+  ),
   fingerlaufen_wand: wdh("seite", flHaltung(1.12, 95), flHaltung(1.68, 5), 6, { halten: 2, aus: 3, seiten: true, texte: ["Fingerspitzen an der Wand nach oben laufen lassen", "Langsam wieder nach unten"], hilfsmittel: [WAND_VORN] }),
 }
 void (null as unknown as P3)

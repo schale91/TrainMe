@@ -210,7 +210,7 @@ const suche = (bed: (l: Linie) => number, dreh: YZ, art: "zehen" | "knie", von =
   }
   return linie((a + b) / 2, dreh, art)
 }
-interface Stuetz {
+export interface Stuetz {
   /** halber Handabstand */
   hand: number
   /** Höhe der Stützfläche der Hände (Box, Erhöhung) */
@@ -252,7 +252,7 @@ const stuetzWinkel = (k: Stuetz, ell: number): Winkel => ({
   hals: [-5, 0, 0],
 })
 /** Ober- und Unterhaltung eines Liegestützes aus der Ausführung */
-const stuetzPaar = (k: Stuetz) => {
+export const stuetzPaar = (k: Stuetz) => {
   const art = k.art ?? "zehen"
   const hh = k.handHoch ?? 0
   const palmeY = hh + (k.palme ?? PALME_Y)

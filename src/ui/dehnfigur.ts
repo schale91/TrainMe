@@ -894,7 +894,8 @@ class Buehne {
           ziele[n] = { bezug: za.bezug, pos: [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number] }
         }
         // Startwert: Mischung der gelösten Enden
-        liste.push(this.loese({ ...m, g: mische(la, lb, u).g, ziele, boden: false }))
+        const ml = mische(la, lb, u)
+        liste.push(this.loese({ ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ziele, boden: false }))
       }
       zwischenSetzen(la, lb, liste)
     }
@@ -924,7 +925,7 @@ class Buehne {
       if (h === ziel) return h
       const p = h.pos ?? POS_GRUND
       const pos: [number, number, number] = h.pos && h.boden === false ? p : [p[0] + versatz[0], p[1] + versatz[1], p[2] + versatz[2]]
-      return { ...h, ziele: { ...h.ziele, ...orte }, boden: false, pos }
+      return { ...h, ziele: { ...h.ziele, ...orte }, boden: false, pos, beckenFrei: true }
     }
     const neu = new Map<Haltung, Haltung>()
     const m = (h: Haltung | undefined) => {
@@ -967,9 +968,16 @@ class Buehne {
         if (ziele[`hand_${s}`] && ziele[`ellbogen_${s}`]) nutze(`hand_${s}`, [0])
       }
     }
-    const start = params.map(([n, i]) => g[n]![i])
-    const setze = (x: number[]) => x.forEach((v, j) => (g[params[j][0]]![params[j][1]] = v))
-    const roh: Haltung = { ...h, g, ziele: undefined, boden: false, pos: h.pos ?? POS_GRUND }
+    // Becken verschiebbar: drei weitere Unbekannte in Zentimetern (damit die Schrittweite zu den Winkeln passt)
+    const pos: [number, number, number] = [...(h.pos ?? POS_GRUND)] as [number, number, number]
+    const nPos = h.beckenFrei ? 3 : 0
+    const start = [...params.map(([n, i]) => g[n]![i]), ...pos.slice(0, nPos).map((v) => v * 100)]
+    const setze = (x: number[]) =>
+      x.forEach((v, j) => {
+        if (j < params.length) g[params[j][0]]![params[j][1]] = v
+        else pos[j - params.length] = v / 100
+      })
+    const roh: Haltung = { ...h, g, ziele: undefined, boden: false, pos }
     const welt = (z: Ziel): THREE.Vector3 => {
       const v = new THREE.Vector3(...z.pos)
       if (!z.bezug || z.bezug === "welt") return v
@@ -1001,7 +1009,7 @@ class Buehne {
         r.push(this.gelenkOrt(`knie_${s}`).sub(this.gelenkOrt(`fuss_${s}`)).dot(quer) * 7 * beuge)
       }
       // sanft beim Startwert bleiben
-      x.forEach((v, j) => r.push((v - start[j]) * 0.002))
+      x.forEach((v, j) => r.push((v - start[j]) * (j < params.length ? 0.002 : 0.004)))
       return r
     }
     let x = [...start]
@@ -1050,7 +1058,12 @@ class Buehne {
     }
     if (groesster > this.restfehler) this.restWo = wo
     this.restfehler = Math.max(this.restfehler, groesster)
-    const fertigH: Haltung = { ...h, g: Object.fromEntries(Object.entries(g).map(([k, w]) => [k, (w as number[]).map((v) => Math.round(v * 10) / 10)])) as Winkel, ziele: undefined }
+    const fertigH: Haltung = {
+      ...h,
+      g: Object.fromEntries(Object.entries(g).map(([k, w]) => [k, (w as number[]).map((v) => Math.round(v * 10) / 10)])) as Winkel,
+      ziele: undefined,
+      ...(nPos ? { pos: pos.map((v) => Math.round(v * 1000) / 1000) as [number, number, number], boden: false } : {}),
+    }
     this.geloest.set(h, fertigH)
     return fertigH
   }

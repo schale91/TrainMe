@@ -43,6 +43,8 @@ export type Winkel = Partial<Record<Gelenk, number[]>>
 export interface Haltung {
   /** Lage des Beckens; ohne pos steht die Figur und wird auf den Boden gesetzt */
   pos?: V3
+  /** Löser darf die Lage des Beckens mit verschieben (feste Punkte: der Körper bewegt sich um den Standfuß) */
+  beckenFrei?: boolean
   dreh?: V3
   g: Winkel
   /** false: Höhe kommt aus pos (z. B. Sitzen auf der Bank), sonst sitzt der tiefste Punkt auf dem Boden */
