@@ -10,7 +10,8 @@
   import { SOLL } from "./soll.ts"
   const q = new URLSearchParams(location.search)
   if (q.get("modell")) modellSetzen(await modellLaden("./privat/figur.bin"))
-  const ids = q.get("ids") ? q.get("ids").split(",") : Object.keys(SOLL)
+  // ?alle=1: alle Dehnungen, ohne Sollwerte nur die Grundprüfung (tiefster Punkt, Verschiebung, Restfehler)
+  const ids = q.get("ids") ? q.get("ids").split(",") : q.get("alle") ? Object.keys(DEHNUNGEN) : Object.keys(SOLL)
   const aus = {}
   let fehler = 0, gesamt = 0
   for (const id of ids) try { console.log("start", id, Math.round(performance.now()))
@@ -23,6 +24,7 @@
     m.alle = d.art === "folge" ? [...new Set(d.schritte.map((x) => x.h))].map((h) => _messen(d, h)) : [m.start, m.ziel]
     const ms = Math.round(performance.now() - t0)
     const r = SOLL[id] ? SOLL[id](m) : []
+    if (!SOLL[id]) aus[id + "#grund"] = m.alle.map((x) => ({ tief: x._tief, schub: x._schub, was: x._was, rest: x._rest[0], wo: x._restWo }))
     const falsch = r.filter((x) => !(x.wert >= x.min && x.wert <= x.max))
     gesamt += r.length; fehler += falsch.length
     aus[id] = { falsch: falsch.map((x) => `${x.was}: ${x.wert} (Soll ${x.min} bis ${x.max}) – ${x.quelle}`), ok: r.length - falsch.length, ms }

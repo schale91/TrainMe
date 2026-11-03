@@ -385,6 +385,8 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
     } else if (h.art === "bank" || h.art === "stuhl" || h.art === "box") {
       const p = k.punkt(h.unter)
       if (h.versatz) p.add(new THREE.Vector3(h.versatz[0], 0, h.versatz[1]))
+      // Sitzen am Ende der Bank: die Bank reicht nach hinten, die Oberschenkel liegen vorn frei über der Kante
+      else if (h.art === "bank" && !h.quer && h.unter === "gesaess") p.add(new THREE.Vector3(0, 0, -0.42))
       const gr: [number, number, number] = h.art === "bank" ? [0.3, h.hoehe, 1.1] : h.art === "stuhl" ? [0.42, h.hoehe, 0.42] : [0.45, h.hoehe, 0.4]
       if (h.art === "bank") {
         // Hantelbank: Polster oben, schwarzes Gestell mit zwei Füßen; quer: Bank steht quer zur Blickrichtung (Hip Thrust)
@@ -1081,6 +1083,10 @@ class Buehne {
     const pk = this.punkte()
     const becken = this.koerper.becken.getWorldPosition(new THREE.Vector3())
     const q = new THREE.Vector3()
+    // Stangen, die die Hände greifen (Rack, Barren): die Faust umschließt sie, Hände zählen dort nicht als Eindringen
+    const haende = [this.koerper.punkt("hand_l"), this.koerper.punkt("hand_r")]
+    const ohneHaende = pk.filter((p) => haende.every((h) => p.distanceTo(h) > 0.11))
+    const gegriffen = (h: Hindernis) => /^(rack|barren|stange)$/.test(h.m.name)
     for (let runde = 0; runde < 8; runde++) {
       const schritt = new THREE.Vector3()
       let min = Infinity
@@ -1088,7 +1094,7 @@ class Buehne {
       if (min < MATTE - 0.002) schritt.y = MATTE - min
       for (const h of hin) {
         let groesster: THREE.Vector3 | null = null
-        for (const p of pk) {
+        for (const p of gegriffen(h) ? ohneHaende : pk) {
           const v = herausschieben(h, q.copy(p).add(c).add(schritt), becken.clone().add(c))
           if (v && (!groesster || v.lengthSq() > groesster.lengthSq())) groesster = v
         }

@@ -745,6 +745,59 @@ const FLY_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   },
 }
 
+
+// ---------------------------------------------------------------- Klimmzug
+const STANGE_Y = 2.12
+interface KZ {
+  griff: Bereich
+  /** Ellbogen oben: seitlich (weit) oder nah am Körper (Grad, gesehen von vorn) */
+  ellbogenSeite: Bereich
+  lSitz?: boolean
+  /** nur Schulterblätter: Arme bleiben gestreckt, Körper hebt sich einige Zentimeter */
+  schulterblatt?: boolean
+  quelle: Record<string, string>
+}
+const kinnY = (m: Punkte) => p(m, "g:kopf")[1] - 0.06
+const zugSoll = (k: KZ) => (m: Messung): Pruefung[] => {
+  // Schulterblatt-Klimmzug: die Schultergelenke sinken oben im Rumpf, daher Start und Ziel statt der Höhe
+  const h = k.schulterblatt ? m.start : m.alle.reduce((a, b) => (schulterY(b) < schulterY(a) ? b : a))
+  const o = k.schulterblatt ? m.ziel : m.alle.reduce((a, b) => (schulterY(b) > schulterY(a) ? b : a))
+  const r = [...ruhig(m), pr("Hände bleiben an der Stange (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.02, "Greif die Stange")]
+  r.push(pr("Griffbreite / Schulterbreite", griffbreite(h) / schulterbreite(h), k.griff[0], k.griff[1], k.quelle.griff))
+  for (const a of SEITEN) r.push(pr(`Arm ${a} im Hang gestreckt (°)`, ellbogenWinkel(h, a), 160, 180, "Häng dich mit gestreckten Armen aus"))
+  r.push(pr("Körper hängt ruhig (°)", Math.abs(rumpfneigung(h)), 0, 10, "ohne Schwung"))
+  r.push(pr("Füße frei (m)", Math.min(...m.alle.map((x) => Math.min(p(x, "fuss_l")[1], p(x, "fuss_r")[1], p(x, "ferse_l")[1], p(x, "ferse_r")[1]))), 0.05, 3, "im Hang"))
+  if (k.lSitz) for (const x of [h, o]) r.push(pr("Beine waagerecht (m)", Math.abs(p(x, "g:fuss_l")[1] - p(x, "g:huefte_l")[1]), 0, 0.1, "Heb die gestreckten Beine nach vorn, bis sie etwa waagerecht sind"))
+  if (k.schulterblatt) {
+    for (const a of SEITEN) r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "ohne die Ellbogen zu beugen"))
+    r.push(pr("Körper hebt sich (m)", p(o, "g:becken")[1] - p(h, "g:becken")[1], 0.03, 0.1, "Dein Körper hebt sich dabei einige Zentimeter"))
+    return r
+  }
+  r.push(pr("Kinn oben über der Stange (m)", kinnY(o) - STANGE_Y, 0.0, 0.1, k.quelle.oben ?? "bis das Kinn über der Stange ist"))
+  for (const a of SEITEN) {
+    const e = p(o, `g:ellbogen_${a}`), sh = p(o, `g:schulter_${a}`)
+    r.push(pr(`Ellbogen ${a} oben unten (m)`, sh[1] - e[1], 0.08, 0.25, "Zieh die Ellbogen nach unten"))
+    r.push(pr(`Ellbogen ${a} oben seitlich (°)`, grad(Math.atan2(Math.abs(e[0]) - Math.abs(sh[0]), sh[1] - e[1])), k.ellbogenSeite[0], k.ellbogenSeite[1], k.quelle.ellbogen))
+  }
+  return r
+}
+const KZ_OBER: KZ = { griff: [1.1, 1.45], ellbogenSeite: [15, 45], quelle: { griff: "etwas breiter als schulterbreit im Obergriff", ellbogen: "die Ellbogen nach unten und hinten zu den Rippen" } }
+const KZ_ENG: KZ = { griff: [0.9, 1.2], ellbogenSeite: [0, 25], quelle: { griff: "schulterbreit", ellbogen: "die Ellbogen eng am Körper nach unten" } }
+const ZUG_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  klimmzug: zugSoll(KZ_OBER),
+  klimmzug_gewicht: zugSoll(KZ_OBER),
+  klimmzug_exzentrisch_betont: zugSoll(KZ_OBER),
+  klimmzug_band: zugSoll(KZ_OBER),
+  klimmzug_negativ: zugSoll(KZ_OBER),
+  klimmzug_exzentrisch_overload: zugSoll(KZ_OBER),
+  klimmzug_halten: zugSoll(KZ_OBER),
+  klimmzug_untergriff: zugSoll(KZ_ENG),
+  klimmzug_neutral: zugSoll({ ...KZ_ENG, quelle: { griff: "die Hände etwa schulterbreit", ellbogen: "die Ellbogen nah am Körper nach unten" } }),
+  klimmzug_weit: zugSoll({ griff: [1.4, 1.7], ellbogenSeite: [35, 70], quelle: { griff: "etwa eineinhalbfach schulterbreit", ellbogen: "die Ellbogen seitlich nach unten zu den Hüften", oben: "bis die obere Brust nah an der Stange ist" } }),
+  klimmzug_l_sit: zugSoll({ ...KZ_OBER, griff: [0.9, 1.45], lSitz: true }),
+  klimmzug_schulterblatt: zugSoll({ ...KZ_ENG, schulterblatt: true }),
+}
+
 const KLASSISCH_Q = { stand: "Stell dich hüftbreit hin", zehen: "Zehen leicht nach außen", griff: "Greif die Stange schulterbreit, die Arme hängen direkt außen an den Beinen", huefte: "Hüfte höher als die Knie" }
 
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
@@ -752,6 +805,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...LS_SOLL,
   ...DIP_SOLL,
   ...FLY_SOLL,
+  ...ZUG_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),

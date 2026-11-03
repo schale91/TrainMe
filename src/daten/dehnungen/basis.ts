@@ -24,7 +24,8 @@ export const RUECKENLAGE: Haltung = H({ ...B("schulter", [0, 12, 0]), ...B("fuss
 export const RUECKENLAGE_AUF: Haltung = H({ ...B("schulter", [0, 12, 0]), ...B("huefte", [60, 4, 0]), ...B("knie", [100]), ...B("fuss", [10, 0]) }, [-90, 0, 0])
 export const BAUCHLAGE: Haltung = H({ ...B("schulter", [170, 30, 0]), ...B("ellbogen", [110, 90]), ...B("fuss", [-70, 0]), hals: [-5, 0, 0] }, [90, 0, 0])
 /** Sitz auf Stuhl oder Bank (Sitzhöhe 0,42 m) */
-export const STUHLSITZ: Haltung = H({ ...B("huefte", [90, 5, 0]), ...B("knie", [90]), ...B("schulter", [15, 10, 0]), ...B("ellbogen", [60, 60]) }, undefined, { pos: [0, 0.5, 0], boden: false })
+/** Sitz auf 45 cm: Gesäß auf der Sitzfläche, Schienbeine senkrecht, Fersen am Boden (Becken 55,5 cm, gemessen an der Figur) */
+export const STUHLSITZ: Haltung = H({ ...B("huefte", [90, 5, 0]), ...B("knie", [90]), ...B("schulter", [15, 10, 0]), ...B("ellbogen", [60, 60]) }, undefined, { pos: [0, 0.555, 0], boden: false })
 export const KNIESTAND: Haltung = H({ ...B("huefte", [0, 4, 0]), ...B("knie", [90]), ...B("fuss", [-80, 0]), ...ARME_LOCKER })
 /** Halber Kniestand: links hinten auf dem Knie, rechts vorn aufgestellt */
 export const HALBKNIESTAND: Haltung = H({ huefte_l: [-5, 4, 0], knie_l: [85], fuss_l: [-80, 0], huefte_r: [90, 4, 0], knie_r: [90], fuss_r: [0, 0], ...ARME_LOCKER })
