@@ -12,14 +12,14 @@ import { FAUST, HAMMER, KH, OBERGRIFF } from "./kraftbasis"
 /** Stange auf dem oberen Rücken: Hände knapp außerhalb der Schultern hinter dem Nacken */
 export const ARME_RUECKEN: Winkel = { ...B("schulter", [-6, 62, 70]), ...B("ellbogen", [118, OBERGRIFF]), ...FAUST }
 /** Front Rack: Ellbogen hoch, Stange vorn auf den Schultern */
-const ARME_FRONT: Winkel = { ...B("schulter", [92, 18, 0]), ...B("ellbogen", [150, -60]), ...FAUST }
+export const ARME_FRONT: Winkel = { ...B("schulter", [92, 18, 0]), ...B("ellbogen", [150, -60]), ...FAUST }
 /** Hantel eng vor der Brust (Goblet) */
 export const ARME_GOBLET: Winkel = { ...B("schulter", [26, 6, 0]), ...B("ellbogen", [138, HAMMER]), ...FAUST }
 /** Kurzhanteln hängen neben dem Körper */
 export const ARME_SEITE: Winkel = { ...B("schulter", [2, 8, 0]), ...B("ellbogen", [6, HAMMER]), ...FAUST }
 /** Arme zum Ausgleich nach vorn */
 export const ARME_VOR: Winkel = { ...B("schulter", [88, 6, 0]), ...B("ellbogen", [4, 90]) }
-const ARME_HOCH: Winkel = { ...B("schulter", [172, 16, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST }
+export const ARME_HOCH: Winkel = { ...B("schulter", [172, 16, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST }
 
 /** Mit Langhantel schräg von vorn, sonst verdecken die Scheiben in der Seitenansicht die Figur */
 export const ansicht = (hilfsmittel: Hilfsmittel[]): Dehnung["ansicht"] => (hilfsmittel.some((h) => h.art === "langhantel") ? "schraeg" : "seite")

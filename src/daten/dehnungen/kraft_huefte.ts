@@ -14,12 +14,12 @@ import { ARME_RUECKEN, ARME_SEITE, RACK, STANGE_RUECKEN, STUHL, WAND_HINTEN, ans
 // ---------------------------------------------------------------- Heben vom Boden
 const LH: Hilfsmittel[] = [{ art: "langhantel", von: "hand_l", bis: "hand_r" }]
 /** Arme hängen senkrecht, Hände im Obergriff */
-const haengen = (kipp: number, breit = 8, dreh = OBERGRIFF): Winkel => ({ ...B("schulter", [kipp, breit, 0]), ...B("ellbogen", [4, dreh]), ...FAUST })
+export const haengen = (kipp: number, breit = 8, dreh = OBERGRIFF): Winkel => ({ ...B("schulter", [kipp, breit, 0]), ...B("ellbogen", [4, dreh]), ...FAUST })
 /**
  * Gebeugte Haltung: kipp = Oberkörper vor, ober = Oberschenkel vor, schien = Knie vor den Füßen (Grad).
  * Rücken gerade, Blick schräg nach vorn unten.
  */
-const beuge = (kipp: number, ober: number, schien: number, arme: Winkel, breit = 10, w: Winkel = {}): Haltung =>
+export const beuge = (kipp: number, ober: number, schien: number, arme: Winkel, breit = 10, w: Winkel = {}): Haltung =>
   H({ ...B("huefte", [ober + kipp, breit, -breit / 2]), ...B("knie", [ober + schien]), ...B("fuss", [schien, 0]), hals: [-kipp / 3, 0, 0], ...arme, ...w }, [kipp, 0, 0])
 const oben = (arme: Winkel, breit = 10): Haltung => stand(arme, breit)
 
@@ -79,7 +79,7 @@ const SEITLAGE_GEBEUGT: Haltung = mit(SEITLAGE, { g: { ...B("huefte", [45, 0, 0]
 
 /** Seitstütz auf dem linken Unterarm: Körper als Linie, linke Seite unten; w überschreibt Beine */
 const SEITSTUETZ_ARME: Winkel = { schulter_l: [0, 84, 0], ellbogen_l: [90, 0], schulter_r: [0, 10, 0], ellbogen_r: [10, 0] }
-const seitstuetz = (w: Winkel, neigen = 96): Haltung => H({ ...B("huefte", [0, 0, 0]), ...B("knie", [4]), ...B("fuss", [0, 0]), ...SEITSTUETZ_ARME, hals: [0, -10, 0], ...w }, [0, 0, neigen])
+export const seitstuetz = (w: Winkel, neigen = 96): Haltung => H({ ...B("huefte", [0, 0, 0]), ...B("knie", [4]), ...B("fuss", [0, 0]), ...SEITSTUETZ_ARME, hals: [0, -10, 0], ...w }, [0, 0, neigen])
 
 // ---------------------------------------------------------------- Wade
 /** Fußballen auf der Kante der Box (20 cm), Ferse frei: tief = Ferse unter der Kante, hoch = auf den Zehen */

@@ -534,8 +534,10 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
     else if (h.art === "hantelscheibe") {
       // zwischen den Handflächen: Achse von Hand zu Hand
       const a = k.punkt("hand_l"), b = k.punkt("hand_r")
-      const m = h.an === "haende" ? a.clone().add(b).multiplyScalar(0.5) : k.punkt(h.an)
-      const d = b.clone().sub(a).normalize()
+      const inHand = h.an === "haende" || h.an === "hand_l" || h.an === "hand_r"
+      // in den Händen zwischen den Handflächen, sonst flach auf dem Körper (z. B. auf dem Rücken im Stütz)
+      const m = h.an === "haende" ? a.clone().add(b).multiplyScalar(0.5) : inHand ? k.punkt(h.an) : k.punkt(h.an).add(new THREE.Vector3(0, 0.09, 0))
+      const d = inHand ? b.clone().sub(a).normalize() : new THREE.Vector3(0, 1, 0)
       out.push(zylinder(m.clone().addScaledVector(d, -0.02), m.clone().addScaledVector(d, 0.02), 0.13, FARBE.stahl))
     } else if (h.art === "gymnastikball") {
       // Gymnastikball (65 cm) rollt am Boden: liegt die Ferse tiefer als oben auf dem Ball, berührt er sie von der
