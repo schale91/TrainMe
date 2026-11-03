@@ -754,6 +754,7 @@ class Buehne {
   /** Verschiebung durch Ausweichen im letzten Bild (Boden, Gegenstände) */
   schub = new THREE.Vector3()
   schubWas = new Set<string>()
+  tiefsterPunkt = new THREE.Vector3()
 
   constructor(
     d: Dehnung,
@@ -1094,6 +1095,8 @@ class Buehne {
     this.koerper.stelle(g)
     this.modell?.uebernehmen(g.boden !== false)
     this.schub.set(0, 0, 0)
+    // tiefster Hautpunkt vor dem Ausweichen (Werkzeug: wo die Figur in den Boden taucht)
+    this.tiefsterPunkt = this.punkte().reduce((a, b) => (b.y < a.y ? b : a), new THREE.Vector3(0, 9, 0))
     if (this.fest.length || g.boden === false) {
       const c = this.ausweichen()
       this.schub.copy(c)
@@ -1436,6 +1439,7 @@ export function _messen(d: Dehnung, h: Haltung): Record<string, [number, number,
   for (const n of Object.keys(b.koerper.marken)) aus[n] = v(b.koerper.punkt(n as Punkt))
   aus["_rest"] = [Math.round(b.restfehler * 1000) / 1000, 0, 0]
   aus["_schub"] = v(b.schub)
+  aus["_tief"] = v(b.tiefsterPunkt)
   ;(aus as Record<string, unknown>)["_was"] = [...b.schubWas]
   return aus
 }

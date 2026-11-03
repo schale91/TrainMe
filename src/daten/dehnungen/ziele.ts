@@ -49,7 +49,8 @@ export const fuss = (s: 1 | -1, x: number, z: number, winkel = 10, ferseHoch = 0
     const neig = Math.asin(Math.min(0.9, ferseHoch / FUSSLAENGE))
     return {
       [`ferse_${n}`]: { pos: [s * x, FERSE_Y + hoch + ferseHoch, z] },
-      [`fuss_${n}`]: { pos: [s * (x + dx), SPITZE_Y + hoch, z + dz * Math.cos(neig)] },
+      // die Marke liegt über dem Ballen; bei gekipptem Fuß liegt die Sohle darunter tiefer
+      [`fuss_${n}`]: { pos: [s * (x + dx), SPITZE_Y + hoch + 0.45 * ferseHoch, z + dz * Math.cos(neig)] },
     }
   }
   return {

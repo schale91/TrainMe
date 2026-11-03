@@ -241,9 +241,128 @@ const hinge = (k: HG) => (m: Messung): Pruefung[] => {
   }
   return r
 }
+// ---------------------------------------------------------------- Einbeinig
+const ruhig = (m: Messung): Pruefung[] => [
+  pr("Restfehler der Zielpunkte (m)", Math.max(...m.alle.map((x) => p(x, "_rest")[0])), 0, 0.02, "Zielpunkte erreicht"),
+  pr("Verschiebung durch Boden oder Gerät (m)", Math.max(...m.alle.map((x) => Math.hypot(...p(x, "_schub")))), 0, 0.015, "Figur steht frei"),
+]
+const bleibt = (m: Messung, n: string[]) => Math.max(...m.alle.map((x) => Math.max(...n.map((k) => Math.hypot(...([0, 1, 2].map((i) => p(x, k)[i] - p(m.alle[0], k)[i]) as V))))))
+interface SP {
+  bank?: boolean
+  /** vorderer Fuß erhöht */
+  vornHoch?: number
+  /** hinteres Knie über dem Boden unten */
+  hintenKnie?: Bereich
+  /** Fuß, der stehen bleibt */
+  fest: "beide" | "vorn" | "hinten"
+}
+const splitSoll = (k: SP) => (m: Messung): Pruefung[] => {
+  const { u } = obenUnten(m)
+  const fl = mitte(p(u, "ferse_l"), p(u, "fuss_l"))
+  const r: Pruefung[] = [
+    ...ruhig(m),
+    pr("Vorderes Knie über dem Fuß unten (m)", p(u, "g:knie_l")[2] - p(u, "g:fuss_l")[2], -0.06, 0.13, "vorderes Knie über dem Fuß oder leicht davor"),
+    pr("Vorderes Knie seitlich über dem Fuß (m)", Math.abs(p(u, "g:knie_l")[0] - fl[0]), 0, 0.07, "das vordere Knie zeigt über die Zehen"),
+    pr("Hinteres Knie über dem Boden unten (m)", p(u, "g:knie_r")[1], ...(k.hintenKnie ?? (k.bank ? [0.05, 0.25] : [0.05, 0.2])) as Bereich, "hinteres Knie knapp über dem Boden"),
+    pr("Vorderer Kniewinkel unten (°)", kniewinkel(u, "l"), 72, 118, "vorderes Knie etwa 90 Grad"),
+    pr("Rumpf aufrecht unten (°)", rumpfneigung(u), -3, 22, "Oberkörper aufrecht"),
+    pr("Vordere Ferse am Boden (m)", p(u, "ferse_l")[1], 0, 0.036 + (k.vornHoch ?? 0), "die Ferse bleibt am Boden"),
+    pr("Spur hüftbreit (m)", Math.abs(p(u, "ferse_l")[0] - p(u, k.bank ? "fuss_r" : "ferse_r")[0]), 0.12, 0.32, "Füße hüftbreit wie auf zwei Schienen"),
+  ]
+  if (!k.bank) {
+    r.push(pr("Hinterer Kniewinkel unten (°)", kniewinkel(u, "r"), 62, 120, "beide Knie etwa 90 Grad"))
+    r.push(pr("Schrittlänge (m)", p(u, "ferse_l")[2] - p(u, "fuss_r")[2], 0.7, 1.05, "eine große Schrittlänge auseinander"))
+    r.push(pr("Hintere Ferse angehoben (m)", p(u, "ferse_r")[1], 0.06, 0.2, "die hintere Ferse ist angehoben"))
+  }
+  const fest = k.fest === "beide" ? ["ferse_l", "fuss_l", "fuss_r"] : k.fest === "vorn" ? ["ferse_l", "fuss_l"] : ["fuss_r"]
+  r.push(pr("Fester Fuß bleibt stehen (m)", bleibt(m, fest), 0, 0.02, "der Fuß bleibt an seiner Stelle"))
+  return r
+}
+const stepSoll = (box: number) => (m: Messung): Pruefung[] => {
+  const o = m.ziel, u = m.start
+  return [
+    ...ruhig(m),
+    pr("Fuß auf der Box (m)", p(u, "ferse_l")[1] - box, 0, 0.036, "einen Fuß komplett auf die Box"),
+    pr("Oberes Knie über den Zehen unten (m)", Math.abs(p(u, "g:knie_l")[0] - mitte(p(u, "ferse_l"), p(u, "fuss_l"))[0]), 0, 0.07, "das Knie zeigt über die Zehen"),
+    pr("Oberer Kniewinkel unten (°)", kniewinkel(u, "l"), 70, 120, "Fuß auf Kniehöhe"),
+    pr("Oberkörper leicht vor unten (°)", rumpfneigung(u), 0, 28, "Oberkörper leicht nach vorn"),
+    pr("Oben aufrecht auf der Box: Knie (°)", kniewinkel(o, "l"), 160, 180, "bis du aufrecht auf der Box stehst"),
+    pr("Oben aufrecht: Rumpf (°)", Math.abs(rumpfneigung(o)), 0, 10, "aufrecht"),
+    pr("Oberer Fuß bleibt (m)", bleibt(m, ["ferse_l", "fuss_l"]), 0, 0.02, "Fuß bleibt auf der Box"),
+  ]
+}
+const pistolSoll = (m: Messung): Pruefung[] => {
+  const o = m.start, u = m.ziel
+  return [
+    ...ruhig(m),
+    pr("Hüfte unter dem Knie unten (m)", (p(u, "g:huefte_l")[1]) - p(u, "g:knie_l")[1], -0.35, -0.08, "bis die Rückseite des Oberschenkels die Wade berührt"),
+    pr("Ferse am Boden unten (m)", p(u, "ferse_l")[1], 0, 0.036, "die Ferse bleibt am Boden"),
+    pr("Knie über den Zehen (m)", Math.abs(p(u, "g:knie_l")[0] - mitte(p(u, "ferse_l"), p(u, "fuss_l"))[0]), 0, 0.07, "das Knie wandert über die Zehen"),
+    pr("Freies Bein gestreckt (°)", kniewinkel(u, "r"), 150, 180, "das andere Bein streckst du nach vorn"),
+    pr("Freier Fuß knapp über dem Boden (m)", Math.min(p(u, "ferse_r")[1], p(u, "fuss_r")[1]), 0.02, 0.35, "bis es knapp über dem Boden schwebt"),
+    pr("Standfuß bleibt (m)", bleibt(m, ["ferse_l", "fuss_l"]), 0, 0.02, "Fuß bleibt stehen"),
+    pr("Oben Knie gestreckt (°)", kniewinkel(o, "l"), 160, 180, "aufrecht auf einem Bein"),
+  ]
+}
+const rdl1Soll = (m: Messung): Pruefung[] => {
+  const o = m.start, u = m.ziel
+  return [
+    ...ruhig(m),
+    pr("Rumpfneigung unten (°)", rumpfneigung(u), 60, 95, "Oberkörper kippt wie eine Wippe nach vorn"),
+    pr("Hinteres Bein in Linie (m)", Math.abs(p(u, "g:fuss_r")[1] - p(u, "g:becken")[1]), 0, 0.2, "Oberkörper und hinteres Bein bilden eine Linie"),
+    pr("Standbein locker gebeugt unten (°)", kniewinkel(u, "l"), 140, 175, "Knie leicht gebeugt"),
+    pr("Standfuß bleibt (m)", bleibt(m, ["ferse_l", "fuss_l"]), 0, 0.02, "Fuß bleibt stehen"),
+    pr("Oben aufrecht (°)", Math.abs(rumpfneigung(o)), 0, 10, "aufrecht stehen"),
+  ]
+}
+const seitSoll = (m: Messung): Pruefung[] => {
+  const { u } = obenUnten(m)
+  return [
+    ...ruhig(m),
+    pr("Oberschenkel etwa waagerecht (m)", p(u, "g:huefte_l")[1] - p(u, "g:knie_l")[1], -0.06, 0.12, "bis der Oberschenkel etwa waagerecht ist"),
+    pr("Anderes Bein gestreckt (°)", kniewinkel(u, "r"), 158, 180, "das andere Bein bleibt gestreckt"),
+    pr("Fersen am Boden (m)", fersenhoehe(u), 0, 0.036, "die Ferse bleibt am Boden"),
+    pr("Großer Schritt zur Seite", fussbreite(u) / schulterbreite(u), 1.6, 3.2, "ein großer Schritt zur Seite"),
+    pr("Knie über den Zehen (m)", Math.abs(p(u, "g:knie_l")[0] - mitte(p(u, "ferse_l"), p(u, "fuss_l"))[0]), 0, 0.08, "Knie des Schrittbeins über dem Fuß"),
+  ]
+}
+
 const KLASSISCH_Q = { stand: "Stell dich hüftbreit hin", zehen: "Zehen leicht nach außen", griff: "Greif die Stange schulterbreit, die Arme hängen direkt außen an den Beinen", huefte: "Hüfte höher als die Knie" }
 
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  split_squat_kh: splitSoll({ fest: "beide" }),
+  split_squat_kg: splitSoll({ fest: "beide" }),
+  split_squat_lh: splitSoll({ fest: "beide" }),
+  split_squat_band: splitSoll({ fest: "beide" }),
+  split_squat_ffe: splitSoll({ fest: "beide", vornHoch: 0.1, hintenKnie: [0.03, 0.15] }),
+  split_squat_iso: splitSoll({ fest: "beide", hintenKnie: [0.06, 0.22] }),
+  bulgarisch_kh: splitSoll({ fest: "beide", bank: true }),
+  bulgarisch_kg: splitSoll({ fest: "beide", bank: true }),
+  bulgarisch_lh: splitSoll({ fest: "beide", bank: true }),
+  bulgarisch_multipresse: splitSoll({ fest: "beide", bank: true }),
+  ausfallschritt_kh: splitSoll({ fest: "vorn" }),
+  ausfallschritt_rueck_lh: splitSoll({ fest: "vorn" }),
+  ausfallschritt_rueck_kg: splitSoll({ fest: "vorn" }),
+  ausfallschritt_goblet: splitSoll({ fest: "vorn" }),
+  ausfallschritt_multipresse: splitSoll({ fest: "vorn" }),
+  ausfallschritt_defizit: splitSoll({ fest: "vorn", vornHoch: 0.08, hintenKnie: [0.03, 0.2] }),
+  ausfallschritt_gleitscheibe: splitSoll({ fest: "vorn" }),
+  ausfallschritt_vor_kh: splitSoll({ fest: "hinten" }),
+  ausfallschritt_vor_kg: splitSoll({ fest: "hinten" }),
+  ausfallschritt_gehend_kh: splitSoll({ fest: "hinten" }),
+  ausfallschritt_gehend_lh: splitSoll({ fest: "hinten" }),
+  ausfallschritt_gehend_kg: splitSoll({ fest: "hinten" }),
+  ausfallschritt_seit_kh: seitSoll,
+  ausfallschritt_seit_kg: seitSoll,
+  ausfallschritt_seit_gleitscheibe: seitSoll,
+  step_up: stepSoll(0.5),
+  step_up_kg: stepSoll(0.5),
+  step_up_lh: stepSoll(0.5),
+  step_up_kniehub: stepSoll(0.5),
+  pistol: pistolSoll,
+  pistol_gegengewicht: pistolSoll,
+  einbein_kreuzheben: rdl1Soll,
+  einbein_kreuzheben_kg: rdl1Soll,
   kreuzheben_lh: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.2, 0.26], quelle: KLASSISCH_Q }),
   kreuzheben_reset: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.2, 0.26], quelle: KLASSISCH_Q }),
   kreuzheben_defizit: heben({ stand: [0.55, 0.9], zehen: [3, 20], griff: [1.0, 1.45], stangeY: [0.2, 0.26], huefteKnie: [-0.1, 0.4], quelle: { ...KLASSISCH_Q, huefte: "Hüfte und Knie tiefer als beim normalen Kreuzheben" } }),
