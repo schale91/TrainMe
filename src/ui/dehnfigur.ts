@@ -32,7 +32,12 @@ const FARBE = {
   holz: "#b08a63",
   polster: "#3b4458",
   metall: "#a3acb8",
-  scheibe: "#d9534f",
+  scheibe: "#d23b33",
+  gruen: "#2f9b4a",
+  /** Rahmen der Geräte (Rack, Latzug, Bank): schwarzer Stahl */
+  stahl: "#26292f",
+  /** Plyo-Box und Medizinball: schwarz */
+  box: "#1f2126",
   wand: "#e4e8ee",
   band: "#e8623c",
   rolle: "#3d6fd6",
@@ -349,7 +354,7 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
     } else if (h.art === "bank" || h.art === "stuhl" || h.art === "box") {
       const p = k.punkt(h.unter)
       const gr: [number, number, number] = h.art === "bank" ? [0.3, h.hoehe, 1.1] : h.art === "stuhl" ? [0.42, h.hoehe, 0.42] : [0.45, h.hoehe, 0.4]
-      out.push(kiste(new THREE.Vector3(p.x, h.hoehe / 2, p.z), gr, h.art === "box" ? FARBE.holz : FARBE.polster))
+      out.push(kiste(new THREE.Vector3(p.x, h.hoehe / 2, p.z), gr, h.art === "box" ? FARBE.box : FARBE.polster))
       if (h.art === "stuhl") out.push(kiste(new THREE.Vector3(p.x, h.hoehe + 0.22, p.z - 0.2), [0.42, 0.44, 0.03], FARBE.polster))
     } else if (h.art === "rolle") {
       const p = k.punkt(h.unter)
@@ -372,13 +377,99 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const p = k.punkt(h.an)
       out.push(zylinder(new THREE.Vector3(-0.7, p.y + 0.02, p.z), new THREE.Vector3(0.7, p.y + 0.02, p.z), 0.016, FARBE.metall))
     } else if (h.art === "kabel") {
-      // Kabelturm: Säule hinter der Rolle, Rolle als kleine Scheibe
+      // Latzug-Turm wie ATX LMSW-700: schwarzer Rahmen, Gewichtsblock dahinter, obere Rolle am Ausleger
       const [x, y, z] = h.rolle
-      const hinten = z >= 0 ? 0.08 : -0.08
-      out.push(kiste(new THREE.Vector3(x, 1.1, z + hinten), [0.12, 2.2, 0.12], FARBE.polster))
-      out.push(zylinder(new THREE.Vector3(x - 0.03, y, z), new THREE.Vector3(x + 0.03, y, z), 0.035, FARBE.metall))
+      const weg = z >= 0 ? 1 : -1
+      const pz = z + weg * 0.12
+      out.push(kiste(new THREE.Vector3(x, 1.12, pz), [0.09, 2.24, 0.09], FARBE.stahl))
+      out.push(kiste(new THREE.Vector3(x, 0.45, pz + weg * 0.26), [0.26, 0.9, 0.16], FARBE.stahl))
+      for (const dx of [-0.07, 0.07]) out.push(zylinder(new THREE.Vector3(x + dx, 0.9, pz + weg * 0.26), new THREE.Vector3(x + dx, 2.1, pz + weg * 0.26), 0.008, FARBE.metall))
+      out.push(kiste(new THREE.Vector3(x, 0.03, pz + weg * 0.12), [0.6, 0.06, 0.55], FARBE.stahl))
+      // Ausleger oben bis über die Rolle, wenn sie hoch hängt
+      if (y > 1.4) out.push(kiste(new THREE.Vector3(x, 2.2, (pz + z) / 2), [0.1, 0.08, Math.abs(pz - z) + 0.12], FARBE.stahl))
+      out.push(zylinder(new THREE.Vector3(x - 0.025, y, z), new THREE.Vector3(x + 0.025, y, z), 0.04, FARBE.stahl))
+    } else if (h.art === "schraegbank") {
+      // Verstellbare Hantelbank wie ATX MBX-610: Sitz, Lehne im Winkel des Rückens, schwarzer Rahmen
+      const p = k.punkt(h.unter)
+      out.push(kiste(new THREE.Vector3(p.x, h.hoehe - 0.04, p.z + 0.1), [0.3, 0.08, 0.36], FARBE.polster))
+      out.push(kiste(new THREE.Vector3(p.x, (h.hoehe - 0.08) / 2, p.z + 0.05), [0.08, h.hoehe - 0.08, 0.08], FARBE.stahl))
+      out.push(kiste(new THREE.Vector3(p.x, 0.03, p.z - 0.1), [0.5, 0.06, 0.08], FARBE.stahl))
+      const r = k.punkt(h.lehne)
+      const d = new THREE.Vector3(0, r.y - h.hoehe, r.z - p.z).normalize()
+      // Lehne liegt hinter dem Rücken: von der Sitzkante aus entlang des Rückens, um ihre Dicke nach hinten versetzt
+      const hinten = new THREE.Vector3(0, d.z, -d.y)
+      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.86, 0.07), mat(FARBE.polster, 0.8))
+      lehne.position.set(p.x, h.hoehe, p.z - 0.06).addScaledVector(d, 0.45).addScaledVector(hinten, 0.08)
+      lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)
+      lehne.castShadow = lehne.receiveShadow = true
+      out.push(lehne)
+    } else if (h.art === "rack") {
+      // Wand-Rack wie ATX Half Rack: zwei Pfosten 2,1 m hinter der Figur, Klimmzugstange, J-Hooks und Ablagen
+      const p = k.punkt(h.an)
+      const z = h.z ?? p.z - 0.25
+      for (const sx of [-0.62, 0.62]) {
+        out.push(kiste(new THREE.Vector3(sx, 1.05, z), [0.06, 2.1, 0.06], FARBE.stahl))
+        if (h.ablage) out.push(kiste(new THREE.Vector3(sx, h.ablage, z + 0.25), [0.05, 0.05, 0.5], FARBE.stahl))
+        if (h.haken) out.push(kiste(new THREE.Vector3(sx, h.haken, z + 0.06), [0.05, 0.07, 0.08], FARBE.stahl))
+      }
+      out.push(zylinder(new THREE.Vector3(-0.66, 2.12, z + 0.08), new THREE.Vector3(0.66, 2.12, z + 0.08), 0.016, FARBE.metall))
     }
     for (let i = vorher; i < out.length; i++) out[i].name = h.art
+  }
+  return out
+}
+
+/**
+ * Stangen wie im Heimstudio: Langhantel ATX Power Bar (schwarz, 2,2 m, 50-mm-Hülsen) mit je einer schwarzen
+ * 20-kg-Bumperscheibe (45 cm); SZ-Stange 120 cm, schwarz, in der Mitte W-förmig gebogen, mit einer roten 2,5-kg- und
+ * einer grünen 1-kg-Scheibe. Außen je ein schwarzer Kompressionsverschluss.
+ */
+function stange(k: Koerper, art: "langhantel" | "sz", von: Punkt, bis: Punkt): THREE.Object3D[] {
+  const out: THREE.Object3D[] = []
+  const a = k.punkt(von), b = k.punkt(bis)
+  const m = a.clone().add(b).multiplyScalar(0.5)
+  const d = b.clone().sub(a).normalize()
+  const halb = art === "langhantel" ? 1.1 : 0.6
+  const huelse = art === "langhantel" ? 0.42 : 0.26
+  const innen = halb - huelse
+  const p = (t: number) => m.clone().addScaledVector(d, t)
+  if (art === "sz") {
+    // W-Biegung zwischen den Händen, zum Unterarm hin
+    const ell = k.punkt(von === "hand_l" ? "ellbogen_l" : "ellbogen_r").sub(a)
+    const quer = ell.sub(d.clone().multiplyScalar(ell.dot(d)))
+    const q = quer.lengthSq() > 1e-6 ? quer.normalize().multiplyScalar(0.035) : new THREE.Vector3()
+    const knick = [-innen, -0.2, -0.12, 0, 0.12, 0.2, innen]
+    const hub = [0, 0, 1, 0, 1, 0, 0]
+    for (let i = 0; i < knick.length - 1; i++) out.push(zylinder(p(knick[i]).addScaledVector(q, hub[i]), p(knick[i + 1]).addScaledVector(q, hub[i + 1]), 0.0125, FARBE.stahl))
+  } else out.push(zylinder(p(-innen), p(innen), 0.014, FARBE.stahl))
+  for (const s of [-1, 1]) {
+    // Bund, Hülse, Scheiben, Verschluss
+    out.push(zylinder(p(s * innen), p(s * (innen + 0.03)), 0.04, FARBE.stahl))
+    out.push(zylinder(p(s * (innen + 0.03)), p(s * halb), 0.025, FARBE.stahl))
+    const scheiben: [number, number, string][] = art === "langhantel" ? [[0.225, 0.065, FARBE.stahl]] : [[0.11, 0.03, FARBE.scheibe], [0.085, 0.025, FARBE.gruen]]
+    let x = innen + 0.035
+    for (const [r, dicke, farbe] of scheiben) {
+      out.push(zylinder(p(s * x), p(s * (x + dicke)), r, farbe))
+      x += dicke
+    }
+    out.push(zylinder(p(s * x), p(s * (x + 0.035)), 0.04, FARBE.box))
+  }
+  return out
+}
+
+/** Latzugstange wie ATX Black Line Rotation Lat Bar: 1,2 m, gerade Mitte mit Drehwirbel, Enden schräg nach unten, Kugelenden */
+function latstange(k: Koerper, von: Punkt, bis: Punkt): THREE.Object3D[] {
+  const a = k.punkt(von), b = k.punkt(bis)
+  const m = a.clone().add(b).multiplyScalar(0.5)
+  const d = b.clone().sub(a).normalize()
+  const unten = new THREE.Vector3(0, -1, 0).addScaledVector(d, d.y).normalize()
+  const p = (t: number, tief = 0) => m.clone().addScaledVector(d, t).addScaledVector(unten, tief)
+  const out = [zylinder(p(-0.36), p(0.36), 0.014, FARBE.stahl), zylinder(p(-0.03, -0.03), p(0.03, -0.03), 0.022, FARBE.stahl)]
+  for (const s of [-1, 1]) {
+    out.push(zylinder(p(s * 0.36), p(s * 0.6, 0.13), 0.014, FARBE.stahl))
+    const kugel = new THREE.Mesh(new THREE.SphereGeometry(0.022, 14, 10), mat(FARBE.stahl, 0.5))
+    kugel.position.copy(p(s * 0.6, 0.13))
+    out.push(kugel)
   }
   return out
 }
@@ -389,7 +480,7 @@ const andereSeite = <T extends string>(p: T): T => (p.endsWith("_l") ? p.slice(0
 function gespiegeltesHilfsmittel(h: Hilfsmittel): Hilfsmittel {
   if (h.art === "hantel") return { ...h, an: andereSeite(h.an) }
   if (h.art === "kabel") return { ...h, von: andereSeite(h.von), rolle: [-h.rolle[0], h.rolle[1], h.rolle[2]] }
-  if (h.art === "stab" || h.art === "band" || h.art === "langhantel" || h.art === "sz") return { ...h, von: andereSeite(h.von), bis: andereSeite(h.bis) }
+  if (h.art === "stab" || h.art === "band" || h.art === "langhantel" || h.art === "sz" || h.art === "latstange") return { ...h, von: andereSeite(h.von), bis: andereSeite(h.bis) }
   return h
 }
 
@@ -409,17 +500,16 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       const q = griff.lengthSq() > 1e-6 ? griff.normalize() : new THREE.Vector3(1, 0, 0)
       out.push(zylinder(p.clone().addScaledVector(q, -0.09), p.clone().addScaledVector(q, 0.09), 0.014, FARBE.metall))
       for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), p.clone().addScaledVector(q, s * 0.1), 0.05, FARBE.polster))
-    } else if (h.art === "langhantel" || h.art === "sz") {
-      // Stange durch beide Hände, Scheiben außen (Langhantel 2,2 m, SZ-Stange 1,2 m)
-      const a = k.punkt(h.von), b = k.punkt(h.bis)
-      const m = a.clone().add(b).multiplyScalar(0.5)
-      const d = b.clone().sub(a).normalize()
-      const halb = h.art === "langhantel" ? 1.1 : 0.6
-      out.push(zylinder(m.clone().addScaledVector(d, -halb), m.clone().addScaledVector(d, halb), 0.014, FARBE.metall))
-      // Scheiben etwas kleiner als echt (45 cm), damit sie die Figur in der Seitenansicht nicht verdecken
-      const r = h.art === "langhantel" ? 0.17 : 0.1
-      for (const s of [-1, 1]) out.push(zylinder(m.clone().addScaledVector(d, s * (halb - 0.32)), m.clone().addScaledVector(d, s * (halb - 0.22)), r, FARBE.scheibe))
-    } else if (h.art === "kabel") out.push(zylinder(k.punkt(h.von), new THREE.Vector3(...h.rolle), 0.005, FARBE.metall))
+    } else if (h.art === "langhantel" || h.art === "sz") out.push(...stange(k, h.art, h.von, h.bis))
+    else if (h.art === "latstange") out.push(...latstange(k, h.von, h.bis))
+    else if (h.art === "kabel") out.push(zylinder(k.punkt(h.von), new THREE.Vector3(...h.rolle), 0.005, FARBE.metall))
+    else if (h.art === "medizinball") {
+      // 10-kg-Ball, etwa 35 cm, zwischen den Händen
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.17, 28, 20), mat(FARBE.box, 0.35))
+      m.position.copy(k.punkt(h.an))
+      m.castShadow = true
+      out.push(m)
+    }
   }
   return out
 }
