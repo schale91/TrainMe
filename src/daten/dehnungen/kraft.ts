@@ -1,33 +1,12 @@
-// Kraftübungen mit der Dehnfigur: dieselbe Figur wie bei den Dehnungen, mit Kurzhantel, Lang- und SZ-Stange, Band
+// Kraftübungen mit der Dehnfigur: Curls und Latzug.
+//: dieselbe Figur wie bei den Dehnungen, mit Kurzhantel, Lang- und SZ-Stange, Band
 // und Kabelzug. Je Übung Ausgangs- und Umkehrstellung und das Tempo (hoch zügig, ablassen kontrolliert).
 // Grundlage sind die Schritte der Ausführung in der Übungsdatenbank.
 //
-// Unterarm drehen (ellbogen_l/r[1]): 0 = Daumen nach vorn (Hammergriff), -80 = Handflächen nach vorn (Untergriff),
-// 90 = Handrücken nach vorn (Obergriff).
 
-import type { Dehnung, Haltung, Hilfsmittel, Punkt, V3, Winkel } from "../../logik/dehnbewegung"
+import type { Dehnung, Haltung, Hilfsmittel, V3, Winkel } from "../../logik/dehnbewegung"
 import { B, H, STAND, STUHLSITZ, folge, halte, mit, wdh } from "./basis"
-
-// ---------------------------------------------------------------- Griffe und Geräte
-const UNTERGRIFF = -80
-const HAMMER = 0
-const OBERGRIFF = 90
-const SZ_GRIFF = -50
-
-const FAUST = B("finger", [90, 0])
-const KH: Hilfsmittel[] = [
-  { art: "hantel", an: "hand_l" },
-  { art: "hantel", an: "hand_r" },
-]
-const KH_R: Hilfsmittel[] = [{ art: "hantel", an: "hand_r" }]
-const LH: Hilfsmittel[] = [{ art: "langhantel", von: "hand_l", bis: "hand_r" }]
-const SZ: Hilfsmittel[] = [{ art: "sz", von: "hand_l", bis: "hand_r" }]
-const BAND: Hilfsmittel[] = [
-  { art: "band", von: "fuss_l", bis: "hand_l" },
-  { art: "band", von: "fuss_r", bis: "hand_r" },
-]
-/** Kabel von der unteren Rolle vor dem Körper */
-const kabel = (von: Punkt, rolle: V3 = [0, 0.12, 0.75]): Hilfsmittel[] => [{ art: "kabel", von, rolle }]
+import { BAND, FAUST, HAMMER, KH, KH_R, LH, OBERGRIFF, SZ, SZ_GRIFF, UNTERGRIFF, kabel } from "./kraftbasis"
 
 const HOCH: [string, string] = ["Hochcurlen", "Langsam ablassen"]
 
@@ -71,7 +50,7 @@ function cheat(dreh: number, hilfsmittel: Hilfsmittel[]): Dehnung {
 
 // ---------------------------------------------------------------- Curls im Sitzen
 const SITZ_AUFRECHT: Haltung = mit(STUHLSITZ, { g: { ...B("schulter", [0, 12, 0]), ...B("ellbogen", [8, UNTERGRIFF]), ...FAUST } })
-const BANK: Hilfsmittel = { art: "bank", unter: "gesaess", hoehe: 0.42 }
+export const BANK: Hilfsmittel = { art: "bank", unter: "gesaess", hoehe: 0.42 }
 
 /**
  * Konzentrationscurl: breit sitzend, Oberkörper vorgeneigt, der Oberarm liegt an der Innenseite des rechten
@@ -158,7 +137,7 @@ const latzugOben = (dreh: number, breit: number): Haltung => H({ ...LAT_SITZ, ..
 const latzugUnten = (dreh: number, breit: number): Haltung =>
   H({ ...LAT_SITZ, bws: [-10, 0, 0], ...B("schulterblatt", [-12, -10]), ...B("schulter", [28, breit + 30, 0]), ...B("ellbogen", [118, dreh]) }, [-16, 0, 0], { pos: [0, 0.55, 0], boden: false })
 const LAT_ROLLE: V3 = [0, 2.15, 0.55]
-const latzug = (dreh: number, breit: number, griff: Hilfsmittel[]): Dehnung =>
+export const latzug = (dreh: number, breit: number, griff: Hilfsmittel[]): Dehnung =>
   wdh("schraeg", latzugOben(dreh, breit), latzugUnten(dreh, breit), 1.4, { aus: 2.4, texte: ["Stange zur oberen Brust ziehen", "Kontrolliert nach oben lassen"], hilfsmittel: [...griff, ...kabel("haende", LAT_ROLLE), BANK] })
 
 export const KRAFT: Record<string, Dehnung> = {
