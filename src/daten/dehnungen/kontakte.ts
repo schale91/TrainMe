@@ -37,6 +37,12 @@ export const FESTE_PUNKTE: Record<string, ZielPunkt[]> = {
   wall_slide: FUESSE,
   wandengel: FUESSE,
   kinn_einziehen_wand: FUESSE,
+  // Auf der Faszienrolle: die Rolle hebt den Körper an, Hände, Unterarme, Knie oder Füße bleiben am Boden
+  lat_ausrollen: FUESSE,
+  trizeps_ausrollen: FUESSE,
+  adduktoren_rolle: ["ellbogen_l", "ellbogen_r"],
+  brust_ausrollen: ["fuss_l", "fuss_r"],
+  unterarm_ausrollen: ["knie_l", "knie_r"],
   // Handstand: die Hände bleiben am Boden
   handstand_liegestuetz: HAENDE,
 }

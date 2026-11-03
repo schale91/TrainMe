@@ -409,7 +409,8 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       } else out.push(kiste(new THREE.Vector3(p.x, h.hoehe / 2, p.z), gr, h.art === "box" ? FARBE.box : FARBE.polster))
       if (h.art === "stuhl") out.push(kiste(new THREE.Vector3(p.x, h.hoehe + 0.22, p.z - 0.2), [0.42, 0.44, 0.03], FARBE.polster))
     } else if (h.art === "rolle") {
-      const p = k.punkt(h.unter)
+      // bei: feste Lage [x, z] in der Welt (der Körper rollt über die liegende Rolle)
+      const p = h.bei ? new THREE.Vector3(h.bei[0], 0, h.bei[1]) : k.punkt(h.unter)
       const d = h.laengs ? new THREE.Vector3(0, 0, 0.45) : new THREE.Vector3(0.45, 0, 0)
       const m = zylinder(new THREE.Vector3(p.x, 0.075 + MATTE, p.z).sub(d), new THREE.Vector3(p.x, 0.075 + MATTE, p.z).add(d), 0.075, FARBE.rolle)
       out.push(m)
@@ -833,7 +834,9 @@ class Buehne {
     }
 
     // Zielpunkte (Füße am Boden, Hände an der Stange) in Winkel umrechnen, an der angezeigten Figur
+    const d0 = d
     this.d = this.loeseDehnung(d)
+    this.zuordnen(d0, this.d)
     d = this.d
 
     // Hilfsmittel an der Zielhaltung ausrichten, Kamera auf den ganzen Ablauf
@@ -859,6 +862,15 @@ class Buehne {
     for (const o of this.fest) this.festBasis.set(o, o.position.clone())
     this.sitzAnpassen(ziel)
     this.wandAnpassen()
+    // Mit festen Punkten auf einem Gerät (Rolle, Ball, Kissen): die Figur auf das Gerät setzen und die Bodenkontakte neu lösen
+    if (d0.fest?.length && this.fest.length) {
+      const neu = this.aufGeraetSetzen(d0)
+      if (neu) {
+        this.d = neu
+        this.zuordnen(d0, neu)
+        d = neu
+      }
+    }
     for (const u of proben) {
       this.stelle(u * gesamt)
       if (this.modell) this.modell.umriss(box)
@@ -925,7 +937,7 @@ class Buehne {
         }
         // Startwert: Mischung der gelösten Enden
         const ml = mische(la, lb, u)
-        liste.push(this.loese({ ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ziele, boden: false }))
+        liste.push(this.loese({ ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ...(a.drehFrei || b.drehFrei ? { pos: ml.pos, dreh: ml.dreh, drehFrei: true } : {}), ziele, boden: false }))
       }
       zwischenSetzen(la, lb, liste)
     }
@@ -936,9 +948,60 @@ class Buehne {
    * d.fest: die genannten Punkte bleiben in allen Phasen an ihrer Lage in der Zielhaltung (z. B. die Hand an der Wand,
    * der Standfuß am Boden). Dafür bekommen alle anderen Haltungen diese Punkte als Zielpunkte.
    */
+  /** Originalhaltungen einer Dehnung auf die gelösten abbilden (Messwerkzeug: stelleHaltung) */
+  private zuordnung = new Map<Haltung, Haltung>()
+  private zuordnen(a: Dehnung, b: Dehnung) {
+    this.zuordnung.set(a.start, b.start)
+    if (a.ziel && b.ziel) this.zuordnung.set(a.ziel, b.ziel)
+    a.schritte?.forEach((x, i) => b.schritte?.[i] && this.zuordnung.set(x.h, b.schritte[i].h))
+  }
+  /** feste Punkte aus der Zielhaltung (vor dem Ausweichen), für das Nachsetzen auf ein Gerät */
+  private festOrte?: Partial<Record<ZielPunkt, Ziel>>
+  /**
+   * Liegt die Figur auf einem Gerät (Rolle, Ball, Kissen), hebt es sie an und die Bodenkontakte schweben. Hier wird
+   * jede Haltung um ihren Versatz angehoben und mit den festen Punkten neu gelöst, damit Hände und Füße am Boden bleiben.
+   */
+  private aufGeraetSetzen(d0: Dehnung): Dehnung | undefined {
+    const haltungen: Haltung[] = [this.d.start, ...(this.d.ziel ? [this.d.ziel] : []), ...(this.d.schritte?.map((x) => x.h) ?? [])]
+    const versatz = new Map<Haltung, THREE.Vector3>()
+    let groesster = 0
+    for (const h of haltungen) {
+      this.koerper.wurzel.position.set(0, 0, 0)
+      this.koerper.stelle(h)
+      this.modell?.uebernehmen(h.boden !== false)
+      const c = this.ausweichen()
+      // Lage des Beckens nach dem Absetzen auf den Boden plus Versatz durch das Gerät
+      versatz.set(h, this.gelenkOrt("becken").add(c))
+      groesster = Math.max(groesster, c.length())
+    }
+    if (groesster < 0.01 || !this.festOrte) return undefined
+    const anheben = (orig: Haltung, geloest: Haltung): Haltung => {
+      const b = versatz.get(geloest)!
+      return { ...orig, pos: [b.x, b.y, b.z], boden: false }
+    }
+    const d1: Dehnung = {
+      ...d0,
+      start: anheben(d0.start, this.d.start),
+      ziel: d0.ziel && this.d.ziel ? anheben(d0.ziel, this.d.ziel) : d0.ziel,
+      schritte: d0.schritte?.map((x, i) => ({ ...x, h: anheben(x.h, this.d.schritte![i].h) })),
+    }
+    const orte = this.festOrte
+    this.festOrteVorgabe = orte
+    const neu = this.loeseDehnung(d1)
+    this.festOrteVorgabe = undefined
+    return neu
+  }
+  private festOrteVorgabe?: Partial<Record<ZielPunkt, Ziel>>
   private festHalten(d: Dehnung): Dehnung {
     if (!d.fest?.length) return d
     const ziel = d.ziel || d.schritte?.[Math.floor((d.schritte.length - 1) / 2)]?.h || d.start
+    // beim Nachsetzen auf ein Gerät: die schon bestimmten Orte für alle Haltungen, auch die Zielhaltung
+    if (this.festOrteVorgabe) {
+      const orte = this.festOrteVorgabe
+      // das Becken bleibt auf der angehobenen Lage (sonst sänke es zurück ins Gerät)
+      const m = (h: Haltung | undefined) => (h ? { ...h, ziele: { ...h.ziele, ...orte }, boden: false, beckenFrei: false, drehFrei: true } : h)
+      return { ...d, start: m(d.start)!, ziel: m(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: m(x.h)! })) }
+    }
     const gz = this.loese(ziel)
     this.koerper.wurzel.position.set(0, 0, 0)
     this.koerper.stelle(gz)
@@ -948,6 +1011,7 @@ class Buehne {
       const v = n.startsWith("knie_") || n.startsWith("ellbogen_") ? this.gelenkOrt(n) : this.koerper.punkt(n)
       orte[n] = { pos: [v.x, v.y, v.z] }
     }
+    this.festOrte = orte
     // Absenken der Zielhaltung auf den Boden: die anderen Haltungen ohne eigene Lage bekommen denselben Versatz
     const b = this.gelenkOrt("becken"), g0 = gz.pos ?? POS_GRUND
     const versatz: [number, number, number] = gz.pos && gz.boden === false ? [0, 0, 0] : [b.x - g0[0], b.y - g0[1], b.z - g0[2]]
@@ -1001,13 +1065,17 @@ class Buehne {
     // Becken verschiebbar: drei weitere Unbekannte in Zentimetern (damit die Schrittweite zu den Winkeln passt)
     const pos: [number, number, number] = [...(h.pos ?? POS_GRUND)] as [number, number, number]
     const nPos = h.beckenFrei ? 3 : 0
-    const start = [...params.map(([n, i]) => g[n]![i]), ...pos.slice(0, nPos).map((v) => v * 100)]
+    // Neigung des Beckens verstellbar: drei weitere Unbekannte in Grad
+    const dreh: [number, number, number] = [...(h.dreh ?? [0, 0, 0])] as [number, number, number]
+    const nDreh = h.drehFrei ? 3 : 0
+    const start = [...params.map(([n, i]) => g[n]![i]), ...pos.slice(0, nPos).map((v) => v * 100), ...dreh.slice(0, nDreh)]
     const setze = (x: number[]) =>
       x.forEach((v, j) => {
         if (j < params.length) g[params[j][0]]![params[j][1]] = v
-        else pos[j - params.length] = v / 100
+        else if (j < params.length + nPos) pos[j - params.length] = v / 100
+        else dreh[j - params.length - nPos] = v
       })
-    const roh: Haltung = { ...h, g, ziele: undefined, boden: false, pos }
+    const roh: Haltung = { ...h, g, ziele: undefined, boden: false, pos, dreh }
     const welt = (z: Ziel): THREE.Vector3 => {
       const v = new THREE.Vector3(...z.pos)
       if (!z.bezug || z.bezug === "welt") return v
@@ -1093,6 +1161,7 @@ class Buehne {
       g: Object.fromEntries(Object.entries(g).map(([k, w]) => [k, (w as number[]).map((v) => Math.round(v * 10) / 10)])) as Winkel,
       ziele: undefined,
       ...(nPos ? { pos: pos.map((v) => Math.round(v * 1000) / 1000) as [number, number, number], boden: false } : {}),
+      ...(nDreh ? { dreh: dreh.map((v) => Math.round(v * 10) / 10) as [number, number, number] } : {}),
     }
     this.geloest.set(h, fertigH)
     return fertigH
@@ -1247,7 +1316,7 @@ class Buehne {
 
   /** Eine Haltung direkt zeigen (Werkzeug): mit Zielpunkten gelöst, Gegenstände wie im Ablauf */
   stelleHaltung(h: Haltung) {
-    const g = this.loese(h)
+    const g = this.zuordnung.get(h) ?? this.loese(h)
     this.koerper.wurzel.position.set(0, 0, 0)
     this.koerper.stelle(g)
     this.modell?.uebernehmen(g.boden !== false)

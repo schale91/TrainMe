@@ -45,6 +45,8 @@ export interface Haltung {
   pos?: V3
   /** Löser darf die Lage des Beckens mit verschieben (feste Punkte: der Körper bewegt sich um den Standfuß) */
   beckenFrei?: boolean
+  /** Löser darf die Neigung des Beckens (dreh) anpassen, etwa um auf einem Gerät liegend Hände oder Füße am Boden zu halten */
+  drehFrei?: boolean
   dreh?: V3
   g: Winkel
   /** false: Höhe kommt aus pos (z. B. Sitzen auf der Bank), sonst sitzt der tiefste Punkt auf dem Boden */
@@ -75,7 +77,7 @@ export type Hilfsmittel =
   | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number]; quer?: boolean }
   | { art: "stab"; von: Punkt; bis: Punkt }
   | { art: "band"; von: Punkt; bis: Punkt }
-  | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean; versatz?: [number, number] }
+  | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean; versatz?: [number, number]; bei?: [number, number] }
   | { art: "tuer"; an: Punkt }
   | { art: "stange"; an: Punkt }
   | { art: "hantel"; an: Punkt }
