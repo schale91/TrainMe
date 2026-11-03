@@ -1635,9 +1635,12 @@ export function _durchdringungen(d: Dehnung, haltenS = 8, schritt = 0.5, toleran
     let unten = 0
     for (const p of pk) unten = Math.max(unten, MATTE - p.y)
     if (unten > toleranz) funde.push({ t, was: "Boden", tiefe: unten, hoehe: 0 })
+    // wie beim Ausweichen: die Faust umschließt Stangen (Rack, Barren), dort zählen die Hände nicht
+    const haende = [b.koerper.punkt("hand_l"), b.koerper.punkt("hand_r")]
+    const ohneHaende = pk.filter((p) => haende.every((hd) => p.distanceTo(hd) > 0.11))
     for (const h of b.hindernisse()) {
       let tief = 0, hoehe = 0
-      for (const p of pk) {
+      for (const p of /^(rack|barren|stange)$/.test(h.m.name) ? ohneHaende : pk) {
         const v = herausschieben(h, p, becken)
         if (v && v.length() > tief) {
           tief = v.length()
