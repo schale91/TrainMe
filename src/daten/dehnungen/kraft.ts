@@ -151,6 +151,16 @@ const schraegbankCurl = (dreh: number): Dehnung =>
     { aus: 2.6, texte: ["Hochcurlen, Oberarme bleiben hinten", "Langsam ganz ablassen"], hilfsmittel: [...KH, { art: "schraegbank", unter: "gesaess", lehne: "bws", hoehe: 0.45 }] },
   )
 
+// ---------------------------------------------------------------- Latzug (ATX LMSW-700)
+/** Sitz am Latzug, Knie unter dem Polster, Oberkörper leicht zurückgelehnt; oben Arme gestreckt und weit gegriffen */
+const LAT_SITZ: Winkel = { ...B("huefte", [82, 8, 0]), ...B("knie", [95]), ...B("fuss", [5, 0]), hals: [-8, 0, 0], ...FAUST }
+const latzugOben = (dreh: number, breit: number): Haltung => H({ ...LAT_SITZ, ...B("schulter", [168, breit, 0]), ...B("ellbogen", [6, dreh]) }, [-12, 0, 0], { pos: [0, 0.55, 0], boden: false })
+const latzugUnten = (dreh: number, breit: number): Haltung =>
+  H({ ...LAT_SITZ, bws: [-10, 0, 0], ...B("schulterblatt", [-12, -10]), ...B("schulter", [28, breit + 30, 0]), ...B("ellbogen", [118, dreh]) }, [-16, 0, 0], { pos: [0, 0.55, 0], boden: false })
+const LAT_ROLLE: V3 = [0, 2.15, 0.35]
+const latzug = (dreh: number, breit: number, griff: Hilfsmittel[]): Dehnung =>
+  wdh("schraeg", latzugOben(dreh, breit), latzugUnten(dreh, breit), 1.4, { aus: 2.4, texte: ["Stange zur oberen Brust ziehen", "Kontrolliert nach oben lassen"], hilfsmittel: [...griff, ...kabel("haende", LAT_ROLLE), BANK] })
+
 export const KRAFT: Record<string, Dehnung> = {
   // Kurzhantel im Stand
   bizeps_kh: curl(UNTERGRIFF, KH),
@@ -182,6 +192,8 @@ export const KRAFT: Record<string, Dehnung> = {
   handgelenk_curl_revers: handgelenk(OBERGRIFF),
   schraegbank_curl: schraegbankCurl(UNTERGRIFF),
   hammercurl_schraegbank: schraegbankCurl(HAMMER),
+  // Latzug
+  latzug: latzug(OBERGRIFF, 22, [{ art: "latstange", von: "hand_l", bis: "hand_r" }]),
   // Sitzen
   bizeps_kh_sitzend: wdh("schraeg", SITZ_AUFRECHT, mit(SITZ_AUFRECHT, { g: { ...B("schulter", [12, 12, 0]), ...B("ellbogen", [140, UNTERGRIFF]) } }), 1.4, { aus: 2.4, texte: HOCH, hilfsmittel: [...KH, BANK] }),
   konzentrationscurl: wdh("schraeg", KONZ_UNTEN, KONZ_OBEN, 1.4, { aus: 2.4, seiten: true, texte: HOCH, hilfsmittel: [...KH_R, BANK] }),

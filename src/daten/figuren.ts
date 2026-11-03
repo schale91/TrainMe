@@ -75,7 +75,6 @@ export const FIGUREN: Record<string, string> = {
   kreuzheben_reset: "kreuzheben",
   l_sitz_haengend: "beinheben",
   larsen_press: "larsen",
-  latzug: "latzug",
   latzug_einarmig: "latzugeinarm",
   latzug_maschine: "latzug",
   latzug_neutral: "latzug",

@@ -60,7 +60,7 @@ export type Hilfsmittel =
   | { art: "stange"; an: Punkt }
   | { art: "hantel"; an: Punkt }
   /** Lang- oder SZ-Stange mit Scheiben, liegt in beiden Händen (oder auf dem Rücken zwischen zwei Punkten) */
-  | { art: "langhantel" | "sz"; von: Punkt; bis: Punkt }
+  | { art: "langhantel" | "sz" | "latstange"; von: Punkt; bis: Punkt }
   /** Kabelzug: Seil von der Hand (bzw. Hände-Mitte) zur Rolle an einem festen Punkt [seitlich, Höhe, vorn] */
   | { art: "kabel"; von: Punkt; rolle: V3 }
   /** Verstellbare Bank: Sitz unter dem Punkt in der Höhe, Lehne in Richtung des zweiten Punkts (z. B. Schultern) */

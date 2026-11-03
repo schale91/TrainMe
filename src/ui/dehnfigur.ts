@@ -32,7 +32,8 @@ const FARBE = {
   holz: "#b08a63",
   polster: "#3b4458",
   metall: "#a3acb8",
-  scheibe: "#d9534f",
+  scheibe: "#d23b33",
+  gruen: "#2f9b4a",
   /** Rahmen der Geräte (Rack, Latzug, Bank): schwarzer Stahl */
   stahl: "#26292f",
   /** Plyo-Box und Medizinball: schwarz */
@@ -418,13 +419,68 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
   return out
 }
 
+/**
+ * Stangen wie im Heimstudio: Langhantel ATX Power Bar (schwarz, 2,2 m, 50-mm-Hülsen) mit je einer schwarzen
+ * 20-kg-Bumperscheibe (45 cm); SZ-Stange 120 cm, schwarz, in der Mitte W-förmig gebogen, mit einer roten 2,5-kg- und
+ * einer grünen 1-kg-Scheibe. Außen je ein schwarzer Kompressionsverschluss.
+ */
+function stange(k: Koerper, art: "langhantel" | "sz", von: Punkt, bis: Punkt): THREE.Object3D[] {
+  const out: THREE.Object3D[] = []
+  const a = k.punkt(von), b = k.punkt(bis)
+  const m = a.clone().add(b).multiplyScalar(0.5)
+  const d = b.clone().sub(a).normalize()
+  const halb = art === "langhantel" ? 1.1 : 0.6
+  const huelse = art === "langhantel" ? 0.42 : 0.26
+  const innen = halb - huelse
+  const p = (t: number) => m.clone().addScaledVector(d, t)
+  if (art === "sz") {
+    // W-Biegung zwischen den Händen, zum Unterarm hin
+    const ell = k.punkt(von === "hand_l" ? "ellbogen_l" : "ellbogen_r").sub(a)
+    const quer = ell.sub(d.clone().multiplyScalar(ell.dot(d)))
+    const q = quer.lengthSq() > 1e-6 ? quer.normalize().multiplyScalar(0.035) : new THREE.Vector3()
+    const knick = [-innen, -0.2, -0.12, 0, 0.12, 0.2, innen]
+    const hub = [0, 0, 1, 0, 1, 0, 0]
+    for (let i = 0; i < knick.length - 1; i++) out.push(zylinder(p(knick[i]).addScaledVector(q, hub[i]), p(knick[i + 1]).addScaledVector(q, hub[i + 1]), 0.0125, FARBE.stahl))
+  } else out.push(zylinder(p(-innen), p(innen), 0.014, FARBE.stahl))
+  for (const s of [-1, 1]) {
+    // Bund, Hülse, Scheiben, Verschluss
+    out.push(zylinder(p(s * innen), p(s * (innen + 0.03)), 0.04, FARBE.stahl))
+    out.push(zylinder(p(s * (innen + 0.03)), p(s * halb), 0.025, FARBE.stahl))
+    const scheiben: [number, number, string][] = art === "langhantel" ? [[0.225, 0.065, FARBE.stahl]] : [[0.11, 0.03, FARBE.scheibe], [0.085, 0.025, FARBE.gruen]]
+    let x = innen + 0.035
+    for (const [r, dicke, farbe] of scheiben) {
+      out.push(zylinder(p(s * x), p(s * (x + dicke)), r, farbe))
+      x += dicke
+    }
+    out.push(zylinder(p(s * x), p(s * (x + 0.035)), 0.04, FARBE.box))
+  }
+  return out
+}
+
+/** Latzugstange wie ATX Black Line Rotation Lat Bar: 1,2 m, gerade Mitte mit Drehwirbel, Enden schräg nach unten, Kugelenden */
+function latstange(k: Koerper, von: Punkt, bis: Punkt): THREE.Object3D[] {
+  const a = k.punkt(von), b = k.punkt(bis)
+  const m = a.clone().add(b).multiplyScalar(0.5)
+  const d = b.clone().sub(a).normalize()
+  const unten = new THREE.Vector3(0, -1, 0).addScaledVector(d, d.y).normalize()
+  const p = (t: number, tief = 0) => m.clone().addScaledVector(d, t).addScaledVector(unten, tief)
+  const out = [zylinder(p(-0.36), p(0.36), 0.014, FARBE.stahl), zylinder(p(-0.03, -0.03), p(0.03, -0.03), 0.022, FARBE.stahl)]
+  for (const s of [-1, 1]) {
+    out.push(zylinder(p(s * 0.36), p(s * 0.6, 0.13), 0.014, FARBE.stahl))
+    const kugel = new THREE.Mesh(new THREE.SphereGeometry(0.022, 14, 10), mat(FARBE.stahl, 0.5))
+    kugel.position.copy(p(s * 0.6, 0.13))
+    out.push(kugel)
+  }
+  return out
+}
+
 const andereSeite = <T extends string>(p: T): T => (p.endsWith("_l") ? p.slice(0, -2) + "_r" : p.endsWith("_r") ? p.slice(0, -2) + "_l" : p) as T
 
 /** Hilfsmittel für die gespiegelte Seite: links und rechts getauscht, Kabelrolle auf der anderen Seite */
 function gespiegeltesHilfsmittel(h: Hilfsmittel): Hilfsmittel {
   if (h.art === "hantel") return { ...h, an: andereSeite(h.an) }
   if (h.art === "kabel") return { ...h, von: andereSeite(h.von), rolle: [-h.rolle[0], h.rolle[1], h.rolle[2]] }
-  if (h.art === "stab" || h.art === "band" || h.art === "langhantel" || h.art === "sz") return { ...h, von: andereSeite(h.von), bis: andereSeite(h.bis) }
+  if (h.art === "stab" || h.art === "band" || h.art === "langhantel" || h.art === "sz" || h.art === "latstange") return { ...h, von: andereSeite(h.von), bis: andereSeite(h.bis) }
   return h
 }
 
@@ -444,17 +500,9 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       const q = griff.lengthSq() > 1e-6 ? griff.normalize() : new THREE.Vector3(1, 0, 0)
       out.push(zylinder(p.clone().addScaledVector(q, -0.09), p.clone().addScaledVector(q, 0.09), 0.014, FARBE.metall))
       for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), p.clone().addScaledVector(q, s * 0.1), 0.05, FARBE.polster))
-    } else if (h.art === "langhantel" || h.art === "sz") {
-      // Stange durch beide Hände, Scheiben außen (Langhantel 2,2 m, SZ-Stange 1,2 m)
-      const a = k.punkt(h.von), b = k.punkt(h.bis)
-      const m = a.clone().add(b).multiplyScalar(0.5)
-      const d = b.clone().sub(a).normalize()
-      const halb = h.art === "langhantel" ? 1.1 : 0.6
-      out.push(zylinder(m.clone().addScaledVector(d, -halb), m.clone().addScaledVector(d, halb), 0.014, FARBE.metall))
-      // Scheiben etwas kleiner als echt (45 cm), damit sie die Figur in der Seitenansicht nicht verdecken
-      const r = h.art === "langhantel" ? 0.17 : 0.1
-      for (const s of [-1, 1]) out.push(zylinder(m.clone().addScaledVector(d, s * (halb - 0.32)), m.clone().addScaledVector(d, s * (halb - 0.22)), r, FARBE.scheibe))
-    } else if (h.art === "kabel") out.push(zylinder(k.punkt(h.von), new THREE.Vector3(...h.rolle), 0.005, FARBE.metall))
+    } else if (h.art === "langhantel" || h.art === "sz") out.push(...stange(k, h.art, h.von, h.bis))
+    else if (h.art === "latstange") out.push(...latstange(k, h.von, h.bis))
+    else if (h.art === "kabel") out.push(zylinder(k.punkt(h.von), new THREE.Vector3(...h.rolle), 0.005, FARBE.metall))
     else if (h.art === "medizinball") {
       // 10-kg-Ball, etwa 35 cm, zwischen den Händen
       const m = new THREE.Mesh(new THREE.SphereGeometry(0.17, 28, 20), mat(FARBE.box, 0.35))
