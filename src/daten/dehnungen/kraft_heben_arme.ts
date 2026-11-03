@@ -315,3 +315,39 @@ export const KRAFT_ROTATOREN: Record<string, Dehnung> = {
   ytw: folge("schraeg", [[bauchArm({ ...Y_BODEN, ebene: 2 }), 0.8, "Y: Arme schräg nach vorn oben"], [bauchArm(Y_BODEN), 1.0, "Arme einige Zentimeter vom Boden heben"], [bauchArm({ ...T_BODEN, ebene: 2 }), 1.0, "T: Arme seitlich"], [bauchArm(T_BODEN), 1.0, "Anheben, Schulterblätter sanft zusammen"], [bauchArm({ ...W_BODEN, ebene: 2 }, { ...W_BODEN, ebene: 2 }), 1.0, "W: Ellbogen gebeugt, Hände auf Kopfhöhe"], [bauchArm(W_BODEN, W_BODEN), 1.0, "Ellbogen und Hände anheben"]], {}),
   schwimmer_bauchlage: folge("schraeg", [[bauchArm({ hebung: 168, ebene: -6, knick: 4 }), 1.0, "Arme über dem Kopf einige Zentimeter vom Boden"], [bauchArm({ hebung: 90, ebene: -8, knick: 4 }), 2.0, "In einem großen Bogen seitlich nach unten"], [bauchArm({ hebung: 18, ebene: -40, knick: 30 }), 2.0, "Kurz vor der Hüfte Handflächen nach oben, Handrücken zum unteren Rücken"], [bauchArm({ hebung: 90, ebene: -8, knick: 4 }), 2.0, "Auf demselben Weg zurück"]], {}),
 }
+
+// ---------------------------------------------------------------- Explosiver Shrug und High Pull aus dem Hang
+// Start: Hüfte und Knie leicht gebeugt, Rücken gerade, Stange knapp über den Knien, Schultern über der Stange.
+// Oben: Hüfte und Knie gestreckt, Schultern hoch (Shrug) bzw. Ellbogen hoch und außen, Stange an der unteren Brust.
+const hangPull = (high: boolean): Dehnung => {
+  const kipp = 40, knie = 40, griff = high ? 0.21 : 0.19
+  const schien = knie * 0.5
+  const knieY = 0.076 + 0.47 * Math.cos(rad(schien)), knieZ = 0.012 + 0.47 * Math.sin(rad(schien))
+  const ober = rad(schien - knie)
+  const hy = knieY + 0.383 * Math.cos(ober), hz = knieZ + 0.383 * Math.sin(ober)
+  const sz = hz + Math.sin(rad(kipp)) * 0.352
+  const dz = -0.05 - sz
+  const fuesse: Ziele = {
+    ferse_l: { pos: [0.1, 0.022, -0.05 + dz] },
+    fuss_l: { pos: [0.11, 0.034, 0.07 + dz] },
+    ferse_r: { pos: [-0.1, 0.022, -0.05 + dz] },
+    fuss_r: { pos: [-0.11, 0.034, 0.07 + dz] },
+  }
+  const startZiele: Ziele = { ...fuesse }
+  for (const sx of [1, -1] as const) startZiele[`hand_${sx === 1 ? "l" : "r"}`] = { pos: [sx * griff, knieY + 0.07, -0.04] }
+  const start = H({ ...B("huefte", [kipp + schien, 6, 0]), ...B("knie", [knie]), ...B("fuss", [schien, 0]), ...B("schulter", [kipp, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST, hals: [-kipp * 0.4, 0, 0] }, [kipp, 0, 0], { pos: [0, hy + 0.003, hz + dz], boden: false, ziele: startZiele })
+  const obenZiele: Ziele = { ...fuesse }
+  if (high)
+    for (const sx of [1, -1] as const) {
+      const n = sx === 1 ? "l" : "r"
+      const e: P3 = [0.35, 0.02, 0.0], h: P3 = [griff, -0.24, 0.12]
+      obenZiele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+      obenZiele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+    }
+  const armeOben: Winkel = high ? { ...B("schulter", [10, 85, 0]), ...B("ellbogen", [100, OBERGRIFF]), ...B("schulterblatt", [16, 0]) } : { ...B("schulter", [4, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...B("schulterblatt", [26, 0]) }
+  const oben = H({ ...B("huefte", [2, 6, 0]), ...B("knie", [3]), ...B("fuss", [0, 0]), ...FAUST, ...armeOben }, [0, 0, 0], { pos: [0, 0.94, dz], boden: false, beckenFrei: true, ziele: obenZiele })
+  const ab = H({ ...B("huefte", [2, 6, 0]), ...B("knie", [3]), ...B("fuss", [0, 0]), ...FAUST, ...B("schulter", [4, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]) }, [0, 0, 0], { pos: [0, 0.94, dz], boden: false, beckenFrei: true, ziele: { ...fuesse } })
+  return folge("schraeg", [[start, 0.9, "Hüfte und Knie leicht beugen, Stange knapp über den Knien"], [oben, 0.5, high ? "Explosiv strecken, Ellbogen nach oben und außen" : "Explosiv strecken, Schultern kräftig hoch"], [ab, 1.2, "Kontrolliert senken, neu ansetzen"]], { hilfsmittel: LH_STANGE })
+}
+const LH_STANGE: Hilfsmittel[] = [{ art: "langhantel", von: "hand_l", bis: "hand_r" }]
+export const KRAFT_HANG_PULL: Record<string, Dehnung> = { shrug_explosiv: hangPull(false), high_pull_lh: hangPull(true) }

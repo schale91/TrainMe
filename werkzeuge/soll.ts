@@ -1466,6 +1466,76 @@ ROT_SOLL.schwimmer_bauchlage = (m) => {
   return r
 }
 
+// ---------------------------------------------------------------- Schulterheben (Shrugs)
+const schulterHoehe = (x: Punkte) => (p(x, "g:schulter_l")[1] + p(x, "g:schulter_r")[1]) / 2
+interface SHS {
+  lage?: "stand" | "schraeg" | "ueberkopf"
+  last: "vorn" | "seite" | "hinten" | "oben"
+  quelle?: string
+}
+const shrugSoll = (k: SHS) => (m: Messung): Pruefung[] => {
+  const u = m.alle[0], o = k.lage === "schraeg" ? m.alle[1] : m.alle.reduce((a, b) => (schulterHoehe(b) > schulterHoehe(a) ? b : a))
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Stell dich hüftbreit hin")]
+  if (k.lage === "schraeg") r.push(pr("Bank 30 bis 45 Grad (°)", rumpfneigung(u), 45, 62, "Stell eine Bank auf etwa 30 bis 45 Grad"))
+  else for (const x of [u, o]) r.push(pr("Oberkörper aufrecht (°)", Math.abs(rumpfneigung(x)), 0, 8, "der Oberkörper ist aufrecht oder minimal nach vorn geneigt"))
+  if (k.lage === "schraeg") {
+    // auf der Schrägbank: die Schulterblätter gehen den Rumpf hinauf nach hinten oben
+    const b = p(u, "g:becken"), h = p(u, "g:hals"), l = Math.hypot(h[1] - b[1], h[2] - b[2])
+    const auf = (x: Punkte) => ((p(x, "g:schulter_l")[1] + p(x, "g:schulter_r")[1]) / 2 * (h[1] - b[1]) + (p(x, "g:schulter_l")[2] + p(x, "g:schulter_r")[2]) / 2 * (h[2] - b[2])) / l
+    r.push(pr("Schulterblätter gehen den Rumpf hinauf (m)", auf(o) - auf(u), 0.025, 0.12, "Zieh die Schulterblätter nach hinten oben zusammen"))
+  } else r.push(pr("Schultern gehen nach oben (m)", schulterHoehe(o) - schulterHoehe(u), 0.025, 0.12, "Zieh die Schultern gerade nach oben in Richtung Ohren"))
+  for (const a of SEITEN) for (const x of [u, o]) r.push(pr(`Arm ${a} gestreckt (°)`, ellbogenWinkel(x, a), 160, 180, "die Arme hängen gestreckt"))
+  if (k.last === "vorn") {
+    const st = amRumpf(u, "stange")
+    r.push(pr("Stange an den Oberschenkeln (m)", st[2], 0.02, 0.2, "die Stange liegt an den Oberschenkeln"))
+    r.push(pr("Griff etwas breiter als hüftbreit", griffbreite(u) / Math.abs(p(u, "g:huefte_l")[0] - p(u, "g:huefte_r")[0]), 1.4, 2.6, "Griff etwas breiter als hüftbreit"))
+  }
+  if (k.last === "hinten") r.push(pr("Stange hinter dem Körper am Gesäß (m)", amRumpf(u, "stange")[2], -0.25, -0.03, "die Stange liegt am Gesäß"))
+  if (k.last === "seite") for (const a of SEITEN) r.push(pr(`Hand ${a} neben dem Körper (m)`, Math.abs(p(u, `hand_${a}`)[0]) - Math.abs(p(u, `g:huefte_${a}`)[0]), 0.06, 0.3, "Die Arme hängen gestreckt neben dem Körper"))
+  if (k.last === "oben") for (const a of SEITEN) r.push(pr(`Hand ${a} über dem Kopf (m)`, p(u, `hand_${a}`)[1] - p(u, `g:schulter_${a}`)[1], 0.42, 0.6, "über den Kopf, die Arme sind gestreckt"))
+  if (k.lage === "schraeg") for (const a of SEITEN) r.push(pr(`Arm ${a} hängt senkrecht (°)`, armLot(u, a), 0, 18, "die Arme hängen gestreckt nach unten"))
+  return r
+}
+const SHRUG_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  shrug_lh: shrugSoll({ last: "vorn" }),
+  shrug_multipresse: shrugSoll({ last: "vorn" }),
+  shrug_trapbar: shrugSoll({ last: "seite" }),
+  shrug_kh: shrugSoll({ last: "seite" }),
+  shrug_band: shrugSoll({ last: "seite" }),
+  shrug_scheibe: shrugSoll({ last: "seite" }),
+  shrug_kabel: shrugSoll({ last: "vorn" }),
+  shrug_kabel_in: shrugSoll({ last: "seite" }),
+  shrug_hinter_ruecken: shrugSoll({ last: "hinten" }),
+  shrug_ueberkopf: shrugSoll({ last: "oben", lage: "ueberkopf" }),
+  shrug_kh_schraeg: shrugSoll({ last: "seite", lage: "schraeg" }),
+}
+
+const zugExplosivSoll = (high: boolean) => (m: Messung): Pruefung[] => {
+  const [u, o, e] = m.alle
+  const r = [...ruhig(m), pr("Füße bleiben am Platz (m)", bleibt(m, ["ferse_l", "ferse_r", "fuss_l", "fuss_r"]), 0, 0.02, "Füße hüftbreit, sanft landen")]
+  const knie = (p(u, "g:knie_l")[1] + p(u, "g:knie_r")[1]) / 2
+  r.push(pr("Stange knapp über den Knien (m)", stange(u)[1] - knie, 0.0, 0.14, "bis die Stange knapp über den Knien ist"))
+  r.push(pr("Rücken gerade vorgeneigt (°)", rumpfneigung(u), 12, 45, "Beuge Hüfte und Knie leicht, Rücken gerade"))
+  r.push(pr("Schultern über der Stange (m)", (p(u, "g:schulter_l")[2] + p(u, "g:schulter_r")[2]) / 2 - stange(u)[2], -0.04, 0.12, "Schultern über der Stange"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} unten gestreckt (°)`, ellbogenWinkel(u, a), 160, 180, "Arme gestreckt"))
+    r.push(pr(`Knie ${a} oben gestreckt (°)`, kniewinkel(o, a), 165, 180, "Streck explosiv Hüfte und Knie"))
+  }
+  r.push(pr("Oberkörper oben aufrecht (°)", Math.abs(rumpfneigung(o)), 0, 8, "Streck Hüfte und Knie"))
+  if (!high) {
+    r.push(pr("Schultern oben gehoben (m)", schulterHoehe(o) - schulterHoehe(e), 0.025, 0.12, "zieh im selben Moment die Schultern kräftig nach oben"))
+    for (const a of SEITEN) r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "Die Arme bleiben gestreckt"))
+  } else
+    for (const a of SEITEN) {
+      r.push(pr(`Ellbogen ${a} oben über der Hand (m)`, p(o, `g:ellbogen_${a}`)[1] - p(o, `hand_${a}`)[1], 0.05, 0.35, "die Ellbogen gehen nach oben und außen"))
+      r.push(pr(`Stange oben an der unteren Brust (m)`, amRumpf(o, "stange")[1], -0.34, -0.14, "bis die Stange etwa auf Höhe der unteren Brust ist"))
+      r.push(pr(`Stange nah am Körper (m)`, amRumpf(o, "stange")[2], 0.03, 0.2, "Die Stange bleibt nah am Körper"))
+    }
+  return r
+}
+SHRUG_SOLL.shrug_explosiv = zugExplosivSoll(false)
+SHRUG_SOLL.high_pull_lh = zugExplosivSoll(true)
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1583,6 +1653,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...HEBE_SOLL,
   ...HINTEN_SOLL,
   ...ROT_SOLL,
+  ...SHRUG_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

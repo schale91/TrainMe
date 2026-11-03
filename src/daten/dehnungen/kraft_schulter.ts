@@ -240,14 +240,15 @@ export const KRAFT_SCHULTER: Record<string, Dehnung> = {
   // Trapez
   shrug_lh: shrug(STAND, LH),
   shrug_multipresse: shrug(STAND, LH),
-  shrug_trapbar: shrug(STAND, LH),
+  // Trap-Bar: die Hände halten die seitlichen Griffe (gezeichnet als Griffe neben dem Körper)
+  shrug_trapbar: shrug(STAND, KH, B("ellbogen", [6, HAMMER])),
   shrug_kh: shrug(STAND, KH, B("ellbogen", [6, HAMMER])),
   shrug_band: shrug(STAND, BAND),
-  shrug_scheibe: shrug(STAND, [], B("finger", [70, 0])),
+  shrug_scheibe: shrug(STAND, [{ art: "hantelscheibe", an: "hand_l" }, { art: "hantelscheibe", an: "hand_r" }], B("finger", [70, 0])),
   shrug_kabel: shrug(STAND, [kabelstange(), ...kabel("haende", [0, 0.12, 0.4])]),
   shrug_kabel_in: shrug(STAND, [...kabel("hand_l", [0.9, 0.12, 0]), ...kabel("hand_r", [-0.9, 0.12, 0])], B("schulter", [2, 14, 0])),
   shrug_hinter_ruecken: shrug(STAND, LH, B("schulter", [-16, 8, 0])),
-  shrug_ueberkopf: shrug(STAND, LH, { ...B("schulter", [174, 14, 0]) }),
+  shrug_ueberkopf: wdh("schraeg", mit(STAND, { g: { ...SHRUG_U, ...B("schulter", [174, 14, 0]) } }), mit(STAND, { g: { ...SHRUG_U, ...B("schulter", [174, 14, 0]), ...B("schulterblatt", [36, 0]) } }), 0.9, { aus: 1.6, halten: 0.8, texte: ["Hantel weiter nach oben schieben, Schultern zu den Ohren", "Schultern langsam ein Stück sinken lassen"], hilfsmittel: LH }),
   shrug_kh_schraeg: shrug(BRUST_LEHNE, [...KH, BAUCH_LEHNE], { ...B("schulter", [48, 8, 0]), ...B("ellbogen", [6, HAMMER]) }),
   shrug_explosiv: folge(
     "schraeg",
