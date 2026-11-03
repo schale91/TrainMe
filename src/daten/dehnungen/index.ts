@@ -19,6 +19,7 @@ import { KRAFT_RUMPF } from "./kraft_rumpf"
 import { KRAFT_GRIFF } from "./kraft_griff"
 import { KRAFT_SCHNELL } from "./kraft_schnell"
 import { KRAFT_LAUF } from "./kraft_lauf"
+import { KRAFT_REST } from "./kraft_rest"
 
-export const DEHNUNGEN: Record<string, Dehnung> = { ...RUECKEN, ...SCHULTER, ...HUEFTE_A, ...HUEFTE_B, ...BEINE, ...FUSS_GOLF, ...KRAFT, ...KRAFT_TRIZEPS, ...KRAFT_BRUST, ...KRAFT_SCHULTER, ...KRAFT_ZIEHEN, ...KRAFT_BEINE, ...KRAFT_HUEFTE, ...KRAFT_RUMPF, ...KRAFT_GRIFF, ...KRAFT_SCHNELL, ...KRAFT_LAUF }
+export const DEHNUNGEN: Record<string, Dehnung> = { ...RUECKEN, ...SCHULTER, ...HUEFTE_A, ...HUEFTE_B, ...BEINE, ...FUSS_GOLF, ...KRAFT, ...KRAFT_TRIZEPS, ...KRAFT_BRUST, ...KRAFT_SCHULTER, ...KRAFT_ZIEHEN, ...KRAFT_BEINE, ...KRAFT_HUEFTE, ...KRAFT_RUMPF, ...KRAFT_GRIFF, ...KRAFT_SCHNELL, ...KRAFT_LAUF, ...KRAFT_REST }
 export { TEST_DEHNUNGEN }
