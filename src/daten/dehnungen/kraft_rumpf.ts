@@ -79,7 +79,7 @@ const halbknie = (arme: Winkel): Haltung => mit(HALBKNIESTAND, { g: arme })
 const kniend = (arme: Winkel): Haltung => mit(KNIESTAND, { g: arme })
 
 /** Drehung des Oberkörpers (Brustwirbelsäule und Lendenwirbelsäule), positiv nach links */
-const dreh = (grad: number): Winkel => ({ lws: [0, 0, grad * 0.3], bws: [0, 0, grad * 0.7] })
+export const dreh = (grad: number): Winkel => ({ lws: [0, 0, grad * 0.3], bws: [0, 0, grad * 0.7] })
 /** Holzhacker: Hände von oben links nach unten rechts (bzw. umgekehrt beim Lift) */
 const HACK_OBEN: Winkel = { schulter_l: [150, -30, 0], ellbogen_l: [8, 0], schulter_r: [130, 20, 0], ellbogen_r: [10, 0], ...FAUST, ...dreh(40) }
 const HACK_UNTEN: Winkel = { schulter_l: [40, -30, 0], ellbogen_l: [8, 0], schulter_r: [30, 30, 0], ellbogen_r: [10, 0], ...FAUST, ...dreh(-40) }
@@ -94,12 +94,12 @@ const STAND_HACK = (w: Winkel): Haltung => H({ ...BREIT, ...w }, [8, 0, 0])
 const ROTATION_ARME: Winkel = { ...B("schulter", [86, -8, 0]), ...B("ellbogen", [6, 0]), ...FAUST }
 
 // ---------------------------------------------------------------- Golf: Ansprechhaltung
-const GOLF_ARME: Winkel = { ...B("schulter", [38, -12, 0]), ...B("ellbogen", [6, 0]), ...FAUST }
-const golf = (w: Winkel = {}): Haltung => mit(ATHLETISCH, { g: { ...GOLF_ARME, ...w } })
+export const GOLF_ARME: Winkel = { ...B("schulter", [38, -12, 0]), ...B("ellbogen", [6, 0]), ...FAUST }
+export const golf = (w: Winkel = {}): Haltung => mit(ATHLETISCH, { g: { ...GOLF_ARME, ...w } })
 /** Rückschwung: Oberkörper rechts gedreht, Hände hoch rechts; Treffmoment: Hüfte offen, Hände vor dem Körper */
-const RUECKSCHWUNG: Winkel = { schulter_l: [110, -40, 0], ellbogen_l: [6, 0], schulter_r: [90, 30, 0], ellbogen_r: [90, 0], ...dreh(-80), hals: [-20, 0, 50] }
-const TREFFMOMENT: Winkel = { ...GOLF_ARME, ...dreh(30), huefte_l: [40, 6, 20], huefte_r: [50, 6, -10] }
-const DURCHSCHWUNG: Winkel = { schulter_l: [90, 30, 0], ellbogen_l: [90, 0], schulter_r: [110, -40, 0], ellbogen_r: [6, 0], ...dreh(80), hals: [-20, 0, -50] }
+export const RUECKSCHWUNG: Winkel = { schulter_l: [110, -40, 0], ellbogen_l: [6, 0], schulter_r: [90, 30, 0], ellbogen_r: [90, 0], ...dreh(-80), hals: [-20, 0, 50] }
+export const TREFFMOMENT: Winkel = { ...GOLF_ARME, ...dreh(30), huefte_l: [40, 6, 20], huefte_r: [50, 6, -10] }
+export const DURCHSCHWUNG: Winkel = { schulter_l: [90, 30, 0], ellbogen_l: [90, 0], schulter_r: [110, -40, 0], ellbogen_r: [6, 0], ...dreh(80), hals: [-20, 0, -50] }
 
 export const KRAFT_RUMPF: Record<string, Dehnung> = {
   // ------------------------------------------------------------ Stütz
