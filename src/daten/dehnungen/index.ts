@@ -12,6 +12,7 @@ import { KRAFT } from "./kraft"
 import { KRAFT_TRIZEPS } from "./kraft_trizeps"
 import { KRAFT_BRUST } from "./kraft_brust"
 import { KRAFT_SCHULTER } from "./kraft_schulter"
+import { KRAFT_ZIEHEN } from "./kraft_ziehen"
 
-export const DEHNUNGEN: Record<string, Dehnung> = { ...RUECKEN, ...SCHULTER, ...HUEFTE_A, ...HUEFTE_B, ...BEINE, ...FUSS_GOLF, ...KRAFT, ...KRAFT_TRIZEPS, ...KRAFT_BRUST, ...KRAFT_SCHULTER }
+export const DEHNUNGEN: Record<string, Dehnung> = { ...RUECKEN, ...SCHULTER, ...HUEFTE_A, ...HUEFTE_B, ...BEINE, ...FUSS_GOLF, ...KRAFT, ...KRAFT_TRIZEPS, ...KRAFT_BRUST, ...KRAFT_SCHULTER, ...KRAFT_ZIEHEN }
 export { TEST_DEHNUNGEN }

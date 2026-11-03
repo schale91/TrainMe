@@ -50,7 +50,7 @@ function cheat(dreh: number, hilfsmittel: Hilfsmittel[]): Dehnung {
 
 // ---------------------------------------------------------------- Curls im Sitzen
 const SITZ_AUFRECHT: Haltung = mit(STUHLSITZ, { g: { ...B("schulter", [0, 12, 0]), ...B("ellbogen", [8, UNTERGRIFF]), ...FAUST } })
-const BANK: Hilfsmittel = { art: "bank", unter: "gesaess", hoehe: 0.42 }
+export const BANK: Hilfsmittel = { art: "bank", unter: "gesaess", hoehe: 0.42 }
 
 /**
  * Konzentrationscurl: breit sitzend, Oberkörper vorgeneigt, der Oberarm liegt an der Innenseite des rechten
@@ -137,7 +137,7 @@ const latzugOben = (dreh: number, breit: number): Haltung => H({ ...LAT_SITZ, ..
 const latzugUnten = (dreh: number, breit: number): Haltung =>
   H({ ...LAT_SITZ, bws: [-10, 0, 0], ...B("schulterblatt", [-12, -10]), ...B("schulter", [28, breit + 30, 0]), ...B("ellbogen", [118, dreh]) }, [-16, 0, 0], { pos: [0, 0.55, 0], boden: false })
 const LAT_ROLLE: V3 = [0, 2.15, 0.55]
-const latzug = (dreh: number, breit: number, griff: Hilfsmittel[]): Dehnung =>
+export const latzug = (dreh: number, breit: number, griff: Hilfsmittel[]): Dehnung =>
   wdh("schraeg", latzugOben(dreh, breit), latzugUnten(dreh, breit), 1.4, { aus: 2.4, texte: ["Stange zur oberen Brust ziehen", "Kontrolliert nach oben lassen"], hilfsmittel: [...griff, ...kabel("haende", LAT_ROLLE), BANK] })
 
 export const KRAFT: Record<string, Dehnung> = {
