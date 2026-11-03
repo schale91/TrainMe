@@ -81,6 +81,8 @@ export type Hilfsmittel =
   | { art: "tuer"; an: Punkt }
   | { art: "stange"; an: Punkt }
   | { art: "hantel"; an: Punkt }
+  /** Kettlebell: Griff in der Faust, die Kugel hängt darunter */
+  | { art: "kettlebell"; an: Punkt }
   /** Lang- oder SZ-Stange mit Scheiben, liegt in beiden Händen (oder auf dem Rücken zwischen zwei Punkten) */
   | { art: "langhantel" | "sz" | "latstange" | "kabelstange"; von: Punkt; bis: Punkt }
   /** Dip-Barren: zwei Holme in Höhe des Punkts (Hände in der Ausgangsstellung), breit: halber Abstand (Standard 27 cm) */

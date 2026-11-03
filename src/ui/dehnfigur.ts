@@ -580,7 +580,7 @@ const andereSeite = <T extends string>(p: T): T => (p.endsWith("_l") ? p.slice(0
 
 /** Hilfsmittel für die gespiegelte Seite: links und rechts getauscht, Kabelrolle auf der anderen Seite */
 function gespiegeltesHilfsmittel(h: Hilfsmittel): Hilfsmittel {
-  if (h.art === "hantel" || h.art === "gymnastikball" || h.art === "gleitscheibe") return { ...h, an: andereSeite(h.an) }
+  if (h.art === "hantel" || h.art === "kettlebell" || h.art === "gymnastikball" || h.art === "gleitscheibe") return { ...h, an: andereSeite(h.an) }
   if (h.art === "kabel") return { ...h, von: andereSeite(h.von), rolle: [-h.rolle[0], h.rolle[1], h.rolle[2]] }
   if (h.art === "bandanker") return { ...h, von: andereSeite(h.von), anker: [-h.anker[0], h.anker[1], h.anker[2]] }
   if (h.art === "stab" || h.art === "band" || h.art === "langhantel" || h.art === "sz" || h.art === "latstange" || h.art === "kabelstange") return { ...h, von: andereSeite(h.von), bis: andereSeite(h.bis) }
@@ -603,6 +603,16 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       const q = griff.lengthSq() > 1e-6 ? griff.normalize() : new THREE.Vector3(1, 0, 0)
       out.push(zylinder(p.clone().addScaledVector(q, -0.09), p.clone().addScaledVector(q, 0.09), 0.014, FARBE.metall))
       for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), p.clone().addScaledVector(q, s * 0.1), 0.05, FARBE.polster))
+    } else if (h.art === "kettlebell") {
+      // Kettlebell: Griff quer in der Faust, die Kugel (Durchmesser etwa 20 cm) senkrecht darunter; steht sie am Boden,
+      // liegt die Handfläche etwa 28 cm hoch
+      const p = k.punkt(h.an)
+      const griff = h.an === "hand_l" || h.an === "hand_r" ? k.punkt(h.an === "hand_l" ? "griff_l" : "griff_r").sub(p) : new THREE.Vector3(1, 0, 0)
+      const q = griff.lengthSq() > 1e-6 ? griff.normalize() : new THREE.Vector3(1, 0, 0)
+      out.push(zylinder(p.clone().addScaledVector(q, -0.06), p.clone().addScaledVector(q, 0.06), 0.012, FARBE.stahl))
+      const mitte = p.clone().add(new THREE.Vector3(0, -0.175, 0))
+      for (const s of [-1, 1]) out.push(zylinder(p.clone().addScaledVector(q, s * 0.06), mitte.clone().addScaledVector(q, s * 0.05).add(new THREE.Vector3(0, 0.08, 0)), 0.012, FARBE.stahl))
+      out.push(kugel(0.1, FARBE.stahl, [mitte.x, mitte.y, mitte.z]))
     } else if (h.art === "langhantel" || h.art === "sz") out.push(...stange(k, h.art, h.von, h.bis))
     else if (h.art === "latstange") out.push(...latstange(k, h.von, h.bis))
     else if (h.art === "kabelstange") {

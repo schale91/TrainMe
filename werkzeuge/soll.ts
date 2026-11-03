@@ -1076,6 +1076,42 @@ const STAND_ROW_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   rudern_band_sitzend: standRowSoll({ art: "sitz", untenY: [-0.4, -0.24], armVorn: [-25, 5], quelle: { unten: "Zieh die Hände zum Bauch", vorn: "die Arme sind gestreckt, das Band ist leicht gespannt" } }),
 }
 
+// ---------------------------------------------------------------- Gorilla-Rudern und Renegade Row (abwechselnd)
+const zugSeite = (r: Pruefung[], x: Punkte, a: "l" | "r", quelle: string) => {
+  r.push(pr(`Hand ${a} gezogen an der Hüfte (m)`, amRumpf(x, `hand_${a}`)[1], -0.44, -0.24, quelle))
+  r.push(pr(`Ellbogen ${a} gezogen hinter dem Rumpf (m)`, amRumpf(x, `g:ellbogen_${a}`)[2], -0.3, -0.02, "der Ellbogen geht nach hinten"))
+}
+const gorillaSoll = (m: Messung): Pruefung[] => {
+  const [u, l, rr] = m.alle
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Stand fest")]
+  r.push(pr("Stand breiter als schulterbreit", fussbreite(u) / schulterbreite(u), 1.1, 2.0, "der Stand ist breiter als schulterbreit"))
+  for (const x of m.alle) r.push(pr("Oberkörper fast waagerecht (°)", rumpfneigung(x), 72, 92, "bis der Oberkörper fast waagerecht ist"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} unten gestreckt (°)`, ellbogenWinkel(u, a), 160, 180, "die Arme sind gestreckt"))
+    r.push(pr(`Hand ${a} unten an der Kettlebell am Boden (m)`, p(u, `hand_${a}`)[1], 0.25, 0.31, "Stell zwei Kettlebells zwischen die Füße"))
+    r.push(pr(`Hand ${a} zwischen den Füßen (m)`, Math.abs(p(u, `ferse_${a}`)[0]) - Math.abs(p(u, `hand_${a}`)[0]), 0.05, 0.4, "zwischen die Füße"))
+  }
+  zugSeite(r, l, "l", "zieh die andere zur Hüfte")
+  zugSeite(r, rr, "r", "wechsle die Seite")
+  r.push(pr("Andere Kettlebell bleibt am Boden (m)", Math.max(p(l, "hand_r")[1], p(rr, "hand_l")[1]), 0.25, 0.31, "Drück eine Kettlebell aktiv in den Boden"))
+  for (const x of [l, rr]) r.push(pr("Oberkörper dreht nicht auf (m)", Math.abs(p(x, "g:schulter_l")[1] - p(x, "g:schulter_r")[1]), 0, 0.06, "Der Oberkörper bleibt ruhig und dreht nicht auf"))
+  return r
+}
+const renegadeSoll = (m: Messung): Pruefung[] => {
+  const [o, l, rr] = m.alle
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["fuss_l", "fuss_r"]), 0, 0.02, "Füße fest")]
+  r.push(pr("Hände schulterbreit", griffbreite(o) / schulterbreite(o), 0.8, 1.25, "zwei Kurzhanteln schulterbreit"))
+  r.push(pr("Füße etwas mehr als hüftbreit", Math.abs(p(o, "fuss_l")[0] - p(o, "fuss_r")[0]) / Math.abs(p(o, "g:huefte_l")[0] - p(o, "g:huefte_r")[0]), 1.0, 2.0, "die Füße etwas mehr als hüftbreit"))
+  for (const a of SEITEN) r.push(pr(`Arm ${a} gestreckt im Stütz (°)`, ellbogenWinkel(o, a), 160, 180, "hoher Liegestütz"))
+  for (const x of m.alle) r.push(pr("Körper in einer Linie (°)", koerperLinie(x), 165, 185, "der Körper bildet eine gerade Linie"))
+  zugSeite(r, l, "l", "Zieh eine Hantel zur Hüfte")
+  zugSeite(r, rr, "r", "wechsle die Seite")
+  r.push(pr("Stützhand bleibt auf der Hantel (m)", Math.max(abstand(p(l, "hand_r"), p(o, "hand_r")), abstand(p(rr, "hand_l"), p(o, "hand_l"))), 0, 0.02, "während du dich auf die andere stützt"))
+  for (const x of [l, rr]) r.push(pr("Hüfte bleibt waagerecht (m)", Math.abs(p(x, "g:huefte_l")[1] - p(x, "g:huefte_r")[1]), 0, 0.03, "Die Hüfte bleibt waagerecht und dreht nicht mit"))
+  return r
+}
+const WECHSEL_SOLL: Record<string, (m: Messung) => Pruefung[]> = { rudern_gorilla: gorillaSoll, rudern_renegade: renegadeSoll }
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1186,6 +1222,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...EINARM_SOLL,
   ...KABEL_ROW_SOLL,
   ...STAND_ROW_SOLL,
+  ...WECHSEL_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

@@ -6,7 +6,7 @@
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { B, H, HALBKNIESTAND, KNIESTAND, LANGSITZ, folge, halte, mit, wdh } from "./basis"
 import { BAUCH_LEHNE, BRUST_LEHNE, FAUST, FLACHBANK, HAMMER, KH, KH_R, LH, OBERGRIFF, SZ, UNTERGRIFF, kabelstange } from "./kraftbasis"
-import { FLACH, liegen } from "./kraft_druecken"
+import { FLACH, liegen, stuetzPaar } from "./kraft_druecken"
 import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, ellbogenKreis, rad } from "./ziele"
 
 type P3 = [number, number, number]
@@ -103,7 +103,7 @@ const rowKoerper = (r: Row) => {
   const s = dreheYZ(r.kipp, SCHULTER_HAENGEND)
   return { hy, hz, sy: hy + 0.003 + s[0], sz: hz + s[1] }
 }
-const rowHaltung = (r: Row, gezogen: boolean): Haltung => {
+const rowHaltung = (r: Row, gezogen: boolean, nur?: "l" | "r"): Haltung => {
   const k = rowKoerper(r)
   // Stange (Hände) unten über dem Mittelfuß: die Füße stehen so, dass die Schultern darüber liegen
   const dz = 0.01 - k.sz
@@ -115,7 +115,7 @@ const rowHaltung = (r: Row, gezogen: boolean): Haltung => {
   }
   for (const sx of [1, -1] as const) {
     const n = sx === 1 ? "l" : "r"
-    if (gezogen) {
+    if (gezogen && (!nur || nur === n)) {
       const hand: P3 = [sx * r.griff, r.oben[0], r.oben[1]]
       ziele[`hand_${n}`] = { pos: hand, bezug: "schultern" }
       const e = ellbogenKreis([SCHULTER_X, 0, 0], [r.griff, r.oben[0], r.oben[1]], [r.eng ? 0 : 0.6, r.eng ? 0.15 : 0.3, -1])
@@ -123,7 +123,7 @@ const rowHaltung = (r: Row, gezogen: boolean): Haltung => {
     } else ziele[`hand_${n}`] = { pos: [sx * r.griff, r.unten ?? k.sy - 0.5, 0.01] }
   }
   return H(
-    { ...B("huefte", [r.kipp + r.knie * 0.5, 6, 0]), ...B("knie", [r.knie]), ...B("fuss", [r.knie * 0.5, 0]), ...B("schulter", gezogen ? [-20, 25, 0] : [r.kipp - 2, 8, 0]), ...B("ellbogen", [gezogen ? 100 : 6, r.dreh]), ...FAUST, hals: [-r.kipp * 0.4, 0, 0], ...r.arme },
+    { ...B("huefte", [r.kipp + r.knie * 0.5, r.breit > 0.15 ? 18 : 6, 0]), ...B("knie", [r.knie]), ...B("fuss", [r.knie * 0.5, 0]), ...B("schulter", gezogen && !nur ? [-20, 25, 0] : [r.kipp - 2, 8, 0]), ...B("ellbogen", [gezogen && !nur ? 100 : 6, r.dreh]), ...FAUST, hals: [-r.kipp * 0.4, 0, 0], ...(nur ? { [`schulter_${nur}`]: [-20, 25, 0], [`ellbogen_${nur}`]: [100, r.dreh] } : {}), ...r.arme },
     [r.kipp, 0, 0],
     { pos: [0, k.hy + 0.003, k.hz + dz], boden: false, ziele },
   )
@@ -469,6 +469,24 @@ const sitzRudern = (gezogen: boolean): Haltung => {
   return mit(LANGSITZ, { g: { ...LANGSITZ.g, ...B("knie", [10]), ...B("schulter", gezogen ? [-20, 16, 0] : [80, 8, 0]), ...B("ellbogen", [gezogen ? 100 : 6, HAMMER]), ...FAUST }, ziele })
 }
 
+
+// ---------------------------------------------------------------- Gorilla-Rudern und Renegade Row
+/** Gorilla: Stand breiter als schulterbreit, Hüfte und Knie gebeugt, Oberkörper fast waagerecht, Kettlebells zwischen den Füßen */
+const GORILLA: Row = { kipp: 80, knie: 82, breit: 0.27, griff: 0.12, dreh: HAMMER, oben: [-0.32, 0.06], unten: 0.285 }
+const gorilla = (): Dehnung => {
+  const u = rowHaltung(GORILLA, false)
+  return folge("seite", [[u, 1.2, "Beide Kettlebells greifen, Arme gestreckt"], [rowHaltung(GORILLA, true, "l"), 1.0, "Links zur Hüfte ziehen, rechts in den Boden drücken"], [u, 1.2, "Kontrolliert absenken"], [rowHaltung(GORILLA, true, "r"), 1.0, "Rechts zur Hüfte ziehen, Oberkörper bleibt ruhig"]], { hilfsmittel: [{ art: "kettlebell", an: "hand_l" }, { art: "kettlebell", an: "hand_r" }] })
+}
+/** Renegade: hoher Liegestütz auf zwei Kurzhanteln, Hände schulterbreit, Füße etwas mehr als hüftbreit */
+const RENEGADE = stuetzPaar({ hand: 0.15, handHoch: 0.07, fuss: 0.13 })
+const renegadeZug = (n: "l" | "r"): Haltung => {
+  const o = RENEGADE.o
+  const sx = n === "l" ? 1 : -1
+  const h: P3 = [0.15, -0.36, 0.02]
+  const e = ellbogenKreis([SCHULTER_X, 0, 0], h, [0.1, 0, -1])
+  return mit(o, { g: { ...o.g, [`schulter_${n}`]: [-20, 12, 0], [`ellbogen_${n}`]: [100, HAMMER] }, ziele: { ...o.ziele, [`hand_${n}`]: { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }, [`ellbogen_${n}`]: { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" } } })
+}
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -565,6 +583,8 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
     texte: ["Hände zum Bauch, Ellbogen nah am Körper", "Arme kontrolliert nach vorn"],
     hilfsmittel: [{ art: "band", von: "fuss_l", bis: "hand_l" }, { art: "band", von: "fuss_r", bis: "hand_r" }],
   }),
+  rudern_gorilla: gorilla(),
+  rudern_renegade: folge("seite", [[RENEGADE.o, 1.0, "Hoher Liegestütz auf den Hanteln, Körper gerade"], [renegadeZug("l"), 1.0, "Links zur Hüfte ziehen, Hüfte bleibt waagerecht"], [RENEGADE.o, 1.0, "Kontrolliert abstellen"], [renegadeZug("r"), 1.0, "Rechts zur Hüfte ziehen"]], { hilfsmittel: [{ art: "hantel", an: "hand_l" }, { art: "hantel", an: "hand_r" }] }),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),
