@@ -843,7 +843,18 @@ class Buehne {
     const ziel = d.ziel || d.schritte?.[Math.floor((d.schritte.length - 1) / 2)]?.h || d.start
     this.koerper.stelle(ziel)
     this.modell?.uebernehmen(ziel.boden !== false)
-    this.fest = festeHilfsmittel(this.koerper, d.hilfsmittel || [])
+    const alleH = d.hilfsmittel || []
+    const ausr = d.ausrichten ?? []
+    this.fest = festeHilfsmittel(this.koerper, alleH.filter((_, i) => ausr[i] === undefined))
+    // Geräte, die an einem anderen Schritt stehen (Bank am Sitzen, Box an der Landung)
+    for (const s of new Set(ausr.filter((x): x is number => x !== undefined))) {
+      const h = d.schritte?.[s]?.h ?? (s === 0 ? d.start : ziel)
+      this.koerper.stelle(h)
+      this.modell?.uebernehmen(h.boden !== false)
+      this.fest.push(...festeHilfsmittel(this.koerper, alleH.filter((_, i) => ausr[i] === s)))
+    }
+    this.koerper.stelle(ziel)
+    this.modell?.uebernehmen(ziel.boden !== false)
     for (const o of this.fest) s.add(o)
     for (const o of this.fest) this.festBasis.set(o, o.position.clone())
     this.sitzAnpassen(ziel)

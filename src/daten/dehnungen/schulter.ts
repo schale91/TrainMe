@@ -155,7 +155,7 @@ export const SCHULTER: Record<string, Dehnung> = {
     [mit(STAND_W, { dreh: [70, 0, 0], g: { ...B("huefte", [70, 7, 0]), ...B("knie", [10]), schulter_r: [70, 0, 0], ellbogen_r: [0, 0], schulter_l: [58, 0, 0] } }), 1],
     [mit(STAND_W, { dreh: [70, 0, 0], g: { ...B("huefte", [70, 7, 0]), ...B("knie", [10]), schulter_r: [70, 0, 0], ellbogen_r: [0, 0], schulter_l: [70, -10, 0] } }), 1],
     [mit(STAND_W, { dreh: [70, 0, 0], g: { ...B("huefte", [70, 7, 0]), ...B("knie", [10]), schulter_r: [70, 0, 0], ellbogen_r: [0, 0], schulter_l: [70, 0, 0] } }), 1],
-  ], { hilfsmittel: [{ art: "bank", unter: "hand_r", hoehe: 0.6 }], hinweis: "Der Arm schwingt locker durch die Bewegung des Körpers." }),
+  ], { hilfsmittel: [{ art: "box", unter: "hand_r", hoehe: 0.6 }], fest: ["hand_r", "fuss_l", "ferse_l", "fuss_r", "ferse_r"], hinweis: "Der Arm schwingt locker durch die Bewegung des Körpers." }),
   // Obergriff etwas weiter als schulterbreit, Körper hängt lang, die Zehen berühren den Boden
   haengen_passiv: halte("vorn", H({ ...B("schulter", [150, -12, 0]), ...B("ellbogen", [20, 0]), ...B("huefte", [5, 3, 0]), ...B("fuss", [-45, 0]) }, undefined, { pos: [0, 0.98, 0], boden: false }), H({ ...B("schulter", [178, -12, 0]), ...B("ellbogen", [0, 0]), ...B("huefte", [5, 3, 0]), ...B("fuss", [-60, 0]) }, undefined, { pos: [0, 1.02, 0], boden: false }), { hilfsmittel: [{ art: "stange", an: "haende" }] }),
   german_hang: halte("seite", H({ ...B("schulter", [-40, 15, 0]), ...B("huefte", [90, 5, 0]), ...B("knie", [90]) }, [20, 0, 0]), H({ ...B("schulter", [-80, 15, 0]), ...B("huefte", [100, 5, 0]), ...B("knie", [80]), hals: [10, 0, 0] }, [50, 0, 0]), { hilfsmittel: [{ art: "stange", an: "haende" }] }),

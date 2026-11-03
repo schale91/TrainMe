@@ -167,6 +167,8 @@ export interface Dehnung {
   /** Punkte, die in allen Phasen dort bleiben, wo sie in der Zielhaltung sind (Hand an der Wand, Standfuß am Boden) */
   fest?: ZielPunkt[]
   hilfsmittel?: Hilfsmittel[]
+  /** je Hilfsmittel (gleiche Reihenfolge) der Schritt, an dessen Haltung es steht; ohne Angabe die Zielhaltung */
+  ausrichten?: (number | undefined)[]
   /** Kurzer Hinweis unter der Figur */
   hinweis?: string
   /** Anzeige für Hin und Zurück bei Wiederholungen, z. B. ["Hochcurlen", "Langsam ablassen"] */
