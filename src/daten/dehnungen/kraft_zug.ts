@@ -5,7 +5,7 @@
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { B, H, folge, halte, wdh } from "./basis"
-import { FAUST, HAMMER, OBERGRIFF, UNTERGRIFF } from "./kraftbasis"
+import { FAUST, HAMMER, KH, LH, OBERGRIFF, UNTERGRIFF } from "./kraftbasis"
 import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, ellbogenKreis, rad } from "./ziele"
 
 type P3 = [number, number, number]
@@ -73,6 +73,66 @@ const BOX: Hilfsmittel = { art: "box", unter: "fuss_l", hoehe: 0.5, versatz: [-0
 /** Schulterblatt-Klimmzug: Schultern locker zu den Ohren; oben ziehen sie nach unten und heben den Körper an */
 const SB_UNTEN = hang({ ...OBER, griff: 0.15 }, B("schulterblatt", [18, 0]), 0.02)
 
+
+// ---------------------------------------------------------------- Rudern vorgebeugt
+// Füße hüftbreit, Knie leicht gebeugt, Oberkörper aus der Hüfte geneigt (kipp gegen die Senkrechte); unten hängen
+// die Arme senkrecht unter den Schultern, oben ist die Last am Bauchnabel, am unteren Brustbein bzw. den unteren
+// Rippen, die Ellbogen gehen nach hinten.
+const SCHULTER_HAENGEND: YZ = [0.352, -0.004]
+interface Row {
+  kipp: number
+  knie: number
+  /** halber Fersenabstand */
+  breit: number
+  griff: number
+  dreh: number
+  /** Last oben im Rahmen der Schultern (den Rumpf hinauf, vor dem Rumpf) */
+  oben: [number, number]
+  /** Ellbogen eng am Körper */
+  eng?: boolean
+  /** Stange unten auf dem Boden (Pendlay): Höhe der Hand unten */
+  unten?: number
+  arme?: Winkel
+}
+const rowKoerper = (r: Row) => {
+  const schien = r.knie * 0.5
+  const knieY = 0.076 + 0.47 * Math.cos(rad(schien)), knieZ = -0.05 + 0.062 + 0.47 * Math.sin(rad(schien))
+  const ober = rad(schien - r.knie)
+  const hy = knieY + 0.383 * Math.cos(ober), hz = knieZ + 0.383 * Math.sin(ober)
+  const s = dreheYZ(r.kipp, SCHULTER_HAENGEND)
+  return { hy, hz, sy: hy + 0.003 + s[0], sz: hz + s[1] }
+}
+const rowHaltung = (r: Row, gezogen: boolean): Haltung => {
+  const k = rowKoerper(r)
+  // Stange (Hände) unten über dem Mittelfuß: die Füße stehen so, dass die Schultern darüber liegen
+  const dz = 0.01 - k.sz
+  const ziele: Ziele = {
+    ferse_l: { pos: [r.breit, 0.022, -0.05 + dz] },
+    fuss_l: { pos: [r.breit + 0.02, 0.034, 0.07 + dz] },
+    ferse_r: { pos: [-r.breit, 0.022, -0.05 + dz] },
+    fuss_r: { pos: [-r.breit - 0.02, 0.034, 0.07 + dz] },
+  }
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    if (gezogen) {
+      const hand: P3 = [sx * r.griff, r.oben[0], r.oben[1]]
+      ziele[`hand_${n}`] = { pos: hand, bezug: "schultern" }
+      const e = ellbogenKreis([SCHULTER_X, 0, 0], [r.griff, r.oben[0], r.oben[1]], [r.eng ? 0 : 0.6, r.eng ? 0.15 : 0.3, -1])
+      ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    } else ziele[`hand_${n}`] = { pos: [sx * r.griff, r.unten ?? k.sy - 0.5, 0.01] }
+  }
+  return H(
+    { ...B("huefte", [r.kipp + r.knie * 0.5, 6, 0]), ...B("knie", [r.knie]), ...B("fuss", [r.knie * 0.5, 0]), ...B("schulter", gezogen ? [-20, 25, 0] : [r.kipp - 2, 8, 0]), ...B("ellbogen", [gezogen ? 100 : 6, r.dreh]), ...FAUST, hals: [-r.kipp * 0.4, 0, 0], ...r.arme },
+    [r.kipp, 0, 0],
+    { pos: [0, k.hy + 0.003, k.hz + dz], boden: false, ziele },
+  )
+}
+const RUDERN: [string, string] = ["Zum Bauch ziehen, Ellbogen nach hinten", "Kontrolliert senken, bis die Arme gestreckt sind"]
+const rudern = (r: Row, hilfsmittel: Hilfsmittel[], extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("seite", rowHaltung(r, false), rowHaltung(r, true), 1.2, { aus: 1.8, halten: 0.5, texte: RUDERN, hilfsmittel, ...extra })
+/** Langhantel: Oberkörper etwa 30 bis 45 Grad über der Waagerechten, Griff etwas breiter als schulterbreit, zum Bauchnabel */
+const ROW_LH: Row = { kipp: 52, knie: 22, breit: 0.1, griff: 0.21, dreh: OBERGRIFF, oben: [-0.27, 0.13] }
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -92,6 +152,13 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
     texte: ["Schulterblätter nach unten ziehen, Arme gestreckt", "Locker in den Hang sinken"],
     hilfsmittel: [RACK],
   }),
+  // Rudern vorgebeugt
+  rudern_lh: rudern(ROW_LH, LH),
+  rudern_multipresse: rudern(ROW_LH, LH),
+  rudern_lh_untergriff: rudern({ ...ROW_LH, kipp: 45, griff: 0.17, dreh: UNTERGRIFF, eng: true }, LH, { texte: ["Zum Bauchnabel ziehen, Ellbogen eng am Körper", "Bis zur vollen Armstreckung senken"] }),
+  // Pendlay: Oberkörper fast waagerecht, Stange über der Fußmitte am Boden, explosiv zum unteren Brustbein
+  rudern_pendlay: rudern({ ...ROW_LH, kipp: 88, knie: 82, unten: 0.245, oben: [-0.14, 0.15] }, LH, { ein: 0.6, aus: 1.4, texte: ["Explosiv vom Boden zum unteren Brustbein", "Kontrolliert ablegen, Spannung neu aufbauen"] }),
+  rudern_kh_vorgebeugt: rudern({ ...ROW_LH, kipp: 45, griff: 0.17, dreh: HAMMER, oben: [-0.24, 0.08] }, KH, { texte: ["Zu den unteren Rippen ziehen, Schulterblätter zusammen", "Senken, bis die Arme gestreckt sind"] }),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),

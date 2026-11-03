@@ -800,6 +800,48 @@ const ZUG_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
 }
 
 
+// ---------------------------------------------------------------- Rudern vorgebeugt
+interface RW {
+  neig: Bereich
+  knie: Bereich
+  griff: Bereich
+  /** Last oben am Rumpf: entlang des Rumpfes ab den Schultern (negativ = Richtung Becken) */
+  obenY: Bereich
+  eng?: boolean
+  boden?: boolean
+  quelle: { neig: string; knie: string; griff: string; oben: string }
+}
+const rowSoll = (k: RW) => (m: Messung): Pruefung[] => {
+  const s = m.start, z = m.ziel
+  const r = [...ruhig(m), pr("Füße bleiben stehen (m)", bleibt(m, ["ferse_l", "ferse_r", "fuss_l", "fuss_r"]), 0, 0.02, "Stell dich hüftbreit hin")]
+  r.push(pr("Oberkörperneigung (°)", rumpfneigung(s), k.neig[0], k.neig[1], k.quelle.neig))
+  r.push(pr("Oberkörper bleibt geneigt (°)", Math.abs(rumpfneigung(z) - rumpfneigung(s)), 0, 5, "ohne dass sich der Oberkörper aufrichtet"))
+  r.push(pr("Kniewinkel (°)", Math.min(kniewinkel(s, "l"), kniewinkel(s, "r")), k.knie[0], k.knie[1], k.quelle.knie))
+  r.push(pr("Fußabstand / Hüftbreite", fussbreite(s) / Math.abs(p(s, "g:huefte_l")[0] - p(s, "g:huefte_r")[0]), 0.8, 1.6, "hüftbreit"))
+  r.push(pr("Griff / Schulterbreite", griffbreite(s) / schulterbreite(s), k.griff[0], k.griff[1], k.quelle.griff))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} unten gestreckt (°)`, ellbogenWinkel(s, a), 160, 180, "bis die Arme gestreckt sind"))
+    r.push(pr(`Hand ${a} unten unter der Schulter (m)`, Math.abs(p(s, `hand_${a}`)[2] - p(s, `g:schulter_${a}`)[2]), 0, 0.07, "die Arme hängen senkrecht unter den Schultern"))
+    r.push(pr(`Ellbogen ${a} oben hinter dem Rumpf (m)`, amRumpf(z, `g:ellbogen_${a}`)[2], -0.25, k.eng ? -0.02 : 0.0, "die Ellbogen gehen nach hinten"))
+    if (k.eng) r.push(pr(`Ellbogen ${a} eng am Körper (m)`, Math.abs(p(z, `g:ellbogen_${a}`)[0]) - Math.abs(p(z, `g:schulter_${a}`)[0]), -0.1, 0.06, "die Ellbogen streichen eng am Körper nach hinten"))
+  }
+  const o = amRumpf(z, "stange")
+  r.push(pr("Last oben am Rumpf entlang (m)", o[1], k.obenY[0], k.obenY[1], k.quelle.oben))
+  r.push(pr("Last oben nah am Rumpf (m)", o[2], 0.03, 0.2, k.quelle.oben))
+  if (k.boden) r.push(pr("Stange unten am Boden (Handhöhe, m)", stange(s)[1], 0.2, 0.27, "vom Boden, vollständig ablegen"))
+  return r
+}
+const ROW_LH_Q = { neig: "etwa 30 bis 45 Grad über der Waagerechten", knie: "die Knie sind leicht gebeugt", griff: "etwas breiter als schulterbreit", oben: "zum Bauchnabel oder zum unteren Brustbein" }
+const ROW_LH: RW = { neig: [43, 62], knie: [145, 172], griff: [1.05, 1.5], obenY: [-0.36, -0.16], quelle: ROW_LH_Q }
+const ROW_45: RW = { ...ROW_LH, neig: [38, 55], quelle: { ...ROW_LH_Q, neig: "etwa 45 Grad geneigt" } }
+const ROW_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  rudern_lh: rowSoll(ROW_LH),
+  rudern_multipresse: rowSoll({ ...ROW_45, quelle: { ...ROW_45.quelle, oben: "zum Bauchnabel" }, obenY: [-0.36, -0.22] }),
+  rudern_lh_untergriff: rowSoll({ ...ROW_45, griff: [0.85, 1.2], eng: true, obenY: [-0.36, -0.22], quelle: { ...ROW_45.quelle, griff: "schulterbreit im Untergriff", oben: "zum Bauchnabel" } }),
+  rudern_pendlay: rowSoll({ ...ROW_LH, neig: [75, 95], knie: [88, 150], obenY: [-0.24, -0.1], boden: true, quelle: { ...ROW_LH_Q, neig: "der Oberkörper ist fast waagerecht", knie: "die Knie sind gebeugt", oben: "zum unteren Brustbein" } }),
+  rudern_kh_vorgebeugt: rowSoll({ ...ROW_45, griff: [0.8, 1.25], obenY: [-0.32, -0.16], quelle: { ...ROW_45.quelle, griff: "die Arme hängen senkrecht unter den Schultern", oben: "zu den unteren Rippen" } }),
+}
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -903,6 +945,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...DIP_SOLL,
   ...FLY_SOLL,
   ...ZUG_SOLL,
+  ...ROW_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
