@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import type { Dehnung } from "../logik/dehnbewegung"
 import type { Uebung } from "../logik/typen"
+import { FIGUREN } from "../daten/figuren"
 import Dehnfigur from "./Dehnfigur"
 import { bruecke } from "./lebenswelt"
 
@@ -15,9 +16,10 @@ export default function Figur(props: { uebung: Uebung; geraet?: string | null; k
   const [da, setDa] = useState(false)
   // Mobilitätsübungen mit eigener Dehnfigur; undefined = wird noch nachgesehen
   const [dehnung, setDehnung] = useState<Dehnung | null | undefined>(undefined)
-  const namen = [props.uebung.name, ...(props.uebung.auch || [])]
-  const schluessel = namen.join("|") + "|" + (props.geraet || "")
   const id = props.uebung.id
+  // Nur Übungen mit geprüfter Zuordnung bekommen eine Figur
+  const figur = FIGUREN[id]
+  const schluessel = (figur || "") + "|" + (props.geraet || "")
   useEffect(() => {
     let aus = false
     void import("../daten/dehnungen")
@@ -32,14 +34,10 @@ export default function Figur(props: { uebung: Uebung; geraet?: string | null; k
     let aus = false
     void import("./figuren3d")
       .then((m) => {
-        const name = m.figurName(namen)
-        if (aus || !name || !ref.current) return setDa(false)
+        if (aus || !figur || !ref.current) return setDa(false)
         setDa(true)
-        const g = GERAET[props.geraet || ""] || ""
-        const b = bruecke()
-        // In der Lebenswelt zeichnet sie die Figur in ihrem Stil (mit der Farbe aus dem Shop)
-        if (b?.figur) b.figur(ref.current, name, g)
-        else m.zeige(ref.current, name, g)
+        // In der Lebenswelt mit der Hoodie-Farbe aus dem Shop
+        m.zeige(ref.current, figur, GERAET[props.geraet || ""] || "", bruecke()?.figurFarbe?.())
       })
       .catch(() => setDa(false))
     return () => {

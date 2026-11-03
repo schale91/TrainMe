@@ -23,8 +23,10 @@ export interface Bruecke {
   startwerte?: Record<string, number>
   /** TrainMe schließen und zurück in die Lebenswelt (die Lebenswelt zeigt dafür keine eigene Leiste) */
   schliessen?(): void
-  /** Zeichnet die Übungsfigur in eine Canvas (sonst zeichnet TrainMe selbst) */
+  /** Früher: Übungsfigur der Lebenswelt. TrainMe zeichnet jetzt selbst, weil nur es die geprüfte Zuordnung kennt. */
   figur?(canvas: HTMLCanvasElement, uebung: string, geraet: string): void
+  /** Farbe des Hoodies der Spielfigur (Shop), für die Übungsfigur */
+  figurFarbe?(): string
 }
 
 export interface Kopplung {

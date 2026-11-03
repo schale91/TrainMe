@@ -328,14 +328,24 @@ Etwas Unbekanntes`
 })
 
 describe("Übungsfiguren", () => {
-  test("TrainMe-Übungen finden ihre Figur über den Zweitnamen", async () => {
-    const { figurName } = await import("../src/ui/figuren3d")
+  test("Kraftbuch-Übungen finden ihre Figur, jede Zuordnung zeigt auf eine vorhandene Bewegung", async () => {
+    const { _intern } = await import("../src/ui/figuren3d")
+    const { FIGUREN } = await import("../src/daten/figuren")
     const { uebung } = await import("../src/daten/uebungen/index")
-    for (const n of ["Back Squat", "Barbell Bench Press", "Deadlift", "Hammer Curl"]) {
-      const u = uebung(zuordnen(n)!)!
-      expect(figurName([u.name, ...(u.auch || [])]), n).toBeTruthy()
+    for (const n of ["Back Squat", "Barbell Bench Press", "Deadlift", "Hammer Curl"]) expect(FIGUREN[zuordnen(n)!], n).toBeTruthy()
+    for (const [id, k] of Object.entries(FIGUREN)) {
+      expect(uebung(id), id).toBeTruthy()
+      expect(_intern.SPECS[k.split(":")[0]], id + " → " + k).toBeTruthy()
+      expect(k.split(":")[1] ?? "db", id).toMatch(/^(bar|sz|db|cable|rope|band|none|latbar|plate)$/)
     }
-    expect(figurName(["Etwas ganz Unbekanntes"])).toBeNull()
+  })
+
+  test("Konzentrationscurl sitzt einarmig mit Kurzhantel, Seil-Trizeps über Kopf zieht vom Kabel", async () => {
+    const { FIGUREN } = await import("../src/daten/figuren")
+    expect(FIGUREN.konzentrationscurl).toBe("konzentration")
+    expect(FIGUREN.trizeps_ueberkopf_seil).toBe("ueberkopfkabel")
+    // Rudergerät, Maschinen und Seitstütz haben keine passende Bewegung: lieber keine Figur
+    for (const id of ["rudern_500m", "hip_thrust_maschine", "seitstuetz"]) expect(FIGUREN[id], id).toBeUndefined()
   })
 })
 
