@@ -308,6 +308,8 @@ class Koerper {
 
   punkt(p: Punkt): THREE.Vector3 {
     if (p === "haende") return this.punkt("hand_l").add(this.punkt("hand_r")).multiplyScalar(0.5)
+    if (p === "knie_mitte") return this.punkt("knie_l").add(this.punkt("knie_r")).multiplyScalar(0.5)
+    if (p === "fuesse") return this.punkt("fuss_l").add(this.punkt("fuss_r")).multiplyScalar(0.5)
     const m = this.marken[p]
     if (m && this.ersatz) {
       const v = this.ersatz(m)
@@ -356,13 +358,16 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       if (h.versatz) p.add(new THREE.Vector3(h.versatz[0], 0, h.versatz[1]))
       const gr: [number, number, number] = h.art === "bank" ? [0.3, h.hoehe, 1.1] : h.art === "stuhl" ? [0.42, h.hoehe, 0.42] : [0.45, h.hoehe, 0.4]
       if (h.art === "bank") {
-        // Hantelbank: Polster oben, schwarzes Gestell mit zwei Füßen
-        out.push(kiste(new THREE.Vector3(p.x, h.hoehe - 0.04, p.z), [gr[0], 0.08, gr[2]], FARBE.polster))
+        // Hantelbank: Polster oben, schwarzes Gestell mit zwei Füßen; quer: Bank steht quer zur Blickrichtung (Hip Thrust)
+        const q = h.quer
+        const lang = (x: number, y: number, z: number, b: number, hh: number, t: number) =>
+          kiste(new THREE.Vector3(q ? p.x + z : p.x + x, y, q ? p.z + x : p.z + z), q ? [t, hh, b] : [b, hh, t], FARBE.stahl)
+        out.push(kiste(new THREE.Vector3(p.x, h.hoehe - 0.04, p.z), q ? [gr[2], 0.08, gr[0]] : [gr[0], 0.08, gr[2]], FARBE.polster))
         for (const dz of [-0.4, 0.4]) {
-          out.push(kiste(new THREE.Vector3(p.x, (h.hoehe - 0.08) / 2, p.z + dz * gr[2]), [0.06, h.hoehe - 0.08, 0.06], FARBE.stahl))
-          out.push(kiste(new THREE.Vector3(p.x, 0.03, p.z + dz * gr[2]), [0.42, 0.06, 0.07], FARBE.stahl))
+          out.push(lang(0, (h.hoehe - 0.08) / 2, dz * gr[2], 0.06, h.hoehe - 0.08, 0.06))
+          out.push(lang(0, 0.03, dz * gr[2], 0.42, 0.06, 0.07))
         }
-        out.push(kiste(new THREE.Vector3(p.x, h.hoehe - 0.12, p.z), [0.06, 0.06, gr[2] * 0.85], FARBE.stahl))
+        out.push(lang(0, h.hoehe - 0.12, 0, 0.06, 0.06, gr[2] * 0.85))
       } else out.push(kiste(new THREE.Vector3(p.x, h.hoehe / 2, p.z), gr, h.art === "box" ? FARBE.box : FARBE.polster))
       if (h.art === "stuhl") out.push(kiste(new THREE.Vector3(p.x, h.hoehe + 0.22, p.z - 0.2), [0.42, 0.44, 0.03], FARBE.polster))
     } else if (h.art === "rolle") {
@@ -494,7 +499,7 @@ const andereSeite = <T extends string>(p: T): T => (p.endsWith("_l") ? p.slice(0
 
 /** Hilfsmittel für die gespiegelte Seite: links und rechts getauscht, Kabelrolle auf der anderen Seite */
 function gespiegeltesHilfsmittel(h: Hilfsmittel): Hilfsmittel {
-  if (h.art === "hantel") return { ...h, an: andereSeite(h.an) }
+  if (h.art === "hantel" || h.art === "gymnastikball" || h.art === "gleitscheibe") return { ...h, an: andereSeite(h.an) }
   if (h.art === "kabel") return { ...h, von: andereSeite(h.von), rolle: [-h.rolle[0], h.rolle[1], h.rolle[2]] }
   if (h.art === "bandanker") return { ...h, von: andereSeite(h.von), anker: [-h.anker[0], h.anker[1], h.anker[2]] }
   if (h.art === "stab" || h.art === "band" || h.art === "langhantel" || h.art === "sz" || h.art === "latstange" || h.art === "kabelstange") return { ...h, von: andereSeite(h.von), bis: andereSeite(h.bis) }
@@ -532,6 +537,22 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       const m = h.an === "haende" ? a.clone().add(b).multiplyScalar(0.5) : k.punkt(h.an)
       const d = b.clone().sub(a).normalize()
       out.push(zylinder(m.clone().addScaledVector(d, -0.02), m.clone().addScaledVector(d, 0.02), 0.13, FARBE.stahl))
+    } else if (h.art === "gymnastikball") {
+      // Gymnastikball (65 cm) rollt am Boden: liegt die Ferse tiefer als oben auf dem Ball, berührt er sie von der
+      // körperfernen Seite (in Richtung vom Becken zum Fuß)
+      const r = 0.32
+      const p = k.punkt(h.an)
+      const hh = Math.min(2 * r, Math.max(0, p.y - 0.04))
+      const weg = Math.sqrt(Math.max(0, r * r - (hh - r) * (hh - r)))
+      const d = p.clone().sub(k.punkt("becken")).setY(0)
+      if (d.lengthSq() > 1e-6) d.normalize()
+      const m = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), mat(FARBE.ball, 0.4))
+      m.position.set(p.x + d.x * weg, r, p.z + d.z * weg)
+      m.castShadow = true
+      out.push(m)
+    } else if (h.art === "gleitscheibe") {
+      const p = k.punkt(h.an)
+      out.push(zylinder(new THREE.Vector3(p.x, MATTE, p.z), new THREE.Vector3(p.x, MATTE + 0.012, p.z), 0.09, FARBE.polster))
     } else if (h.art === "medizinball") {
       // 10-kg-Ball, etwa 35 cm, zwischen den Händen
       const m = new THREE.Mesh(new THREE.SphereGeometry(0.17, 28, 20), mat(FARBE.box, 0.35))

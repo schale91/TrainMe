@@ -53,7 +53,7 @@ export interface Haltung {
 export type Hilfsmittel =
   | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten" }
   /** versatz [seitlich, vorn] in Metern, z. B. damit die Hände auf der Vorderkante einer Box liegen */
-  | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number] }
+  | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number]; quer?: boolean }
   | { art: "stab"; von: Punkt; bis: Punkt }
   | { art: "band"; von: Punkt; bis: Punkt }
   | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean }
@@ -74,6 +74,10 @@ export type Hilfsmittel =
   | { art: "rack"; an: Punkt; z?: number; ablage?: number; haken?: number }
   /** Medizinball in den Händen */
   | { art: "medizinball"; an: Punkt }
+  /** Gymnastikball, rollt am Boden unter dem Punkt mit (z. B. unter den Fersen) */
+  | { art: "gymnastikball"; an: Punkt }
+  /** Gleitscheibe am Boden unter dem Punkt (Fuß, Ferse) */
+  | { art: "gleitscheibe"; an: Punkt }
   /** Hantelscheibe (5 kg, schwarz) in den Händen, zwischen den Handflächen */
   | { art: "hantelscheibe"; an: Punkt }
 
@@ -81,12 +85,14 @@ export type Punkt =
   | "hand_l"
   | "hand_r"
   | "haende"
+  | "fuesse"
   | "fuss_l"
   | "fuss_r"
   | "ferse_l"
   | "ferse_r"
   | "knie_l"
   | "knie_r"
+  | "knie_mitte"
   | "becken"
   | "gesaess"
   | "ruecken"
