@@ -80,6 +80,8 @@ export type Hilfsmittel =
   | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean; versatz?: [number, number]; bei?: [number, number] }
   | { art: "tuer"; an: Punkt }
   | { art: "stange"; an: Punkt }
+  /** Stabiler Tisch: die Hände greifen die Kante, die Platte reicht zum Kopf hin (-z) */
+  | { art: "tisch"; an: Punkt }
   | { art: "hantel"; an: Punkt }
   /** Kettlebell: Griff in der Faust, die Kugel hängt darunter */
   | { art: "kettlebell"; an: Punkt }

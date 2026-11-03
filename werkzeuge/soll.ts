@@ -1112,6 +1112,25 @@ const renegadeSoll = (m: Messung): Pruefung[] => {
 }
 const WECHSEL_SOLL: Record<string, (m: Messung) => Pruefung[]> = { rudern_gorilla: gorillaSoll, rudern_renegade: renegadeSoll }
 
+// ---------------------------------------------------------------- Rudern im Hang
+const hangRowSoll = (art: "stange" | "hoch" | "tisch") => (m: Messung): Pruefung[] => {
+  const s = m.start, z = m.ziel
+  const r = [...ruhig(m), pr("Hände bleiben an der Stange (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.02, art === "tisch" ? "Greif die Kante" : "greif die Stange"), pr("Fersen bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, art === "tisch" ? "Stell die Füße auf" : "die Fersen liegen am Boden")]
+  r.push(art === "tisch" ? pr("Griff schulterbreit", griffbreite(s) / schulterbreite(s), 0.85, 1.25, "Greif die Kante schulterbreit") : pr("Griff etwas breiter als schulterbreit", griffbreite(s) / schulterbreite(s), 1.05, 1.5, "etwas breiter als schulterbreit im Obergriff"))
+  for (const [x, w] of [[s, "unten"], [z, "oben"]] as const) r.push(pr(`Körper gerade ${w} (°)`, koerperLinie(x, art === "tisch" ? "knie" : "knoechel"), 166, 185, art === "tisch" ? "der Körper ist von Knie bis Schulter gerade" : "der Körper bildet eine gerade Linie von Kopf bis Fuß"))
+  if (art === "hoch") r.push(pr("Fersen auf der Erhöhung (m)", p(s, "ferse_l")[1], 0.4, 0.55, "leg die Fersen auf die Erhöhung"))
+  if (art === "tisch") for (const a of SEITEN) r.push(pr(`Knie ${a} gebeugt (°)`, kniewinkel(s, a), 70, 120, "die Knie sind gebeugt"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} unten gestreckt (°)`, ellbogenWinkel(s, a), 160, 180, "bis die Arme gestreckt sind"))
+    r.push(pr(`Ellbogen ${a} oben hinter dem Rumpf (m)`, amRumpf(z, `g:ellbogen_${a}`)[2], -0.3, -0.02, "die Ellbogen gehen nach hinten"))
+  }
+  const o = amRumpf(z, "stange")
+  r.push(pr("Stange oben an der Brust: entlang (m)", o[1], -0.2, 0.02, "zieh die Brust zur Stange"))
+  r.push(pr("Stange oben an der Brust: Abstand (m)", o[2], 0.1, 0.22, "zieh die Brust zur Stange"))
+  return r
+}
+const HANG_ROW_SOLL: Record<string, (m: Messung) => Pruefung[]> = { rudern_invertiert: hangRowSoll("stange"), rudern_invertiert_erhoeht: hangRowSoll("hoch"), rudern_tisch: hangRowSoll("tisch") }
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1223,6 +1242,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...KABEL_ROW_SOLL,
   ...STAND_ROW_SOLL,
   ...WECHSEL_SOLL,
+  ...HANG_ROW_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

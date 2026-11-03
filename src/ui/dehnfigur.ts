@@ -428,6 +428,12 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
     } else if (h.art === "tuer") {
       const p = k.punkt(h.an)
       for (const dz of [-0.04, 0.04]) out.push(kiste(new THREE.Vector3(p.x + (p.x >= 0 ? 0.04 : -0.04), 1.05, p.z + dz), [0.06, 2.1, 0.06], FARBE.wand))
+    } else if (h.art === "tisch") {
+      // Tisch: Kante an den Händen, Platte 4 cm dick, 0,8 m tief zum Kopf hin, Beine an den hinteren und vorderen Ecken
+      const p = k.punkt(h.an)
+      const oben = p.y + 0.035
+      out.push(kiste(new THREE.Vector3(0, oben - 0.02, p.z - 0.38), [1.2, 0.04, 0.8], FARBE.holz))
+      for (const sx of [-0.55, 0.55]) for (const dz of [-0.05, -0.72]) out.push(kiste(new THREE.Vector3(sx, (oben - 0.04) / 2, p.z + dz), [0.05, oben - 0.04, 0.05], FARBE.holz))
     } else if (h.art === "stange") {
       const p = k.punkt(h.an)
       out.push(zylinder(new THREE.Vector3(-0.7, p.y + 0.02, p.z), new THREE.Vector3(0.7, p.y + 0.02, p.z), 0.016, FARBE.metall))
@@ -1317,10 +1323,10 @@ class Buehne {
     const pk = this.punkte()
     const becken = this.koerper.becken.getWorldPosition(new THREE.Vector3())
     const q = new THREE.Vector3()
-    // Stangen, die die Hände greifen (Rack, Barren): die Faust umschließt sie, Hände zählen dort nicht als Eindringen
+    // Stangen und Kanten, die die Hände greifen (Rack, Barren, Tischkante): die Faust umschließt sie, Hände zählen dort nicht als Eindringen
     const haende = [this.koerper.punkt("hand_l"), this.koerper.punkt("hand_r")]
     const ohneHaende = pk.filter((p) => haende.every((h) => p.distanceTo(h) > 0.11))
-    const gegriffen = (h: Hindernis) => /^(rack|barren|stange)$/.test(h.m.name)
+    const gegriffen = (h: Hindernis) => /^(rack|barren|stange|tisch)$/.test(h.m.name)
     for (let runde = 0; runde < 8; runde++) {
       const schritt = new THREE.Vector3()
       let min = Infinity
@@ -1669,7 +1675,7 @@ export function _durchdringungen(d: Dehnung, haltenS = 8, schritt = 0.5, toleran
     const ohneHaende = pk.filter((p) => haende.every((hd) => p.distanceTo(hd) > 0.11))
     for (const h of b.hindernisse()) {
       let tief = 0, hoehe = 0
-      for (const p of /^(rack|barren|stange)$/.test(h.m.name) ? ohneHaende : pk) {
+      for (const p of /^(rack|barren|stange|tisch)$/.test(h.m.name) ? ohneHaende : pk) {
         const v = herausschieben(h, p, becken)
         if (v && v.length() > tief) {
           tief = v.length()

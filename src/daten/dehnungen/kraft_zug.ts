@@ -487,6 +487,78 @@ const renegadeZug = (n: "l" | "r"): Haltung => {
   return mit(o, { g: { ...o.g, [`schulter_${n}`]: [-20, 12, 0], [`ellbogen_${n}`]: [100, HAMMER] }, ziele: { ...o.ziele, [`hand_${n}`]: { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }, [`ellbogen_${n}`]: { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" } } })
 }
 
+
+// ---------------------------------------------------------------- Rudern im Hang (invertiert, Tisch, Füße erhöht)
+// Der Körper ist von den Fersen (Tisch: von den Knien) bis zu den Schultern gerade und dreht sich um diesen Punkt.
+// Unten sind die Arme gestreckt, oben liegt die untere Brust an der Stange bzw. Tischkante.
+interface Hang {
+  /** Drehpunkt (Knöchel bzw. Knie) in der Welt: y, z */
+  dreh: YZ
+  /** Drehpunkt bis Schultergelenk entlang des Körpers */
+  lang: number
+  /** Drehpunkt bis Becken */
+  becken: number
+  /** Höhe der Stange (Mitte) */
+  stange: number
+  griff: number
+  dreh_: number
+  knie?: boolean
+  /** zusätzliche Reichweite unten */
+  reich?: number
+}
+/** Kontakt oben: untere Brust, 8 cm zum Becken hin und 15,5 cm vor dem Schultergelenk */
+const HANG_BRUST: YZ = [0.08, 0.155]
+/** unten gleiten die Schulterblätter nach vorn: die Hand reicht weiter als der gestreckte Arm */
+const HANG_REICH = ARM_FAUST * 0.99 + 0.03
+/** Körperrichtung (zum Kopf) und Senkrechte (zur Brust) bei Neigung th über der Waagerechten */
+const hangU = (th: number): YZ => [Math.sin(rad(th)), -Math.cos(rad(th))]
+const hangN = (th: number): YZ => [Math.cos(rad(th)), Math.sin(rad(th))]
+const hangPunkt = (h: Hang, th: number, a: number, b: number): YZ => {
+  const u = hangU(th), n = hangN(th)
+  return [h.dreh[0] + a * u[0] + b * n[0], h.dreh[1] + a * u[1] + b * n[1]]
+}
+const hangGeometrie = (h: Hang) => {
+  // oben: untere Brust an der Stange
+  let th = 0
+  for (let i = 0; i < 60; i++) {
+    const y = hangPunkt(h, th, h.lang - HANG_BRUST[0], HANG_BRUST[1])[0]
+    th += (h.stange - y) * 40
+  }
+  const stangeZ = hangPunkt(h, th, h.lang - HANG_BRUST[0], HANG_BRUST[1])[1]
+  const hand: YZ = [h.stange - 0.03, stangeZ]
+  // unten: Schulter auf dem Kreis um den Drehpunkt, gestreckter Arm bis zur Hand
+  let tu = th
+  for (let i = 0; i < 80; i++) {
+    const s = hangPunkt(h, tu, h.lang, 0)
+    const d = Math.hypot(s[0] - hand[0], s[1] - hand[1])
+    tu -= (HANG_REICH + (h.reich ?? 0) - d) * 30
+  }
+  return { oben: th, unten: tu, hand }
+}
+const invHaltung = (h: Hang, gezogen: boolean): Haltung => {
+  const g = hangGeometrie(h)
+  const th = gezogen ? g.oben : g.unten
+  const b = hangPunkt(h, th, h.becken, 0)
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    ziele[`hand_${n}`] = { pos: [sx * h.griff, g.hand[0], g.hand[1]] }
+    if (h.knie) {
+      ziele[`ferse_${n}`] = { pos: [sx * 0.12, 0.022, h.dreh[1] + 0.1] }
+      ziele[`fuss_${n}`] = { pos: [sx * 0.13, 0.034, h.dreh[1] + 0.22] }
+    } else ziele[`ferse_${n}`] = { pos: [sx * 0.1, h.dreh[0] - 0.045, h.dreh[1] + 0.06] }
+  }
+  const beine: Winkel = h.knie ? { ...B("huefte", [0, 6, 0]), ...B("knie", [95]), ...B("fuss", [0, 0]) } : { ...B("huefte", [0, 6, 0]), ...B("knie", [3]), ...B("fuss", [20, 0]) }
+  const arme: Winkel = gezogen ? { ...B("schulter", [30, 40, 0]), ...B("ellbogen", [105, h.dreh_]), ...B("schulterblatt", [0, -15]) } : { ...B("schulter", [90, 12, 0]), ...B("ellbogen", [4, h.dreh_]), ...B("schulterblatt", [0, 30]) }
+  return H({ ...beine, ...arme, ...FAUST, hals: [h.knie && gezogen ? -30 : 10, 0, 0] }, [th - 90, 0, 0], { pos: [0, b[0], b[1]], boden: false, ziele })
+}
+const INVERS: Hang = { dreh: [0.07, 0.95], lang: 1.23, becken: 0.86, stange: 0.95, griff: 0.21, dreh_: OBERGRIFF }
+const hangRow = (h: Hang, hilfsmittel: Hilfsmittel[], texte: [string, string], extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("seite", invHaltung(h, false), invHaltung(h, true), 1.3, { aus: 2.0, halten: 0.5, texte, hilfsmittel, ...extra })
+const HANG_STANGE = (h: Hang): Hilfsmittel[] => [{ art: "stange", an: "hand_r" }, { art: "rack", an: "hand_r", z: hangGeometrie(h).hand[1] }]
+const INVERS_HOCH: Hang = { ...INVERS, dreh: [0.52, 1.0] }
+const TISCH: Hang = { dreh: [0.53, 0.75], lang: 0.76, becken: 0.38, stange: 0.75, griff: 0.17, dreh_: OBERGRIFF, knie: true, reich: 0.012 }
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -585,6 +657,10 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
   }),
   rudern_gorilla: gorilla(),
   rudern_renegade: folge("seite", [[RENEGADE.o, 1.0, "Hoher Liegestütz auf den Hanteln, Körper gerade"], [renegadeZug("l"), 1.0, "Links zur Hüfte ziehen, Hüfte bleibt waagerecht"], [RENEGADE.o, 1.0, "Kontrolliert abstellen"], [renegadeZug("r"), 1.0, "Rechts zur Hüfte ziehen"]], { hilfsmittel: [{ art: "hantel", an: "hand_l" }, { art: "hantel", an: "hand_r" }] }),
+  // Rudern im Hang
+  rudern_invertiert: hangRow(INVERS, HANG_STANGE(INVERS), ["Brust zur Stange, Körper bleibt gerade", "Kontrolliert ablassen, bis die Arme gestreckt sind"]),
+  rudern_invertiert_erhoeht: hangRow(INVERS_HOCH, [...HANG_STANGE(INVERS_HOCH), { art: "box", unter: "ferse_l", hoehe: 0.45, versatz: [-0.1, 0] }], ["Brust zur Stange, eine Sekunde halten", "Kontrolliert ablassen, Hüfte hängt nicht durch"], { halten: 1.0 }),
+  rudern_tisch: hangRow(TISCH, [{ art: "tisch", an: "hand_r" }], ["Brust zur Tischkante ziehen, Körper von Knie bis Schulter gerade", "Langsam ablassen, bis die Arme gestreckt sind"]),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),
