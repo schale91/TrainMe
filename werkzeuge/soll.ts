@@ -907,6 +907,30 @@ const UEBER_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ueberzug_kabel_liegend: ueberSoll({ art: "liegend", ellbogen: [145, 178], start: [155, 185], ende: [30, 100], quelle: { start: "mit gestreckten Armen hinter dem Kopf in der Dehnung", ende: "in einem Bogen über das Gesicht bis über die Brust oder zur Hüfte", ellbogen: "Ellbogen leicht gebeugt" } }),
 }
 
+// ---------------------------------------------------------------- Latzug kniend und mit Band
+const knieLatSoll = (k: LZ & { neig: Bereich; quelleNeig: string }) => (m: Messung): Pruefung[] => {
+  const s = m.start, z = m.ziel
+  const r = [...ruhig(m), pr("Knie bleiben (m)", bleibt(m, ["knie_l", "knie_r"]), 0, 0.02, "Knie dich vor den Turm")]
+  for (const [x, w] of [[s, "oben"], [z, "unten"]] as const) r.push(pr(`Oberkörper ${w} (°)`, rumpfneigung(x), k.neig[0], k.neig[1], k.quelleNeig))
+  if (k.griff) r.push(pr("Griff / Schulterbreite", griffbreite(s) / schulterbreite(s), k.griff[0], k.griff[1], k.quelle.griff ?? ""))
+  for (const a of k.einarm ? (["r"] as const) : SEITEN) {
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(s, a), 160, 180, "Arme gestreckt"))
+    r.push(pr(`Hand ${a} oben über der Schulter (m)`, p(s, `hand_${a}`)[1] - p(s, `g:schulter_${a}`)[1], 0.4, 0.6, "Arm lang über dem Kopf"))
+    const h = amRumpf(z, `hand_${a}`)
+    r.push(pr(`Hand ${a} unten am Rumpf entlang (m)`, h[1], k.untenY[0], k.untenY[1], k.quelle.unten))
+    r.push(pr(`Hand ${a} unten vor dem Rumpf (m)`, h[2], 0.04, 0.22, k.quelle.unten))
+    const e = p(z, `g:ellbogen_${a}`), sh = p(z, `g:schulter_${a}`)
+    r.push(pr(`Ellbogen ${a} unten nach unten (m)`, sh[1] - e[1], 0.1, 0.3, "die Ellbogen gehen nach unten"))
+    r.push(pr(`Ellbogen ${a} unten seitlich (°)`, grad(Math.atan2(Math.abs(e[0]) - Math.abs(sh[0]), sh[1] - e[1])), k.ellbogenSeite[0], k.ellbogenSeite[1], k.quelle.ellbogen))
+  }
+  return r
+}
+const KNIE_LAT_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  latzug_kniend: knieLatSoll({ ...LZ_WEIT, rueck: [0, 0], griff: [1.2, 1.6], neig: [3, 18], quelleNeig: "Oberkörper leicht nach vorn geneigt", quelle: { ...LZ_WEIT.quelle, griff: "etwas breiter als schulterbreit", unten: "Zieh die Stange zur oberen Brust", ellbogen: "die Ellbogen gehen nach unten zu den Rippen" } }),
+  latzug_kniend_einarmig: knieLatSoll({ ...LZ_ENG, untenY: [-0.18, -0.03], einarm: true, neig: [-4, 15], quelleNeig: "der Oberkörper bleibt aufrecht oder leicht nach vorn geneigt", quelle: { ...LZ_ENG.quelle, unten: "bis die Hand neben der Brust ist", ellbogen: "den Ellbogen nah am Körper nach unten zur Hüfte" } }),
+  latzug_band: knieLatSoll({ ...LZ_ENG, untenY: [-0.18, -0.03], neig: [-6, 10], quelleNeig: "die Brust ist aufgerichtet", quelle: { ...LZ_ENG.quelle, unten: "bis die Hände neben der Brust sind", ellbogen: "die Ellbogen zu den Rippen" } }),
+}
+
 // ---------------------------------------------------------------- Rudern vorgebeugt
 interface RW {
   neig: Bereich
@@ -1236,6 +1260,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...ZUG_SOLL,
   ...ROW_SOLL,
   ...LAT_SOLL,
+  ...KNIE_LAT_SOLL,
   ...UEBER_SOLL,
   ...BRUST_ROW_SOLL,
   ...EINARM_SOLL,
