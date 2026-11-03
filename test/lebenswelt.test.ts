@@ -332,7 +332,10 @@ describe("Übungsfiguren", () => {
     const { _intern } = await import("../src/ui/figuren3d")
     const { FIGUREN } = await import("../src/daten/figuren")
     const { uebung } = await import("../src/daten/uebungen/index")
-    for (const n of ["Back Squat", "Barbell Bench Press", "Deadlift", "Hammer Curl"]) expect(FIGUREN[zuordnen(n)!], n).toBeTruthy()
+    const { DEHNUNGEN } = await import("../src/daten/dehnungen")
+    for (const n of ["Back Squat", "Barbell Bench Press", "Deadlift", "Hammer Curl"]) expect(FIGUREN[zuordnen(n)!] || DEHNUNGEN[zuordnen(n)!], n).toBeTruthy()
+    // Übungen mit Dehnfigur brauchen keine zweite Zuordnung
+    for (const id of Object.keys(FIGUREN)) expect(DEHNUNGEN[id], id).toBeUndefined()
     for (const [id, k] of Object.entries(FIGUREN)) {
       expect(uebung(id), id).toBeTruthy()
       expect(_intern.SPECS[k.split(":")[0]], id + " → " + k).toBeTruthy()
@@ -342,7 +345,11 @@ describe("Übungsfiguren", () => {
 
   test("Konzentrationscurl sitzt einarmig mit Kurzhantel, Seil-Trizeps über Kopf zieht vom Kabel", async () => {
     const { FIGUREN } = await import("../src/daten/figuren")
-    expect(FIGUREN.konzentrationscurl).toBe("konzentration")
+    const { DEHNUNGEN } = await import("../src/daten/dehnungen")
+    const k = DEHNUNGEN.konzentrationscurl
+    expect(k.seiten).toBe(true)
+    expect(k.start.boden).toBe(false)
+    expect(k.hilfsmittel?.map((h) => h.art).sort()).toEqual(["bank", "hantel"])
     expect(FIGUREN.trizeps_ueberkopf_seil).toBe("ueberkopfkabel")
     // Rudergerät, Maschinen und Seitstütz haben keine passende Bewegung: lieber keine Figur
     for (const id of ["rudern_500m", "hip_thrust_maschine", "seitstuetz"]) expect(FIGUREN[id], id).toBeUndefined()

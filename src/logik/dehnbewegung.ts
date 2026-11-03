@@ -59,6 +59,10 @@ export type Hilfsmittel =
   | { art: "tuer"; an: Punkt }
   | { art: "stange"; an: Punkt }
   | { art: "hantel"; an: Punkt }
+  /** Lang- oder SZ-Stange mit Scheiben, liegt in beiden Händen (oder auf dem Rücken zwischen zwei Punkten) */
+  | { art: "langhantel" | "sz"; von: Punkt; bis: Punkt }
+  /** Kabelzug: Seil von der Hand (bzw. Hände-Mitte) zur Rolle an einem festen Punkt [seitlich, Höhe, vorn] */
+  | { art: "kabel"; von: Punkt; rolle: V3 }
 
 export type Punkt =
   | "hand_l"
@@ -85,6 +89,9 @@ export type Punkt =
   | "wade_r"
   | "schulter_l"
   | "schulter_r"
+  /** Griffrichtung in der Faust (Daumenseite), für die Lage einer Kurzhantel */
+  | "griff_l"
+  | "griff_r"
 
 export type Ansicht = "vorn" | "seite" | "schraeg" | "hinten" | "oben" | "seite_links"
 
@@ -121,6 +128,8 @@ export interface Dehnung {
   hilfsmittel?: Hilfsmittel[]
   /** Kurzer Hinweis unter der Figur */
   hinweis?: string
+  /** Anzeige für Hin und Zurück bei Wiederholungen, z. B. ["Hochcurlen", "Langsam ablassen"] */
+  texte?: [string, string]
 }
 
 const GELENKE: Gelenk[] = ["lws", "bws", "hals", "kopf", "schulterblatt_l", "schulterblatt_r", "schulter_l", "schulter_r", "ellbogen_l", "ellbogen_r", "hand_l", "hand_r", "huefte_l", "huefte_r", "knie_l", "knie_r", "fuss_l", "fuss_r", "zehen_l", "zehen_r", "finger_l", "finger_r"]
@@ -193,9 +202,9 @@ export function ablauf(d: Dehnung, haltenS?: number): Schritt[] {
   }
   // Wiederholungen: hin, kurz halten, zurück
   return [
-    { h: ziel, s: d.ein ?? 2, text: "Hin" },
+    { h: ziel, s: d.ein ?? 2, text: d.texte?.[0] ?? "Hin" },
     ...(d.halten ? [{ h: ziel, s: d.halten, halten: true, text: "Kurz halten" }] : []),
-    { h: d.start, s: d.aus ?? d.ein ?? 2, text: "Zurück" },
+    { h: d.start, s: d.aus ?? d.ein ?? 2, text: d.texte?.[1] ?? "Zurück" },
   ]
 }
 
