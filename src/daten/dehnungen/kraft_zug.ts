@@ -4,7 +4,7 @@
 // werkzeuge/soll.ts.
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
-import { B, H, KNIESTAND, folge, halte, mit, wdh } from "./basis"
+import { B, H, HALBKNIESTAND, KNIESTAND, LANGSITZ, folge, halte, mit, wdh } from "./basis"
 import { BAUCH_LEHNE, BRUST_LEHNE, FAUST, FLACHBANK, HAMMER, KH, KH_R, LH, OBERGRIFF, SZ, UNTERGRIFF, kabelstange } from "./kraftbasis"
 import { FLACH, liegen } from "./kraft_druecken"
 import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, ellbogenKreis, rad } from "./ziele"
@@ -431,6 +431,44 @@ const kabelRow = (k: KR, griff: Hilfsmittel[], texte: [string, string], extra: P
   })
 const KR_V: KR = { vor: [12, 0], griff: 0.06, dreh: HAMMER, hinten: [-0.32, 0.14], ellbogen: [0.15, 0, -1] }
 
+
+// ---------------------------------------------------------------- Rudern im Stand, im Halbkniestand und im Langsitz
+// Vorn sind die Arme gestreckt in Richtung der Befestigung, hinten die Hände neben den Rippen bzw. am Bauch, die
+// Ellbogen nah am Körper hinter dem Rumpf (hohes Kabel: Ellbogen schräg nach unten hinten).
+const handRumpf = (ziele: Ziele, sx: 1 | -1, h: P3, ell?: P3) => {
+  const n = sx === 1 ? "l" : "r"
+  ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+  if (ell) {
+    const e = ellbogenKreis([SCHULTER_X, 0, 0], h, ell)
+    ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+  }
+}
+const RIPPEN: P3 = [0.17, -0.24, 0.1]
+const NAH: P3 = [0.15, 0, -1]
+const standRudern = (einarm: boolean, gezogen: boolean): Haltung => {
+  const ziele: Ziele = einarm
+    ? { ferse_l: { pos: [0.1, 0.022, 0.2] }, fuss_l: { pos: [0.11, 0.034, 0.32] }, ferse_r: { pos: [-0.1, 0.022, -0.3] }, fuss_r: { pos: [-0.11, 0.034, -0.18] } }
+    : { ferse_l: { pos: [0.1, 0.022, -0.05] }, fuss_l: { pos: [0.11, 0.034, 0.07] }, ferse_r: { pos: [-0.1, 0.022, -0.05] }, fuss_r: { pos: [-0.11, 0.034, 0.07] } }
+  for (const sx of einarm ? ([-1] as const) : ([1, -1] as const)) handRumpf(ziele, sx, gezogen ? RIPPEN : armBogen(0.15, 92, ARM_FAUST * 0.99), gezogen ? NAH : undefined)
+  const beine: Winkel = einarm ? { huefte_l: [22, 6, 0], knie_l: [22], fuss_l: [0, 0], huefte_r: [-14, 6, 0], knie_r: [10], fuss_r: [4, 0] } : { ...B("huefte", [6, 6, 0]), ...B("knie", [10]), ...B("fuss", [4, 0]) }
+  const frei: Winkel = einarm ? { schulter_l: [4, 8, 0], ellbogen_l: [12, 0] } : {}
+  const arme: Winkel = gezogen ? { ...B("schulter", [-20, 16, 0]), ...B("ellbogen", [100, HAMMER]) } : { ...B("schulter", [88, 8, 0]), ...B("ellbogen", [6, HAMMER]) }
+  return H({ ...beine, ...arme, ...frei, ...FAUST }, [2, 0, 0], { pos: [0, 0.92, 0], boden: false, beckenFrei: true, ziele })
+}
+const STAND_ANKER: P3 = [0, 1.3, 1.25]
+const standRow = (einarm: boolean, hilfsmittel: Hilfsmittel[], texte: [string, string], extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("seite", standRudern(einarm, false), standRudern(einarm, true), 1.2, { aus: 2.0, halten: 0.5, texte, hilfsmittel, ...(einarm ? { seiten: true } : {}), ...extra })
+const hochRudern = (gezogen: boolean): Haltung => {
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) handRumpf(ziele, sx, gezogen ? [0.2, -0.1, 0.08] : armBogen(0.17, 135, ARM_FAUST * 0.99), gezogen ? [0.4, -1, -0.6] : undefined)
+  return mit(HALBKNIESTAND, { g: { ...HALBKNIESTAND.g, ...B("schulter", gezogen ? [10, 40, 0] : [135, 10, 0]), ...B("ellbogen", [gezogen ? 115 : 6, HAMMER]), ...FAUST }, ziele })
+}
+const sitzRudern = (gezogen: boolean): Haltung => {
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) handRumpf(ziele, sx, gezogen ? [0.14, -0.32, 0.13] : armBogen(0.14, 80, ARM_FAUST * 0.99), gezogen ? NAH : undefined)
+  return mit(LANGSITZ, { g: { ...LANGSITZ.g, ...B("knie", [10]), ...B("schulter", gezogen ? [-20, 16, 0] : [80, 8, 0]), ...B("ellbogen", [gezogen ? 100 : 6, HAMMER]), ...FAUST }, ziele })
+}
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -511,6 +549,22 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
   rudern_kabel_weit: kabelRow({ vor: [6, 0], griff: 0.26, dreh: OBERGRIFF, hinten: [-0.2, 0.14], ellbogen: [1, -0.25, -0.5] }, [kabelstange()], ["Zur unteren Brust, Ellbogen etwa 60 bis 75 Grad abgespreizt", "Kontrolliert nach vorn, bis die Arme gestreckt sind"]),
   rudern_kabel_einarmig: kabelRow({ ...KR_V, vor: [10, 0], griff: 0.15, hinten: [-0.34, 0.1], einarm: true }, [], ["Ellbogen nah am Körper zur Hüfte, ohne aufzudrehen", "Langsam zurück in die Dehnung"], { seiten: true }),
   rudern_schulterblatt: kabelRow({ ...KR_V, vor: [2, 2], schulterblatt: true }, [], ["Nur die Schulterblätter zusammenziehen, Arme bleiben gestreckt", "Schulterblätter langsam nach vorn gleiten lassen"], { halten: 2.0 }),
+  // Rudern im Stand, Halbkniestand, Langsitz
+  rudern_band: standRow(false, [{ art: "bandanker", von: "hand_l", anker: [0.06, STAND_ANKER[1], STAND_ANKER[2]] }, { art: "bandanker", von: "hand_r", anker: [-0.06, STAND_ANKER[1], STAND_ANKER[2]] }], ["Hände zu den Rippen, Ellbogen nah am Körper", "Arme kontrolliert wieder nach vorn"]),
+  rudern_band_einarmig: standRow(true, [{ art: "bandanker", von: "hand_r", anker: [-0.1, STAND_ANKER[1], STAND_ANKER[2]] }], ["Ellbogen nah am Körper nach hinten, Hand neben die Rippen", "Langsam zurück, ohne aufzudrehen"]),
+  rudern_kabel_stehend_einarmig: standRow(true, [{ art: "kabel", von: "hand_r", rolle: [-0.1, 1.25, 1.2] }], ["Ellbogen nah am Körper nach hinten, Hand neben die Rippen", "Kontrolliert nach vorn, Hüfte und Schultern drehen nicht mit"]),
+  rudern_kabel_hoch: wdh("schraeg", hochRudern(false), hochRudern(true), 1.2, {
+    aus: 2.0,
+    halten: 0.4,
+    texte: ["Ellbogen schräg nach unten hinten, Hände neben die Brust", "Kontrolliert zurück nach vorn oben"],
+    hilfsmittel: [kabelstange(), { art: "kabel", von: "haende", rolle: [0, 2.0, 1.0] }],
+  }),
+  rudern_band_sitzend: wdh("seite", sitzRudern(false), sitzRudern(true), 1.2, {
+    aus: 2.0,
+    halten: 0.4,
+    texte: ["Hände zum Bauch, Ellbogen nah am Körper", "Arme kontrolliert nach vorn"],
+    hilfsmittel: [{ art: "band", von: "fuss_l", bis: "hand_l" }, { art: "band", von: "fuss_r", bis: "hand_r" }],
+  }),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),
