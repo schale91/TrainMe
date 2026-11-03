@@ -380,6 +380,11 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const dicke = 0.08
       const ab = h.abstand ?? 0.03
       const mitte = new THREE.Vector3(p.x + n[0] * (ab + dicke / 2), 1.2, p.z + n[2] * (ab + dicke / 2))
+      // feste Wandfläche in der Welt (z bei vorn/hinten, x bei links/rechts): Zielpunkte liegen genau auf ihr
+      if (h.ebene !== undefined) {
+        if (n[2]) mitte.z = h.ebene + (n[2] * dicke) / 2
+        if (n[0]) mitte.x = h.ebene + (n[0] * dicke) / 2
+      }
       const gr: [number, number, number] = n[0] ? [dicke, 2.4, 1.6] : [1.6, 2.4, dicke]
       out.push(kiste(mitte, gr, FARBE.wand))
     } else if (h.art === "bank" || h.art === "stuhl" || h.art === "box") {
@@ -756,6 +761,8 @@ class Buehne {
   d: Dehnung
   /** Größter Restfehler des Lösers je Haltung (Meter), für die Prüfung */
   restfehler = 0
+  /** wie weit eine Wand weichen musste, weil eine Phase in sie hineinragte (Kontakt der Zielhaltung geht verloren) */
+  wandVersatz = 0
   /** Zielpunkt mit dem größten Restfehler */
   restWo = ""
   /** Verschiebung durch Ausweichen im letzten Bild (Boden, Gegenstände) */
@@ -819,6 +826,7 @@ class Buehne {
     for (const o of this.fest) s.add(o)
     for (const o of this.fest) this.festBasis.set(o, o.position.clone())
     this.sitzAnpassen(ziel)
+    this.wandAnpassen()
     for (const u of proben) {
       this.stelle(u * gesamt)
       if (this.modell) this.modell.umriss(box)
@@ -1072,6 +1080,40 @@ class Buehne {
           m.position.y = neu / 2
         } else m.position.y -= tief
         this.festBasis.set(m, m.position.clone())
+      }
+    }
+  }
+
+  /**
+   * Wände stehen an der Zielhaltung. Ragt in einer anderen Phase ein Körperteil hinein, rückt die Wand um dieses Maß
+   * weg, statt die Figur samt Füßen über den Boden zu schieben.
+   */
+  private wandAnpassen() {
+    const waende = this.fest.filter((o) => o.name === "wand") as THREE.Mesh[]
+    if (!waende.length) return
+    const gesamt = this.laenge() / (this.d.seiten ? 2 : 1)
+    const becken = this.koerper.becken.getWorldPosition(new THREE.Vector3())
+    const lagen: THREE.Vector3[][] = []
+    for (let i = 0; i <= 24; i++) {
+      const st = standZu(this.d, (i / 24) * gesamt * 0.999, this.haltenS)
+      this.koerper.wurzel.position.set(0, 0, 0)
+      this.koerper.stelle(st.haltung)
+      this.modell?.uebernehmen(st.haltung.boden !== false)
+      lagen.push(this.punkte())
+    }
+    for (const w of waende) {
+      const bb = w.geometry.boundingBox ?? (w.geometry.computeBoundingBox(), w.geometry.boundingBox!)
+      const gr = bb.getSize(new THREE.Vector3())
+      const achse = gr.x < gr.z ? "x" : "z"
+      const dicke = Math.min(gr.x, gr.z)
+      const seite = Math.sign(w.position[achse] - becken[achse]) || 1
+      const flaeche = w.position[achse] - (seite * dicke) / 2
+      let tief = 0
+      for (const pk of lagen) for (const p of pk) tief = Math.max(tief, seite * (p[achse] - flaeche))
+      this.wandVersatz = Math.max(this.wandVersatz, tief)
+      if (tief > 0.003) {
+        w.position[achse] += seite * (tief + 0.002)
+        this.festBasis.set(w, w.position.clone())
       }
     }
   }
@@ -1460,6 +1502,7 @@ export function _messen(d: Dehnung, h: Haltung): Record<string, [number, number,
   for (const n of Object.keys(b.koerper.marken)) aus[n] = v(b.koerper.punkt(n as Punkt))
   aus["_rest"] = [Math.round(b.restfehler * 1000) / 1000, 0, 0]
   ;(aus as Record<string, unknown>)["_restWo"] = b.restWo
+  aus["_wand"] = [Math.round(b.wandVersatz * 1000) / 1000, 0, 0]
   aus["_schub"] = v(b.schub)
   aus["_tief"] = v(b.tiefsterPunkt)
   ;(aus as Record<string, unknown>)["_was"] = [...b.schubWas]

@@ -24,7 +24,7 @@
     m.alle = d.art === "folge" ? [...new Set(d.schritte.map((x) => x.h))].map((h) => _messen(d, h)) : [m.start, m.ziel]
     const ms = Math.round(performance.now() - t0)
     const r = SOLL[id] ? SOLL[id](m) : []
-    if (!SOLL[id]) aus[id + "#grund"] = m.alle.map((x) => ({ tief: x._tief, schub: x._schub, was: x._was, rest: x._rest[0], wo: x._restWo }))
+    if (!SOLL[id]) aus[id + "#grund"] = m.alle.map((x) => ({ tief: x._tief, schub: x._schub, was: x._was, rest: x._rest[0], wo: x._restWo, wand: x._wand[0] }))
     const falsch = r.filter((x) => !(x.wert >= x.min && x.wert <= x.max))
     gesamt += r.length; fehler += falsch.length
     aus[id] = { falsch: falsch.map((x) => `${x.was}: ${x.wert} (Soll ${x.min} bis ${x.max}) – ${x.quelle}`), ok: r.length - falsch.length, ms }

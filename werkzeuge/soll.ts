@@ -243,6 +243,7 @@ const hinge = (k: HG) => (m: Messung): Pruefung[] => {
 }
 // ---------------------------------------------------------------- Einbeinig
 const ruhig = (m: Messung): Pruefung[] => [
+  pr("Wand musste weichen (m)", Math.max(...m.alle.map((x) => p(x, "_wand")[0])), 0, 0.02, "Kontakt zur Wand"),
   pr("Restfehler der Zielpunkte (m)", Math.max(...m.alle.map((x) => p(x, "_rest")[0])), 0, 0.02, "Zielpunkte erreicht"),
   pr("Verschiebung durch Boden oder Gerät (m)", Math.max(...m.alle.map((x) => Math.hypot(...p(x, "_schub")))), 0, 0.015, "Figur steht frei"),
 ]
@@ -798,6 +799,63 @@ const ZUG_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   klimmzug_schulterblatt: zugSoll({ ...KZ_ENG, schulterblatt: true }),
 }
 
+
+// ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
+const WAND_Z = 0.5
+const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
+interface WS {
+  /** Hände flach an der Wand (beide oder eine) */
+  haende?: ("l" | "r")[]
+  extra: (m: Messung, s: Punkte, z: Punkte) => Pruefung[]
+}
+const wandSoll = (k: WS) => (m: Messung): Pruefung[] => {
+  const s = m.start, z = m.ziel
+  const r = [...ruhig(m), pr("Füße bleiben stehen (m)", bleibt(m, ["fuss_l", "fuss_r"]), 0, 0.02, "die Füße stehen fest")]
+  for (const a of k.haende ?? SEITEN) r.push(pr(`Hand ${a} an der Wand (m)`, Math.max(...m.alle.map((x) => WAND_Z - p(x, `hand_${a}`)[2])), 0.02, 0.08, "die Hände stützen sich an der Wand ab"))
+  r.push(...k.extra(m, s, z))
+  return r
+}
+const fersAm = (x: Punkte, a: "l" | "r") => p(x, `ferse_${a}`)[1]
+const WAND_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  knie_zur_wand: wandSoll({ extra: (_m, s, z) => [
+    pr("Fußspitze eine Handbreit vor der Wand (m)", WAND_Z - (p(s, "fuss_l")[2] + 0.1), 0.06, 0.14, "den Fuß etwa eine Handbreit vor der Wand"),
+    pr("Ferse bleibt am Boden (m)", Math.max(fersAm(s, "l"), fersAm(z, "l")), 0, 0.04, "Die Ferse bleibt fest am Boden"),
+    pr("Knie berührt die Wand (m)", WAND_Z - p(z, "g:knie_l")[2], 0.03, 0.08, "Berühr die Wand kurz mit dem Knie"),
+    pr("Knie über der zweiten Zehe (m)", Math.abs(p(z, "g:knie_l")[0] - p(z, "fuss_l")[0]), 0, 0.05, "über die zweite Zehe"),
+  ] }),
+  grosszehe_dehnen_wand: wandSoll({ extra: (_m, _s, z) => [
+    pr("Ballen am Boden (m)", p(z, "fuss_l")[1], 0, 0.05, "der Fußballen bleibt am Boden"),
+    // Zehenspitzen etwa 10 cm vor der Ballenmarke (die Zehen der Figur beugen sich nicht)
+    pr("Zehen an der Wand (m)", WAND_Z - p(z, "fuss_l")[2], 0.06, 0.14, "Setz die Großzehe an die Wand"),
+    pr("Knie nach vorn zur Wand (m)", p(z, "g:knie_l")[2] - p(z, "g:fuss_l")[2], 0.03, 0.3, "Schiebe das Knie langsam nach vorn zur Wand"),
+  ] }),
+  waden_dehnen: wandSoll({ extra: (_m, _s, z) => [
+    pr("Hintere Ferse am Boden (m)", fersAm(z, "r"), 0, 0.04, "Drück die Ferse fest in den Boden"),
+    pr("Hinteres Knie gestreckt (°)", kniewinkel(z, "r"), 168, 180, "halte das Knie gestreckt"),
+    pr("Vorderes Knie gebeugt (°)", kniewinkel(z, "l"), 120, 165, "Das vordere Bein steht mit gebeugtem Knie"),
+    pr("Hinterer Fuß weit hinten (m)", p(z, "ferse_l")[2] - p(z, "ferse_r")[2], 0.4, 0.8, "Stell den Fuß weit nach hinten"),
+  ] }),
+  waden_pnf_wand: wandSoll({ extra: (_m, _s, z) => [
+    pr("Hintere Ferse am Boden (m)", fersAm(z, "r"), 0, 0.04, "die Ferse am Boden"),
+    pr("Hinteres Knie gestreckt (°)", kniewinkel(z, "r"), 168, 180, "mit gestrecktem Knie"),
+  ] }),
+  soleus_dehnen_wand: wandSoll({ extra: (_m, _s, z) => [
+    pr("Hintere Ferse am Boden (m)", fersAm(z, "r"), 0, 0.04, "die Ferse bleibt fest am Boden"),
+    pr("Hinterer Fuß eine Fußlänge hinter dem vorderen (m)", p(z, "ferse_l")[2] - p(z, "ferse_r")[2], 0.15, 0.32, "nur etwa eine Fußlänge hinter den linken"),
+    pr("Beide Knie gebeugt (°)", Math.max(kniewinkel(z, "l"), kniewinkel(z, "r")), 110, 160, "Beuge beide Knie"),
+  ] }),
+  waden_dehnen_zehen_wand: wandSoll({ extra: (_m, _s, z) => [
+    pr("Ferse am Boden vor der Wand (m)", fersAm(z, "l"), 0, 0.04, "die Ferse am Boden direkt vor der Wand"),
+    pr("Ballen an der Wand (m)", WAND_Z - p(z, "fuss_l")[2], 0, 0.1, "den Fußballen an die Wand"),
+    pr("Knie gestreckt (°)", kniewinkel(z, "l"), 165, 180, "Das Knie ist gestreckt"),
+  ] }),
+  fingerlaufen_wand: wandSoll({ haende: ["l"], extra: (_m, s, z) => [
+    pr("Fingerspitzen anfangs auf Brusthöhe (m)", p(s, "hand_l")[1] - p(s, "g:schulter_l")[1], -0.4, 0.0, "auf Hüft- bis Brusthöhe"),
+    pr("Hand läuft nach oben (m)", p(z, "hand_l")[1] - p(s, "hand_l")[1], 0.4, 0.8, "die Finger an der Wand nach oben laufen"),
+    pr("Abstand eine Unterarmlänge (m)", WAND_Z - p(s, "g:schulter_l")[2], 0.25, 0.4, "etwa eine Unterarmlänge entfernt"),
+  ] }),
+}
+
 const KLASSISCH_Q = { stand: "Stell dich hüftbreit hin", zehen: "Zehen leicht nach außen", griff: "Greif die Stange schulterbreit, die Arme hängen direkt außen an den Beinen", huefte: "Hüfte höher als die Knie" }
 
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
@@ -806,6 +864,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...DIP_SOLL,
   ...FLY_SOLL,
   ...ZUG_SOLL,
+  ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),
