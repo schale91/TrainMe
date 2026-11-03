@@ -157,7 +157,7 @@ const LAT_SITZ: Winkel = { ...B("huefte", [82, 8, 0]), ...B("knie", [95]), ...B(
 const latzugOben = (dreh: number, breit: number): Haltung => H({ ...LAT_SITZ, ...B("schulter", [168, breit, 0]), ...B("ellbogen", [6, dreh]) }, [-12, 0, 0], { pos: [0, 0.55, 0], boden: false })
 const latzugUnten = (dreh: number, breit: number): Haltung =>
   H({ ...LAT_SITZ, bws: [-10, 0, 0], ...B("schulterblatt", [-12, -10]), ...B("schulter", [28, breit + 30, 0]), ...B("ellbogen", [118, dreh]) }, [-16, 0, 0], { pos: [0, 0.55, 0], boden: false })
-const LAT_ROLLE: V3 = [0, 2.15, 0.35]
+const LAT_ROLLE: V3 = [0, 2.15, 0.55]
 const latzug = (dreh: number, breit: number, griff: Hilfsmittel[]): Dehnung =>
   wdh("schraeg", latzugOben(dreh, breit), latzugUnten(dreh, breit), 1.4, { aus: 2.4, texte: ["Stange zur oberen Brust ziehen", "Kontrolliert nach oben lassen"], hilfsmittel: [...griff, ...kabel("haende", LAT_ROLLE), BANK] })
 
