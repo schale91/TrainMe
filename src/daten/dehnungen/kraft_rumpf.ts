@@ -33,12 +33,12 @@ const crunchOben = (w: Winkel = {}): Haltung => mit(RUECKENLAGE_AUF, { g: { ...H
 const HOLLOW: Haltung = mit(RUECKENLAGE, { g: { ...B("huefte", [22, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]), ...B("schulter", [165, 8, 0]), ...B("ellbogen", [4, 90]), lws: [4, 0, 0], bws: [14, 0, 0], hals: [10, 0, 0] } })
 
 // ---------------------------------------------------------------- Hang und Stütz am Gerät
-const STANGE: Hilfsmittel = { art: "rack", an: "becken", z: -0.08 }
+export const STANGE: Hilfsmittel = { art: "rack", an: "becken", z: -0.08 }
 const RICHTUNG = -1
 /** Hang an der Klimmzugstange (2,12 m): lehnt sich der Körper zurück (kipp < 0), bleiben die Hände an der Stange */
 const RUMPF_LANG = 0.52
 const ARM_LANG = 0.62
-const hang = (w: Winkel = {}, kipp = 0): Haltung => {
+export const hang = (w: Winkel = {}, kipp = 0): Haltung => {
   const r = (kipp * Math.PI) / 180
   const pos: [number, number, number] = [0, 2.12 - RUMPF_LANG * Math.cos(r) - ARM_LANG, RICHTUNG * RUMPF_LANG * Math.sin(r)]
   return H({ ...B("huefte", [6, 4, 0]), ...B("knie", [10]), ...B("fuss", [-20, 0]), ...B("schulter", [176 + kipp, 14, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST, hals: [-8, 0, 0], ...w }, [kipp, 0, 0], { pos, boden: false })
@@ -53,7 +53,7 @@ const FRONT_RACK_R: Winkel = { schulter_r: [40, 20, 0], ellbogen_r: [140, HAMMER
 const UEBERKOPF_R: Winkel = { schulter_r: [176, 10, 0], ellbogen_r: [4, HAMMER] }
 const LOCKER_L: Winkel = { schulter_l: [4, 12, 0], ellbogen_l: [10, 0] }
 /** Gehen auf der Stelle: arme bleiben, Beine wechseln */
-const gehen = (arme: Winkel, hilfsmittel: Hilfsmittel[], knie = 30, text = "Aufrecht gehen, Rumpf bleibt gerade"): Dehnung =>
+export const gehen = (arme: Winkel, hilfsmittel: Hilfsmittel[], knie = 30, text = "Aufrecht gehen, Rumpf bleibt gerade"): Dehnung =>
   folge(
     "schraeg",
     [

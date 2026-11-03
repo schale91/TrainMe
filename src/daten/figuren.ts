@@ -4,9 +4,7 @@
 // Bewegungsweg müssen passen. Übungen ohne Eintrag zeigen lieber keine Figur als eine falsche.
 
 export const FIGUREN: Record<string, string> = {
-  isometrischer_halt_griff: "halten:bar",
   latzug_einarmig: "latzugeinarm",
-  nacken_extension_band: "nacken",
   rueckenstrecker_45: "rueckenstrecken",
   rueckenstrecker_45_gesaess: "rueckenstrecken",
   rueckenstrecker_horizontal: "rueckenstrecken",
