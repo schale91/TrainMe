@@ -800,6 +800,46 @@ const ZUG_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
 }
 
 
+// ---------------------------------------------------------------- Latzug sitzend
+interface LZ {
+  rueck: Bereich
+  griff?: Bereich
+  untenY: Bereich
+  ellbogenSeite: Bereich
+  einarm?: boolean
+  quelle: { rueck: string; griff?: string; unten: string; ellbogen: string }
+}
+const latSoll = (k: LZ) => (m: Messung): Pruefung[] => {
+  const s = m.start, z = m.ziel
+  const r = [...ruhig(m), pr("Sitz und Füße bleiben (m)", bleibt(m, ["g:becken", "ferse_l", "ferse_r"]), 0, 0.03, "Bleib dabei ruhig sitzen, die Oberschenkel klemmen unter dem Polster")]
+  for (const [x, w] of [[s, "oben"], [z, "unten"]] as const) r.push(pr(`Rücklage ${w} (°)`, -rumpfneigung(x), k.rueck[0], k.rueck[1], k.quelle.rueck))
+  r.push(pr("Kein Schaukeln (°)", Math.abs(rumpfneigung(z) - rumpfneigung(s)), 0, 8, "ohne mit dem Oberkörper zu schaukeln"))
+  for (const a of SEITEN) r.push(pr(`Oberschenkel ${a} waagerecht (m)`, Math.abs(p(s, `g:knie_${a}`)[1] - p(s, `g:huefte_${a}`)[1]), 0, 0.08, "die Oberschenkel klemmen unter dem Polster"))
+  if (k.griff) r.push(pr("Griff / Schulterbreite", griffbreite(s) / schulterbreite(s), k.griff[0], k.griff[1], k.quelle.griff ?? ""))
+  for (const a of k.einarm ? (["r"] as const) : SEITEN) {
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(s, a), 160, 180, "die Arme sind oben gestreckt"))
+    r.push(pr(`Hand ${a} oben über der Schulter (m)`, p(s, `hand_${a}`)[1] - p(s, `g:schulter_${a}`)[1], 0.42, 0.6, "Arm lang über dem Kopf"))
+    r.push(pr(`Arm ${a} oben senkrecht (°)`, Math.abs(grad(Math.atan2(p(s, `hand_${a}`)[2] - p(s, `g:schulter_${a}`)[2], p(s, `hand_${a}`)[1] - p(s, `g:schulter_${a}`)[1]))), 0, 15, "die Stange hängt über dir"))
+    const h = amRumpf(z, `hand_${a}`)
+    r.push(pr(`Hand ${a} unten am Rumpf entlang (m)`, h[1], k.untenY[0], k.untenY[1], k.quelle.unten))
+    r.push(pr(`Hand ${a} unten vor dem Rumpf (m)`, h[2], 0.04, 0.22, k.quelle.unten))
+    const e = p(z, `g:ellbogen_${a}`), sh = p(z, `g:schulter_${a}`)
+    r.push(pr(`Ellbogen ${a} unten nach unten (m)`, sh[1] - e[1], 0.1, 0.3, "die Ellbogen zeigen nach unten"))
+    r.push(pr(`Ellbogen ${a} unten seitlich (°)`, grad(Math.atan2(Math.abs(e[0]) - Math.abs(sh[0]), sh[1] - e[1])), k.ellbogenSeite[0], k.ellbogenSeite[1], k.quelle.ellbogen))
+  }
+  return r
+}
+const LZ_WEIT: LZ = { rueck: [8, 22], griff: [1.35, 1.75], untenY: [-0.14, 0.02], ellbogenSeite: [30, 70], quelle: { rueck: "Lehn den Oberkörper leicht zurück, etwa 10 bis 20 Grad", griff: "etwa eineinhalbfach schulterbreit", unten: "bis knapp unter das Kinn oder zur oberen Brust", ellbogen: "die Ellbogen seitlich nach unten zu den Rippen" } }
+const LZ_ENG: LZ = { rueck: [3, 18], untenY: [-0.15, -0.02], ellbogenSeite: [-10, 28], quelle: { rueck: "leicht zurückgelehnt", unten: "bis zur oberen Brust", ellbogen: "die Ellbogen nah am Körper nach unten" } }
+const LAT_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  latzug: latSoll(LZ_WEIT),
+  latzug_wechselnde_griffe: latSoll(LZ_WEIT),
+  latzug_neutral: latSoll({ ...LZ_ENG, rueck: [2, 14], griff: [0.6, 1.2], quelle: { ...LZ_ENG.quelle, rueck: "Lehn dich minimal zurück", griff: "V-Griff oder Parallelgriffe", unten: "etwa auf Höhe der oberen Brust" } }),
+  latzug_untergriff: latSoll({ ...LZ_ENG, griff: [0.9, 1.25], quelle: { ...LZ_ENG.quelle, griff: "schulterbreit im Untergriff" } }),
+  latzug_maschine: latSoll({ ...LZ_ENG, rueck: [-3, 10], untenY: [-0.08, 0.06], ellbogenSeite: [-10, 35], quelle: { ...LZ_ENG.quelle, rueck: "die Brust ist aufgerichtet, der Rücken liegt nicht nach hinten durch", unten: "bis die Hände etwa auf Schulterhöhe sind", ellbogen: "die Ellbogen zu den Rippen" } }),
+  latzug_einarmig: latSoll({ ...LZ_ENG, rueck: [0, 14], untenY: [-0.18, -0.03], einarm: true, quelle: { ...LZ_ENG.quelle, rueck: "mit fixierten Oberschenkeln sitzen", unten: "bis der Griff neben der Brust ist", ellbogen: "den Ellbogen nah am Körper nach unten zur Hüfte" } }),
+}
+
 // ---------------------------------------------------------------- Rudern vorgebeugt
 interface RW {
   neig: Bereich
@@ -946,6 +986,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...FLY_SOLL,
   ...ZUG_SOLL,
   ...ROW_SOLL,
+  ...LAT_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

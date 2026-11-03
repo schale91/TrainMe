@@ -133,6 +133,62 @@ const rudern = (r: Row, hilfsmittel: Hilfsmittel[], extra: Partial<Dehnung> = {}
 /** Langhantel: Oberkörper etwa 30 bis 45 Grad über der Waagerechten, Griff etwas breiter als schulterbreit, zum Bauchnabel */
 const ROW_LH: Row = { kipp: 52, knie: 22, breit: 0.1, griff: 0.21, dreh: OBERGRIFF, oben: [-0.27, 0.13] }
 
+
+// ---------------------------------------------------------------- Latzug sitzend
+// Oberschenkel unter dem Polster, Füße am Boden, Oberkörper leicht zurückgelehnt. Oben sind die Arme gestreckt
+// (etwa senkrecht zur Stange), unten ist die Stange knapp unter dem Kinn an der oberen Brust bzw. die Griffe etwa
+// auf Schulterhöhe; die Ellbogen zeigen nach unten, beim weiten Griff seitlich, sonst nah am Körper.
+interface Lat {
+  griff: number
+  dreh: number
+  /** Rücklage in Grad (positiv = zurück) */
+  rueck: number
+  /** Hände unten im Rahmen der Schultern (y den Rumpf hinauf, z vor dem Rumpf) */
+  unten: [number, number]
+  /** Ellbogen unten seitlich (weiter Griff) statt nah am Körper */
+  weit?: boolean
+  /** nur der rechte Arm zieht */
+  einarm?: boolean
+}
+const LAT_FUESSE: Ziele = {
+  ferse_l: { pos: [0.15, 0.022, 0.36] },
+  fuss_l: { pos: [0.17, 0.034, 0.48] },
+  ferse_r: { pos: [-0.15, 0.022, 0.36] },
+  fuss_r: { pos: [-0.17, 0.034, 0.48] },
+}
+const LAT_BEINE: Winkel = { ...B("huefte", [84, 8, 0]), ...B("knie", [90]), ...B("fuss", [4, 0]), hals: [-8, 0, 0], ...FAUST }
+const LAT_FREI: Winkel = { schulter_l: [8, 14, 0], ellbogen_l: [70, 0] }
+const latHaltung = (l: Lat, gezogen: boolean): Haltung => {
+  const ziele: Ziele = { ...LAT_FUESSE }
+  for (const sx of l.einarm ? ([-1] as const) : ([1, -1] as const)) {
+    const n = sx === 1 ? "l" : "r"
+    if (gezogen) {
+      const h: P3 = [l.griff, l.unten[0], l.unten[1]]
+      ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], h[2]], bezug: "schultern" }
+      const e = ellbogenKreis([SCHULTER_X, 0, 0], h, l.weit ? [1, -0.6, -0.25] : [0.15, -1, -0.5])
+      ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], e[2]], bezug: "schultern" }
+    } else {
+      // Arm gestreckt, in der Welt etwa senkrecht: im zurückgelehnten Rumpf nach vorn geneigt
+      const dx = l.griff - SCHULTER_X, lang = Math.sqrt(ARM_FAUST * ARM_FAUST - dx * dx) * 0.975 + (l.einarm ? 0.03 : 0)
+      ziele[`hand_${n}`] = { pos: [sx * l.griff, lang * Math.cos(rad(l.rueck)), lang * Math.sin(rad(l.rueck)) + 0.03], bezug: "schultern" }
+    }
+  }
+  const arme: Winkel = gezogen
+    ? { ...B("schulterblatt", [-12, -10]), ...B("schulter", [28, l.weit ? 60 : 25, 0]), ...B("ellbogen", [118, l.dreh]) }
+    : { ...B("schulter", [168, l.weit ? 25 : 10, 0]), ...B("ellbogen", [6, l.dreh]) }
+  return H({ ...LAT_BEINE, ...arme, ...(l.einarm ? LAT_FREI : {}) }, [-l.rueck, 0, 0], { pos: [0, 0.57, 0], boden: false, ziele })
+}
+const LAT_KABEL: P3 = [0, 2.15, 0.12]
+const latSitz = (l: Lat, griff: Hilfsmittel[], extra: Partial<Dehnung> = {}): Dehnung =>
+  wdh("schraeg", latHaltung(l, false), latHaltung(l, true), 1.4, {
+    aus: 2.4,
+    texte: ["Schulterblätter nach unten, Stange zur oberen Brust", "Kontrolliert nach oben, bis die Arme gestreckt sind"],
+    hilfsmittel: [...griff, { art: "kabel", von: l.einarm ? "hand_r" : "haende", rolle: LAT_KABEL, turm: 0.72 }, { art: "bank", unter: "gesaess", hoehe: 0.42 }],
+    ...extra,
+  })
+const LAT_STANGE: Hilfsmittel = { art: "latstange", von: "hand_l", bis: "hand_r" }
+const LAT_WEIT: Lat = { griff: 0.25, dreh: OBERGRIFF, rueck: 15, unten: [-0.07, 0.15], weit: true }
+
 export const KRAFT_ZUG: Record<string, Dehnung> = {
   klimmzug: klimmzug(OBER),
   klimmzug_gewicht: klimmzug(OBER, { texte: ["Mit Gewicht hochziehen, Kinn über die Stange", "Kontrolliert ablassen"] }),
@@ -159,6 +215,13 @@ export const KRAFT_ZUG: Record<string, Dehnung> = {
   // Pendlay: Oberkörper fast waagerecht, Stange über der Fußmitte am Boden, explosiv zum unteren Brustbein
   rudern_pendlay: rudern({ ...ROW_LH, kipp: 88, knie: 82, unten: 0.245, oben: [-0.14, 0.15] }, LH, { ein: 0.6, aus: 1.4, texte: ["Explosiv vom Boden zum unteren Brustbein", "Kontrolliert ablegen, Spannung neu aufbauen"] }),
   rudern_kh_vorgebeugt: rudern({ ...ROW_LH, kipp: 45, griff: 0.17, dreh: HAMMER, oben: [-0.24, 0.08] }, KH, { texte: ["Zu den unteren Rippen ziehen, Schulterblätter zusammen", "Senken, bis die Arme gestreckt sind"] }),
+  // Latzug sitzend
+  latzug: latSitz(LAT_WEIT, [LAT_STANGE]),
+  latzug_wechselnde_griffe: latSitz(LAT_WEIT, [LAT_STANGE], { texte: ["Erster Satz weit: Ellbogen seitlich nach unten", "Oben ganz strecken"] }),
+  latzug_neutral: latSitz({ griff: 0.17, dreh: HAMMER, rueck: 8, unten: [-0.08, 0.15] }, [{ art: "kabelstange", von: "hand_l", bis: "hand_r" }], { texte: ["Ellbogen nah am Körper zu den Hüften", "Langsam nach oben in die Dehnung"] }),
+  latzug_untergriff: latSitz({ griff: 0.18, dreh: UNTERGRIFF, rueck: 12, unten: [-0.08, 0.15] }, [LAT_STANGE], { texte: ["Ellbogen nah am Körper nach unten, Stange zur oberen Brust", "Kontrolliert bis zur vollen Streckung"] }),
+  latzug_maschine: latSitz({ griff: 0.22, dreh: HAMMER, rueck: 4, unten: [0.0, 0.12] }, [{ art: "kabelstange", von: "hand_l", bis: "hand_r" }], { texte: ["Ellbogen zu den Rippen, Hände auf Schulterhöhe", "Langsam zurück, bis die Arme gestreckt sind"] }),
+  latzug_einarmig: latSitz({ griff: 0.15, dreh: HAMMER, rueck: 6, unten: [-0.1, 0.13], einarm: true }, [], { seiten: true, texte: ["Schulter nach unten, Ellbogen nah am Körper zur Hüfte", "Langsam zurück in die volle Dehnung"] }),
   klimmzug_box: wdh(
     "schraeg",
     hang(OBER, { ...B("huefte", [80, 6, 0]), ...B("knie", [110]), ...B("fuss", [10, 0]) }),

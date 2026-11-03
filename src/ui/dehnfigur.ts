@@ -435,7 +435,7 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       // Latzug-Turm wie ATX LMSW-700: schwarzer Rahmen, Gewichtsblock dahinter, obere Rolle am Ausleger
       const [x, y, z] = h.rolle
       const weg = z >= 0 ? 1 : -1
-      const pz = z + weg * 0.12
+      const pz = z + weg * (h.turm ?? 0.12)
       out.push(kiste(new THREE.Vector3(x, 1.12, pz), [0.09, 2.24, 0.09], FARBE.stahl))
       out.push(kiste(new THREE.Vector3(x, 0.45, pz + weg * 0.26), [0.26, 0.9, 0.16], FARBE.stahl))
       for (const dx of [-0.07, 0.07]) out.push(zylinder(new THREE.Vector3(x + dx, 0.9, pz + weg * 0.26), new THREE.Vector3(x + dx, 2.1, pz + weg * 0.26), 0.008, FARBE.metall))
