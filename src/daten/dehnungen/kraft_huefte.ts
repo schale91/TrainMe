@@ -8,7 +8,7 @@
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { ARME_VERSCHRAENKT, B, H, RUECKENLAGE_AUF, SEITLAGE, STAND, VIERFUESSLER, folge, halte, mit, wdh } from "./basis"
-import { FAUST, HAMMER, KH, OBERGRIFF, kabel, kabelstange } from "./kraftbasis"
+import { FAUST, HAMMER, KH, OBERGRIFF, kabel } from "./kraftbasis"
 import { ARME_RUECKEN, ARME_SEITE, RACK, STANGE_RUECKEN, STUHL, WAND_HINTEN, ansicht, stand } from "./kraft_beine"
 
 // ---------------------------------------------------------------- Heben vom Boden
@@ -24,21 +24,7 @@ export const beuge = (kipp: number, ober: number, schien: number, arme: Winkel, 
 const oben = (arme: Winkel, breit = 10): Haltung => stand(arme, breit)
 
 /** Kreuzheben: vom Boden in den Stand, ablegen */
-const kreuzheben = (kipp: number, ober: number, schien: number, hilfsmittel: Hilfsmittel[], breit = 10, arm = 8, extra: Partial<Dehnung> = {}): Dehnung =>
-  wdh(ansicht(hilfsmittel), beuge(kipp, ober, schien, haengen(kipp, arm), breit), oben(haengen(2, arm), breit), 1.4, {
-    aus: 1.8,
-    texte: ["Stange nah am Körper hochziehen, Hüfte nach vorn", "Kontrolliert ablegen"],
-    hilfsmittel,
-    ...extra,
-  })
 /** Hüftbeugen aus dem Stand (RDL, Good Morning): Hüfte nach hinten, Knie leicht gebeugt */
-const hinge = (arme: (kipp: number) => Winkel, hilfsmittel: Hilfsmittel[], kipp = 72, knie = 18, extra: Partial<Dehnung> = {}, breit = 10): Dehnung =>
-  wdh(ansicht(hilfsmittel), oben(arme(2), breit), beuge(kipp, 12, knie - 12, arme(kipp), breit), 2.0, {
-    aus: 1.4,
-    texte: ["Hüfte nach hinten schieben, Rücken gerade", "Hüfte nach vorn, aufrichten"],
-    hilfsmittel,
-    ...extra,
-  })
 
 // ---------------------------------------------------------------- Hip Thrust, Beckenheben
 /** Oberer Rücken an der quer stehenden Bank, Füße flach am Boden unter den Knien */
@@ -107,57 +93,7 @@ const standBein = (rechts: Winkel, kipp = 6): Haltung => H({ huefte_l: [4, 6, 0]
 
 export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   // Kreuzheben
-  kreuzheben_lh: kreuzheben(50, 70, 22, LH),
-  kreuzheben_sumo: kreuzheben(34, 72, 14, LH, 36, 2),
-  kreuzheben_gegenstand: kreuzheben(34, 72, 14, LH, 36, 2),
-  kreuzheben_reset: folge(
-    "schraeg",
-    [
-      [beuge(50, 70, 22, haengen(50)), 0.8, "Stange liegt, Spannung neu aufbauen"],
-      [oben(haengen(2)), 1.4, "Hochziehen"],
-      [beuge(50, 70, 22, haengen(50)), 1.8, "Komplett ablegen"],
-    ],
-    { hilfsmittel: LH },
-  ),
-  kreuzheben_defizit: kreuzheben(54, 76, 24, [...LH, { art: "kissen", unter: "fuss_l" }, { art: "kissen", unter: "fuss_r" }], 10, 8, { texte: ["Von der Erhöhung aus tiefer starten, hochziehen", "Kontrolliert ablegen"] }),
-  kreuzheben_pause: folge(
-    "schraeg",
-    [
-      [beuge(50, 70, 22, haengen(50)), 0.6, "Start vom Boden"],
-      [beuge(44, 40, 8, haengen(44)), 1.0, "Bis knapp unter das Knie"],
-      [beuge(44, 40, 8, haengen(44)), 2.0, "Pause halten, Rücken fest", true],
-      [oben(haengen(2)), 1.0, "Ganz aufrichten"],
-      [beuge(50, 70, 22, haengen(50)), 1.8, "Ablegen"],
-    ],
-    { hilfsmittel: LH },
-  ),
-  rack_pull: wdh("schraeg", beuge(38, 30, 6, haengen(38)), oben(haengen(2)), 1.2, {
-    aus: 1.6,
-    texte: ["Von den Ablagen in den Stand ziehen", "Stange zurück auf die Ablagen"],
-    hilfsmittel: [...LH, { art: "rack", an: "becken", z: 0.2, ablage: 0.5 }],
-  }),
-  kreuzheben_gestreckt: kreuzheben(84, 6, 0, LH, 10, 8, { texte: ["Mit fast gestreckten Knien hochziehen", "Hüfte nach hinten, ablegen"] }),
-  kb_kreuzheben: wdh("schraeg", beuge(52, 86, 30, haengen(52, 0, HAMMER), 18), oben(haengen(2, 0, HAMMER), 18), 1.2, {
-    aus: 1.6,
-    texte: ["Kettlebell zwischen den Füßen hochziehen", "Hüfte nach hinten, abstellen"],
-    hilfsmittel: [{ art: "hantel", an: "haende" }],
-  }),
   // Hüftbeugen aus dem Stand
-  rdl_lh: hinge((k) => haengen(k), LH),
-  rdl_kh: hinge((k) => haengen(k, 10), KH),
-  rdl_kabel: hinge((k) => haengen(k, 4), [kabelstange(), ...kabel("haende")], 66),
-  rdl_b_stance: wdh(
-    "seite",
-    H({ huefte_l: [2, 8, 0], knie_l: [4], fuss_l: [0, 0], huefte_r: [-8, 8, 0], knie_r: [24], fuss_r: [-24, 0], zehen_r: [40], ...haengen(2, 10) }),
-    H({ huefte_l: [82, 8, 0], knie_l: [18], fuss_l: [6, 0], huefte_r: [62, 8, 0], knie_r: [30], fuss_r: [-12, 0], zehen_r: [50], ...haengen(72, 10), hals: [-24, 0, 0] }, [72, 0, 0]),
-    2.0,
-    { aus: 1.4, seiten: true, texte: ["Vorderes Bein trägt, Hüfte nach hinten", "Aufrichten"], hilfsmittel: KH },
-  ),
-  good_morning_lh: hinge(() => ARME_RUECKEN, [...STANGE_RUECKEN, RACK], 70, 18, { texte: ["Hüfte nach hinten, Oberkörper fast waagerecht", "Hüfte nach vorn, aufrichten"] }),
-  good_morning_band: hinge(() => ({ ...B("schulter", [-6, 50, 70]), ...B("ellbogen", [130, OBERGRIFF]), ...FAUST }), [{ art: "band", von: "fuss_l", bis: "hand_l" }, { art: "band", von: "fuss_r", bis: "hand_r" }], 70),
-  hip_hinge_stab: hinge(() => ({ schulter_l: [-40, 20, 70], ellbogen_l: [100, 0], schulter_r: [160, 24, 0], ellbogen_r: [150, 0] }), [{ art: "stab", von: "hand_l", bis: "hand_r" }], 60, 18, {
-    texte: ["Stab bleibt an Kopf, Brustwirbelsäule und Kreuzbein", "Aufrichten"],
-  }),
   // Hip Thrust an der Bank
   hip_thrust_lh: thrust(ARME_STANGE_HUEFTE, LH),
   hip_thrust_multipresse: thrust(ARME_STANGE_HUEFTE, LH),

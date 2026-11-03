@@ -9,7 +9,7 @@
 // - schulterblatt_l/r: [heben, nach vorn schieben]
 // - schulter_l/r: [beugen (Arm nach vorn und oben), abspreizen, außen drehen, waagerecht öffnen]
 // - ellbogen_l/r: [beugen, Unterarm einwärts drehen]; hand_l/r: [strecken (Handrücken zum Unterarm), zur Daumenseite]
-// - huefte_l/r: [beugen, abspreizen, innen drehen]; knie_l/r: [beugen]
+// - huefte_l/r: [beugen, abspreizen, innen drehen, waagerecht öffnen]; knie_l/r: [beugen]
 // - fuss_l/r: [anziehen (Zehen zum Schienbein), nach innen kanten]; zehen_l/r: [strecken]
 // - finger_l/r: [beugen (90 = Faust), strecken nach hinten]
 
@@ -47,23 +47,40 @@ export interface Haltung {
   g: Winkel
   /** false: Höhe kommt aus pos (z. B. Sitzen auf der Bank), sonst sitzt der tiefste Punkt auf dem Boden */
   boden?: boolean
+  /**
+   * Zielpunkte: Die Figur rechnet die Winkel der Beine (Hüfte, Knie, Fuß) bzw. Arme (Schulter, Ellbogen) so aus, dass
+   * Ferse, Fußspitze, Knie oder Hand genau dort liegen. Mit Ferse und Fußspitze zeigt das Knie über die Zehen.
+   * Die Winkel in g sind der Startwert.
+   */
+  ziele?: Partial<Record<ZielPunkt, Ziel>>
+}
+
+export type ZielPunkt = "fuss_l" | "fuss_r" | "ferse_l" | "ferse_r" | "knie_l" | "knie_r" | "hand_l" | "hand_r" | "ellbogen_l" | "ellbogen_r"
+/**
+ * Ort in Metern: in der Welt (Boden y = 0, x nach links, z nach vorn) oder im Rahmen von Becken bzw. Brustwirbelsäule;
+ * "schultern": Mitte zwischen den Schultergelenken, ausgerichtet wie der Brustkorb
+ */
+export interface Ziel {
+  pos: V3
+  bezug?: "welt" | "becken" | "bws" | "schultern"
 }
 
 /** Geräte und Hilfsmittel in der Szene, an Körperpunkten ausgerichtet */
 export type Hilfsmittel =
-  | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten" }
+  /** abstand: Lücke zwischen Punkt und Wand (Meter, sonst 3 cm), z. B. für einen Ball dazwischen */
+  | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten"; abstand?: number }
   /** versatz [seitlich, vorn] in Metern, z. B. damit die Hände auf der Vorderkante einer Box liegen */
   | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number]; quer?: boolean }
   | { art: "stab"; von: Punkt; bis: Punkt }
   | { art: "band"; von: Punkt; bis: Punkt }
-  | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean }
+  | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean; versatz?: [number, number] }
   | { art: "tuer"; an: Punkt }
   | { art: "stange"; an: Punkt }
   | { art: "hantel"; an: Punkt }
   /** Lang- oder SZ-Stange mit Scheiben, liegt in beiden Händen (oder auf dem Rücken zwischen zwei Punkten) */
   | { art: "langhantel" | "sz" | "latstange" | "kabelstange"; von: Punkt; bis: Punkt }
-  /** Dip-Barren: zwei Holme in Höhe des Punkts (Hände in der Ausgangsstellung) */
-  | { art: "barren"; an: Punkt }
+  /** Dip-Barren: zwei Holme in Höhe des Punkts (Hände in der Ausgangsstellung), breit: halber Abstand (Standard 27 cm) */
+  | { art: "barren"; an: Punkt; breit?: number }
   /** Band an einem festen Anker (Tür, Stange) [seitlich, Höhe, vorn], anderes Ende am Punkt */
   | { art: "bandanker"; von: Punkt; anker: V3 }
   /** Kabelzug: Seil von der Hand (bzw. Hände-Mitte) zur Rolle an einem festen Punkt [seitlich, Höhe, vorn] */
@@ -75,11 +92,12 @@ export type Hilfsmittel =
   /** Medizinball in den Händen */
   | { art: "medizinball"; an: Punkt }
   /** Gymnastikball, rollt am Boden unter dem Punkt mit (z. B. unter den Fersen) */
-  | { art: "gymnastikball"; an: Punkt }
+  /** hinter: Ball zwischen Rücken und Wand (Mitte 34 cm hinter dem Punkt, auf seiner Höhe) */
+  | { art: "gymnastikball"; an: Punkt; hinter?: boolean }
   /** Gleitscheibe am Boden unter dem Punkt (Fuß, Ferse) */
   | { art: "gleitscheibe"; an: Punkt }
-  /** Hantelscheibe (5 kg, schwarz) in den Händen, zwischen den Handflächen */
-  | { art: "hantelscheibe"; an: Punkt }
+  /** Hantelscheibe (5 kg, schwarz) in den Händen, zwischen den Handflächen, sonst flach auf dem Körper (hoch: Mitte über dem Punkt, Standard 9 cm) */
+  | { art: "hantelscheibe"; an: Punkt; hoch?: number }
 
 export type Punkt =
   | "hand_l"
@@ -166,7 +184,31 @@ const wert = (w: Winkel, g: Gelenk, i: number) => w[g]?.[i] ?? 0
 /** Beckenposition, wenn eine Haltung keine angibt (Stand, Meter). */
 export const POS_GRUND: V3 = [0, 0.94, 0]
 
+/**
+ * Gelöste Zwischenhaltungen zwischen zwei Haltungen (gleichmäßig in u verteilt, ohne die Enden). Mit Zielpunkten
+ * bleiben so auch mitten in der Bewegung die Füße stehen und die Knie über den Zehen.
+ */
+const ZWISCHEN = new WeakMap<Haltung, Map<Haltung, Haltung[]>>()
+export const zwischenDa = (a: Haltung, b: Haltung) => !!ZWISCHEN.get(a)?.get(b)
+export function zwischenSetzen(a: Haltung, b: Haltung, liste: Haltung[]) {
+  if (!ZWISCHEN.has(a)) ZWISCHEN.set(a, new Map())
+  ZWISCHEN.get(a)!.set(b, liste)
+}
+
 export function mische(a: Haltung, b: Haltung, u: number): Haltung {
+  const hin = ZWISCHEN.get(a)?.get(b)
+  const her = hin ? undefined : ZWISCHEN.get(b)?.get(a)
+  if ((hin || her) && u > 0 && u < 1) {
+    const kette = hin ? [a, ...hin, b] : [b, ...her!, a]
+    const v = hin ? u : 1 - u
+    const n = kette.length - 1
+    const i = Math.min(n - 1, Math.floor(v * n))
+    return mischeEinfach(kette[i], kette[i + 1], v * n - i)
+  }
+  return mischeEinfach(a, b, u)
+}
+
+function mischeEinfach(a: Haltung, b: Haltung, u: number): Haltung {
   const g: Winkel = {}
   for (const k of GELENKE) {
     const n = Math.max(a.g[k]?.length ?? 0, b.g[k]?.length ?? 0)
