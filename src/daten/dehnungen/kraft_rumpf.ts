@@ -91,12 +91,31 @@ const TISCH: Winkel = { ...B("huefte", [90, 4, 0]), ...B("knie", [90]), ...B("fu
 const ARME_DECKE: Winkel = { ...B("schulter", [90, 6, 0]), ...B("ellbogen", [4, 0]) }
 const deadBug = (w: Winkel = {}): Haltung => mit(RUECKENLAGE, { g: { ...TISCH, ...ARME_DECKE, ...w } })
 /** Gegengleich: rechter Arm über den Kopf, linkes Bein lang knapp über dem Boden */
-const DB_STRECK: Winkel = { schulter_r: [170, 6, 0], huefte_l: [12, 4, 0], knie_l: [2], fuss_l: [-10, 0] }
-const DB_STRECK_2: Winkel = { schulter_l: [170, 6, 0], huefte_r: [12, 4, 0], knie_r: [2], fuss_r: [-10, 0] }
+const DB_STRECK: Winkel = { schulter_r: [172, 6, 0], huefte_l: [6, 4, 0], knie_l: [2], fuss_l: [-10, 0] }
+const DB_STRECK_2: Winkel = { schulter_l: [172, 6, 0], huefte_r: [6, 4, 0], knie_r: [2], fuss_r: [-10, 0] }
+/** Hüftbeugung, bei der die Ferse mit 90 Grad im Knie gerade den Boden berührt (gemessen: Oberschenkel 0,38 m, Unterschenkel 0,47 m) */
+const FERSE_TIPP = 49
 const HAENDE_KOPF: Winkel = { ...B("schulter", [150, 60, 0]), ...B("ellbogen", [140, 0]) }
 const CRUNCH_UNTEN: Haltung = mit(RUECKENLAGE_AUF, { g: HAENDE_KOPF })
 const crunchOben = (w: Winkel = {}): Haltung => mit(RUECKENLAGE_AUF, { g: { ...HAENDE_KOPF, bws: [34, 0, 0], hals: [20, 0, 0], ...w } })
-const HOLLOW: Haltung = mit(RUECKENLAGE, { g: { ...B("huefte", [22, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]), ...B("schulter", [165, 8, 0]), ...B("ellbogen", [4, 90]), lws: [4, 0, 0], bws: [14, 0, 0], hals: [10, 0, 0] } })
+/** Bird Dog Crunch: rechter Ellbogen und linkes Knie treffen sich unter dem Bauch; linke Hand und rechtes Knie bleiben */
+const BD_CRUNCH: Haltung = mit(VIERFUESSLER, {
+  g: { schulter_r: [40, -10, 0], ellbogen_r: [120, 90], huefte_l: [125, -4, 0], knie_l: [140], fuss_l: [-40, 0], bws: [12, 0, 0], lws: [8, 0, 0], hals: [-10, 0, 0] },
+  ziele: { ellbogen_r: { pos: [0.01, 0.34, 0.2] }, knie_l: { pos: [0.03, 0.31, 0.2] }, hand_l: { pos: [0.121, 0.051, 0.46] }, knie_r: { pos: [-0.078, 0.091, -0.01] } },
+  pos: [0, 0.47, 0],
+  boden: false,
+})
+/** Bird Dog Rudern auf der Flachbank (45 cm): linke Hand und rechtes Knie auf dem Polster, linkes Bein lang auf Hüfthöhe */
+const BANK_H = 0.45
+const bdRudern = (gezogen: boolean): Haltung =>
+  H(
+    { huefte_r: [90, 3, 0], knie_r: [90], fuss_r: [-45, 0], huefte_l: [0, 4, 0], knie_l: [2], fuss_l: [-20, 0], schulter_l: [90, 3, 0], ellbogen_l: [4, 90], hand_l: [85, 0], ...(gezogen ? { schulter_r: [30, 12, 0], ellbogen_r: [100, HAMMER] } : { schulter_r: [90, 16, 0], ellbogen_r: [4, HAMMER] }), ...FAUST, hals: [-15, 0, 0] },
+    [90, 0, 0],
+    { pos: [0, BANK_H + 0.09 + 0.385, 0], boden: false, ziele: { hand_l: { pos: [0.11, BANK_H + 0.055, 0.45] }, knie_r: { pos: [-0.03, BANK_H + 0.09, -0.01] }, ...(gezogen ? {} : { hand_r: { pos: [-0.22, 0.42, 0.39] } }) } },
+  )
+/** Hüftbeugung im Hollow Hold: Fersen gut 20 cm über dem Boden */
+const HOLLOW_HUEFTE = 10
+const HOLLOW: Haltung = mit(RUECKENLAGE, { g: { ...B("huefte", [HOLLOW_HUEFTE, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]), ...B("schulter", [176, 8, 0]), ...B("ellbogen", [4, 90]), lws: [4, 0, 0], bws: [14, 0, 0], hals: [10, 0, 0] } })
 
 // ---------------------------------------------------------------- Hang und Stütz am Gerät
 export const STANGE: Hilfsmittel = { art: "rack", an: "becken", z: -0.08 }
@@ -261,13 +280,13 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
     "seite",
     [
       [mit(RUECKENLAGE, { g: { ...TISCH, ...B("schulter", [0, 14, 0]) } }), 0.8, "Beine in der Luft, Lendenwirbelsäule am Boden"],
-      [mit(RUECKENLAGE, { g: { ...TISCH, ...B("schulter", [0, 14, 0]), huefte_l: [36, 4, 0] } }), 1.0, "Eine Ferse langsam zum Boden tippen"],
+      [mit(RUECKENLAGE, { g: { ...TISCH, ...B("schulter", [0, 14, 0]), huefte_l: [FERSE_TIPP, 4, 0] } }), 1.0, "Ein Bein senken, Kniewinkel bleibt, Ferse tippt den Boden"],
       [mit(RUECKENLAGE, { g: { ...TISCH, ...B("schulter", [0, 14, 0]) } }), 0.8],
-      [mit(RUECKENLAGE, { g: { ...TISCH, ...B("schulter", [0, 14, 0]), huefte_r: [36, 4, 0] } }), 1.0, "Andere Ferse"],
+      [mit(RUECKENLAGE, { g: { ...TISCH, ...B("schulter", [0, 14, 0]), huefte_r: [FERSE_TIPP, 4, 0] } }), 1.0, "Andere Ferse"],
     ],
   ),
   dead_bug: folge("seite", [[deadBug(), 0.8, "Arme zur Decke, Beine angewinkelt"], [deadBug(DB_STRECK), 1.6, "Arm und Gegenbein lang machen"], [deadBug(), 1.0], [deadBug(DB_STRECK_2), 1.6, "Andere Seite"], [deadBug(), 1.0]]),
-  dead_bug_band: folge("seite", [[deadBug(), 0.8, "Arme gestreckt gegen den Zug des Bands"], [deadBug({ huefte_l: [12, 4, 0], knie_l: [2] }), 1.6, "Ein Bein lang, Arme bleiben"], [deadBug(), 1.0], [deadBug({ huefte_r: [12, 4, 0], knie_r: [2] }), 1.6, "Anderes Bein"], [deadBug(), 1.0]], {
+  dead_bug_band: folge("seite", [[deadBug(), 0.8, "Arme gestreckt gegen den Zug des Bands"], [deadBug({ huefte_l: [6, 4, 0], knie_l: [2], fuss_l: [-10, 0] }), 1.6, "Ein Bein lang knapp über den Boden, Arme bleiben"], [deadBug(), 1.0], [deadBug({ huefte_r: [6, 4, 0], knie_r: [2], fuss_r: [-10, 0] }), 1.6, "Anderes Bein"], [deadBug(), 1.0]], {
     hilfsmittel: [{ art: "bandanker", von: "haende", anker: [0, 0.3, -1.4] }],
   }),
   dead_bug_gewicht: folge("seite", [[deadBug(FAUST), 0.8, "Hanteln über den Schultern"], [deadBug({ ...DB_STRECK, ...FAUST }), 1.6, "Arm und Gegenbein lang"], [deadBug(FAUST), 1.0], [deadBug({ ...DB_STRECK_2, ...FAUST }), 1.6, "Andere Seite"], [deadBug(FAUST), 1.0]], { hilfsmittel: KH }),
@@ -276,20 +295,19 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
     "seite",
     [
       [mit(VIERFUESSLER, { g: { schulter_r: [178, 4, 0], ellbogen_r: [0, 90], hand_r: [0, 0], huefte_l: [0, 3, 0], knie_l: [4] } }), 1.2, "Arm und Gegenbein strecken"],
-      [mit(VIERFUESSLER, { g: { schulter_r: [60, -10, 0], ellbogen_r: [130, 90], huefte_l: [120, -6, 0], knie_l: [120], bws: [18, 0, 0], lws: [10, 0, 0] } }), 1.0, "Ellbogen und Knie unter dem Bauch zusammen"],
+      [BD_CRUNCH, 1.0, "Ellbogen und Knie unter dem Bauch zusammen, Rücken rund"],
       [mit(VIERFUESSLER, { g: { schulter_r: [178, 4, 0], ellbogen_r: [0, 90], hand_r: [0, 0], huefte_l: [0, 3, 0], knie_l: [4] } }), 1.0, "Wieder strecken"],
     ],
     { seiten: true },
   ),
-  bird_dog_rudern: wdh(
-    "seite",
-    H({ huefte_l: [90, 4, 0], knie_l: [90], fuss_l: [-40, 0], huefte_r: [0, 4, 0], knie_r: [4], fuss_r: [-20, 0], schulter_l: [90, 6, 0], ellbogen_l: [30, 90], schulter_r: [90, 8, 0], ellbogen_r: [4, HAMMER], ...FAUST, hals: [-20, 0, 0] }, [90, 0, 0], { pos: [0, 0.98, 0], boden: false }),
-    H({ huefte_l: [90, 4, 0], knie_l: [90], fuss_l: [-40, 0], huefte_r: [0, 4, 0], knie_r: [4], fuss_r: [-20, 0], schulter_l: [90, 6, 0], ellbogen_l: [30, 90], schulter_r: [40, 10, 0], ellbogen_r: [96, HAMMER], ...FAUST, hals: [-20, 0, 0] }, [90, 0, 0], { pos: [0, 0.98, 0], boden: false }),
-    1.0,
-    { aus: 1.6, seiten: true, texte: ["Hantel zur Hüfte rudern, freies Bein bleibt lang", "Arm wieder strecken"], hilfsmittel: [{ art: "bank", unter: "knie_l", hoehe: 0.45, versatz: [0, 0.25] }, ...KH_R] },
-  ),
+  bird_dog_rudern: wdh("seite", bdRudern(false), bdRudern(true), 1.0, {
+    aus: 1.6,
+    seiten: true,
+    texte: ["Hantel zur Hüfte rudern, Ellbogen dicht am Körper, linkes Bein bleibt lang", "Hantel kontrolliert absenken"],
+    hilfsmittel: [{ art: "bank", unter: "knie_r", hoehe: BANK_H, versatz: [0.09, 0.2] }, ...KH_R],
+  }),
   hollow_hold: halte("seite", RUECKENLAGE, HOLLOW, { ein: 2, aus: 2, hinweis: "Lendenwirbelsäule fest am Boden, Schultern und gestreckte Beine angehoben." }),
-  hollow_rocks: folge("seite", [[HOLLOW, 0.8, "Hollow-Position"], [mit(HOLLOW, { dreh: [-100, 0, 0] }), 0.6, "Nach hinten schaukeln"], [mit(HOLLOW, { dreh: [-80, 0, 0] }), 0.6, "Nach vorn schaukeln, Form bleibt"]]),
+  hollow_rocks: folge("seite", [[HOLLOW, 0.8, "Hollow-Position"], [mit(HOLLOW, { dreh: [-104, 0, 0] }), 0.6, "Nach hinten schaukeln, Füße höher"], [mit(HOLLOW, { dreh: [-79, 0, 0] }), 0.6, "Nach vorn schaukeln, Form bleibt"]]),
   // ------------------------------------------------------------ Am Barren und an der Stange
   l_sitz_dip: halte("seite", barren(), barren({ ...B("huefte", [90, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]) }), { ein: 1.5, aus: 1.5, hinweis: "Im Stütz die gestreckten Beine waagerecht halten.", hilfsmittel: [BARREN] }),
   knieheben_dip: wdh("seite", barren(), barren({ ...B("huefte", [110, 4, 0]), ...B("knie", [110]) }), 1.0, { aus: 1.6, texte: ["Knie zur Brust heben", "Langsam senken"], hilfsmittel: [BARREN] }),
