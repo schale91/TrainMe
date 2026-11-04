@@ -254,12 +254,17 @@ const PALLOF_VOR: Winkel = { ...B("schulter", [88, -6, 0]), ...B("ellbogen", [4,
 const PALLOF_HOCH: Winkel = { ...B("schulter", [170, -4, 0]), ...B("ellbogen", [4, 0]), ...FAUST }
 const BREIT: Winkel = { ...B("huefte", [12, 12, -6]), ...B("knie", [16]), ...B("fuss", [6, 0]) }
 const pallofStand = (arme: Winkel, kipp = 6): Haltung => H({ ...BREIT, ...arme }, [kipp, 0, 0])
+/** Pallof-Walkout: Becken wandert seitlich vom Kabel weg; breit = rechter Fuß schon draußen, linker noch nicht nachgestellt */
+const walk = (x: number, breit: boolean): Haltung =>
+  H({ ...BREIT, ...(breit ? { huefte_l: [12, 6, -6], huefte_r: [12, 20, -6] } : {}), ...PALLOF_VOR }, [6, 0, 0], { pos: [x, 0.926, 0], boden: false })
 const ROLLE_SEITE: [number, number, number] = [0.9, 1.15, 0.2]
 const pallof = (basis: (arme: Winkel) => Haltung, zug: Hilfsmittel[], extra: Partial<Dehnung> = {}): Dehnung =>
   wdh("schraeg", basis(PALLOF_BRUST), basis(PALLOF_VOR), 1.2, { aus: 1.4, halten: 2, seiten: true, texte: ["Griff gerade nach vorn drücken, Rumpf dreht nicht mit", "Zurück zur Brust"], hilfsmittel: zug, ...extra })
 const KABEL_SEITE = kabel("haende", ROLLE_SEITE)
 const BAND_SEITE: Hilfsmittel[] = [{ art: "bandanker", von: "haende", anker: ROLLE_SEITE }]
 const halbknie = (arme: Winkel): Haltung => mit(HALBKNIESTAND, { g: arme })
+/** Halbkniestand gespiegelt: rechtes Knie am Boden, linkes Bein vorn aufgestellt */
+const halbknieRechts = (arme: Winkel): Haltung => mit(HALBKNIESTAND, { g: { huefte_r: [-5, 4, 0], knie_r: [85], fuss_r: [-80, 0], huefte_l: [90, 4, 0], knie_l: [90], fuss_l: [0, 0], ...arme } })
 const kniend = (arme: Winkel): Haltung => mit(KNIESTAND, { g: arme })
 
 /** Drehung des Oberkörpers (Brustwirbelsäule und Lendenwirbelsäule), positiv nach links */
@@ -275,6 +280,22 @@ const hacken = (basis: (w: Winkel) => Haltung, von: Winkel, bis: Winkel, rolle: 
     hilfsmittel: zug === "kabel" ? [kabelstange(), ...kabel("haende", rolle)] : [{ art: "bandanker", von: "haende", anker: rolle }],
   })
 const STAND_HACK = (w: Winkel): Haltung => H({ ...BREIT, ...w }, [8, 0, 0])
+/** Chop und Lift im Halbknien: Oberkörper bleibt aufrecht und dreht sich kaum */
+const CHOP_OBEN: Winkel = { ...HACK_OBEN, ...dreh(12) }
+const CHOP_UNTEN: Winkel = { ...HACK_UNTEN, schulter_l: [30, -30, 0], schulter_r: [20, 30, 0], ...dreh(-12) }
+/** Tiefer Holzhacker: leicht in den Knien, Griff neben dem kabelnahen (rechten) Knie */
+const STAND_TIEF = (w: Winkel): Haltung => H({ ...B("huefte", [62, 12, -6]), ...B("knie", [56]), ...B("fuss", [22, 0]), ...w }, [45, 0, 0], { pos: [0, 0.858, 0], boden: false, ziele: { hand_r: { pos: [-0.345, 0.708, 0.09] }, hand_l: { pos: [-0.24, 0.693, 0.2] } } })
+const HACK_KNIE: Winkel = { ...HACK_UNTEN, schulter_l: [46, -40, 0], schulter_r: [36, 26, 0], bws: [14, 0, -28], lws: [0, 0, -12] }
+/** Russian Twist: Sitz, Knie gebeugt, Fersen am Boden, Oberkörper 45 Grad zurück; seite -1 rechts, 1 links (Ball neben der Hüfte) */
+const twist = (seite: -1 | 0 | 1): Haltung => {
+  const w: Winkel = { ...B("huefte", [100, 6, 0]), ...B("knie", [90]), ...B("fuss", [10, 0]), ...PALLOF_BRUST, bws: [10, 0, 40 * seite], lws: [0, 0, 10 * seite] }
+  const ziele: NonNullable<Haltung["ziele"]> | undefined = seite
+    ? { hand_l: { pos: [seite * 0.3 + 0.13, 0.26, 0.1] }, hand_r: { pos: [seite * 0.3 - 0.13, 0.26, 0.06] } }
+    : undefined
+  return H(w, [-45, 0, 0], { pos: [0, 0.108, 0], boden: false, ...(ziele ? { ziele } : {}) })
+}
+/** Gewicht mit fast gestreckten Armen vor dem Brustbein */
+const KH_VOR: Winkel = { ...B("schulter", [80, -10, 0]), ...B("ellbogen", [22, 0]), ...FAUST }
 const ROTATION_ARME: Winkel = { ...B("schulter", [86, -8, 0]), ...B("ellbogen", [6, 0]), ...FAUST }
 
 // ---------------------------------------------------------------- Golf: Ansprechhaltung
@@ -543,17 +564,20 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
   pallof_walkout: folge(
     "schraeg",
     [
-      [pallofStand(PALLOF_VOR), 0.8, "Arme gestreckt vor der Brust"],
-      [H({ huefte_l: [12, 4, -6], huefte_r: [12, 20, -6], ...B("knie", [16]), ...B("fuss", [6, 0]), ...PALLOF_VOR }, [6, 0, 0]), 1.0, "Seitlich vom Kabel weg"],
-      [pallofStand(PALLOF_VOR), 1.0, "Nachstellen, Rumpf dreht nicht"],
+      [walk(0, false), 0.8, "Nah am Kabel, Arme gestreckt vor der Brust"],
+      [walk(-0.1, true), 0.8, "Rechter Fuß einen kleinen Schritt vom Kabel weg"],
+      [walk(-0.2, false), 0.8, "Linker Fuß nach, Arme bleiben vor der Brustmitte"],
+      [walk(-0.3, true), 0.8, "Noch ein Seitschritt"],
+      [walk(-0.4, false), 0.8, "Am weitesten Punkt kurz halten"],
+      [walk(-0.2, false), 1.4, "Mit Seitschritten zurück, Oberkörper dreht nicht"],
     ],
     { seiten: true, hilfsmittel: KABEL_SEITE },
   ),
   // ------------------------------------------------------------ Holzhacker und Rotation
-  chop_halbkniend: hacken(halbknie, HACK_OBEN, HACK_UNTEN, [0.7, 2.0, 0.3], ["Stange diagonal von oben nach unten ziehen", "Kontrolliert zurück"]),
-  lift_halbkniend: hacken(halbknie, HACK_UNTEN, HACK_OBEN, [-0.7, 0.12, 0.3], ["Stange diagonal von unten nach oben drücken", "Kontrolliert zurück"]),
+  chop_halbkniend: hacken(halbknieRechts, CHOP_OBEN, CHOP_UNTEN, [0.7, 2.0, 0.3], ["Stange diagonal nach unten an der rechten Hüfte vorbei drücken, Oberkörper bleibt aufrecht", "Kontrolliert zurück"]),
+  lift_halbkniend: hacken(halbknieRechts, CHOP_UNTEN, CHOP_OBEN, [-0.7, 0.12, 0.3], ["Stange diagonal nach oben über die linke Schulter drücken, Rippen bleiben unten", "Kontrolliert zurück"]),
   holzhacker_kabel: hacken(STAND_HACK, HACK_OBEN, HACK_UNTEN, [0.7, 2.0, 0.3], ["Griff diagonal nach unten ziehen, Rumpf dreht", "Kontrolliert zurück"]),
-  holzhacker_kabel_tief: hacken(STAND_HACK, HACK_UNTEN, HACK_OBEN, [-0.7, 0.12, 0.3], ["Griff diagonal nach oben über die Schulter", "Kontrolliert zurück"]),
+  holzhacker_kabel_tief: wdh("vorn", STAND_TIEF(HACK_KNIE), STAND_HACK(HACK_OBEN), 1.2, { aus: 1.6, seiten: true, texte: ["Mit den Beinen hochdrücken, Griff diagonal über die linke Schulter", "Kontrolliert zurück neben das rechte Knie"], hilfsmittel: [kabelstange(), ...kabel("haende", [-0.7, 0.12, 0.3])] }),
   holzhacker_band: hacken(STAND_HACK, HACK_OBEN, HACK_UNTEN, [0.7, 2.0, 0.3], ["Band diagonal nach unten ziehen", "Kontrolliert zurück"], "band"),
   kabel_rotation: wdh("oben", pallofStand({ ...ROTATION_ARME, ...dreh(30) }), pallofStand({ ...ROTATION_ARME, ...dreh(-50) }), 1.0, {
     aus: 1.6,
@@ -567,13 +591,13 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
     texte: ["Brustkorb dreht, Becken bleibt fest", "Kontrolliert zurück"],
     hilfsmittel: kabel("haende", [0.9, 0.8, 0.2]),
   }),
-  rotation_kh: folge("oben", [[pallofStand(PALLOF_BRUST), 0.6, "Gewicht vor der Brust"], [pallofStand({ ...PALLOF_BRUST, ...dreh(50) }), 1.0, "Oberkörper zur einen Seite drehen"], [pallofStand({ ...PALLOF_BRUST, ...dreh(-50) }), 1.6, "Zur anderen Seite"], [pallofStand(PALLOF_BRUST), 1.0]], { hilfsmittel: [{ art: "hantel", an: "haende" }] }),
+  rotation_kh: folge("oben", [[pallofStand(KH_VOR), 0.6, "Gewicht mit fast gestreckten Armen vor der Brust"], [H({ ...BREIT, ...KH_VOR, ...dreh(-44), huefte_l: [12, 12, 4], huefte_r: [12, 12, 4] }, [6, -10, 0]), 1.0, "Oberkörper und Arme zur rechten Seite, die Hüfte dreht leicht mit"], [H({ ...BREIT, ...KH_VOR, ...dreh(44), huefte_l: [12, 12, -16], huefte_r: [12, 12, -16] }, [6, 10, 0]), 1.6, "Abbremsen und zur anderen Seite"], [pallofStand(KH_VOR), 1.0]], { hilfsmittel: [{ art: "hantel", an: "haende" }] }),
   russian_twist: folge(
     "schraeg",
     [
-      [H({ ...B("huefte", [100, 6, 0]), ...B("knie", [90]), ...B("fuss", [10, 0]), ...PALLOF_BRUST, bws: [10, 0, 0] }, [-40, 0, 0]), 0.6, "Zurückgelehnt, Ball vor der Brust"],
-      [H({ ...B("huefte", [100, 6, 0]), ...B("knie", [90]), ...B("fuss", [10, 0]), ...PALLOF_BRUST, bws: [10, 0, 40], lws: [0, 0, 10] }, [-40, 0, 0]), 0.8, "Ball zur einen Seite"],
-      [H({ ...B("huefte", [100, 6, 0]), ...B("knie", [90]), ...B("fuss", [10, 0]), ...PALLOF_BRUST, bws: [10, 0, -40], lws: [0, 0, -10] }, [-40, 0, 0]), 1.2, "Zur anderen Seite"],
+      [twist(0), 0.6, "Mit geradem Rücken etwa 45 Grad zurückgelehnt, Ball vor der Brust"],
+      [twist(-1), 0.8, "Zur rechten Seite drehen, Ball neben die Hüfte"],
+      [twist(1), 1.2, "Über die Mitte zur linken Seite, die Brust dreht mit"],
     ],
     { hilfsmittel: [{ art: "medizinball", an: "haende" }] },
   ),
