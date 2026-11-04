@@ -79,6 +79,8 @@ export type Hilfsmittel =
   | { art: "stab"; von: Punkt; bis: Punkt }
   | { art: "band"; von: Punkt; bis: Punkt }
   | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean; versatz?: [number, number]; bei?: [number, number] }
+  /** Fixierung der Fersen (Sofakante, Polster einer Nordic-Bank): gepolstertes Querholz über den Fersen beider Beine, auf zwei Stützen */
+  | { art: "fixierung"; an: Punkt; ueber?: number }
   | { art: "tuer"; an: Punkt }
   | { art: "stange"; an: Punkt }
   /** Stabiler Tisch: die Hände greifen die Kante, die Platte reicht zum Kopf hin (-z) */

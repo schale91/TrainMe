@@ -11,6 +11,8 @@ import { OBERARM, SCHULTER_X, UNTERARM, type Ziele, ellbogenKreis, rad } from ".
 
 type P3 = [number, number, number]
 type YZ = [number, number]
+/** Kniepolster des Latzugs: hält die Oberschenkel knapp vor den Knien fest */
+const KNIEPOLSTER: Hilfsmittel = { art: "fixierung", an: "knie_l", ueber: 0.085 }
 const dreheYZ = (th: number, p: YZ): YZ => [Math.cos(rad(th)) * p[0] - Math.sin(rad(th)) * p[1], Math.sin(rad(th)) * p[0] + Math.cos(rad(th)) * p[1]]
 /** Schultergelenk im Becken bei erhobenen Armen (gemessen) */
 const SCHULTER_OBEN: YZ = [0.395, -0.004]
@@ -194,7 +196,7 @@ const latSitz = (l: Lat, griff: Hilfsmittel[], extra: Partial<Dehnung> = {}): De
   wdh("schraeg", latHaltung(l, false), latHaltung(l, true), 1.4, {
     aus: 2.4,
     texte: ["Schulterblätter nach unten, Stange zur oberen Brust", "Kontrolliert nach oben, bis die Arme gestreckt sind"],
-    hilfsmittel: [...griff, { art: "kabel", von: l.einarm ? "hand_r" : "haende", rolle: LAT_KABEL, turm: 0.72 }, { art: "bank", unter: "gesaess", hoehe: 0.42 }],
+    hilfsmittel: [...griff, { art: "kabel", von: l.einarm ? "hand_r" : "haende", rolle: LAT_KABEL, turm: 0.72 }, { art: "bank", unter: "gesaess", hoehe: 0.42 }, KNIEPOLSTER],
     ...extra,
   })
 const LAT_STANGE: Hilfsmittel = { art: "latstange", von: "hand_l", bis: "hand_r" }

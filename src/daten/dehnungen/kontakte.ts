@@ -7,6 +7,7 @@ import type { ZielPunkt } from "../../logik/dehnbewegung"
 const FUSS_L: ZielPunkt[] = ["fuss_l", "ferse_l"]
 const FUESSE: ZielPunkt[] = ["fuss_l", "ferse_l", "fuss_r", "ferse_r"]
 const HAENDE: ZielPunkt[] = ["hand_l", "hand_r"]
+const KNIE: ZielPunkt[] = ["knie_l", "knie_r"]
 
 export const FESTE_PUNKTE: Record<string, ZielPunkt[]> = {
   // Seitlich an der Wand, linke Hand stützt, das rechte Bein bewegt sich
@@ -45,4 +46,42 @@ export const FESTE_PUNKTE: Record<string, ZielPunkt[]> = {
   unterarm_ausrollen: ["knie_l", "knie_r"],
   // Handstand: die Hände bleiben am Boden
   handstand_liegestuetz: HAENDE,
+  // Prüfung der Fixpunkte (04.11.2026): Füße, Knie und Hände rutschten zwischen den Phasen über den Boden
+  // Stand und Hocke: beide Füße bleiben
+  tiefe_hocke: FUESSE,
+  goblet_squat_pry: FUESSE,
+  golf_tiefe_kniebeuge_schlaeger: FUESSE,
+  reha_mini_kniebeuge: FUESSE,
+  vorbeuge_stehend: FUESSE,
+  reha_gewicht_verlagern: FUESSE,
+  golf_beckenrotation: FUESSE,
+  golf_huefte_innenrotation_band: FUESSE,
+  tandemstand: FUESSE,
+  rueckstreckung_stehend: FUESSE,
+  seitdehnung_stange: FUESSE,
+  brust_dehnen: FUESSE,
+  brust_dehnen_hoch: FUESSE,
+  aussenrotation_tuer: FUESSE,
+  lat_dehnen_band: FUESSE,
+  lat_dehnen_schlingentrainer: FUESSE,
+  lat_dehnen_pnf: FUESSE,
+  star_excursion: FUSS_L,
+  // Kniestand und Halbkniestand: Füße bzw. Knie bleiben
+  hueftbeuger_dehnen: FUESSE,
+  hueftbeuger_dehnen_band: FUESSE,
+  hueftbeuger_dehnen_seitneigung: FUESSE,
+  hueftbeuger_kniestand_wippen: FUESSE,
+  hueftbeuger_pnf: FUESSE,
+  sprunggelenk_rocks_kniestand: FUSS_L,
+  sprunggelenk_rocks_gewicht: FUSS_L,
+  sprunggelenk_band: FUSS_L,
+  bank_gebetsdehnung: KNIE,
+  // Noch einzeln mit Zielpunkten umzubauen (festes Halten allein hebt die Figur an): lat_dehnen_bank_kniend,
+  // golf_bws_streckung_bank_schlaeger, froschdehnung, vierfuessler_rock_back, adduktoren_rock_back, handgelenk_wippen,
+  // scheibenwischer, huefte_9090_wechsel, rkc_plank
+  frosch_wippen: KNIE,
+  // Vierfüßler: Hände und Knie bleiben, nur das Becken geht nach hinten
+  kindhaltung: [...HAENDE, ...KNIE],
+  mckenzie_liegestuetz: HAENDE,
+  oberschenkel_vorn_dehnen: ["fuss_r", "ferse_r"],
 }
