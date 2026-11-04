@@ -234,7 +234,27 @@ const HANDSTAND_WAND: Haltung = H(
   },
 )
 
+
+// ---------------------------------------------------------------- Wall Slide mit dem Rücken zur Wand
+// Wand hinter dem Körper (z = -WAND), Füße eine Fußlänge davor, Knie leicht gebeugt; Gesäß, oberer Rücken und
+// Hinterkopf an der Wand. Unterarme und Handrücken liegen an der Wand: unten W (Ellbogen 90 Grad auf Schulterhöhe),
+// oben so weit nach oben geschoben, wie es mit Rücken und Armen an der Wand geht.
+const RUECKEN_WAND = -WAND
+const rueckenSlide = (oben: boolean): Haltung => {
+  const w = RUECKEN_WAND + 0.045
+  const e: [number, number] = oben ? [0.27, 1.49] : [0.33, 1.32]
+  const h: [number, number] = oben ? [0.31, 1.76] : [0.35, 1.6]
+  const ziele: Ziele = { ...stehtBei(RUECKEN_WAND + 0.27) }
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    ziele[`ellbogen_${n}`] = { pos: [sx * e[0], e[1], w] }
+    ziele[`hand_${n}`] = { pos: [sx * h[0], h[1], w + 0.01] }
+  }
+  return H({ ...B("huefte", [8, 5, 0]), ...B("knie", [10]), ...B("fuss", [2, 0]), ...B("schulter", oben ? [10, 150, 70] : [10, 88, 80]), ...B("ellbogen", [oben ? 70 : 92, 0]), hals: [-14, 0, 0] }, [-3, 0, 0], { pos: [0, 0.92, RUECKEN_WAND + 0.09], boden: false, ziele })
+}
+
 export const WAND_UEBUNGEN: Record<string, Dehnung> = {
+  wall_slide: wdh("vorn", rueckenSlide(false), rueckenSlide(true), 1.8, { aus: 1.8, fest: [], texte: ["Arme langsam an der Wand nach oben schieben, Rücken bleibt an der Wand", "Zurück, Ellbogen knapp unter Schulterhöhe"], hilfsmittel: [WAND_HINTEN_FEST] }),
   knie_zur_wand: wdh("seite", KZW_START, KZW_ZIEL, 2.5, { halten: 2, seiten: true, texte: ["Linkes Knie über die zweite Zehe zur Wand, Ferse bleibt am Boden", "Zurück"], hilfsmittel: [WAND_VORN] }),
   grosszehe_dehnen_wand: halte("seite", GZ_START, GZ_ZIEL, { seiten: true, hilfsmittel: [WAND_VORN], hinweis: "Großzehe nach oben an der Wand, der Ballen bleibt am Boden, Knie langsam nach vorn." }),
   waden_dehnen: halte("seite", WADE_START, WADE_ZIEL, { seiten: true, hilfsmittel: [WAND_VORN], hinweis: "Hintere Ferse fest am Boden, Knie gestreckt, Hüfte zur Wand schieben." }),

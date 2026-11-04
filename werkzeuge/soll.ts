@@ -1168,6 +1168,463 @@ const hangRowSoll = (art: "stange" | "hoch" | "tisch") => (m: Messung): Pruefung
 }
 const HANG_ROW_SOLL: Record<string, (m: Messung) => Pruefung[]> = { rudern_invertiert: hangRowSoll("stange"), rudern_invertiert_erhoeht: hangRowSoll("hoch"), rudern_tisch: hangRowSoll("tisch") }
 
+// ---------------------------------------------------------------- Drücken über Kopf
+interface UKS {
+  basis: "stand" | "sitz" | "boden" | "halbknie"
+  last: "lh" | "kh"
+  griff?: Bereich
+  /** Hand unten am Rumpf entlang (Schlüsselbein bzw. Schulter- und Ohrhöhe) */
+  untenY: Bereich
+  untenZ: Bereich
+  /** Ellbogen unten vor dem Körper (m vor der Schulterebene) */
+  ellVor?: Bereich
+  streckOben: Bereich
+  arme?: ("l" | "r")[]
+  /** Unterarm unten von vorn gesehen senkrecht (Text verlangt es) */
+  lot?: boolean
+  quelle: { unten: string; oben: string; ell?: string; griff?: string; lot?: string }
+}
+const ueberKopfSoll = (k: UKS) => (m: Messung): Pruefung[] => {
+  const u = m.alle[0], o = m.alle.reduce((a, b) => (p(b, "hand_r")[1] + p(b, "hand_l")[1] > p(a, "hand_r")[1] + p(a, "hand_l")[1] ? b : a))
+  const fest = k.basis === "stand" ? ["ferse_l", "ferse_r"] : k.basis === "halbknie" ? ["knie_l", "fuss_r"] : ["g:becken"]
+  const r = [...ruhig(m), pr("Stand bzw. Sitz bleibt (m)", bleibt(m, fest), 0, 0.02, k.basis === "sitz" ? "Füße fest auf dem Boden, Gesäß ganz hinten" : "Stell die Füße hüftbreit")]
+  const aufrecht: Bereich = k.basis === "sitz" ? [-12, 2] : [-6, 6]
+  for (const [x, w] of [[u, "unten"], [o, "oben"]] as const) r.push(pr(`Oberkörper ${w} (°)`, rumpfneigung(x), aufrecht[0], aufrecht[1], k.basis === "sitz" ? "Rücken an der fast senkrechten Lehne" : "der Oberkörper steht senkrecht, ohne nach hinten zu lehnen"))
+  if (k.griff) r.push(pr("Griff / Schulterbreite", griffbreite(u) / schulterbreite(u), k.griff[0], k.griff[1], k.quelle.griff ?? ""))
+  for (const a of k.arme ?? SEITEN) {
+    const h = amRumpf(u, `hand_${a}`)
+    r.push(pr(`Hand ${a} unten am Rumpf entlang (m)`, h[1], k.untenY[0], k.untenY[1], k.quelle.unten))
+    r.push(pr(`Hand ${a} unten vor dem Rumpf (m)`, h[2], k.untenZ[0], k.untenZ[1], k.quelle.unten))
+    if (k.lot ?? k.last === "lh") {
+      const e = p(u, `g:ellbogen_${a}`), hg = p(u, `g:hand_${a}`)
+      r.push(pr(`Unterarm ${a} unten von vorn senkrecht (°)`, grad(Math.atan2(Math.abs(hg[0] - e[0]), hg[1] - e[1])), 0, 12, k.quelle.lot ?? "die Unterarme stehen von vorn betrachtet senkrecht"))
+    }
+    if (k.ellVor) r.push(pr(`Ellbogen ${a} unten vor dem Körper (m)`, amRumpf(u, `g:ellbogen_${a}`)[2], k.ellVor[0], k.ellVor[1], k.quelle.ell ?? ""))
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), k.streckOben[0], k.streckOben[1], k.quelle.oben))
+    r.push(pr(`Hand ${a} oben über der Schulter (m)`, p(o, `hand_${a}`)[1] - p(o, `g:schulter_${a}`)[1], 0.42, 0.6, k.quelle.oben))
+    r.push(pr(`Hand ${a} oben senkrecht über der Schulter (m)`, Math.abs(p(o, `hand_${a}`)[2] - p(o, `g:schulter_${a}`)[2]), 0, 0.07, "senkrecht nach oben"))
+  }
+  if (k.last === "lh" && k.basis === "stand") r.push(pr("Stange oben über dem Mittelfuß (m)", Math.abs(stange(o)[2] - mittelfuss(o)[2]), 0, 0.06, "Oben steht die Stange über dem Mittelfuß"))
+  return r
+}
+const UK_LH: UKS = { basis: "stand", last: "lh", griff: [1.0, 1.35], untenY: [-0.04, 0.08], untenZ: [0.07, 0.17], streckOben: [165, 180], quelle: { unten: "Die Stange liegt auf Höhe des Schlüsselbeins", oben: "die Arme sind gestreckt", griff: "knapp schulterbreit" } }
+const UK_KH: UKS = { basis: "sitz", last: "kh", untenY: [-0.02, 0.18], untenZ: [-0.02, 0.12], ellVor: [0.0, 0.2], streckOben: [155, 180], lot: true, quelle: { unten: "neben den Ohren auf Schulterhöhe", oben: "bis die Arme fast gestreckt sind", ell: "Ellbogen leicht vor dem Körper, nicht ganz seitlich", lot: "Unterarme etwa senkrecht" } }
+const UEBERKOPF_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  schulterdruecken_lh: ueberKopfSoll(UK_LH),
+  push_press: ueberKopfSoll(UK_LH),
+  schulterdruecken_lh_sitzend: ueberKopfSoll({ ...UK_LH, basis: "sitz", streckOben: [155, 178], quelle: { ...UK_LH.quelle, oben: "Streck die Arme oben fast vollständig" } }),
+  schulterdruecken_multipresse: ueberKopfSoll({ ...UK_LH, basis: "sitz", griff: [1.15, 1.55], untenY: [0.0, 0.12], streckOben: [155, 178], quelle: { unten: "bis etwa Kinnhöhe, die Unterarme bleiben ungefähr senkrecht", oben: "bis die Arme fast gestreckt sind", griff: "etwas weiter als schulterbreit" } }),
+  schulterdruecken_kh_sitzend: ueberKopfSoll(UK_KH),
+  schulterdruecken_kh_neutral: ueberKopfSoll({ ...UK_KH, lot: false, untenY: [0.06, 0.22], untenZ: [0.08, 0.22], ellVor: [0.08, 0.25], quelle: { ...UK_KH.quelle, unten: "vor die Schultern", ell: "Halte die Ellbogen die ganze Zeit vor dem Körper" } }),
+  schulterdruecken_kh_stehend: ueberKopfSoll({ ...UK_KH, basis: "stand" }),
+  schulterdruecken_band: ueberKopfSoll({ ...UK_KH, basis: "stand", ellVor: undefined }),
+  schulterdruecken_kabel: ueberKopfSoll(UK_KH),
+  z_press: ueberKopfSoll({ ...UK_LH, basis: "boden", quelle: { ...UK_LH.quelle, oben: "Streck die Arme oben fast ganz" }, streckOben: [160, 180] }),
+  arnold_press_sitzend: ueberKopfSoll({ ...UK_KH, lot: false, untenY: [0.04, 0.2], untenZ: [0.1, 0.24], ellVor: [0.08, 0.3], quelle: { unten: "Hanteln vor den Schultern, Handflächen zu dir", oben: "bis die Arme fast gestreckt sind", ell: "Ellbogen vor dem Körper" } }),
+  schulterdruecken_kh_einarmig: ueberKopfSoll({ ...UK_KH, basis: "stand", arme: ["r"] }),
+  kb_druecken: ueberKopfSoll({ ...UK_KH, basis: "stand", arme: ["r"], lot: false, untenY: [-0.1, 0.04], untenZ: [0.06, 0.2], ellVor: [-0.02, 0.2], quelle: { unten: "Rack-Position, Kugel auf dem Unterarm", oben: "Oben steht der Arm senkrecht neben dem Ohr", ell: "Ellbogen nah am Körper" } }),
+  kb_bottoms_up_druecken: ueberKopfSoll({ ...UK_KH, basis: "stand", arme: ["r"], untenY: [0.04, 0.2], untenZ: [0.04, 0.18], ellVor: [-0.02, 0.18], quelle: { unten: "vor der Schulter, Ellbogen unter der Hand", oben: "Oben steht der Arm gestreckt neben dem Ohr", ell: "der Ellbogen ist unter der Hand", lot: "Der Unterarm steht senkrecht" } }),
+  schulterdruecken_kh_halbkniend: ueberKopfSoll({ ...UK_KH, basis: "halbknie", arme: ["l"] }),
+}
+
+// ---------------------------------------------------------------- Seitheben, Frontheben, Y-Heben, aufrechtes Rudern
+/** Ebene des Oberarms im Rahmen des Rumpfes (0 = genau zur Seite, 90 = genau nach vorn) */
+const armEbene = (m: Punkte, a: "l" | "r") => {
+  const e = amRumpf(m, `g:ellbogen_${a}`), sh = amRumpf(m, `g:schulter_${a}`)
+  return grad(Math.atan2(e[2] - sh[2], Math.abs(e[0] - sh[0])))
+}
+interface AHS {
+  basis?: "stand" | "sitz"
+  hebung: Bereich
+  ebene: Bereich
+  /** Hand oben gegen den Ellbogen (m, negativ = tiefer) */
+  handEll?: Bereich
+  ellbogen?: Bereich
+  arme?: ("l" | "r")[]
+  schwung?: boolean
+  quelle: { hebung: string; ebene: string; hand?: string; ellbogen?: string }
+  extra?: (m: Messung, r: Pruefung[]) => void
+}
+const hebeSoll = (k: AHS) => (m: Messung): Pruefung[] => {
+  const u = m.alle[0]
+  const o = m.alle.reduce((a, b) => (armBeugung(b, (k.arme ?? SEITEN)[0]) > armBeugung(a, (k.arme ?? SEITEN)[0]) ? b : a))
+  const r = [...ruhig(m), pr("Stand bzw. Sitz bleibt (m)", bleibt(m, k.basis === "sitz" ? ["g:becken", "ferse_l", "ferse_r"] : ["ferse_l", "ferse_r"]), 0, 0.02, "Füße fest am Boden")]
+  for (const x of m.alle) r.push(pr("Oberkörper aufrecht oder minimal vorgeneigt (°)", rumpfneigung(x), -3, k.schwung ? 12 : 10, "Oberkörper aufrecht oder minimal nach vorn geneigt"))
+  if (!k.schwung) r.push(pr("Ohne Schwung aus dem Oberkörper (°)", Math.abs(rumpfneigung(o) - rumpfneigung(u)), 0, 4, "ohne Schwung aus Oberkörper oder Beinen"))
+  for (const a of k.arme ?? SEITEN) {
+    r.push(pr(`Arm ${a} unten hängt (°)`, armBeugung(u, a), 0, 25, "die Hanteln hängen unten"))
+    r.push(pr(`Oberarm ${a} oben (°)`, armBeugung(o, a), k.hebung[0], k.hebung[1], k.quelle.hebung))
+    r.push(pr(`Oberarm ${a} Ebene vor der Körperebene (°)`, armEbene(o, a), k.ebene[0], k.ebene[1], k.quelle.ebene))
+    r.push(pr(`Ellbogen ${a} leicht gebeugt (°)`, ellbogenWinkel(o, a), (k.ellbogen ?? [140, 176])[0], (k.ellbogen ?? [140, 176])[1], k.quelle.ellbogen ?? "die Ellbogen sind leicht gebeugt"))
+    if (k.handEll) r.push(pr(`Hand ${a} oben gegen Ellbogen (m)`, p(o, `hand_${a}`)[1] - p(o, `g:ellbogen_${a}`)[1], k.handEll[0], k.handEll[1], k.quelle.hand ?? ""))
+  }
+  k.extra?.(m, r)
+  return r
+}
+const AH_SEIT: AHS = { hebung: [80, 98], ebene: [12, 32], handEll: [-0.12, 0.02], quelle: { hebung: "Stopp, wenn die Oberarme etwa waagerecht sind", ebene: "seitlich und leicht nach vorn, etwa 15 bis 30 Grad vor der Körperebene", hand: "Die Hände sind auf Ellbogenhöhe oder knapp darunter" } }
+const AH_SEIT_NUR: AHS = { ...AH_SEIT, ebene: [0, 32], quelle: { ...AH_SEIT.quelle, ebene: "seitlich anheben" } }
+const vorHuefte = (a: "l" | "r") => (m: Messung, r: Pruefung[]) => {
+  const u = m.alle[0], h = p(u, `hand_${a}`)
+  r.push(pr(`Hand ${a} unten vor der Hüfte (m)`, h[2] - p(u, "g:becken")[2], 0.05, 0.25, "die Hand ist vor dem Körper auf Höhe der Hüfte"))
+  r.push(pr(`Hand ${a} unten über die Mitte (m)`, a === "r" ? h[0] : -h[0], -0.12, 0.08, "das Kabel verläuft vor dem Körper"))
+}
+const HEBE_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  seitheben: hebeSoll(AH_SEIT),
+  seitheben_swing: hebeSoll({ ...AH_SEIT, schwung: true, quelle: { ...AH_SEIT.quelle, hebung: "seitlich bis auf Schulterhöhe" } }),
+  seitheben_teilwdh_gedehnt: hebeSoll({ ...AH_SEIT, hebung: [38, 52], ebene: [10, 40], handEll: undefined, quelle: { ...AH_SEIT.quelle, hebung: "nur bis etwa 45 Grad" } }),
+  seitheben_band: hebeSoll(AH_SEIT_NUR),
+  seitheben_sitzend: hebeSoll({ ...AH_SEIT, basis: "sitz", quelle: { ...AH_SEIT.quelle, ebene: "seitlich und etwas nach vorn" } }),
+  seitheben_isohold: hebeSoll({ ...AH_SEIT, ebene: [5, 30], quelle: { ...AH_SEIT.quelle, ebene: "seitlich anheben", hand: "die Hände bleiben auf Höhe der Ellbogen oder knapp darunter" } }),
+  seitheben_21er: hebeSoll(AH_SEIT),
+  lu_raise: hebeSoll({ hebung: [140, 170], ebene: [0, 30], ellbogen: [160, 180], quelle: { hebung: "über Schulterhöhe hinaus, bis sie über dem Kopf ein breites V bilden", ebene: "seitlich", ellbogen: "mit fast gestreckten Ellbogen" } }),
+  seitheben_kabel_einarmig: hebeSoll({ ...AH_SEIT_NUR, arme: ["r"], extra: vorHuefte("r") }),
+  seitheben_kabel_beidarmig: hebeSoll({ ...AH_SEIT_NUR, extra: (m, r) => { vorHuefte("r")(m, r); vorHuefte("l")(m, r) } }),
+  kabel_y_raise: hebeSoll({ hebung: [118, 142], ebene: [20, 40], ellbogen: [150, 178], quelle: { hebung: "bis etwa auf Kopfhöhe oder etwas darüber", ebene: "schräg nach vorn oben in ein Y, etwa 30 Grad vor der Körperebene" } }),
+  frontheben_kh: hebeSoll({ hebung: [80, 98], ebene: [70, 95], quelle: { hebung: "bis die Hände etwa auf Schulterhöhe sind", ebene: "nach vorn" }, extra: (m, r) => { const o = m.alle[1]; for (const a of SEITEN) r.push(pr(`Hand ${a} oben auf Schulterhöhe (m)`, p(o, `hand_${a}`)[1] - p(o, `g:schulter_${a}`)[1], -0.1, 0.06, "bis die Hände etwa auf Schulterhöhe sind")) } }),
+  frontheben_scheibe: hebeSoll({ hebung: [95, 115], ebene: [60, 95], quelle: { hebung: "bis sie etwa auf Augenhöhe ist", ebene: "nach vorn" }, extra: (m, r) => r.push(pr("Hände oben auf Augenhöhe (m)", p(m.alle[1], "hand_l")[1] - p(m.alle[1], "g:kopf")[1], -0.08, 0.08, "bis sie etwa auf Augenhöhe ist")) }),
+  frontheben_kabel: hebeSoll({ hebung: [80, 98], ebene: [70, 95], arme: ["r"], quelle: { hebung: "bis die Hand etwa auf Schulterhöhe ist", ebene: "nach vorn" } }),
+}
+const aufrechtSoll = (weit: boolean) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Füße hüftbreit")]
+  r.push(pr("Oberkörper ruhig (°)", Math.abs(rumpfneigung(o) - rumpfneigung(u)), 0, 4, "Halte den Oberkörper ruhig, ohne Schwung"))
+  r.push(pr("Griff / Schulterbreite", griffbreite(u) / schulterbreite(u), weit ? 1.35 : 1.05, weit ? 1.75 : 1.4, weit ? "etwa eineinhalbfach schulterbreit" : "etwas mehr als schulterbreit"))
+  for (const a of SEITEN) {
+    r.push(pr(`Hand ${a} unten vor den Oberschenkeln (m)`, amRumpf(u, `hand_${a}`)[1], -0.55, -0.38, "vor den Oberschenkeln"))
+    r.push(pr(`Ellbogen ${a} oben auf Schulterhöhe (m)`, p(o, `g:ellbogen_${a}`)[1] - p(o, `g:schulter_${a}`)[1], -0.06, 0.04, "bis die Ellbogen auf Schulterhöhe sind"))
+    r.push(pr(`Ellbogen ${a} höher als die Hand (m)`, p(o, `g:ellbogen_${a}`)[1] - p(o, `hand_${a}`)[1], 0.08, 0.35, "Die Ellbogen sind immer höher als die Hände"))
+    r.push(pr(`Hand ${a} oben an der unteren Brust (m)`, amRumpf(o, `hand_${a}`)[1], -0.32, -0.16, weit ? "die Stange auf Höhe des unteren Brustbeins" : "die Hanteln sind etwa auf Höhe der unteren Brust"))
+    r.push(pr(`Hand ${a} oben nah am Körper (m)`, amRumpf(o, `hand_${a}`)[2], 0.04, 0.18, "nah am Körper"))
+  }
+  return r
+}
+HEBE_SOLL.aufrechtes_rudern_kh = aufrechtSoll(false)
+HEBE_SOLL.aufrechtes_rudern_kabel_weit = aufrechtSoll(true)
+
+// ---------------------------------------------------------------- Hintere Schulter
+/** Winkel des Arms (Schulter bis Hand) gegen die Senkrechte in der Welt */
+const armLot = (m: Punkte, a: "l" | "r") => {
+  const sh = p(m, `g:schulter_${a}`), h = p(m, `hand_${a}`)
+  return grad(Math.atan2(Math.hypot(h[0] - sh[0], h[2] - sh[2]), sh[1] - h[1]))
+}
+const reverseSoll = (neig: Bereich, quelleNeig: string, oben: Bereich = [78, 100], extra?: (m: Messung, r: Pruefung[]) => void) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Stand bzw. Sitz bleibt (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Füße fest")]
+  for (const [x, w] of [[u, "unten"], [o, "oben"]] as const) r.push(pr(`Oberkörperneigung ${w} (°)`, rumpfneigung(x), neig[0], neig[1], quelleNeig))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} hängt unten unter der Schulter (°)`, armLot(u, a), 0, 22, "die Hanteln hängen unter den Schultern"))
+    r.push(pr(`Oberarm ${a} oben (°)`, armBeugung(o, a), oben[0], oben[1], "bis die Oberarme in einer Linie mit dem Rücken sind"))
+    r.push(pr(`Oberarm ${a} oben seitlich (°)`, Math.abs(armEbene(o, a)), 0, 18, "Heb die Arme seitlich an"))
+    r.push(pr(`Ellbogen ${a} leicht gebeugt (°)`, ellbogenWinkel(o, a), 140, 178, "mit leicht gebeugten Ellbogen"))
+  }
+  extra?.(m, r)
+  return r
+}
+const auseinanderSoll = (k: { vornHebung: Bereich; vornEbene: Bereich; endeHebung: Bereich; endeEbene: Bereich; arme?: ("l" | "r")[]; kreuz?: boolean; quelle: [string, string]; diagonal?: boolean }) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Stell dich hüftbreit hin")]
+  for (const x of [u, o]) r.push(pr("Oberkörper aufrecht (°)", Math.abs(rumpfneigung(x)), 0, 8, "Bauch fest, ohne mitzudrehen"))
+  for (const a of k.arme ?? SEITEN) {
+    r.push(pr(`Oberarm ${a} vorn (°)`, armBeugung(u, a), k.vornHebung[0], k.vornHebung[1], k.quelle[0]))
+    if (!k.kreuz) r.push(pr(`Oberarm ${a} vorn nach vorn (°)`, armEbene(u, a), k.vornEbene[0], k.vornEbene[1], k.quelle[0]))
+    else r.push(pr(`Hand ${a} vorn über der Mitte (m)`, a === "l" ? -p(u, "hand_l")[0] : p(u, "hand_r")[0], -0.02, 0.15, k.quelle[0]))
+    if (!k.diagonal) r.push(pr(`Oberarm ${a} am Ende (°)`, armBeugung(o, a), k.endeHebung[0], k.endeHebung[1], k.quelle[1]))
+    r.push(pr(`Oberarm ${a} am Ende in Linie mit dem Körper (°)`, armEbene(o, a), k.endeEbene[0], k.endeEbene[1], k.quelle[1]))
+    r.push(pr(`Ellbogen ${a} leicht gebeugt (°)`, ellbogenWinkel(o, a), 140, 180, "Ellbogen leicht gebeugt"))
+  }
+  if (k.diagonal) {
+    r.push(pr("Rechte Hand schräg oben (°)", armBeugung(o, "r"), 115, 150, "die rechte Hand geht schräg nach oben außen"))
+    r.push(pr("Linke Hand schräg unten (°)", armBeugung(o, "l"), 30, 60, "die linke Hand schräg nach unten außen"))
+  }
+  return r
+}
+const facePullSoll = (sitz: boolean) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Stand bzw. Sitz bleibt (m)", bleibt(m, sitz ? ["g:becken"] : ["ferse_l", "ferse_r"]), 0, 0.02, sitz ? "Setz dich aufrecht vor den Zug" : "Füße hüftbreit")]
+  for (const x of [u, o]) r.push(pr("Oberkörper aufrecht, ohne Zurücklehnen (°)", Math.abs(rumpfneigung(x)), 0, 6, "Halte den Oberkörper aufrecht und ruhig, ohne dich zurückzulehnen"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} vorn gestreckt (°)`, ellbogenWinkel(u, a), 160, 180, "bis die Arme gestreckt sind"))
+    r.push(pr(`Ellbogen ${a} am Ende auf Schulterhöhe (m)`, p(o, `g:ellbogen_${a}`)[1] - p(o, `g:schulter_${a}`)[1], -0.05, 0.05, "die Ellbogen auf Schulterhöhe"))
+    r.push(pr(`Ellbogen ${a} hoch und nach außen (°)`, armEbene(o, a), -30, 5, "die Ellbogen gehen hoch und nach außen"))
+    r.push(pr(`Unterarm ${a} zeigt nach oben (°)`, unterarmLot(o, a), 0, 20, "die Unterarme zeigen nach oben, wie bei einer Bizeps-Pose"))
+    r.push(pr(`Hand ${a} neben dem Ohr (m)`, p(o, `hand_${a}`)[1] - p(o, `g:schulter_${a}`)[1], 0.14, 0.32, "die Hände sind neben den Ohren"))
+  }
+  return r
+}
+const HINTEN_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  reverse_flye_kh_vorgebeugt: reverseSoll([72, 92], "bis der Oberkörper fast waagerecht ist"),
+  reverse_flye_kh_sitzend: reverseSoll([50, 80], "bis die Brust fast auf den Oberschenkeln liegt", [76, 100], (m, r) => r.push(pr("Brust nah an den Oberschenkeln (m)", abstand(p(m.start, "bws"), p(m.start, "oberschenkel_l")), 0, 0.4, "bis die Brust fast auf den Oberschenkeln liegt"))),
+  reverse_flye_brustgestuetzt: reverseSoll([45, 62], "Bank auf etwa 30 bis 45 Grad, Brust auf der Lehne"),
+  reverse_flye_kabel: auseinanderSoll({ vornHebung: [78, 102], vornEbene: [60, 110], endeHebung: [78, 100], endeEbene: [-20, 10], kreuz: true, quelle: ["Die Arme sind vor dir gekreuzt", "bis sie etwa in einer Linie mit dem Körper sind"] }),
+  reverse_flye_kabel_einarmig: auseinanderSoll({ vornHebung: [78, 102], vornEbene: [60, 110], endeHebung: [78, 100], endeEbene: [-20, 10], kreuz: true, arme: ["r"], quelle: ["der Arm zeigt vor der Brust über die Körpermitte zum Turm", "bis er in einer Linie mit der Schulter ist"] }),
+  reverse_flye_band: auseinanderSoll({ vornHebung: [78, 102], vornEbene: [70, 100], endeHebung: [78, 100], endeEbene: [-20, 10], quelle: ["Arme gestreckt vor dir in Schulterhöhe", "bis sie in einer Linie mit dem Körper sind"] }),
+  face_pull: facePullSoll(false),
+  face_pull_sitzend: facePullSoll(true),
+  face_pull_band: facePullSoll(false),
+  band_pull_apart: auseinanderSoll({ vornHebung: [80, 100], vornEbene: [60, 90], endeHebung: [80, 100], endeEbene: [-20, 10], quelle: ["schulterbreit vor der Brust, Arme gestreckt auf Schulterhöhe", "bis die Arme ein T bilden"] }),
+  band_pull_apart_untergriff: auseinanderSoll({ vornHebung: [72, 95], vornEbene: [60, 90], endeHebung: [60, 82], endeEbene: [-20, 10], quelle: ["Arme gestreckt auf Brusthöhe", "etwas unterhalb der Schulterhöhe"] }),
+  band_pull_apart_diagonal: auseinanderSoll({ vornHebung: [80, 100], vornEbene: [60, 90], endeHebung: [0, 180], endeEbene: [-20, 10], diagonal: true, quelle: ["schulterbreit vor der Brust, Arme gestreckt", "die Arme bilden eine diagonale Linie"] }),
+}
+
+// ---------------------------------------------------------------- Rotatoren, Cuban Press, Y-T-W
+/** Drehung des Unterarms um den Oberarm in der Welt (0 = nach vorn, positiv nach außen) */
+const unterarmDrehung = (m: Punkte, a: "l" | "r") => {
+  const e = p(m, `g:ellbogen_${a}`), h = p(m, `hand_${a}`)
+  const aussen = a === "l" ? h[0] - e[0] : e[0] - h[0]
+  return grad(Math.atan2(aussen, h[2] - e[2]))
+}
+const rotSoll = (start: Bereich, ende: Bereich, q: [string, string]) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "stell dich seitlich dazu"), pr("Ellbogen bleibt am Körper (m)", bleibt(m, ["g:ellbogen_r"]), 0, 0.03, "der Ellbogen bleibt dabei am Körper wie an einem Scharnier")]
+  for (const x of [u, o]) {
+    r.push(pr("Ellbogen 90 Grad (°)", ellbogenWinkel(x, "r"), 78, 102, "beug den Ellbogen auf 90 Grad"))
+    r.push(pr("Oberarm seitlich am Körper (m)", Math.abs(p(x, "g:ellbogen_r")[0]) - Math.abs(p(x, "g:schulter_r")[0]), -0.02, 0.08, "leg den Oberarm seitlich an den Körper, ein Handtuch dazwischen"))
+    r.push(pr("Oberkörper weicht nicht aus (°)", Math.abs(rumpfneigung(x)), 0, 5, "ohne Ausweichen des Oberkörpers"))
+  }
+  r.push(pr("Unterarm am Anfang (°)", unterarmDrehung(u, "r"), start[0], start[1], q[0]))
+  r.push(pr("Unterarm am Ende (°)", unterarmDrehung(o, "r"), ende[0], ende[1], q[1]))
+  return r
+}
+const neunzigSoll = (m: Messung, r: Pruefung[], x: Punkte, a: "l" | "r", hoch: boolean) => {
+  r.push(pr(`Oberarm ${a} waagerecht (°)`, armBeugung(x, a), 78, 100, "Heb den Oberarm seitlich auf Schulterhöhe"))
+  r.push(pr(`Ellbogen ${a} 90 Grad (°)`, ellbogenWinkel(x, a), 78, 102, "der Ellbogen ist 90 Grad gebeugt"))
+  const e = p(x, `g:ellbogen_${a}`), h = p(x, `hand_${a}`)
+  if (hoch) r.push(pr(`Unterarm ${a} senkrecht nach oben (m)`, h[1] - e[1], 0.24, 0.3, "bis er senkrecht steht"))
+  else r.push(pr(`Unterarm ${a} waagerecht nach vorn (m)`, h[1] - e[1], -0.06, 0.06, "der Unterarm zeigt nach vorn"))
+}
+const ROT_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  aussenrotation: rotSoll([-40, 0], [40, 65], ["Der Unterarm zeigt nach vorn bis leicht vor den Bauch", "meist etwa 45 bis 60 Grad nach außen"]),
+  aussenrotation_kabel: rotSoll([-40, 0], [40, 65], ["vor den Bauch", "bis etwa 45 bis 60 Grad nach außen"]),
+  innenrotation: rotSoll([30, 60], [-55, -25], ["Der Unterarm zeigt zunächst nach außen", "Dreh den Unterarm nach innen vor den Bauch"]),
+  aussenrotation_90_90: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    const r = [...ruhig(m), pr("Ellbogen bleibt auf derselben Höhe (m)", bleibt(m, ["g:ellbogen_r"]), 0, 0.03, "der Ellbogen bleibt auf derselben Höhe")]
+    r.push(pr("Oberarm etwas vor der Körperebene (°)", armEbene(u, "r"), 5, 28, "etwas vor der Körperebene, das ist schulterfreundlicher"))
+    neunzigSoll(m, r, u, "r", false)
+    neunzigSoll(m, r, o, "r", true)
+    return r
+  },
+  cuban_press: (m) => {
+    const [unten, haengend, n90, oben] = m.alle
+    const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Stell dich hüftbreit hin")]
+    for (const a of SEITEN) {
+      r.push(pr(`Hand ${a} vor den Oberschenkeln (m)`, amRumpf(unten, `hand_${a}`)[1], -0.55, -0.38, "vor den Oberschenkeln"))
+      r.push(pr(`Oberarm ${a} waagerecht, Unterarm hängt (°)`, armBeugung(haengend, a), 78, 100, "bis die Oberarme waagerecht sind"))
+      r.push(pr(`Unterarm ${a} hängt nach unten (m)`, p(haengend, `g:ellbogen_${a}`)[1] - p(haengend, `hand_${a}`)[1], 0.2, 0.3, "die Unterarme nach unten hängen"))
+      neunzigSoll(m, r, n90, a, true)
+      r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(oben, a), 160, 180, "bis die Arme gestreckt sind"))
+      r.push(pr(`Arm ${a} oben über dem Kopf (°)`, armBeugung(oben, a), 150, 180, "nach oben drücken"))
+    }
+    return r
+  },
+  prone_trap_raise: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    const r = [...ruhig(m), pr("Brust bleibt auf der Bank (m)", bleibt(m, ["g:hals", "g:becken"]), 0, 0.02, "die Brust auf der Bank")]
+    r.push(pr("Bank 30 bis 45 Grad (°)", rumpfneigung(u), 45, 62, "Stell eine Bank auf etwa 30 bis 45 Grad"))
+    for (const a of SEITEN) {
+      r.push(pr(`Arm ${a} hängt unten (°)`, armLot(u, a), 0, 20, "die Arme hängen senkrecht"))
+      r.push(pr(`Arm ${a} oben im Y in Linie mit dem Körper (°)`, armBeugung(o, a), 140, 168, "in ein Y, bis sie etwa in einer Linie mit dem Körper sind"))
+      r.push(pr(`Arm ${a} gestreckt (°)`, ellbogenWinkel(o, a), 162, 180, "Heb die gestreckten Arme"))
+    }
+    return r
+  },
+  ytw_schraegbank: (m) => {
+    const [u, y, t, w] = m.alle
+    const r = [...ruhig(m), pr("Brust bleibt auf der Bank (m)", bleibt(m, ["g:hals", "g:becken"]), 0, 0.02, "die Brust auf der Lehne")]
+    for (const a of SEITEN) {
+      r.push(pr(`Arm ${a} hängt unten (°)`, armLot(u, a), 0, 20, "die Arme hängen senkrecht nach unten"))
+      r.push(pr(`Y: Arm ${a} schräg nach vorn oben (°)`, armBeugung(y, a), 140, 168, "Y: schräg nach vorn oben bis auf Kopfhöhe"))
+      r.push(pr(`T: Arm ${a} seitlich (°)`, armBeugung(t, a), 80, 100, "T: seitlich bis auf Schulterhöhe"))
+      r.push(pr(`T: Arm ${a} in der Ebene (°)`, Math.abs(armEbene(t, a)), 0, 15, "T: seitlich"))
+      r.push(pr(`W: Ellbogen ${a} gebeugt (°)`, ellbogenWinkel(w, a), 70, 115, "W: Ellbogen gebeugt nach hinten"))
+      r.push(pr(`W: Ellbogen ${a} hinter dem Rumpf (m)`, amRumpf(w, `g:ellbogen_${a}`)[2], -0.25, -0.03, "Zieh die Ellbogen nach hinten"))
+    }
+    return r
+  },
+}
+const bodenArme = (x: Punkte) => Math.min(p(x, "hand_l")[1], p(x, "hand_r")[1])
+ROT_SOLL.ytw = (m) => {
+  const [yl, yh, tl, th, wl, wh] = m.alle
+  const r = [...ruhig(m), pr("Becken bleibt liegen (m)", bleibt(m, ["g:becken"]), 0, 0.02, "Leg dich auf den Bauch")]
+  for (const [lieg, hoch, was] of [[yl, yh, "Y"], [tl, th, "T"], [wl, wh, "W"]] as const) r.push(pr(`${was}: Arme heben ab (m)`, bodenArme(hoch) - bodenArme(lieg), 0.03, 0.12, "Heb die Arme einige Zentimeter vom Boden"))
+  for (const a of SEITEN) {
+    r.push(pr(`Y: Arm ${a} schräg nach vorn (°)`, armBeugung(yh, a), 140, 165, "Streck die Arme schräg nach vorn oben in ein Y"))
+    r.push(pr(`T: Arm ${a} seitlich (°)`, armBeugung(th, a), 80, 100, "Streck die Arme seitlich zu einem T"))
+    r.push(pr(`W: Ellbogen ${a} gebeugt (°)`, ellbogenWinkel(wh, a), 70, 120, "Beug die Ellbogen, die Hände sind auf Kopfhöhe"))
+  }
+  return r
+}
+ROT_SOLL.schwimmer_bauchlage = (m) => {
+  const [oben, seite, huefte] = m.alle
+  const r = [...ruhig(m), pr("Becken bleibt liegen (m)", bleibt(m, ["g:becken"]), 0, 0.02, "Leg dich auf den Bauch")]
+  for (const x of m.alle) r.push(pr("Arme schweben über dem Boden (m)", bodenArme(x), 0.06, 0.4, "ohne den Boden zu berühren"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} über dem Kopf (°)`, armBeugung(oben, a), 155, 180, "die Arme sind über dem Kopf ausgestreckt"))
+    r.push(pr(`Arm ${a} seitlich (°)`, armBeugung(seite, a), 78, 102, "in einem großen Bogen seitlich nach unten"))
+    r.push(pr(`Arm ${a} an der Hüfte (°)`, armBeugung(huefte, a), 0, 40, "kurz vor der Hüfte"))
+  }
+  return r
+}
+
+// ---------------------------------------------------------------- Schulterheben (Shrugs)
+const schulterHoehe = (x: Punkte) => (p(x, "g:schulter_l")[1] + p(x, "g:schulter_r")[1]) / 2
+interface SHS {
+  lage?: "stand" | "schraeg" | "ueberkopf"
+  last: "vorn" | "seite" | "hinten" | "oben"
+  quelle?: string
+}
+const shrugSoll = (k: SHS) => (m: Messung): Pruefung[] => {
+  const u = m.alle[0], o = k.lage === "schraeg" ? m.alle[1] : m.alle.reduce((a, b) => (schulterHoehe(b) > schulterHoehe(a) ? b : a))
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Stell dich hüftbreit hin")]
+  if (k.lage === "schraeg") r.push(pr("Bank 30 bis 45 Grad (°)", rumpfneigung(u), 45, 62, "Stell eine Bank auf etwa 30 bis 45 Grad"))
+  else for (const x of [u, o]) r.push(pr("Oberkörper aufrecht (°)", Math.abs(rumpfneigung(x)), 0, 8, "der Oberkörper ist aufrecht oder minimal nach vorn geneigt"))
+  if (k.lage === "schraeg") {
+    // auf der Schrägbank: die Schulterblätter gehen den Rumpf hinauf nach hinten oben
+    const b = p(u, "g:becken"), h = p(u, "g:hals"), l = Math.hypot(h[1] - b[1], h[2] - b[2])
+    const auf = (x: Punkte) => ((p(x, "g:schulter_l")[1] + p(x, "g:schulter_r")[1]) / 2 * (h[1] - b[1]) + (p(x, "g:schulter_l")[2] + p(x, "g:schulter_r")[2]) / 2 * (h[2] - b[2])) / l
+    r.push(pr("Schulterblätter gehen den Rumpf hinauf (m)", auf(o) - auf(u), 0.025, 0.12, "Zieh die Schulterblätter nach hinten oben zusammen"))
+  } else r.push(pr("Schultern gehen nach oben (m)", schulterHoehe(o) - schulterHoehe(u), 0.025, 0.12, "Zieh die Schultern gerade nach oben in Richtung Ohren"))
+  for (const a of SEITEN) for (const x of [u, o]) r.push(pr(`Arm ${a} gestreckt (°)`, ellbogenWinkel(x, a), 160, 180, "die Arme hängen gestreckt"))
+  if (k.last === "vorn") {
+    const st = amRumpf(u, "stange")
+    r.push(pr("Stange an den Oberschenkeln (m)", st[2], 0.02, 0.2, "die Stange liegt an den Oberschenkeln"))
+    r.push(pr("Griff etwas breiter als hüftbreit", griffbreite(u) / Math.abs(p(u, "g:huefte_l")[0] - p(u, "g:huefte_r")[0]), 1.4, 2.6, "Griff etwas breiter als hüftbreit"))
+  }
+  if (k.last === "hinten") r.push(pr("Stange hinter dem Körper am Gesäß (m)", amRumpf(u, "stange")[2], -0.25, -0.03, "die Stange liegt am Gesäß"))
+  if (k.last === "seite") for (const a of SEITEN) r.push(pr(`Hand ${a} neben dem Körper (m)`, Math.abs(p(u, `hand_${a}`)[0]) - Math.abs(p(u, `g:huefte_${a}`)[0]), 0.06, 0.3, "Die Arme hängen gestreckt neben dem Körper"))
+  if (k.last === "oben") for (const a of SEITEN) r.push(pr(`Hand ${a} über dem Kopf (m)`, p(u, `hand_${a}`)[1] - p(u, `g:schulter_${a}`)[1], 0.42, 0.6, "über den Kopf, die Arme sind gestreckt"))
+  if (k.lage === "schraeg") for (const a of SEITEN) r.push(pr(`Arm ${a} hängt senkrecht (°)`, armLot(u, a), 0, 18, "die Arme hängen gestreckt nach unten"))
+  return r
+}
+const SHRUG_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  shrug_lh: shrugSoll({ last: "vorn" }),
+  shrug_multipresse: shrugSoll({ last: "vorn" }),
+  shrug_trapbar: shrugSoll({ last: "seite" }),
+  shrug_kh: shrugSoll({ last: "seite" }),
+  shrug_band: shrugSoll({ last: "seite" }),
+  shrug_scheibe: shrugSoll({ last: "seite" }),
+  shrug_kabel: shrugSoll({ last: "vorn" }),
+  shrug_kabel_in: shrugSoll({ last: "seite" }),
+  shrug_hinter_ruecken: shrugSoll({ last: "hinten" }),
+  shrug_ueberkopf: shrugSoll({ last: "oben", lage: "ueberkopf" }),
+  shrug_kh_schraeg: shrugSoll({ last: "seite", lage: "schraeg" }),
+}
+
+const zugExplosivSoll = (high: boolean) => (m: Messung): Pruefung[] => {
+  const [u, o, e] = m.alle
+  const r = [...ruhig(m), pr("Füße bleiben am Platz (m)", bleibt(m, ["ferse_l", "ferse_r", "fuss_l", "fuss_r"]), 0, 0.02, "Füße hüftbreit, sanft landen")]
+  const knie = (p(u, "g:knie_l")[1] + p(u, "g:knie_r")[1]) / 2
+  r.push(pr("Stange knapp über den Knien (m)", stange(u)[1] - knie, 0.0, 0.14, "bis die Stange knapp über den Knien ist"))
+  r.push(pr("Rücken gerade vorgeneigt (°)", rumpfneigung(u), 12, 45, "Beuge Hüfte und Knie leicht, Rücken gerade"))
+  r.push(pr("Schultern über der Stange (m)", (p(u, "g:schulter_l")[2] + p(u, "g:schulter_r")[2]) / 2 - stange(u)[2], -0.04, 0.12, "Schultern über der Stange"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} unten gestreckt (°)`, ellbogenWinkel(u, a), 160, 180, "Arme gestreckt"))
+    r.push(pr(`Knie ${a} oben gestreckt (°)`, kniewinkel(o, a), 165, 180, "Streck explosiv Hüfte und Knie"))
+  }
+  r.push(pr("Oberkörper oben aufrecht (°)", Math.abs(rumpfneigung(o)), 0, 8, "Streck Hüfte und Knie"))
+  if (!high) {
+    r.push(pr("Schultern oben gehoben (m)", schulterHoehe(o) - schulterHoehe(e), 0.025, 0.12, "zieh im selben Moment die Schultern kräftig nach oben"))
+    for (const a of SEITEN) r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "Die Arme bleiben gestreckt"))
+  } else
+    for (const a of SEITEN) {
+      r.push(pr(`Ellbogen ${a} oben über der Hand (m)`, p(o, `g:ellbogen_${a}`)[1] - p(o, `hand_${a}`)[1], 0.05, 0.35, "die Ellbogen gehen nach oben und außen"))
+      r.push(pr(`Stange oben an der unteren Brust (m)`, amRumpf(o, "stange")[1], -0.34, -0.14, "bis die Stange etwa auf Höhe der unteren Brust ist"))
+      r.push(pr(`Stange nah am Körper (m)`, amRumpf(o, "stange")[2], 0.03, 0.2, "Die Stange bleibt nah am Körper"))
+    }
+  return r
+}
+SHRUG_SOLL.shrug_explosiv = zugExplosivSoll(false)
+SHRUG_SOLL.high_pull_lh = zugExplosivSoll(true)
+
+// ---------------------------------------------------------------- Schulterblatt
+const SB_SOLL: Record<string, (m: Messung) => Pruefung[]> = {}
+const blattLsSoll = (wand: boolean) => (m: Messung): Pruefung[] => {
+  const [zu, vor] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Hände bleiben (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.02, wand ? "die Hände an der Wand" : "Hände unter den Schultern")]
+  for (const x of [zu, vor]) {
+    for (const a of SEITEN) r.push(pr(`Arm ${a} bleibt gestreckt (°)`, ellbogenWinkel(x, a), 160, 180, "Die Arme bleiben gestreckt"))
+    r.push(pr("Körper gerade (°)", koerperLinie(x), 160, 185, "Körper gerade von Kopf bis Fuß, die Hüfte sinkt nicht ab"))
+  }
+  // die Brust sinkt zwischen die Schultern bzw. Richtung Wand, nur wenige Zentimeter
+  const weg = wand ? p(zu, "bws")[2] - p(vor, "bws")[2] : p(vor, "bws")[1] - p(zu, "bws")[1]
+  r.push(pr("Weg der Brust (m)", Math.abs(weg), 0.02, 0.09, "Der Bewegungsweg ist klein, nur wenige Zentimeter"))
+  return r
+}
+SB_SOLL.schulterblatt_liegestuetz = blattLsSoll(false)
+SB_SOLL.schulterblatt_liegestuetz_wand = blattLsSoll(true)
+SB_SOLL.liegestuetz_plus = (m) => {
+  const [o, u, plus] = m.alle
+  const r = [...ruhig(m), pr("Hände bleiben (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.02, "hohe Liegestützposition")]
+  r.push(pr("Hände etwas breiter als schulterbreit", griffbreite(o) / schulterbreite(o), 1.05, 1.5, "Hände etwas breiter als schulterbreit"))
+  r.push(pr("Brust unten knapp über dem Boden (m)", p(u, "bws")[1] - 0.12, 0.05, 0.2, "bis die Brust knapp über dem Boden ist"))
+  for (const a of SEITEN) {
+    r.push(pr(`Ellbogen ${a} unten etwa 45 Grad (°)`, abspreizen(u, a), 30, 60, "Ellbogen etwa 45 Grad vom Körper"))
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "bis die Arme gestreckt sind"))
+    r.push(pr(`Arm ${a} im Plus gestreckt (°)`, ellbogenWinkel(plus, a), 160, 180, "noch weiter vom Boden weg"))
+  }
+  r.push(pr("Plus: Brust noch höher (m)", p(plus, "bws")[1] - p(o, "bws")[1], 0.015, 0.08, "Drück dich noch weiter vom Boden weg"))
+  for (const x of m.alle) r.push(pr("Körper gerade (°)", koerperLinie(x), 160, 185, "Bauch und Gesäß fest"))
+  return r
+}
+const serratusSoll = (kabel: boolean) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const arme = kabel ? (["r"] as const) : SEITEN
+  const r = [...ruhig(m)]
+  for (const a of arme) {
+    for (const x of [u, o]) r.push(pr(`Arm ${a} gestreckt (°)`, ellbogenWinkel(x, a), 160, 180, "Der Arm bleibt gestreckt"))
+    const weg = kabel ? p(o, `hand_${a}`)[2] - p(u, `hand_${a}`)[2] : p(o, `hand_${a}`)[1] - p(u, `hand_${a}`)[1]
+    r.push(pr(`Hand ${a} geht mit dem Schulterblatt (m)`, weg, 0.03, 0.12, kabel ? "bis das Schulterblatt ganz um den Brustkorb nach vorn geschoben ist" : "die Bewegung ist nur wenige Zentimeter"))
+    if (kabel) r.push(pr("Arm auf Schulterhöhe (m)", Math.abs(p(o, "hand_r")[1] - p(o, "g:schulter_r")[1]), 0, 0.08, "streck den Arm nach vorn auf Schulterhöhe"))
+    else r.push(pr(`Arm ${a} senkrecht über der Schulter (°)`, Math.abs(armLot(u, a) - 180), 0, 15, "Streck die Arme senkrecht über die Schultern zur Decke"))
+  }
+  if (kabel) r.push(pr("Oberkörper ruhig (°)", Math.abs(rumpfneigung(o) - rumpfneigung(u)), 0, 4, "Bauch fest"))
+  return r
+}
+SB_SOLL.serratus_punch_liegend = serratusSoll(false)
+SB_SOLL.serratus_punch_kabel = serratusSoll(true)
+
+// ---------------------------------------------------------------- Pike-Liegestütz
+const pikeSoll = (erhoeht: boolean) => (m: Messung): Pruefung[] => {
+  const [o, u] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Hände und Füße bleiben (m)", bleibt(m, ["hand_l", "hand_r", "fuss_l", "fuss_r"]), 0, 0.02, "Hände etwas breiter als schulterbreit")]
+  r.push(pr("Hände etwas breiter als schulterbreit", griffbreite(o) / schulterbreite(o), 1.05, 1.6, "Hände etwas breiter als schulterbreit"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "bis die Arme gestreckt sind"))
+    if (!erhoeht) r.push(pr(`Bein ${a} fast gestreckt (°)`, kniewinkel(o, a), 150, 180, "mit fast gestreckten Beinen"))
+    r.push(pr(`Ellbogen ${a} unten schräg nach hinten (m)`, p(u, `hand_${a}`)[2] - p(u, `g:ellbogen_${a}`)[2], 0.02, 0.2, "Die Ellbogen zeigen schräg nach hinten"))
+  }
+  r.push(pr("Gesäß hoch (m)", p(o, "g:becken")[1] - (p(o, "g:schulter_l")[1] + p(o, "g:schulter_r")[1]) / 2, erhoeht ? 0.25 : 0.2, 0.7, erhoeht ? "bis die Hüfte fast über den Schultern steht" : "ein umgekehrtes V, Gesäß hoch"))
+  if (erhoeht) {
+    r.push(pr("Hüfte fast über den Schultern (m)", Math.abs(p(o, "g:becken")[2] - (p(o, "g:schulter_l")[2] + p(o, "g:schulter_r")[2]) / 2), 0, 0.2, "bis die Hüfte fast über den Schultern steht"))
+    r.push(pr("Füße auf der Box (m)", p(o, "fuss_l")[1], 0.5, 0.64, "Leg die Füße auf die Box"))
+  }
+  r.push(pr("Kopf unten Richtung Boden (m)", p(u, "kopf")[1], 0.08, 0.26, "senk den Kopf Richtung Boden"))
+  r.push(pr("Kopf vor den Händen (m)", p(u, "kopf")[2] - p(u, "hand_l")[2], -0.03, 0.2, "vor den Händen, sodass Kopf und Hände ein Dreieck bilden"))
+  r.push(pr("Gesäß bleibt hoch (m)", p(u, "g:becken")[1], 0.6, 1.1, "Halte das Gesäß während des ganzen Satzes hoch"))
+  return r
+}
+SB_SOLL.pike_liegestuetz = pikeSoll(false)
+SB_SOLL.pike_liegestuetz_erhoeht = pikeSoll(true)
+
+const wallSlideSoll = (m: Messung): Pruefung[] => {
+  const [w, o] = [m.start, m.ziel]
+  const WAND_HINTEN = -0.5
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "die Füße etwa eine Fußlänge vor der Wand")]
+  r.push(pr("Füße eine Fußlänge vor der Wand (m)", p(w, "ferse_l")[2] - WAND_HINTEN, 0.18, 0.35, "die Füße etwa eine Fußlänge vor der Wand"))
+  for (const a of SEITEN) r.push(pr(`Knie ${a} leicht gebeugt (°)`, kniewinkel(w, a), 150, 178, "Knie leicht gebeugt"))
+  for (const x of [w, o]) {
+    for (const [n, q] of [["gesaess", "Gesäß"], ["bws", "oberer Rücken"], ["kopf", "Hinterkopf"]] as const) r.push(pr(`${q} an der Wand (m)`, p(x, n)[2] - WAND_HINTEN, 0, 0.05, "Gesäß, oberer Rücken und Hinterkopf berühren die Wand"))
+    for (const a of SEITEN) r.push(pr(`Unterarm ${a} an der Wand (m)`, Math.max(p(x, `g:ellbogen_${a}`)[2], p(x, `hand_${a}`)[2]) - WAND_HINTEN, 0, 0.07, "ohne dass die Arme die Wand verlassen"))
+  }
+  for (const a of SEITEN) {
+    r.push(pr(`W: Ellbogen ${a} auf Schulterhöhe (m)`, p(w, `g:ellbogen_${a}`)[1] - p(w, `g:schulter_${a}`)[1], -0.06, 0.05, "die Ellbogen sind etwa 90 Grad gebeugt auf Schulterhöhe"))
+    r.push(pr(`W: Ellbogen ${a} 90 Grad (°)`, ellbogenWinkel(w, a), 75, 105, "etwa 90 Grad gebeugt"))
+    r.push(pr(`Arm ${a} oben weiter nach oben (m)`, p(o, `hand_${a}`)[1] - p(w, `hand_${a}`)[1], 0.12, 0.4, "Schieb die Arme langsam an der Wand nach oben, so weit es geht"))
+  }
+  return r
+}
+SB_SOLL.wall_slide = wallSlideSoll
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1281,6 +1738,12 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...STAND_ROW_SOLL,
   ...WECHSEL_SOLL,
   ...HANG_ROW_SOLL,
+  ...UEBERKOPF_SOLL,
+  ...HEBE_SOLL,
+  ...HINTEN_SOLL,
+  ...ROT_SOLL,
+  ...SHRUG_SOLL,
+  ...SB_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
