@@ -7,7 +7,7 @@
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { ARME_VERSCHRAENKT, ATHLETISCH, B, H, HALBKNIESTAND, KNIESTAND, RUECKENLAGE, RUECKENLAGE_AUF, STAND, STUHLSITZ, VIERFUESSLER, folge, halte, mit, wdh } from "./basis"
-import { FAUST, HAMMER, KH, KH_R, OBERGRIFF, ROLLE_OBEN, kabel, kabelstange } from "./kraftbasis"
+import { FAUST, HAMMER, KH, KH_R, OBERGRIFF, kabel, kabelstange } from "./kraftbasis"
 import { stuetzPaar, unterarmStuetz } from "./kraft_druecken"
 import { seitBoden } from "./seitstuetz"
 import { SCHULTER_X } from "./ziele"
@@ -95,9 +95,35 @@ const DB_STRECK: Winkel = { schulter_r: [172, 6, 0], huefte_l: [6, 4, 0], knie_l
 const DB_STRECK_2: Winkel = { schulter_l: [172, 6, 0], huefte_r: [6, 4, 0], knie_r: [2], fuss_r: [-10, 0] }
 /** Hüftbeugung, bei der die Ferse mit 90 Grad im Knie gerade den Boden berührt (gemessen: Oberschenkel 0,38 m, Unterschenkel 0,47 m) */
 const FERSE_TIPP = 49
-const HAENDE_KOPF: Winkel = { ...B("schulter", [150, 60, 0]), ...B("ellbogen", [140, 0]) }
-const CRUNCH_UNTEN: Haltung = mit(RUECKENLAGE_AUF, { g: HAENDE_KOPF })
-const crunchOben = (w: Winkel = {}): Haltung => mit(RUECKENLAGE_AUF, { g: { ...HAENDE_KOPF, bws: [34, 0, 0], hals: [20, 0, 0], ...w } })
+/** Fingerspitzen locker an den Schläfen, Ellbogen zur Seite (Zielpunkte im Rahmen der Schultern, gehen beim Einrollen mit) */
+const HAENDE_KOPF: Winkel = { ...B("schulter", [15, 100, 0]), ...B("ellbogen", [130, 0]) }
+const KOPF_HAENDE: NonNullable<Haltung["ziele"]> = { hand_l: { pos: [0.09, 0.25, 0.03], bezug: "schultern" }, hand_r: { pos: [-0.09, 0.25, 0.03], bezug: "schultern" } }
+/** Beide Hände halten die Scheibe auf der Brust */
+const HAENDE_BRUST: NonNullable<Haltung["ziele"]> = { hand_l: { pos: [0.05, -0.12, 0.15], bezug: "schultern" }, hand_r: { pos: [-0.05, -0.12, 0.15], bezug: "schultern" } }
+/** McGill: beide Hände flach unter dem unteren Rücken, Ellbogen seitlich am Boden */
+const unterRuecken = (oben: boolean): NonNullable<Haltung["ziele"]> => ({ ferse_l: { pos: [0.119, 0.07, 0.595] }, hand_l: { pos: [0.08, 0.072, -0.1] }, hand_r: { pos: [-0.08, 0.072, -0.1] }, ellbogen_l: { pos: [0.29, oben ? 0.105 : 0.08, -0.25] }, ellbogen_r: { pos: [-0.29, oben ? 0.105 : 0.08, -0.25] } })
+const CRUNCH_UNTEN: Haltung = mit(RUECKENLAGE_AUF, { g: HAENDE_KOPF, ziele: KOPF_HAENDE })
+/** Schräger Crunch: rechter Knöchel auf dem linken Knie, linke Hand an der Schläfe, rechter Arm seitlich am Boden */
+const schraegCrunch = (oben: boolean): Haltung =>
+  mit(RUECKENLAGE_AUF, {
+    g: { huefte_r: [70, 30, 50], knie_r: [100], fuss_r: [0, 0], schulter_l: [15, 100, 0], ellbogen_l: [130, 0], schulter_r: [0, 60, 0], ellbogen_r: [6, 0], ...(oben ? { bws: [30, 0, -24], lws: [4, 0, -6], hals: [18, 0, 0] } : {}) },
+    ziele: { hand_l: KOPF_HAENDE.hand_l, fuss_r: { pos: [0.2, 0.5, 0.22] }, hand_r: { pos: [-0.56, 0.05, -0.12] } },
+    pos: [0, 0.119, 0],
+    boden: false,
+  })
+/**
+ * Crunch auf dem Gymnastikball (65 cm): unterer und mittlerer Rücken liegen oben auf dem Ball, Becken davor etwa auf
+ * Kniehöhe, Füße hüftbreit flach am Boden, Knie etwa 90 Grad; unten sinkt der Oberkörper über den Ball nach hinten.
+ */
+// Die Lendenwirbelsäule der Figur ist starr: auf dem Ball liegt das Becken höher als beim Menschen, die Knie bleiben bei etwa 120 Grad
+const BALL_KIPP = -90, BALL_UNTEN = 0.8, BALL_OBEN = 0.73, BALL_FUSS = 0.45
+const ballCrunch = (oben: boolean): Haltung =>
+  H(
+    { ...B("huefte", [20, 6, 0]), ...B("knie", [90]), ...B("fuss", [0, 0]), ...HAENDE_KOPF, ...(oben ? { lws: [12, 0, 0], bws: [32, 0, 0], hals: [18, 0, 0] } : { lws: [-8, 0, 0], bws: [-14, 0, 0], hals: [-10, 0, 0] }) },
+    [BALL_KIPP, 0, 0],
+    { pos: [0, oben ? BALL_OBEN : BALL_UNTEN, 0], boden: false, ziele: { ...KOPF_HAENDE, ferse_l: { pos: [0.15, 0.066, BALL_FUSS] }, ferse_r: { pos: [-0.15, 0.066, BALL_FUSS] } } },
+  )
+const crunchOben = (w: Winkel = {}, ziele: NonNullable<Haltung["ziele"]> = KOPF_HAENDE): Haltung => mit(RUECKENLAGE_AUF, { g: { ...HAENDE_KOPF, bws: [34, 0, 0], hals: [20, 0, 0], ...w }, ziele })
 /** Bird Dog Crunch: rechter Ellbogen und linkes Knie treffen sich unter dem Bauch; linke Hand und rechtes Knie bleiben */
 const BD_CRUNCH: Haltung = mit(VIERFUESSLER, {
   g: { schulter_r: [40, -10, 0], ellbogen_r: [120, 90], huefte_l: [125, -4, 0], knie_l: [140], fuss_l: [-40, 0], bws: [12, 0, 0], lws: [8, 0, 0], hals: [-10, 0, 0] },
@@ -354,29 +380,27 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
   ),
   // ------------------------------------------------------------ Crunches und Rückenlage
   crunch: wdh("seite", CRUNCH_UNTEN, crunchOben(), 1.0, { aus: 1.4, texte: ["Oberkörper einrollen, Schulterblätter heben", "Langsam ablegen"] }),
-  crunch_gewicht: wdh("seite", mit(RUECKENLAGE_AUF, { g: ARME_VERSCHRAENKT }), crunchOben(ARME_VERSCHRAENKT), 1.0, { aus: 1.4, texte: ["Mit der Scheibe auf der Brust einrollen", "Langsam ablegen"], hilfsmittel: [{ art: "hantelscheibe", an: "bws" }] }),
+  crunch_gewicht: wdh("seite", mit(RUECKENLAGE_AUF, { g: ARME_VERSCHRAENKT, ziele: HAENDE_BRUST }), crunchOben(ARME_VERSCHRAENKT, HAENDE_BRUST), 1.0, { aus: 1.4, texte: ["Mit der Scheibe auf der Brust einrollen", "Langsam ablegen"], hilfsmittel: [{ art: "hantelscheibe", an: "bws" }] }),
   kabel_crunch: wdh(
     "seite",
-    kniend({ ...B("schulter", [150, 20, 0]), ...B("ellbogen", [130, 0]), ...FAUST, ...B("huefte", [30, 4, 0]) }),
-    mit(KNIESTAND, { dreh: [30, 0, 0], g: { ...B("schulter", [120, 20, 0]), ...B("ellbogen", [130, 0]), ...FAUST, ...B("huefte", [50, 4, 0]), lws: [20, 0, 0], bws: [30, 0, 0], hals: [20, 0, 0] } }),
+    mit(KNIESTAND, { dreh: [16, 0, 0], pos: [0, 0.465, 0], boden: false, g: { ...B("schulter", [150, 20, 0]), ...B("ellbogen", [130, 0]), ...FAUST, ...B("huefte", [16, 4, 0]) } }),
+    mit(KNIESTAND, { dreh: [26, 0, 0], pos: [0, 0.46, 0], boden: false, g: { ...B("schulter", [110, 20, 0]), ...B("ellbogen", [130, 0]), ...FAUST, ...B("huefte", [28, 4, 0]), lws: [26, 0, 0], bws: [36, 0, 0], hals: [20, 0, 0] } }),
     1.2,
-    { aus: 1.6, texte: ["Oberkörper mit dem Seil nach unten einrollen", "Langsam aufrichten"], hilfsmittel: kabel("haende", ROLLE_OBEN) },
+    { aus: 1.6, texte: ["Oberkörper mit dem Seil einrollen, Ellbogen Richtung Oberschenkel", "Langsam aufrichten, bis der Bauch gedehnt ist"], hilfsmittel: kabel("haende", [0, 2.1, 0.75]) },
   ),
-  crunch_ball: wdh(
-    "seite",
-    H({ ...B("huefte", [10, 8, 0]), ...B("knie", [100]), ...B("fuss", [10, 0]), ...HAENDE_KOPF, lws: [-10, 0, 0], bws: [-10, 0, 0] }, [-80, 0, 0], { pos: [0, 0.62, 0], boden: false }),
-    H({ ...B("huefte", [30, 8, 0]), ...B("knie", [100]), ...B("fuss", [10, 0]), ...HAENDE_KOPF, lws: [10, 0, 0], bws: [30, 0, 0], hals: [20, 0, 0] }, [-60, 0, 0], { pos: [0, 0.62, 0], boden: false }),
-    1.2,
-    { aus: 1.6, texte: ["Über den Ball einrollen", "Langsam über den Ball zurück"], hilfsmittel: [{ art: "ball", unter: "becken" }] },
-  ),
-  reverse_crunch: wdh("seite", mit(RUECKENLAGE, { g: { ...TISCH, ...B("schulter", [0, 14, 0]) } }), mit(RUECKENLAGE, { dreh: [-120, 0, 0], g: { ...B("huefte", [110, 4, 0]), ...B("knie", [100]), ...B("schulter", [-20, 14, 0]), bws: [26, 0, 0] } }), 1.2, {
+  crunch_ball: wdh("seite", ballCrunch(false), ballCrunch(true), 1.2, {
+    aus: 1.6,
+    texte: ["Oberkörper über den Ball einrollen, bis der Bauch maximal verkürzt ist", "Langsam über den Ball zurück in die Dehnung"],
+    hilfsmittel: [{ art: "ball", unter: "ruecken" }],
+  }),
+  reverse_crunch: wdh("seite", mit(RUECKENLAGE, { g: { ...TISCH, ...B("schulter", [0, 14, 0]) } }), mit(RUECKENLAGE, { dreh: [-108, 0, 0], g: { ...B("huefte", [118, 4, 0]), ...B("knie", [100]), ...B("schulter", [-6, 14, 0]), bws: [14, 0, 0] } }), 1.2, {
     aus: 1.6,
     texte: ["Becken einrollen, Hüfte leicht vom Boden", "Langsam abrollen"],
   }),
   mcgill_curl_up: wdh(
     "seite",
-    mit(RUECKENLAGE, { g: { huefte_l: [60, 4, 0], knie_l: [100], fuss_l: [10, 0], ...B("schulter", [-10, 30, 0]), ...B("ellbogen", [60, 0]) } }),
-    mit(RUECKENLAGE, { g: { huefte_l: [60, 4, 0], knie_l: [100], fuss_l: [10, 0], ...B("schulter", [-10, 30, 0]), ...B("ellbogen", [60, 0]), bws: [14, 0, 0], hals: [4, 0, 0] } }),
+    mit(RUECKENLAGE, { g: { huefte_l: [60, 4, 0], knie_l: [100], fuss_l: [10, 0], ...B("schulter", [-10, 30, 0]), ...B("ellbogen", [60, 0]), ...B("hand", [0, 0]) }, ziele: unterRuecken(false), pos: [0, 0.182, 0], boden: false }),
+    mit(RUECKENLAGE, { g: { huefte_l: [60, 4, 0], knie_l: [100], fuss_l: [10, 0], ...B("schulter", [-10, 30, 0]), ...B("ellbogen", [60, 0]), ...B("hand", [0, 0]), bws: [12, 0, 0], hals: [2, 0, 0] }, ziele: unterRuecken(true), pos: [0, 0.182, 0], boden: false }),
     0.8,
     { aus: 1.2, halten: 8, texte: ["Kopf und Schultern minimal heben, Hals lang", "Ablegen"] },
   ),
@@ -384,16 +408,16 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
     aus: 2.0,
     texte: ["Gestreckte Beine heben, unterer Rücken bleibt am Boden", "Langsam bis knapp über den Boden senken"],
   }),
-  v_up: wdh("seite", mit(RUECKENLAGE, { g: { ...B("schulter", [170, 8, 0]), ...B("ellbogen", [4, 90]) } }), H({ ...B("huefte", [96, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]), ...B("schulter", [92, 8, 0]), ...B("ellbogen", [4, 90]), bws: [10, 0, 0] }, [-46, 0, 0]), 1.0, {
+  v_up: wdh("seite", mit(RUECKENLAGE, { g: { ...B("schulter", [170, 8, 0]), ...B("ellbogen", [4, 90]) } }), H({ ...B("huefte", [125, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]), ...B("schulter", [70, 8, 0]), ...B("ellbogen", [4, 90]), bws: [10, 0, 0] }, [-30, 0, 0], { pos: [0, 0.12, 0], boden: false, ziele: { hand_l: { pos: [0.09, 0.61, 0.23] }, hand_r: { pos: [-0.09, 0.61, 0.23] } } }), 1.0, {
     aus: 1.6,
     texte: ["Arme und Beine gleichzeitig heben, Hände zu den Füßen", "Langsam ablegen"],
   }),
-  schraeger_crunch: wdh("seite", CRUNCH_UNTEN, crunchOben({ bws: [30, 0, 22], lws: [4, 0, 6] }), 1.0, { aus: 1.4, seiten: true, texte: ["Schulter zum gegenüberliegenden Knie", "Langsam ablegen"] }),
+  schraeger_crunch: wdh("seite", schraegCrunch(false), schraegCrunch(true), 1.0, { aus: 1.4, seiten: true, texte: ["Schulter zum gegenüberliegenden Knie", "Langsam ablegen"] }),
   fahrrad_crunch: folge(
     "seite",
     [
-      [crunchOben({ huefte_l: [100, 4, 0], knie_l: [110], huefte_r: [30, 4, 0], knie_r: [4], bws: [30, 0, 26] }), 0.8, "Ellbogen zum Gegenknie"],
-      [crunchOben({ huefte_r: [100, 4, 0], knie_r: [110], huefte_l: [30, 4, 0], knie_l: [4], bws: [30, 0, -26] }), 0.8, "Seite wechseln, Beine radeln"],
+      [crunchOben({ huefte_r: [100, 4, 0], knie_r: [110], huefte_l: [30, 4, 0], knie_l: [4], bws: [30, 0, -26] }), 0.8, "Rechtes Knie zur Brust, linke Schulter zum rechten Knie, linkes Bein lang"],
+      [crunchOben({ huefte_l: [100, 4, 0], knie_l: [110], huefte_r: [30, 4, 0], knie_r: [4], bws: [30, 0, 26] }), 0.8, "Seite wechseln, Schultern bleiben oben"],
     ],
   ),
   scheibenwischer_liegend_rumpf: folge(
