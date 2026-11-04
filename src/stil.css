@@ -3092,3 +3092,50 @@ select.ampel.rot {
   color: var(--leise);
   font-size: 12px;
 }
+
+/* Supersatz: Karten der Gruppe mit farbiger Leiste links verbunden */
+.superkopf {
+  margin: 18px 0 -8px;
+  padding: 8px 12px;
+  border-left: 5px solid var(--superfarbe);
+  border-radius: var(--gross) var(--gross) 0 0;
+  background: color-mix(in srgb, var(--superfarbe) 16%, var(--flaeche));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9rem;
+}
+.superkopf b {
+  color: var(--superfarbe);
+  font-size: 1rem;
+}
+.uebungskarte.imsuper {
+  border-left: 5px solid var(--superfarbe);
+}
+.superkopf + .uebungskarte.imsuper {
+  margin-top: 8px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.uebungskarte.supermitte-unten {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.uebungskarte.supermitte-oben {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.superband {
+  border-left: 5px solid var(--superfarbe);
+  background: color-mix(in srgb, var(--superfarbe) 10%, var(--flaeche));
+  color: var(--superfarbe);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 4px 14px;
+}
+.uebungskarte.imsuper .marke:first-child {
+  background: var(--superfarbe);
+  color: #fff;
+}

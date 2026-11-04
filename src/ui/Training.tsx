@@ -1,7 +1,7 @@
 // Eine Einheit durchführen: Vorgaben sehen, Sätze abhaken, Pause läuft automatisch, am Ende gibt es XP.
 
 import { hatSport } from "../logik/auswahl"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { alternativen, lastGeraet, lastenAn, platzMit, verlauf } from "../logik/plan"
 import { hoeher, lastText, niedriger } from "../logik/gewichte"
 import { pauseNachSatz, satzAnpassung, type Anpassung } from "../logik/progression"
@@ -19,7 +19,7 @@ import { Sym } from "./symbole"
 import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
-import { hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, schaetzung, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
+import { freieGruppe, hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, schaetzung, supersatzVorschlag, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
 import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
 import { bandhilfeMoeglich, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
@@ -30,6 +30,9 @@ import { useWachHalten } from "./wachHalten"
 
 type Eingabe = Satz & { fertig: boolean }
 /** ort: Kennung des Orts (Name, Geräte, Gewichte), für den die Vorgaben gerechnet wurden */
+/** Farben der Supersatz-Gruppen (A, B, C, …), gut unterscheidbar in hell und dunkel */
+const SUPER_FARBEN = ["#7c5cff", "#ff8a3d", "#18a999", "#e2479b", "#3d8bff"]
+
 type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string; warm?: string[]; beginn?: number; geschaetzt?: number; angepasst?: string[]; budget?: number }
 /** gemessene Zeit einer Einheit (Millisekunden) mit Zeitbudget und Schätzung in Minuten */
 export type TrainingsZeit = { beginn: number; ende: number; budget: number; geschaetzt: number }
@@ -294,15 +297,21 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     if (!s.fertig && plaetze[i].vorgabe.pause_s > 0) {
       const g = plaetze[i].gruppe
       const gruppe = g ? plaetze.map((p, x) => (p.gruppe === g ? x : -1)).filter((x) => x >= 0) : []
-      if (gruppe.length > 1 && gruppe.indexOf(i) < gruppe.length - 1) {
-        // Supersatz: ohne Pause weiter zur nächsten Übung der Gruppe
-        pauseSetzen(null)
-      } else if (gruppe.length > 1) {
-        // Letzte Übung der Gruppe: Pause, danach wieder die erste
-        const erste = gruppe[0]
-        const offen = saetze[erste].some((x) => !x.fertig)
-        if (offen) pauseSetzen(Date.now() + pz.sekunden * 1000, plaetze[erste].uebung.name + ", Satz " + (k + 2), pz.grund)
-        else uebungFertig(i)
+      if (gruppe.length > 1) {
+        // Supersatz: ohne Pause weiter zur nächsten Übung der Gruppe mit offenen Sätzen; die Pause kommt erst, wenn
+        // die Runde wieder vorn beginnt. Hat eine Übung mehr Sätze, geht es mit ihr allein weiter.
+        const pos = gruppe.indexOf(i)
+        const offenNoch = (x: number) => saetze[x].some((y, b) => !y.fertig && !(x === i && b === k))
+        const folge = [...gruppe.slice(pos + 1), ...gruppe.slice(0, pos + 1)].find(offenNoch)
+        if (folge === undefined) uebungFertig(i)
+        else if (gruppe.indexOf(folge) > pos) {
+          pauseSetzen(null)
+          setTimeout(() => document.getElementById("uebung-" + folge)?.scrollIntoView({ behavior: "smooth", block: "start" }), 350)
+        } else {
+          const satzNr = saetze[folge].findIndex((y, b) => !y.fertig && !(folge === i && b === k)) + 1
+          pauseSetzen(Date.now() + pz.sekunden * 1000, plaetze[folge].uebung.name + ", Satz " + satzNr, pz.grund)
+          if (folge !== i) setTimeout(() => document.getElementById("uebung-" + folge)?.scrollIntoView({ behavior: "smooth", block: "start" }), 350)
+        }
       } else {
         const letzterSatz = saetze[i].every((x, b) => b === k || x.fertig)
         if (letzterSatz) uebungFertig(i)
@@ -362,6 +371,21 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setToast("Damit du in " + budget + " Minuten fertig wirst: kürzere Pausen bei " + gekuerzt.join(", ") + ".")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [beginn, zuLang])
+  // Immer noch zu lang: Ergänzungsübungen mit verschiedenen Muskeln als Supersatz im Wechsel vorschlagen
+  const superVorschlag = zuLang && angepasst.indexOf("supersatz") < 0 ? supersatzVorschlag(plaetze, saetze, plaetze.map((p) => lastGeraet(p.uebung, ort)), prog.gesamt - budget) : { paare: [], spart_min: 0 }
+  const alsSupersatz = () => {
+    const neu = plaetze.map((p) => ({ ...p }))
+    const vergeben: string[] = []
+    for (const [a, b] of superVorschlag.paare) {
+      const g = freieGruppe(neu, vergeben)
+      vergeben.push(g)
+      neu[a].gruppe = g
+      neu[b].gruppe = g
+    }
+    setPlaetze(neu)
+    setAngepasst([...angepasst, "supersatz"])
+    setToast("Im Wechsel ohne Pause dazwischen, die Pause kommt nach der zweiten Übung.")
+  }
   const vorschlag = weglassenVorschlag(plaetze, saetze)
   const weglassen = () => {
     setSaetze(saetze.map((ss, i) => (vorschlag.ganz.indexOf(i) >= 0 ? ss.filter((s) => s.fertig) : vorschlag.einSatz.indexOf(i) >= 0 ? (() => { const k = ss.map((s) => s.fertig).lastIndexOf(false); return ss.filter((_, x) => x !== k) })() : ss)))
@@ -373,6 +397,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setBeginn(t)
     setJetzt(t)
   }
+  const superKnopf = superVorschlag.paare.length ? (
+    <button type="button" className="knopf klein leise" onClick={alsSupersatz}>
+      Zeit sparen (etwa {superVorschlag.spart_min} min): {superVorschlag.paare.map(([a, b]) => plaetze[a].uebung.name + " + " + plaetze[b].uebung.name).join(" und ")} als Supersatz, die Muskeln sind verschieden
+    </button>
+  ) : null
   const uhr = (min: number) => Math.floor(min) + ":" + String(Math.floor((min * 60) % 60)).padStart(2, "0")
 
   const warmHaken = (i: number, k: number, anzahl: number) => {
@@ -551,6 +580,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             <p className="hinweistext klein">
               Ab dem Start zählt die Zeit, mit Aufwärmen und Aufräumen. Nach Plan brauchst du voraussichtlich etwa {Math.round(prog.gesamt)} min{prog.gesamt > budget + 1 ? ". Das ist mehr als deine Zeit: Die App kürzt dann zuerst die Pausen der Ergänzungsübungen." : "."}
             </p>
+            {superKnopf}
           </>
         ) : (
           <>
@@ -558,7 +588,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               <b>{uhr(prog.vergangen)}</b> <span>von {budget} min</span> <span className="leise">· fertig nach etwa {Math.round(prog.gesamt)} min</span>
             </div>
             {angepasst.indexOf("pausen") >= 0 ? <small className="leise">Pausen der Ergänzungsübungen gekürzt, damit es in {budget} min passt. Die Hauptübungen behalten ihre Pause.</small> : null}
-            {zuLang && angepasst.indexOf("pausen") >= 0 && angepasst.indexOf("weglassen") < 0 && (vorschlag.ganz.length || vorschlag.einSatz.length) ? (
+            {angepasst.indexOf("pausen") >= 0 ? superKnopf : null}
+            {zuLang && angepasst.indexOf("pausen") >= 0 && angepasst.indexOf("weglassen") < 0 && !superVorschlag.paare.length && (vorschlag.ganz.length || vorschlag.einSatz.length) ? (
               <button type="button" className="knopf klein leise" onClick={weglassen}>
                 Immer noch zu lang: {[...vorschlag.ganz.map((i) => plaetze[i].uebung.name), ...(vorschlag.einSatz.length ? ["je einen Satz bei " + vorschlag.einSatz.map((i) => plaetze[i].uebung.name).join(", ")] : [])].join(" und ")} weglassen
               </button>
@@ -609,8 +640,24 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         const offenerSatz = saetze[i].find((x) => !x.fertig)
         const scheiben = stange && offenerSatz?.last ? scheibenProSeite(offenerSatz.last, stange, ort.gewichte.scheiben, ort.gewichte.scheiben_beliebig) : null
         const warmups = saetze[i].some((x) => x.fertig) ? [] : aufwaermen(i)
+        // Supersatz: Karten der Gruppe farbig verbunden, Kopfzeile über der ersten, „ohne Pause weiter“ dazwischen
+        const gr = p.gruppe ? plaetze.map((x, k) => (x.gruppe === p.gruppe ? k : -1)).filter((k) => k >= 0) : []
+        const imSuper = gr.length > 1
+        const grPos = gr.indexOf(i)
+        const nachbarVorn = imSuper && grPos > 0 && gr[grPos - 1] === i - 1
+        const nachbarHinten = imSuper && grPos < gr.length - 1 && gr[grPos + 1] === i + 1
+        const farbe = imSuper ? SUPER_FARBEN[(p.gruppe as string).charCodeAt(0) % SUPER_FARBEN.length] : undefined
         return (
-          <section key={i + u.id} id={"uebung-" + i} className={"uebungskarte" + (alle ? " geschafft" : "") + (i === aktiveUebung && erledigt > 0 ? " dran" : "")}>
+          <Fragment key={i + u.id}>
+          {imSuper && grPos === 0 ? (
+            <div className="superkopf" style={{ "--superfarbe": farbe } as CSSProperties}>
+              <b>Supersatz {p.gruppe}</b>
+              <span>
+                {gr.map((k) => plaetze[k].uebung.name).join(" ↔ ")}: im Wechsel, ohne Pause dazwischen. Pause erst nach {plaetze[gr[gr.length - 1]].uebung.name}, dann wieder {u.name}.
+              </span>
+            </div>
+          ) : null}
+          <section id={"uebung-" + i} style={imSuper ? ({ "--superfarbe": farbe } as CSSProperties) : undefined} className={"uebungskarte" + (alle ? " geschafft" : "") + (i === aktiveUebung && erledigt > 0 ? " dran" : "") + (imSuper ? " imsuper" + (nachbarVorn ? " supermitte-oben" : "") + (nachbarHinten ? " supermitte-unten" : "") : "")}>
             {i === aktiveUebung && erledigt > 0 ? <span className="dranmarke">Jetzt dran</span> : null}
             {wechsel && wechsel.nach === i && !saetze[i].some((x) => x.fertig) ? (
               <p className="wechselgrund">
@@ -862,6 +909,12 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               </div>
             </div>
           </section>
+          {nachbarHinten ? (
+            <div className="superband" style={{ "--superfarbe": farbe } as CSSProperties} aria-hidden="true">
+              ↓ ohne Pause weiter
+            </div>
+          ) : null}
+          </Fragment>
         )
       })}
 

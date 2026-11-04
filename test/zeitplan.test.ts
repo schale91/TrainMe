@@ -1,6 +1,6 @@
 // Trainingszeit: Budget je Tag, Vorhersage aus gemessenen Sätzen, Kürzen der Pausen, Hinweis auf zu kurze Pausen
 import { describe, expect, test } from "vitest"
-import { hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, schaetzung, weglassenVorschlag, zeitBudget } from "../src/logik/zeitplan"
+import { freieGruppe, hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, satzMinuten, schaetzung, supersatzVorschlag, weglassenVorschlag, zeitBudget } from "../src/logik/zeitplan"
 
 const platz = (name: string, rolle: "haupt" | "neben", pause_s: number, saetze = 3) => ({ uebung: { name }, rolle, vorgabe: { pause_s, saetze } as { pause_s: number; saetze: number } as never as import("../src/logik/typen").Vorgabe })
 const min = 60000
@@ -59,5 +59,32 @@ describe("Umbauzeit", () => {
     const s = [[{ fertig: true, um: 0 }, { fertig: true, um: (220 / 60) * min }], [{ fertig: true, um: 10 * min }, { fertig: true, um: 10 * min + (160 / 60) * min }]]
     // nur zwei Messungen: noch der gelernte Faktor
     expect(heuteFaktor(p, s, 1.1)).toBe(1.1)
+  })
+
+  test("Supersatz: Pause erst nach der letzten Übung der Gruppe", () => {
+    const a = { vorgabe: { pause_s: 90 }, gruppe: "A" } as never
+    const b = { vorgabe: { pause_s: 90 }, gruppe: "A" } as never
+    const m = satzMinuten([a, b])
+    expect(m[0]).toBeCloseTo(1, 5)
+    expect(m[1]).toBeCloseTo(130 / 60, 5)
+  })
+
+  test("Supersatz zum Zeitsparen nur bei verschiedenen Muskeln und verschiedenen Geräten", () => {
+    const sp = (name: string, muskeln: string[], sekundaer: string[] = [], rolle = "neben", pause_s = 90) => ({ uebung: { name, muskeln, sekundaer }, rolle, vorgabe: { pause_s, saetze: 3 } }) as never
+    const offen = [[{ fertig: false }, { fertig: false }, { fertig: false }]]
+    const s3 = [...offen, ...offen, ...offen, ...offen]
+    // Bizeps-Curl + Trizepsdrücken: verschieden → Paar, spart 3 · (90 − 20) s = 3,5 min
+    const p = [sp("Curl", ["bizeps"]), sp("Pushdown", ["trizeps"]), sp("Latzug", ["latissimus"], ["bizeps"]), sp("Rudern", ["oberer_ruecken"], ["bizeps"])]
+    const v = supersatzVorschlag(p, s3, ["kurzhantel", "kabelzug", "latzug", "kabelrudern"], 10)
+    expect(v.paare).toEqual([[0, 1]])
+    expect(v.spart_min).toBe(4)
+    // Hauptübung bleibt allein, gleiches Kabel geht nicht
+    expect(supersatzVorschlag([sp("Kniebeuge", ["quadrizeps"], [], "haupt"), sp("Curl", ["bizeps"])], s3, ["langhantel", "kurzhantel"], 10).paare).toEqual([])
+    expect(supersatzVorschlag([sp("Curl", ["bizeps"]), sp("Pushdown", ["trizeps"])], s3, ["kabelzug", "kabelzug"], 10).paare).toEqual([])
+    // reicht schon das erste Paar, kommt kein zweites dazu
+    const q = [sp("Curl", ["bizeps"]), sp("Pushdown", ["trizeps"]), sp("Beinstrecker", ["quadrizeps"]), sp("Beinbeuger", ["beinbeuger"])]
+    expect(supersatzVorschlag(q, s3, ["kurzhantel", "kabelzug", "beinstrecker", "beinbeuger_sitzend"], 2).paare).toEqual([[0, 1]])
+    expect(supersatzVorschlag(q, s3, ["kurzhantel", "kabelzug", "beinstrecker", "beinbeuger_sitzend"], 6).paare).toEqual([[0, 1], [2, 3]])
+    expect(freieGruppe([{ gruppe: "A" }, {}], ["B"])).toBe("C")
   })
 })
