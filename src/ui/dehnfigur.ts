@@ -506,8 +506,9 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       // Lehne liegt hinter dem Rücken: von der Sitzkante aus entlang des Rückens, um ihre Dicke nach hinten versetzt
       const hinten = new THREE.Vector3(0, d.z, -d.y).multiplyScalar(h.bauch ? -1 : 1)
       // Lehne 24 cm breit: hängende Arme (Schrägbank-Curl) laufen seitlich an ihr vorbei
-      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.86, 0.07), mat(FARBE.polster, 0.8))
-      lehne.position.set(p.x, h.hoehe, p.z - 0.06).addScaledVector(d, 0.45).addScaledVector(hinten, 0.08)
+      const lang = h.lang ?? 0.86
+      const lehne = new THREE.Mesh(new THREE.BoxGeometry(0.24, lang, 0.07), mat(FARBE.polster, 0.8))
+      lehne.position.set(p.x, h.hoehe, p.z - 0.06).addScaledVector(d, 0.02 + lang / 2).addScaledVector(hinten, 0.08)
       lehne.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)
       lehne.castShadow = lehne.receiveShadow = true
       out.push(lehne)
@@ -522,7 +523,8 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       }
       out.push(zylinder(new THREE.Vector3(-0.66, 2.12, z + 0.08), new THREE.Vector3(0.66, 2.12, z + 0.08), 0.016, FARBE.metall))
     }
-    for (let i = vorher; i < out.length; i++) out[i].name = h.art
+    // Bank, deren Kante die Hände greifen (Bankdips): dort zählen die Hände nicht als Eindringen
+    for (let i = vorher; i < out.length; i++) out[i].name = h.art === "bank" && h.griff ? "bankgriff" : h.art
   }
   return out
 }
@@ -649,6 +651,13 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       // körperfernen Seite (in Richtung vom Becken zum Fuß)
       const r = 0.32
       const p = k.punkt(h.an)
+      if (h.vor !== undefined) {
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), mat(FARBE.ball, 0.4))
+        ball.position.set(p.x, r, p.z + h.vor)
+        ball.castShadow = true
+        out.push(ball)
+        continue
+      }
       if (h.hinter) {
         const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), mat(FARBE.ball, 0.4))
         ball.position.set(p.x, p.y, p.z - 0.34)
@@ -1335,7 +1344,7 @@ class Buehne {
     // Stangen und Kanten, die die Hände greifen (Rack, Barren, Tischkante): die Faust umschließt sie, Hände zählen dort nicht als Eindringen
     const haende = [this.koerper.punkt("hand_l"), this.koerper.punkt("hand_r")]
     const ohneHaende = pk.filter((p) => haende.every((h) => p.distanceTo(h) > 0.11))
-    const gegriffen = (h: Hindernis) => /^(rack|barren|stange|tisch)$/.test(h.m.name)
+    const gegriffen = (h: Hindernis) => /^(rack|barren|stange|tisch|bankgriff)$/.test(h.m.name)
     for (let runde = 0; runde < 8; runde++) {
       const schritt = new THREE.Vector3()
       let min = Infinity
@@ -1684,7 +1693,7 @@ export function _durchdringungen(d: Dehnung, haltenS = 8, schritt = 0.5, toleran
     const ohneHaende = pk.filter((p) => haende.every((hd) => p.distanceTo(hd) > 0.11))
     for (const h of b.hindernisse()) {
       let tief = 0, hoehe = 0
-      for (const p of /^(rack|barren|stange|tisch)$/.test(h.m.name) ? ohneHaende : pk) {
+      for (const p of /^(rack|barren|stange|tisch|bankgriff)$/.test(h.m.name) ? ohneHaende : pk) {
         const v = herausschieben(h, p, becken)
         if (v && v.length() > tief) {
           tief = v.length()

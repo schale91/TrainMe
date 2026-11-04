@@ -310,6 +310,59 @@ export const stuetzPaar = (k: Stuetz) => {
   }
   return { o: haltung(o, true), u: haltung(u, false, k.seitlich ?? 0), flug, linien: { o, u, dz }, palmeZ }
 }
+/** Höhe des Ellbogengelenks über dem Boden, wenn der Unterarm flach aufliegt */
+export const ELL_BODEN = 0.085
+export interface UnterarmStuetz {
+  /** Ellbogen vor (+) den Schultern (langer Hebel) */
+  vor?: number
+  /** halber Abstand der Füße */
+  fuss?: number
+  art?: "zehen" | "knie"
+  /** halber Abstand der Ellbogen */
+  ellX?: number
+  /** Höhe des Ellbogengelenks (Ball) */
+  ellY?: number
+  /** Hand: halber Abstand, Höhe der Handfläche, Abstand vor dem Ellbogen */
+  hand?: [number, number, number]
+  /** Höhe der Stützfläche der Füße */
+  fussHoch?: number
+  /** Ellbogen in Weltkoordinaten bei diesem z (sonst Becken bei z = 0) */
+  ellZ?: number
+  /** Ellbogen und Hände seitlich und nach vorn verschoben (Kreise auf dem Ball) */
+  versatz?: [number, number]
+  /** freie Winkel, die die Grundwinkel ersetzen (z. B. Fäuste) */
+  w?: Winkel
+}
+/**
+ * Unterarmstütz: Ellbogen am Boden (mit vor: vor die Schultern geschoben, langer Hebel), Unterarme parallel nach vorn,
+ * Hände flach; der Körper bildet eine Linie von den Schultern bis zu den Fußballen (bzw. Knien).
+ */
+export const unterarmStuetz = (k: UnterarmStuetz = {}): Haltung => {
+  const art = k.art ?? "zehen"
+  const vor = k.vor ?? 0
+  const ey = k.ellY ?? ELL_BODEN
+  const dreh: YZ = art === "zehen" ? [(k.fussHoch ?? 0) + BALLEN_Y, 0] : [0.06, 0]
+  const ex = k.ellX ?? 0.14
+  const sy = ey + Math.sqrt(OBERARM ** 2 - vor ** 2 - (SCHULTER_X + 0.03 - ex) ** 2)
+  const l = suche((x) => x.schulter[0] - sy, dreh, art)
+  const dz = k.ellZ === undefined ? -l.becken[1] : k.ellZ - l.schulter[1] - vor
+  const sz = l.schulter[1] + dz
+  const z = (p: YZ): P3 => [0, p[0], p[1] + dz]
+  const ziele: Ziele = {}
+  const [hx0, hy, hz] = k.hand ?? [ex - 0.02, 0.06, UNTERARM - 0.02]
+  const [vx, vz] = k.versatz ?? [0, 0]
+  for (const s of [1, -1] as const) {
+    const n = s === 1 ? "l" : "r"
+    ziele[`ellbogen_${n}`] = { pos: [s * ex + vx, ey, sz + vor + vz] }
+    ziele[`hand_${n}`] = { pos: [s * hx0 + vx, hy, sz + vor + hz + vz] }
+    const kz = z(l.knie), fx = k.fuss ?? 0.1, hx = s * HUEFTE_X
+    ziele[`knie_${n}`] = { pos: [hx + (s * fx - hx) * (art === "zehen" ? OBER / (OBER + UNTER) : 1), kz[1], kz[2]] }
+    if (art === "zehen") ziele[`fuss_${n}`] = { pos: [s * fx, dreh[0], dreh[1] + dz] }
+  }
+  const b = z(l.becken)
+  const w: Winkel = { ...B("schulter", [90 - vor * 100, 10, 0]), ...B("ellbogen", [90, 90]), ...B("hand", [0, 0]), ...B("zehen", [60]), ...B("knie", [art === "knie" ? 70 : 0]), ...B("fuss", [art === "knie" ? -60 : -22, 0]), hals: [-5, 0, 0], ...k.w }
+  return H(w, [90 - l.beta, 0, 0], { pos: [0, b[1], b[2]], boden: false, ziele })
+}
 const LS_TEXTE: [string, string] = ["Brust zum Boden senken", "Hochdrücken"]
 const liegestuetz = (k: Stuetz, extra: Partial<Dehnung> = {}): Dehnung => {
   const { o, u } = stuetzPaar(k)
@@ -356,15 +409,15 @@ const DIP_HAND = 0.24
 /** Schultergelenk im Becken bei hängenden Armen (gemessen; mit erhobenen Armen 0,366) */
 const DIP_SCHULTER: YZ = [0.352, -0.004]
 const DIP_BEINE: Winkel = { huefte_l: [22, 4, 0], huefte_r: [18, -2, 0], ...B("knie", [75]), ...B("fuss", [-25, 0]) }
-const dipHaltung = (kipp: number, schulter: P3, ell: boolean): Haltung => {
+const dipHaltung = (kipp: number, schulter: P3, ell: boolean, handX = DIP_HAND, aussen = 0.35): Haltung => {
   const [by, bz] = [schulter[1] - dreheYZ(kipp, DIP_SCHULTER)[0], schulter[2] - dreheYZ(kipp, DIP_SCHULTER)[1]]
   const ziele: Ziele = {}
   for (const s of [1, -1] as const) {
     const n = s === 1 ? "l" : "r"
-    const hand: P3 = [s * DIP_HAND, HOLM_Y, 0]
+    const hand: P3 = [s * handX, HOLM_Y, 0]
     ziele[`hand_${n}`] = { pos: hand }
-    // unten: Ellbogen leicht nach außen hinten, Unterarm senkrecht über der Hand
-    if (ell) ziele[`ellbogen_${n}`] = { pos: ellbogenKreis([s * SCHULTER_X, schulter[1], schulter[2]], hand, [s * 0.35, 0, -1]) }
+    // unten: Ellbogen leicht nach außen hinten (aussen), Unterarm senkrecht über der Hand
+    if (ell) ziele[`ellbogen_${n}`] = { pos: ellbogenKreis([s * SCHULTER_X, schulter[1], schulter[2]], hand, [s * aussen, 0, -1]) }
   }
   return H(
     { ...DIP_BEINE, ...B("schulter", ell ? [-60, 20, 0] : [-8, 12, 0]), ...B("ellbogen", [ell ? 95 : 4, HAMMER]), ...B("hand", [0, 0]), ...FAUST, hals: [-kipp * 0.5, 0, 0] },
@@ -384,6 +437,15 @@ const DIP_STEHEN: Haltung = H(
   { pos: [0, 0.93, -0.04], boden: false, ziele: { ...fuesse(0.12, 10, -0.09), hand_l: { pos: [DIP_HAND, HOLM_Y, 0] }, hand_r: { pos: [-DIP_HAND, HOLM_Y, 0] } } },
 )
 const HOLME: Hilfsmittel = { art: "barren", an: "hand_r", breit: DIP_HAND }
+/** Dips am Barren mit wählbarer Neigung, Handbreite und Ellbogenrichtung (Trizeps: aufrecht, schulterbreit, Ellbogen nah am Körper) */
+export const dipPaar = (kipp: number, handX: number, aussen: number): { o: Haltung; u: Haltung; holme: Hilfsmittel } => {
+  const dx = handX - SCHULTER_X
+  return {
+    o: dipHaltung(kipp, [0, HOLM_Y + Math.sqrt(0.497 ** 2 - dx * dx), 0], false, handX),
+    u: dipHaltung(kipp + 4, [0, HOLM_Y + UNTERARM - 0.005, Math.sqrt(OBERARM ** 2 - (dx - 0.005) ** 2) - 0.005], true, handX, aussen),
+    holme: { art: "barren", an: "hand_r", breit: handX },
+  }
+}
 const DIP_TEXTE: [string, string] = ["Vorgeneigt absenken, bis die Oberarme waagerecht sind", "Hochdrücken"]
 
 
