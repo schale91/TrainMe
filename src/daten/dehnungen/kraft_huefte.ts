@@ -7,6 +7,7 @@
 // hat das Heimstudio nicht; diese Übungen behalten die einfache Figur.
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
+import { seitBoden } from "./seitstuetz"
 import { ARME_VERSCHRAENKT, B, H, RUECKENLAGE_AUF, SEITLAGE, STAND, VIERFUESSLER, folge, halte, mit, wdh } from "./basis"
 import { FAUST, HAMMER, KH, OBERGRIFF, kabel } from "./kraftbasis"
 import { ARME_RUECKEN, ARME_SEITE, RACK, STANGE_RUECKEN, STUHL, WAND_HINTEN, ansicht, stand } from "./kraft_beine"
@@ -108,9 +109,11 @@ const VIER: Haltung = VIERFUESSLER
 const SEITLAGE_GESTRECKT: Haltung = mit(SEITLAGE, { g: { ...B("huefte", [6, 0, 0]), ...B("knie", [4]), ...B("fuss", [0, 0]), schulter_l: [170, 0, 0], ellbogen_l: [120, 0], schulter_r: [20, 0, 0], ellbogen_r: [80, 0] } })
 const SEITLAGE_GEBEUGT: Haltung = mit(SEITLAGE, { g: { ...B("huefte", [45, 0, 0]), ...B("knie", [90]), schulter_l: [170, 0, 0], ellbogen_l: [120, 0], schulter_r: [20, 0, 0], ellbogen_r: [80, 0] } })
 
-/** Seitstütz auf dem linken Unterarm: Körper als Linie, linke Seite unten; w überschreibt Beine */
-const SEITSTUETZ_ARME: Winkel = { schulter_l: [0, 84, 0], ellbogen_l: [90, 0], schulter_r: [0, 10, 0], ellbogen_r: [10, 0] }
-export const seitstuetz = (w: Winkel, neigen = 96): Haltung => H({ ...B("huefte", [0, 0, 0]), ...B("knie", [4]), ...B("fuss", [0, 0]), ...SEITSTUETZ_ARME, hals: [0, -10, 0], ...w }, [0, 0, neigen])
+/** Clamshell: oberer Fuß bleibt auf dem unteren liegen, das obere Knie öffnet sich */
+// Knie um die Achse Hüfte–Ferse um 40 Grad nach oben gedreht
+const KNIE_AUF: NonNullable<Haltung["ziele"]> = { ferse_r: { pos: [-0.627, 0.229, -0.151] }, knie_r: { pos: [-0.262, 0.438, 0.193] } }
+/** Seitlage links: oberes (rechtes) Bein gebeugt, Fuß vor dem unteren Bein flach am Boden */
+const OBERER_FUSS_VORN: NonNullable<Haltung["ziele"]> = { ferse_r: { pos: [-0.5, 0.03, 0.3] } }
 
 // ---------------------------------------------------------------- Wade
 /** Fußballen auf der Kante der Box (20 cm), Ferse frei: tief = Ferse unter der Kante, hoch = auf den Zehen */
@@ -130,11 +133,47 @@ const wade = (w: Winkel, hilfsmittel: Hilfsmittel[], einbein = false, extra: Par
 }
 /** Wadenheben am Boden mit Halt an der Stuhllehne */
 const STUHL_VORN: Hilfsmittel = { art: "stuhl", unter: "haende", hoehe: 0.45, versatz: [0, 0.28] }
+/** Standbein (links) leicht gebeugt */
+const STANDBEIN_WEICH: Winkel = { huefte_l: [8, 4, 0], knie_l: [12], fuss_l: [6, 0] }
 const HALT_STUHL: Winkel = { ...B("schulter", [34, 8, 0]), ...B("ellbogen", [12, 90]), ...B("hand", [40, 0]) }
 
 // ---------------------------------------------------------------- Stehend am Kabel oder Band (rechtes Bein arbeitet)
 const STAND_HALT: Winkel = { ...B("schulter", [50, 10, 0]), ...B("ellbogen", [20, 90]) }
 /** Standbein links bleibt senkrecht, auch wenn sich das Becken mit dem Oberkörper nach vorn neigt */
+/** Sitz vorn auf dem Stuhl (45 cm), Füße hüftbreit fest am Boden, Knie 90 Grad; abd: Knie nach außen */
+const SITZ_FERSEN: NonNullable<Haltung["ziele"]> = { ferse_l: { pos: [0.12, 0.01, 0.329] }, ferse_r: { pos: [-0.12, 0.01, 0.329] } }
+// Fußballen in der Ausgangsstellung; beim Abspreizen bleiben die Fersen stehen und die Fußspitzen drehen leicht mit nach außen
+const SITZ_BALLEN: NonNullable<Haltung["ziele"]> = { fuss_l: { pos: [0.125, 0.05, 0.445] }, fuss_r: { pos: [-0.125, 0.05, 0.445] } }
+const sitzAbd = (abd: number): Haltung => {
+  const x = 0.078 + 0.381 * Math.sin((abd * Math.PI) / 180), z = -0.003 + 0.381 * Math.cos((abd * Math.PI) / 180)
+  return H({ ...B("huefte", [90, abd, 0]), ...B("knie", [90]), ...B("schulter", [20, 10, 0]), ...B("ellbogen", [60, 60]) }, undefined, {
+    pos: [0, 0.575, 0],
+    boden: false,
+    ziele: { ...SITZ_FERSEN, ...(abd > 10 ? { knie_l: { pos: [x, 0.53, z] }, knie_r: { pos: [-x, 0.53, z] }, fuss_l: { pos: [0.16, 0.05, 0.44] }, fuss_r: { pos: [-0.16, 0.05, 0.44] } } : SITZ_BALLEN) },
+  })
+}
+/** Hip Hike: links auf der Box (45 cm), beide Knie gestreckt; die rechte Beckenseite sinkt (-1) bzw. steigt (1) */
+const hipHike = (rich: -1 | 1): Haltung =>
+  H({ huefte_l: [0, 4 + rich * 10, 0], knie_l: [2], fuss_l: [0, 0], huefte_r: [0, 4 - rich * 10, 0], knie_r: [2], fuss_r: [-10, 0], ...B("schulter", [4, 10, 0]) }, [0, 0, rich * 10], {
+    pos: [0, 1.373 + rich * 0.007, 0],
+    boden: false,
+    ziele: { ferse_l: { pos: [0.12, 0.457, -0.06] }, fuss_l: { pos: [0.13, 0.45, 0.05] } },
+    drehFrei: false,
+  })
+/** Bandlauf: Grundhaltung, Beckenhöhe, Fersenmarke über dem Boden und Fersen-z in der Grundstellung */
+interface BandLauf { w: Winkel; kipp: number; y: number; fy: number; fz: number }
+const MONSTER: BandLauf = { w: { ...B("huefte", [30, 14, 0]), ...B("knie", [30]), ...B("fuss", [10, 0]), ...ARME_VERSCHRAENKT }, kipp: 20, y: 0.914, fy: 0.052, fz: -0.153 }
+const SEITWAERTS: BandLauf = { w: { ...B("huefte", [30, 12, 0]), ...B("knie", [30]), ...B("fuss", [10, 0]), ...ARME_VERSCHRAENKT }, kipp: 20, y: 0.919, fy: 0.051, fz: -0.156 }
+const REHA_SEIT: BandLauf = { w: { ...B("huefte", [14, 8, 0]), ...B("knie", [14]), ...B("fuss", [0, 0]), ...B("schulter", [4, 10, 0]) }, kipp: 6, y: 0.943, fy: 0.032, fz: -0.057 }
+/** Becken wandert mit: x seitlich (Seitschritte) bzw. z nach vorn (Monster Walk); Fersen [x, z-Versatz] fest am Boden */
+const bandSchritt = (b: BandLauf, weg: number, l: [number, number], r: [number, number]): Haltung => {
+  const vor = b === MONSTER
+  return H(b.w, [b.kipp, 0, 0], {
+    pos: vor ? [0, b.y, weg] : [weg, b.y, 0],
+    boden: false,
+    ziele: { ferse_l: { pos: [l[0], b.fy, b.fz + l[1]] }, ferse_r: { pos: [r[0], b.fy, b.fz + r[1]] } },
+  })
+}
 const standBein = (rechts: Winkel, kipp = 6): Haltung => H({ huefte_l: [kipp - 2, 6, 0], knie_l: [6], fuss_l: [0, 0], ...STAND_HALT, ...rechts }, [kipp, 0, 0])
 
 /**
@@ -376,51 +415,32 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
     texte: ["Bein am Standbein vorbei nach innen ziehen", "Kontrolliert zurück"],
     hilfsmittel: kabel("fuss_r", [-0.8, 0.12, 0]),
   }),
-  adduktion_seitlage: wdh("vorn", mit(SEITLAGE_GESTRECKT, { g: { huefte_r: [70, 0, 0], knie_r: [90] } }), mit(SEITLAGE_GESTRECKT, { g: { huefte_r: [70, 0, 0], knie_r: [90], huefte_l: [6, -20, 0] } }), 1.0, {
+  adduktion_seitlage: wdh("vorn", mit(SEITLAGE_GESTRECKT, { pos: [0, 0.168, 0], boden: false, g: { huefte_r: [70, 0, 0], knie_r: [90], fuss_r: [25, 0] }, ziele: OBERER_FUSS_VORN }), mit(SEITLAGE_GESTRECKT, { pos: [0, 0.168, 0], boden: false, g: { huefte_r: [70, 0, 0], knie_r: [90], fuss_r: [25, 0], huefte_l: [6, -20, 0] }, ziele: OBERER_FUSS_VORN }), 1.0, {
     aus: 1.6,
     seiten: true,
     texte: ["Unteres Bein gestreckt anheben", "Langsam ablegen"],
   }),
-  adduktoren_ball_druecken: halte("schraeg", brueckeUnten(B("huefte", [60, 14, 0])), brueckeUnten(B("huefte", [60, 12, 0])), {
+  adduktoren_ball_druecken: halte("schraeg", brueckeUnten(B("huefte", [60, 6, 0])), brueckeUnten(B("huefte", [60, 4, 0])), {
     ein: 1,
     aus: 1.5,
     hinweis: "Ball zwischen den Knien fest zusammendrücken.",
     hilfsmittel: [{ art: "medizinball", an: "knie_mitte" }],
   }),
-  copenhagen: halte("vorn", seitstuetz({ huefte_l: [0, 24, 0] }, 90), seitstuetz({ huefte_l: [0, -6, 0] }), {
-    ein: 1.5,
-    aus: 2,
-    seiten: true,
-    hinweis: "Oberer Fuß auf der Bank, Unterarm am Boden, Körper als Linie, unteres Bein zur Bank heben.",
-    hilfsmittel: [{ art: "bank", unter: "fuss_r", hoehe: 0.45, quer: true }],
-  }),
-  copenhagen_kurz: halte("vorn", seitstuetz({ huefte_l: [0, 24, 0], knie_r: [90] }, 90), seitstuetz({ huefte_l: [0, -6, 0], knie_r: [90] }), {
-    ein: 1.5,
-    aus: 2,
-    seiten: true,
-    hinweis: "Oberes Knie auf der Bank, Unterarm am Boden, Becken hoch, Körper als Linie.",
-    hilfsmittel: [{ art: "bank", unter: "knie_r", hoehe: 0.45, quer: true }],
-  }),
-  copenhagen_dynamisch: wdh("vorn", seitstuetz({ huefte_l: [0, 24, 0] }, 84), seitstuetz({ huefte_l: [0, -6, 0] }), 1.4, {
-    aus: 1.8,
-    seiten: true,
-    texte: ["Becken heben, unteres Bein zur Bank", "Becken langsam absenken"],
-    hilfsmittel: [{ art: "bank", unter: "fuss_r", hoehe: 0.45, quer: true }],
-  }),
+  // Copenhagen-Varianten: siehe seitstuetz.ts
 
   // ------------------------------------------------------------ Abduktoren
-  hip_abduction_band: wdh("vorn", H({ ...B("huefte", [90, 6, 0]), ...B("knie", [90]), ...B("schulter", [20, 10, 0]), ...B("ellbogen", [60, 60]) }, undefined, { pos: [0, 0.5, 0], boden: false }), H({ ...B("huefte", [90, 30, 0]), ...B("knie", [90]), ...B("schulter", [20, 10, 0]), ...B("ellbogen", [60, 60]) }, undefined, { pos: [0, 0.5, 0], boden: false }), 0.8, {
+  hip_abduction_band: wdh("vorn", sitzAbd(6), sitzAbd(24), 0.8, {
     aus: 1.4,
     halten: 0.5,
     texte: ["Knie gegen das Band nach außen drücken", "Langsam zurück"],
     hilfsmittel: [STUHL, { art: "band", von: "knie_l", bis: "knie_r" }],
   }),
-  abduktion_seitlage: wdh("vorn", SEITLAGE_GESTRECKT, mit(SEITLAGE_GESTRECKT, { g: { huefte_r: [2, 34, 0] } }), 1.0, {
+  abduktion_seitlage: wdh("vorn", mit(SEITLAGE_GESTRECKT, { g: { huefte_l: [20, 0, 0], knie_l: [30], huefte_r: [-4, 0, 0] } }), mit(SEITLAGE_GESTRECKT, { g: { huefte_l: [20, 0, 0], knie_l: [30], huefte_r: [-4, 34, 0] } }), 1.0, {
     aus: 1.6,
     seiten: true,
     texte: ["Oberes Bein gestreckt leicht nach hinten oben", "Langsam senken"],
   }),
-  clamshell: wdh("vorn", SEITLAGE_GEBEUGT, mit(SEITLAGE_GEBEUGT, { g: { huefte_r: [45, 36, -30] } }), 0.9, {
+  clamshell: wdh("vorn", mit(SEITLAGE_GEBEUGT, { pos: [0, 0.151, 0], boden: false }), mit(SEITLAGE_GEBEUGT, { pos: [0, 0.151, 0], boden: false, g: { huefte_r: [45, 36, -30] }, ziele: KNIE_AUF }), 0.9, {
     aus: 1.4,
     seiten: true,
     halten: 0.5,
@@ -430,56 +450,60 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   monster_walk: folge(
     "schraeg",
     [
-      [H({ ...B("huefte", [30, 14, 0]), ...B("knie", [30]), ...B("fuss", [10, 0]), ...ARME_VERSCHRAENKT }, [20, 0, 0]), 0.6, "Leichte Kniebeuge, Band gespannt"],
-      [H({ huefte_l: [44, 22, 0], knie_l: [36], fuss_l: [10, 0], huefte_r: [20, 12, 0], knie_r: [28], fuss_r: [10, 0], ...ARME_VERSCHRAENKT }, [20, 0, 0]), 0.8, "Schritt diagonal nach vorn außen"],
-      [H({ ...B("huefte", [30, 14, 0]), ...B("knie", [30]), ...B("fuss", [10, 0]), ...ARME_VERSCHRAENKT }, [20, 0, 0]), 0.6],
-      [H({ huefte_r: [44, 22, 0], knie_r: [36], fuss_r: [10, 0], huefte_l: [20, 12, 0], knie_l: [28], fuss_l: [10, 0], ...ARME_VERSCHRAENKT }, [20, 0, 0]), 0.8, "Anderes Bein"],
+      [bandSchritt(MONSTER, 0, [0.291, 0], [-0.291, 0]), 0.6, "Leichte Kniebeuge, Füße weiter als hüftbreit, Band gespannt"],
+      [bandSchritt(MONSTER, 0.12, [0.291, 0.24], [-0.291, 0]), 0.8, "Schritt diagonal nach vorn außen"],
+      [bandSchritt(MONSTER, 0.24, [0.291, 0.24], [-0.291, 0.24]), 0.8, "Anderes Bein diagonal nach vorn, Knie zeigen nach außen"],
+      [bandSchritt(MONSTER, 0.12, [0.291, 0], [-0.291, 0.24]), 0.8, "Rückwärts zurück, Band bleibt gespannt"],
+      [bandSchritt(MONSTER, 0, [0.291, 0], [-0.291, 0]), 0.8],
     ],
     { hilfsmittel: [{ art: "band", von: "knie_l", bis: "knie_r" }] },
   ),
+
   seitwaerts_band: folge(
     "vorn",
     [
-      [H({ ...B("huefte", [30, 12, 0]), ...B("knie", [30]), ...B("fuss", [10, 0]), ...ARME_VERSCHRAENKT }, [20, 0, 0]), 0.6, "Leichte Kniebeuge"],
-      [H({ huefte_l: [30, 26, 0], knie_l: [30], fuss_l: [10, 0], huefte_r: [30, 10, 0], knie_r: [30], fuss_r: [10, 0], ...ARME_VERSCHRAENKT }, [20, 0, 0]), 0.8, "Schritt zur Seite"],
-      [H({ ...B("huefte", [30, 12, 0]), ...B("knie", [30]), ...B("fuss", [10, 0]), ...ARME_VERSCHRAENKT }, [20, 0, 0]), 0.8, "Anderes Bein nachziehen, Band bleibt gespannt"],
+      [bandSchritt(SEITWAERTS, 0, [0.261, 0], [-0.261, 0]), 0.6, "Leichte Kniebeuge, Band gespannt"],
+      [bandSchritt(SEITWAERTS, 0.1, [0.461, 0], [-0.261, 0]), 0.8, "Schritt zur Seite"],
+      [bandSchritt(SEITWAERTS, 0.2, [0.461, 0], [-0.061, 0]), 0.8, "Anderes Bein nachziehen, Band bleibt gespannt"],
+      [bandSchritt(SEITWAERTS, 0.1, [0.461, 0], [-0.261, 0]), 0.8, "Zurück: Schritt zur anderen Seite"],
+      [bandSchritt(SEITWAERTS, 0, [0.261, 0], [-0.261, 0]), 0.8, "Nachziehen"],
     ],
     { hilfsmittel: [{ art: "band", von: "knie_l", bis: "knie_r" }] },
   ),
-  abduktion_kabel: wdh("vorn", standBein({ huefte_r: [0, 4, 0], knie_r: [4], fuss_r: [0, 0] }, 0), standBein({ huefte_r: [0, 36, 0], knie_r: [4], fuss_r: [0, 0] }, 0), 1.0, {
+
+  abduktion_kabel: wdh("vorn", standBein({ huefte_r: [4, -8, 0], knie_r: [4], fuss_r: [0, 0] }, 0), standBein({ huefte_r: [0, 36, 0], knie_r: [4], fuss_r: [0, 0] }, 0), 1.0, {
     aus: 1.6,
     seiten: true,
     texte: ["Bein gestreckt zur Seite führen", "Kontrolliert zurück"],
     hilfsmittel: kabel("fuss_r", [0.8, 0.12, 0]),
   }),
-  seitstuetz_abduktion: wdh("vorn", seitstuetz({}), seitstuetz({ huefte_r: [0, 38, 0] }), 1.0, { aus: 1.6, seiten: true, texte: ["Im Seitstütz das obere Bein heben", "Langsam senken"] }),
-  fire_hydrant: wdh("vorn", VIER, mit(VIER, { g: { huefte_r: [90, 60, 0], knie_r: [90] } }), 1.0, {
+  seitstuetz_abduktion: wdh("vorn", seitBoden({ fussVor: false }), seitBoden({ beinFrei: true, w: { huefte_l: [0, 30, 0], knie_l: [2], fuss_l: [-10, 0] } }), 1.0, { aus: 1.6, seiten: true, texte: ["Im Seitstütz auf dem Unterarm das obere Bein gestreckt anheben, Becken bleibt oben", "Langsam senken"] }),
+  fire_hydrant: wdh("vorn", VIER, mit(VIER, { g: { huefte_r: [0, 70, -90], knie_r: [90], fuss_r: [0, 0] } }), 1.0, {
     aus: 1.4,
     seiten: true,
     halten: 0.5,
-    texte: ["Gebeugtes Bein seitlich anheben", "Zurück"],
+    texte: ["Bein mit 90 Grad im Knie seitlich anheben, bis der Oberschenkel etwa waagerecht ist, Becken und Rumpf bleiben ruhig", "Langsam absenken"],
   }),
-  hip_hike: wdh(
-    "vorn",
-    H({ huefte_l: [0, 4, 0], knie_l: [2], fuss_l: [0, 0], huefte_r: [0, -4, 0], knie_r: [2], fuss_r: [0, 0], ...B("schulter", [4, 10, 0]) }, [0, 0, -8], { pos: [0, 1.38, 0], boden: false }),
-    H({ huefte_l: [0, -4, 0], knie_l: [2], fuss_l: [0, 0], huefte_r: [0, 4, 0], knie_r: [2], fuss_r: [0, 0], ...B("schulter", [4, 10, 0]) }, [0, 0, 6], { pos: [0, 1.4, 0], boden: false }),
-    1.0,
-    { aus: 1.4, seiten: true, texte: ["Hüfte der freien Seite anheben", "Freie Seite langsam absenken"], hilfsmittel: [{ art: "box", unter: "fuss_l", hoehe: 0.45 }] },
-  ),
-  abduktion_wand_isometrisch: halte("vorn", mit(STAND, { g: B("huefte", [0, 4, 0]) }), H({ huefte_l: [0, 4, 0], knie_l: [2], huefte_r: [70, 4, 0], knie_r: [90], ...B("schulter", [4, 10, 0]) }), {
+  hip_hike: wdh("vorn", hipHike(-1), hipHike(1), 1.0, {
+    aus: 1.4,
+    seiten: true,
+    texte: ["Hüfte der freien Seite anheben, etwas höher als die Standbeinseite", "Freie Seite langsam absenken, Standbein bleibt gestreckt"],
+    hilfsmittel: [{ art: "box", unter: "fuss_l", hoehe: 0.45, versatz: [0.15, 0] }],
+  }),
+  abduktion_wand_isometrisch: halte("vorn", mit(STAND, { g: B("huefte", [0, 4, 0]) }), H({ huefte_l: [6, 4, 0], knie_l: [12], fuss_l: [6, 0], huefte_r: [90, 4, 0], knie_r: [90], ...B("schulter", [4, 10, 0]) }), {
     ein: 1,
     aus: 1.5,
     seiten: true,
     hinweis: "Angehobenes Knie seitlich gegen die Wand drücken.",
     hilfsmittel: [{ art: "wand", an: "knie_r", richtung: "rechts" }],
   }),
-  reha_abspreizen_stand: wdh("vorn", mit(STAND, { g: HALT_STUHL }), mit(STAND, { g: { ...HALT_STUHL, huefte_r: [0, 30, 0], knie_r: [4] } }), 1.4, {
+  reha_abspreizen_stand: wdh("vorn", mit(STAND, { g: { ...HALT_STUHL, ...STANDBEIN_WEICH } }), mit(STAND, { g: { ...HALT_STUHL, ...STANDBEIN_WEICH, huefte_r: [0, 22, 0], knie_r: [4] } }), 1.4, {
     aus: 1.8,
     seiten: true,
     texte: ["Bein langsam zur Seite heben", "Zurück"],
     hilfsmittel: [STUHL_VORN],
   }),
-  reha_abspreizen_band: wdh("vorn", mit(STAND, { g: HALT_STUHL }), mit(STAND, { g: { ...HALT_STUHL, huefte_r: [0, 26, 0], knie_r: [4] } }), 1.4, {
+  reha_abspreizen_band: wdh("vorn", mit(STAND, { g: { ...HALT_STUHL, ...STANDBEIN_WEICH } }), mit(STAND, { g: { ...HALT_STUHL, ...STANDBEIN_WEICH, huefte_r: [0, 26, 0], knie_r: [4] } }), 1.4, {
     aus: 1.8,
     seiten: true,
     texte: ["Bein gegen das Band zur Seite", "Zurück"],
@@ -488,12 +512,15 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   reha_seitschritte_band: folge(
     "vorn",
     [
-      [H({ ...B("huefte", [14, 8, 0]), ...B("knie", [14]), ...B("fuss", [0, 0]), ...B("schulter", [4, 10, 0]) }, [6, 0, 0]), 0.6, "Leicht gebeugt stehen"],
-      [H({ huefte_l: [14, 22, 0], knie_l: [14], fuss_l: [0, 0], huefte_r: [14, 6, 0], knie_r: [14], fuss_r: [0, 0], ...B("schulter", [4, 10, 0]) }, [6, 0, 0]), 1.0, "Kleiner Schritt zur Seite"],
-      [H({ ...B("huefte", [14, 8, 0]), ...B("knie", [14]), ...B("fuss", [0, 0]), ...B("schulter", [4, 10, 0]) }, [6, 0, 0]), 1.0, "Nachstellen"],
+      [bandSchritt(REHA_SEIT, 0, [0.205, 0], [-0.205, 0]), 0.6, "Leicht gebeugt stehen"],
+      [bandSchritt(REHA_SEIT, 0.075, [0.355, 0], [-0.205, 0]), 1.0, "Kleiner Schritt zur Seite"],
+      [bandSchritt(REHA_SEIT, 0.15, [0.355, 0], [-0.055, 0]), 1.0, "Nachstellen"],
+      [bandSchritt(REHA_SEIT, 0.075, [0.355, 0], [-0.205, 0]), 1.0, "Schritt zurück"],
+      [bandSchritt(REHA_SEIT, 0, [0.205, 0], [-0.205, 0]), 1.0, "Nachstellen"],
     ],
-    { hilfsmittel: [{ art: "band", von: "fuss_l", bis: "fuss_r" }] },
+    { hilfsmittel: [{ art: "band", von: "knie_l", bis: "knie_r" }] },
   ),
+
 
   // ------------------------------------------------------------ Wade
   wadenheben: wade({ schulter_l: [10, 10, 0], ellbogen_l: [10, 90], ...B("hand", [0, 0]), schulter_r: [2, 8, 0], ellbogen_r: [6, HAMMER], ...FAUST }, [{ art: "hantel", an: "hand_r" }], true),

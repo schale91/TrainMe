@@ -19,18 +19,19 @@ const seitstuetz = (lang: boolean, hoch: boolean, unten: Winkel): Haltung => {
   const oben = AUFLAGE_Y - 0.078
   const dy = oben - SCHULTER_MITTE_Y
   const dz = Math.sqrt(l * l - dy * dy)
-  // oben: Becken auf der Linie; abgesenkt hängt es 5 cm tiefer (Ellbogen und Auflage bleiben)
+  // oben: Becken auf der Linie; abgesenkt hängt es 3,5 cm tiefer (Ellbogen und Auflage bleiben)
   const t = RUMPF_L / l
   const neig = (Math.atan2(dy, dz) * 180) / Math.PI
   // beim langen Hebel liegt der Fuß weit weg auf der Bank: dort hängt das Becken nur 2 cm tiefer
-  const by = SCHULTER_MITTE_Y + dy * t - (hoch ? 0 : lang ? 0.02 : 0.05)
+  const by = SCHULTER_MITTE_Y + dy * t - (hoch ? 0 : lang ? 0.02 : 0.035)
   const bz = SCHULTER_Z - dz * t
   const auflage = lang ? { fuss_l: { pos: [0.02, AUFLAGE_Y + 0.02, SCHULTER_Z - dz - 0.02] as [number, number, number] } } : { knie_l: { pos: [0, AUFLAGE_Y, SCHULTER_Z - dz] as [number, number, number] } }
   return H(
     { ...ARME, huefte_l: [hoch ? 0 : 14, 4, 0], knie_l: [lang ? 2 : 95], fuss_l: [-10, 0], ...unten, hals: [0, 8, 0] },
     // Bauchlage (Kopf nach +z), um die Längsachse auf die rechte Seite gedreht, Füße etwas höher als die Schultern
     [90 + neig, 90, 0],
-    { pos: [0, by, bz], boden: false, ziele: { ellbogen_r: { pos: [0, 0.05, SCHULTER_Z] }, ...auflage } },
+    // abgesenkt darf sich das Becken neigen, damit Ellbogen und Auflage liegen bleiben
+    { pos: [0, by, bz], boden: false, ziele: { ellbogen_r: { pos: [0, 0.05, SCHULTER_Z] }, ...auflage }, ...(hoch ? {} : { drehFrei: true }) },
   )
 }
 // ---------------------------------------------------------------- Seitstütz am Boden (rechte Seite unten)
@@ -100,8 +101,11 @@ export const seitBoden = (k: SeitBoden = {}): Haltung => {
 
 /** unteres Bein: am Boden unter der Bank bzw. zum oberen Bein hochgezogen */
 // rechts liegt unten: Abspreizen führt das untere Bein zum Boden
-const UNTEN_BODEN: Winkel = { huefte_r: [4, 22, 0], knie_r: [4], fuss_r: [-10, 0] }
-const UNTEN_HOCH: Winkel = { huefte_r: [4, 2, 0], knie_r: [4], fuss_r: [-10, 0] }
+const UNTEN_BODEN: Winkel = { huefte_r: [4, 21, 0], knie_r: [4], fuss_r: [15, 0] }
+// hochgezogen bleibt das untere Bein knapp unter dem Polster der Bank
+const UNTEN_HOCH: Winkel = { huefte_r: [4, 14, 0], knie_r: [4], fuss_r: [-10, 0] }
+// kurzer Hebel: das Becken liegt tiefer, das untere Bein liegt locker am Boden
+const UNTEN_KURZ = (abd: number): Winkel => ({ huefte_r: [4, abd, 0], knie_r: [4], fuss_r: [15, 0] })
 const BANK_KNIE = { art: "bank" as const, unter: "knie_l" as const, hoehe: 0.45, quer: true }
 const BANK_FUSS = { art: "bank" as const, unter: "fuss_l" as const, hoehe: 0.45, quer: true }
 
@@ -113,7 +117,7 @@ export const SEITSTUETZ: Record<string, Dehnung> = {
     hinweis: "Oberer Fuß auf der Bank, Unterarm am Boden, Körper als Linie, unteres Bein zur Bank heben.",
     hilfsmittel: [BANK_FUSS],
   }),
-  copenhagen_kurz: halte("vorn", seitstuetz(false, false, UNTEN_BODEN), seitstuetz(false, true, UNTEN_BODEN), {
+  copenhagen_kurz: halte("vorn", seitstuetz(false, false, UNTEN_KURZ(22)), seitstuetz(false, true, UNTEN_KURZ(22)), {
     ein: 1.5,
     aus: 2,
     seiten: true,
