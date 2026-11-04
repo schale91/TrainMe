@@ -42,7 +42,8 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const s = stufe(daten.spiel.xp)
   const ser = serie(profil, daten.erledigt, tag)
   const aktuell = montag === montagVon(tag)
-  const heutige = aktuell ? plan.find((e) => e.datum === tag) : undefined
+  // Zwei Einheiten an einem Tag: zuerst die noch offene
+  const heutige = aktuell ? (plan.find((e) => e.datum === tag && !istErledigt(daten, e)) ?? plan.find((e) => e.datum === tag)) : undefined
   // Fortlaufend: auch Verpasstes aus dieser Woche nachholen, sonst nur ab heute
   const naechste = aktuell ? plan.find((e) => (profil.folge === "fortlaufend" || e.datum >= tag) && !istErledigt(daten, e)) : undefined
   const eigen = profil.planart === "eigen" && !!daten.eigenerPlan
@@ -289,14 +290,16 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
       </div>
       <div className="wochenwisch" {...wischen(() => setMontag(plusTage(montag, 7)), () => setMontag(plusTage(montag, -7)))}>
       <Gruppe fuss="Nach links oder rechts wischen für die nächste oder vorige Woche.">
-        {profil.woche.map((t, i) => {
+        {profil.woche.flatMap((t, i) => {
           const datum = plusTage(montag, i)
-          const e = plan.find((x) => x.datum === datum)
+          // Jede Einheit des Tages bekommt eine eigene Zeile (zwei an einem Tag zum Nachholen); ohne Einheit eine Zeile
+          const am = plan.filter((x) => x.datum === datum)
+          return (am.length ? am : [undefined]).map((e, n) => {
           const fertig = e && istErledigt(daten, e)
           const rollen = e ? Array.from(new Set(e.plaetze.map((p) => p.etikett || ROLLE[p.rolle]))).slice(0, 3).join(", ") : ""
           return (
             <Zeile
-              key={i}
+              key={i + "-" + n}
               symbol={
                 <span className={"tagkreis" + (datum === tag ? " heute" : "") + (fertig ? " fertig" : "")}>
                   <b>{WT[i]}</b>
@@ -321,6 +324,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
               onClick={e ? () => props.oeffnen(e) : undefined}
             />
           )
+          })
         })}
       </Gruppe>
       </div>
