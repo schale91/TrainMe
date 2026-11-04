@@ -141,6 +141,56 @@ const bdRudern = (gezogen: boolean): Haltung =>
   )
 /** Hüftbeugung im Hollow Hold: Fersen gut 20 cm über dem Boden */
 const HOLLOW_HUEFTE = 10
+/** Achse der Langhantel mit großen Scheiben am Boden (Scheibe 45 cm) */
+const STANGE_BODEN_Y = 0.225
+/**
+ * Rollout mit der Langhantel: Hände schulterbreit an der Stange am Boden, Arme gestreckt. Kniend sind die Knie, stehend
+ * die Fußballen der feste Drehpunkt; vorn ist der Körper fast gestreckt, die Stange bleibt immer am Boden.
+ */
+const rollout = (art: "knie" | "fuss", vorn: boolean): Haltung => {
+  const knie = art === "knie"
+  const ziele: NonNullable<Haltung["ziele"]> = {}
+  const hz = knie ? (vorn ? 1.27 : 0.36) : vorn ? 1.72 : 0.42
+  for (const [n, x] of [["l", 1], ["r", -1]] as const) {
+    ziele[`hand_${n}`] = { pos: [x * 0.16, STANGE_BODEN_Y, hz] }
+    // kniend bleiben die Schienbeine am Boden: Knie und Fußspitzen liegen fest
+    if (knie) {
+      ziele[`knie_${n}`] = { pos: [x * 0.1, 0.091, 0] }
+      ziele[`fuss_${n}`] = { pos: [x * 0.14, 0.08, -0.556] }
+    }
+    else ziele[`fuss_${n}`] = { pos: [x * 0.1, vorn ? 0.112 : 0.03, 0] }
+  }
+  const g: Winkel = knie
+    ? { ...B("huefte", [vorn ? 8 : 50, 6, 0]), ...B("knie", [vorn ? 150 : 90]), ...B("fuss", [-70, 0]), ...B("schulter", [vorn ? 165 : 70, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST, bws: [8, 0, 0] }
+    : { ...B("huefte", [vorn ? 10 : 110, 6, 0]), ...B("knie", [vorn ? 4 : 20]), ...B("fuss", [vorn ? -30 : 10, 0]), ...(vorn ? B("zehen", [50]) : {}), ...B("schulter", [vorn ? 168 : 100, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST, bws: [8, 0, 0] }
+  const pos: [number, number, number] = knie ? (vorn ? [0, 0.24, 0.42] : [0, 0.47, 0.05]) : vorn ? [0, 0.3, 1.0] : [0, 0.9, -0.05]
+  return H(g, [knie ? (vorn ? 72 : 48) : vorn ? 86 : 100, 0, 0], { pos, boden: false, ziele, beckenFrei: true, drehFrei: true })
+}
+/**
+ * Rollout auf dem Gymnastikball: kniend, Knie hüftbreit und Schienbeine am Boden, Unterarme auf dem Ball (Ellbogen hinten
+ * oben auf der Rundung, Hände locker zusammen); vorn rollt der Ball, Rumpf und Oberschenkel bleiben eine Linie.
+ */
+const ballRollout = (vorn: boolean): Haltung => {
+  const c = vorn ? 0.95 : 0.65
+  const ziele: NonNullable<Haltung["ziele"]> = {}
+  for (const [n, x] of [["l", 1], ["r", -1]] as const) {
+    ziele[`knie_${n}`] = { pos: [x * 0.1, 0.091, 0] }
+    ziele[`fuss_${n}`] = { pos: [x * 0.14, 0.08, -0.556] }
+    ziele[`ellbogen_${n}`] = { pos: [x * 0.11, 0.665, c - 0.13] }
+    ziele[`hand_${n}`] = { pos: [x * 0.05, 0.69, c + 0.12] }
+  }
+  return H(
+    { ...B("huefte", [vorn ? 6 : 2, 6, 0]), ...B("knie", [vorn ? 140 : 112]), ...B("fuss", [-70, 0]), ...B("schulter", [vorn ? 150 : 100, 10, 0]), ...B("ellbogen", [90, 90]), ...B("hand", [0, 0]) },
+    [vorn ? 62 : 22, 0, 0],
+    { pos: vorn ? [0, 0.4, 0.3] : [0, 0.43, 0.18], boden: false, ziele, beckenFrei: true, drehFrei: true },
+  )
+}
+/** Pike mit Gleitscheiben oben: Hände bleiben, Schultern über den Händen, Füße zu den Händen gezogen, Hüfte hoch */
+const PIKE_OBEN: Haltung = H(
+  { ...B("huefte", [100, 4, 0]), ...B("knie", [2]), ...B("fuss", [20, 0]), ...B("schulter", [150, 4, 0]), ...B("ellbogen", [0, 90]), ...B("hand", [80, 0]), hals: [-5, 0, 0] },
+  [130, 0, 0],
+  { pos: [0, 0.85, -0.05], boden: false, beckenFrei: true, drehFrei: true, ziele: { hand_l: { pos: [0.16, 0.055, 0.441] }, hand_r: { pos: [-0.16, 0.055, 0.441] }, fuss_l: { pos: [0.1, 0.112, -0.33] }, fuss_r: { pos: [-0.1, 0.112, -0.33] } } },
+)
 const HOLLOW: Haltung = mit(RUECKENLAGE, { g: { ...B("huefte", [HOLLOW_HUEFTE, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]), ...B("schulter", [176, 8, 0]), ...B("ellbogen", [4, 90]), lws: [4, 0, 0], bws: [14, 0, 0], hals: [10, 0, 0] } })
 
 // ---------------------------------------------------------------- Hang und Stütz am Gerät
@@ -182,6 +232,9 @@ const SEITE_R: Winkel = { schulter_r: [2, 8, 0], ellbogen_r: [6, HAMMER], ...FAU
 const FRONT_RACK_L: Winkel = { schulter_l: [40, 20, 0], ellbogen_l: [140, HAMMER] }
 const FRONT_RACK_R: Winkel = { schulter_r: [40, 20, 0], ellbogen_r: [140, HAMMER] }
 const UEBERKOPF_R: Winkel = { schulter_r: [176, 10, 0], ellbogen_r: [4, HAMMER] }
+/** Linke Hand an der Hüfte */
+const HAND_HUEFTE_L: Winkel = { schulter_l: [-12, 22, 0], ellbogen_l: [95, 0], hand_l: [0, 0] }
+const HUEFTE_HAND_L: NonNullable<Haltung["ziele"]> = { hand_l: { pos: [0.19, 0.09, 0.02], bezug: "becken" } }
 const LOCKER_L: Winkel = { schulter_l: [4, 12, 0], ellbogen_l: [10, 0] }
 /** Gehen auf der Stelle: arme bleiben, Beine wechseln */
 export const gehen = (arme: Winkel, hilfsmittel: Hilfsmittel[], knie = 30, text = "Aufrecht gehen, Rumpf bleibt gerade"): Dehnung =>
@@ -431,43 +484,37 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
     ],
   ),
   // ------------------------------------------------------------ Rollouts und Gleiten
-  rollout_ball: wdh(
-    "seite",
-    mit(KNIESTAND, { dreh: [40, 0, 0], g: { ...B("huefte", [40, 4, 0]), ...B("schulter", [80, 8, 0]), ...B("ellbogen", [90, 90]), ...B("hand", [0, 0]) } }),
-    mit(KNIESTAND, { dreh: [62, 0, 0], g: { ...B("huefte", [20, 4, 0]), ...B("knie", [48]), ...B("schulter", [130, 8, 0]), ...B("ellbogen", [70, 90]), ...B("hand", [0, 0]) } }),
-    2.0,
-    { aus: 1.6, texte: ["Ball mit den Unterarmen nach vorn rollen", "Zurückziehen, Rumpf fest"], hilfsmittel: [{ art: "gymnastikball", an: "haende" }] },
-  ),
-  rollout_kniend: wdh(
-    "schraeg",
-    mit(KNIESTAND, { dreh: [50, 0, 0], g: { ...B("huefte", [50, 6, 0]), ...B("schulter", [60, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST } }),
-    mit(KNIESTAND, { dreh: [78, 0, 0], g: { ...B("huefte", [28, 6, 0]), ...B("knie", [50]), ...B("schulter", [160, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST } }),
-    2.0,
-    { aus: 1.6, texte: ["Stange weit nach vorn rollen, Rücken bleibt gerade", "Zurückziehen"], hilfsmittel: [{ art: "langhantel", von: "hand_l", bis: "hand_r" }] },
-  ),
-  rollout_stehend: wdh(
-    "schraeg",
-    H({ ...B("huefte", [100, 6, 0]), ...B("knie", [6]), ...B("schulter", [100, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST }, [100, 0, 0]),
-    H({ ...B("huefte", [10, 6, 0]), ...B("knie", [4]), ...B("fuss", [-20, 0]), ...B("zehen", [50]), ...B("schulter", [170, 8, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST }, [78, 0, 0]),
-    2.4,
-    { aus: 2.0, texte: ["Aus dem Stand weit nach vorn ausrollen", "Zurück in den Stand"], hilfsmittel: [{ art: "langhantel", von: "hand_l", bis: "hand_r" }] },
-  ),
-  pike_gleitscheiben: wdh("seite", STUETZ, H({ ...B("huefte", [100, 4, 0]), ...B("knie", [2]), ...B("fuss", [20, 0]), ...B("schulter", [150, 4, 0]), ...B("ellbogen", [0, 90]), ...B("hand", [80, 0]), hals: [-5, 0, 0] }, [130, 0, 0]), 1.4, {
+  rollout_ball: wdh("seite", ballRollout(false), ballRollout(true), 2.0, {
     aus: 1.6,
-    texte: ["Gestreckte Beine zu den Händen ziehen, Hüfte hoch", "Zurück in den Stütz"],
+    texte: ["Ball mit den Unterarmen nach vorn rollen, die Hüfte wandert mit, ohne Hohlkreuz", "Ball über die Bauchspannung zurückziehen"],
+    hilfsmittel: [{ art: "gymnastikball", an: "haende", vor: -0.12 }],
+  }),
+  rollout_kniend: wdh("schraeg", rollout("knie", false), rollout("knie", true), 2.0, {
+    aus: 1.6,
+    texte: ["Mit gestreckten Armen nach vorn rollen, Hüfte und Schultern gemeinsam, ohne Hohlkreuz", "Mit gestreckten Armen zurückziehen, bis die Hüfte über den Knien ist"],
+    hilfsmittel: [{ art: "langhantel", von: "hand_l", bis: "hand_r" }],
+  }),
+  rollout_stehend: wdh("schraeg", rollout("fuss", false), rollout("fuss", true), 2.4, {
+    aus: 2.0,
+    texte: ["Aus dem Stand nach vorn rollen, bis der Körper fast gestreckt über dem Boden schwebt", "Über Bauch und Latissimus zurück in die Ausgangsposition"],
+    hilfsmittel: [{ art: "langhantel", von: "hand_l", bis: "hand_r" }],
+  }),
+  pike_gleitscheiben: wdh("seite", STUETZ, PIKE_OBEN, 1.4, {
+    aus: 1.6,
+    texte: ["Gestreckte Beine zu den Händen ziehen, Hüfte nach oben ins umgekehrte V", "Beine langsam zurück in den geraden Stütz schieben"],
     hilfsmittel: [{ art: "gleitscheibe", an: "fuss_l" }, { art: "gleitscheibe", an: "fuss_r" }],
   }),
   // ------------------------------------------------------------ Seitbeugen, Tragen
-  seitbeugen_kh: wdh("vorn", mit(STAND, { g: { ...SEITE_R, ...LOCKER_L } }), mit(STAND, { g: { ...SEITE_R, ...LOCKER_L, lws: [0, -12, 0], bws: [0, -14, 0] } }), 1.2, {
+  seitbeugen_kh: wdh("vorn", mit(STAND, { g: { ...SEITE_R, ...HAND_HUEFTE_L, lws: [0, 3, 0], bws: [0, 4, 0] }, ziele: HUEFTE_HAND_L }), mit(STAND, { g: { ...SEITE_R, ...HAND_HUEFTE_L, schulter_r: [2, 32, 0], lws: [0, -12, 0], bws: [0, -14, 0] }, ziele: HUEFTE_HAND_L }), 1.2, {
     aus: 1.4,
     seiten: true,
-    texte: ["Zur Seite der Hantel neigen", "Über die Gegenseite aufrichten"],
+    texte: ["Zur Seite der Hantel neigen, die Hantel gleitet am Oberschenkel nach unten", "Über die linke Rumpfseite aufrichten, leicht über die Mitte hinaus"],
     hilfsmittel: KH_R,
   }),
-  seitbeugen_kabel: wdh("vorn", mit(STAND, { g: { ...SEITE_R, ...LOCKER_L } }), mit(STAND, { g: { ...SEITE_R, ...LOCKER_L, lws: [0, 12, 0], bws: [0, 14, 0] } }), 1.2, {
+  seitbeugen_kabel: wdh("vorn", mit(STAND, { g: { ...SEITE_R, ...HAND_HUEFTE_L, schulter_r: [2, 28, 0], lws: [0, -10, 0], bws: [0, -12, 0] }, ziele: HUEFTE_HAND_L }), mit(STAND, { g: { ...SEITE_R, ...HAND_HUEFTE_L, schulter_r: [2, 2, 0], lws: [0, 3, 0], bws: [0, 4, 0] }, ziele: HUEFTE_HAND_L }), 1.2, {
     aus: 1.4,
     seiten: true,
-    texte: ["Gegen den Zug zur anderen Seite neigen", "Langsam zurück"],
+    texte: ["Über die gegenüberliegende Rumpfseite aufrichten, leicht über die Mitte hinaus", "Vom Kabel langsam zur Seite ziehen lassen"],
     hilfsmittel: kabel("hand_r", [-0.6, 0.12, 0]),
   }),
   koffer_tragen: gehen({ ...SEITE_R, ...LOCKER_L }, KH_R, 20, "Gewicht in einer Hand, aufrecht gehen"),

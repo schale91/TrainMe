@@ -2417,6 +2417,95 @@ const CRUNCH_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   },
 }
 
+// ---------------------------------------------------------------- Rumpf: Rollouts, Seitbeugen, Tragen
+const STANGE_BODEN = 0.225
+const rolloutSoll = (knie: boolean) => (m: Messung): Pruefung[] => {
+  const [h, v] = [m.start, m.ziel]
+  const ende = (x: Punkte) => (knie ? mitte(p(x, "g:knie_l"), p(x, "g:knie_r")) : mitte(p(x, "g:fuss_l"), p(x, "g:fuss_r")))
+  return [
+    ...ruhig(m),
+    pr("Stange bleibt am Boden (m)", Math.max(...m.alle.map((x) => Math.abs(mitte(p(x, "hand_l"), p(x, "hand_r"))[1] - STANGE_BODEN))), 0, 0.02, "setz die Langhantel auf den Boden"),
+    pr("Hände schulterbreit (m)", Math.abs(p(h, "hand_l")[0] - p(h, "hand_r")[0]) / Math.abs(p(h, "g:schulter_l")[0] - p(h, "g:schulter_r")[0]), 1.0, 1.5, "greif schulterbreit"),
+    ...[h, v].flatMap((x, i) => SEITEN.map((s) => pr(`Arm ${s} gestreckt${i ? " vorn" : ""} (°)`, ellbogenWinkel(x, s), 155, 181, "die Arme bleiben gestreckt"))),
+    // stehend: der Ballen bleibt am Ort, die Ferse hebt sich vorn (die Zehen der Figur beugen sich nicht)
+    pr(knie ? "Knie bleiben (m)" : "Füße bleiben am Ort (m)", knie ? bleibt(m, ["g:knie_l", "g:knie_r"]) : Math.max(...m.alle.map((x) => Math.hypot(p(x, "fuss_l")[0] - p(h, "fuss_l")[0], p(x, "fuss_l")[2] - p(h, "fuss_l")[2]))), 0, 0.03, knie ? "Knie dich auf eine weiche Unterlage" : "Stell dich hüftbreit hin"),
+    ...(knie ? [pr("Hüfte hinten über den Knien (m)", Math.abs(mitte(p(h, "g:huefte_l"), p(h, "g:huefte_r"))[2] - ende(h)[2]), 0, 0.12, "wenn die Hüfte wieder über den Knien ist"), pr("Schienbeine bleiben am Boden (m)", Math.max(...m.alle.map((x) => p(x, "fuss_l")[1])), 0, 0.12, "kniend")] : [pr("Hinten vorgebeugt, Stange vor den Füßen (m)", p(h, "hand_l")[2] - ende(h)[2], 0.2, 0.6, "setz die Langhantel vor den Füßen auf")]),
+    pr("Vorn fast gestreckt (°)", winkelBei(ende(v), mitte(p(v, "g:huefte_l"), p(v, "g:huefte_r")), sm(v)), 150, 185, "bis der Körper fast gestreckt ist"),
+    pr("Vorn weit ausgerollt (m)", p(v, "hand_l")[2] - ende(v)[2], knie ? 1.0 : 1.5, knie ? 1.4 : 1.95, "Roll langsam nach vorn"),
+    pr("Hüfte und Schultern bewegen sich gemeinsam (m)", (mitte(p(v, "g:huefte_l"), p(v, "g:huefte_r"))[2] - mitte(p(h, "g:huefte_l"), p(h, "g:huefte_r"))[2]), 0.2, 1.2, "Hüfte und Schultern bewegen sich gemeinsam"),
+  ]
+}
+const seitbeuge = (x: Punkte) => grad(Math.atan2(sm(x)[0] - mitte(p(x, "g:huefte_l"), p(x, "g:huefte_r"))[0], sm(x)[1] - mitte(p(x, "g:huefte_l"), p(x, "g:huefte_r"))[1]))
+const aufrecht = (m: Messung, max = 6) => pr("Oberkörper bleibt senkrecht (°)", Math.max(...m.alle.map((x) => Math.abs(seitbeuge(x)))), 0, max, "Halte den Oberkörper senkrecht")
+const gehtLos = (m: Messung) => pr("Schritte (Knie heben sich) (m)", Math.max(...m.alle.map((x) => Math.max(p(x, "g:knie_l")[1], p(x, "g:knie_r")[1]))) - p(m.alle[1] ?? m.start, "g:knie_l")[1], 0.01, 0.5, "geh mit kurzen, kontrollierten Schritten los")
+const schulternWaagerecht = (m: Messung) => pr("Schultern auf gleicher Höhe (m)", Math.max(...m.alle.map((x) => Math.abs(p(x, "g:schulter_l")[1] - p(x, "g:schulter_r")[1]))), 0, 0.06, "die Schultern auf gleicher Höhe")
+const seiteHaengt = (x: Punkte, s: "l" | "r") => [pr(`Arm ${s} hängt gestreckt seitlich (°)`, ellbogenWinkel(x, s), 160, 181, "trag sie seitlich wie einen Koffer"), pr(`Gewicht ${s} neben dem Oberschenkel (m)`, p(x, `g:hand_${s}`)[1], 0.7, 0.95, "neben deinen Fuß")]
+const rack = (x: Punkte, s: "l" | "r") => [
+  pr(`Rack ${s}: Hand vor der Schulter (m)`, p(x, `g:hand_${s}`)[2] - p(x, `g:schulter_${s}`)[2], 0.05, 0.25, "Sie liegt in der Beuge zwischen Unterarm und Oberarm vor der Schulter"),
+  pr(`Rack ${s}: Hand auf Schulterhöhe (m)`, p(x, `g:hand_${s}`)[1] - p(x, `g:schulter_${s}`)[1], -0.08, 0.1, "vor der Schulter"),
+  pr(`Rack ${s}: Ellbogen zeigt nach unten (m)`, p(x, `g:hand_${s}`)[1] - p(x, `g:ellbogen_${s}`)[1], 0.1, 0.3, "der Ellbogen zeigt nach unten"),
+  pr(`Rack ${s}: Ellbogen nah am Körper (m)`, Math.abs(p(x, `g:ellbogen_${s}`)[0]) - Math.abs(p(x, `g:schulter_${s}`)[0]), -0.05, 0.1, "den Ellbogen nah am Körper"),
+]
+const ueberkopf = (x: Punkte, s: "l" | "r") => [pr(`Arm ${s} über Kopf gestreckt (°)`, ellbogenWinkel(x, s), 160, 181, "der Arm gestreckt"), pr(`Gewicht ${s} senkrecht über der Schulter (m)`, Math.hypot(p(x, `g:hand_${s}`)[0] - p(x, `g:schulter_${s}`)[0], p(x, `g:hand_${s}`)[2] - p(x, `g:schulter_${s}`)[2]), 0, 0.12, "das Gewicht bleibt senkrecht über der Schulter")]
+const ROLL_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  rollout_ball: (m) => {
+    const [h, v] = [m.start, m.ziel]
+    const hm = (x: Punkte) => mitte(p(x, "g:huefte_l"), p(x, "g:huefte_r")), km = (x: Punkte) => mitte(p(x, "g:knie_l"), p(x, "g:knie_r"))
+    return [
+      ...ruhig(m),
+      pr("Knie bleiben (m)", bleibt(m, ["g:knie_l", "g:knie_r"]), 0, 0.02, "Knie dich vor den Ball, die Knie hüftbreit"),
+      ...SEITEN.map((s) => pr(`Unterarm ${s} auf dem Ball (m)`, p(h, `g:ellbogen_${s}`)[1], 0.6, 0.72, "leg die Unterarme darauf")),
+      pr("Rumpf und Oberschenkel in einer Linie (°)", winkelBei(km(h), hm(h), sm(h)), 150, 185, "Bring Rumpf und Oberschenkel in eine Linie"),
+      pr("Vorn: Linie bleibt, kein Hohlkreuz (°)", winkelBei(km(v), hm(v), sm(v)), 150, 190, "Geh nur so weit, wie du ohne Hohlkreuz bleibst"),
+      pr("Ball rollt nach vorn (m)", p(v, "hand_l")[2] - p(h, "hand_l")[2], 0.25, 0.6, "Roll den Ball langsam nach vorn"),
+      pr("Hüfte wandert mit (m)", hm(v)[2] - hm(h)[2], 0.15, 0.5, "die Hüfte wandert mit nach vorn"),
+    ]
+  },
+  rollout_kniend: rolloutSoll(true),
+  rollout_stehend: rolloutSoll(false),
+  pike_gleitscheiben: (m) => {
+    const [st, o] = [m.start, m.ziel]
+    return [
+      ...ruhig(m), ...hochPruef(st),
+      pr("Hände bleiben (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.02, "die Hände unter den Schultern"),
+      pr("Schultern bleiben über den Händen (m)", Math.abs(sm(o)[2] - mitte(p(o, "g:hand_l"), p(o, "g:hand_r"))[2]), 0, 0.08, "Die Schultern bleiben über den Händen"),
+      ...gestreckt(o, "Zieh die gestreckten Beine Richtung Hände"),
+      pr("Hüfte hoch: umgekehrtes V (m)", mitte(p(o, "g:huefte_l"), p(o, "g:huefte_r"))[1], 0.7, 1.0, "bis der Körper ein umgekehrtes V bildet"),
+      pr("Füße gleiten zu den Händen (m)", p(o, "g:fuss_l")[2] - p(st, "g:fuss_l")[2], 0.3, 0.7, "Zieh die Beine Richtung Hände"),
+      pr("Füße bleiben am Boden (m)", Math.max(p(o, "fuss_l")[1], p(o, "fuss_r")[1]), 0.05, 0.14, "Füße auf den Gleitscheiben"),
+    ]
+  },
+  seitbeugen_kh: (m) => {
+    const [o, u] = [m.start, m.ziel]
+    return [
+      ...ruhig(m),
+      pr("Zur rechten Seite geneigt (°)", -seitbeuge(u), 15, 35, "Neige den Oberkörper langsam zur rechten Seite"),
+      pr("Oben leicht über die Mitte nach links (°)", seitbeuge(o), 1, 10, "neige dich leicht über die Mitte hinaus nach links"),
+      pr("Hantel gleitet am Oberschenkel (m)", Math.abs(p(u, "g:hand_r")[0]) - Math.abs(p(u, "g:huefte_r")[0]), 0.1, 0.3, "die Hantel gleitet am Oberschenkel entlang nach unten"),
+      pr("Hantel unten tiefer (m)", p(o, "g:hand_r")[1] - p(u, "g:hand_r")[1], 0.05, 0.3, "nach unten"),
+      pr("Linke Hand an der Hüfte (m)", abstand(p(u, "hand_l"), p(u, "g:huefte_l")), 0, 0.2, "die linke Hand an der Hüfte"),
+      pr("Nicht nach vorn oder hinten gedreht (m)", Math.abs(p(u, "g:schulter_l")[2] - p(u, "g:schulter_r")[2]), 0, 0.04, "ohne dich nach vorn oder hinten zu drehen"),
+      pr("Becken bleibt (m)", bleibt(m, ["g:becken"]), 0, 0.02, "Brust und Becken zeigen nach vorn"),
+    ]
+  },
+  seitbeugen_kabel: (m) => {
+    const [zug, auf] = [m.start, m.ziel]
+    return [
+      ...ruhig(m),
+      pr("Vom Kabel zur Seite gezogen (°)", -seitbeuge(zug), 12, 30, "Lass dich vom Kabel langsam zur Seite ziehen"),
+      pr("Leicht über die Mitte hinaus (°)", seitbeuge(auf), 1, 10, "und neige dich leicht über die Mitte hinaus"),
+      pr("Kabelnahe Hand hält den Griff (°)", ellbogenWinkel(zug, "r"), 160, 181, "greif den Griff mit der kabelnahen Hand"),
+      pr("Becken und Brust nach vorn (m)", Math.abs(p(zug, "g:schulter_l")[2] - p(zug, "g:schulter_r")[2]), 0, 0.04, "Becken und Brust zeigen die ganze Zeit nach vorn"),
+    ]
+  },
+  koffer_tragen: (m) => [...ruhig(m), aufrecht(m), schulternWaagerecht(m), gehtLos(m), ...seiteHaengt(m.start, "r")],
+  koffer_marsch: (m) => [...ruhig(m), aufrecht(m), schulternWaagerecht(m), ...seiteHaengt(m.start, "r"), ...SEITEN.map((s) => pr(`Knie ${s} bis Hüfthöhe (m)`, Math.max(...m.alle.map((x) => p(x, `g:knie_${s}`)[1] - p(x, `g:huefte_${s}`)[1])), -0.08, 0.05, "Zieh langsam ein Knie bis auf Hüfthöhe an"))],
+  rack_tragen_einarmig: (m) => [...ruhig(m), aufrecht(m), schulternWaagerecht(m), gehtLos(m), ...rack(m.start, "r")],
+  rack_tragen: (m) => [...ruhig(m), aufrecht(m), schulternWaagerecht(m), gehtLos(m), ...rack(m.start, "r"), ...rack(m.start, "l")],
+  kellner_tragen: (m) => [...ruhig(m), aufrecht(m), gehtLos(m), ...ueberkopf(m.start, "r")],
+  tragen_gemischt: (m) => [...ruhig(m), aufrecht(m), gehtLos(m), ...ueberkopf(m.start, "r"), ...seiteHaengt(m.start, "l")],
+}
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...BANK_SOLL,
   ...LS_SOLL,
@@ -2447,6 +2536,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...DB_SOLL,
   ...STANGE_SOLL,
   ...CRUNCH_SOLL,
+  ...ROLL_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),
