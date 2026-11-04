@@ -85,6 +85,8 @@ describe("Umbauzeit", () => {
     const q = [sp("Curl", ["bizeps"]), sp("Pushdown", ["trizeps"]), sp("Beinstrecker", ["quadrizeps"]), sp("Beinbeuger", ["beinbeuger"])]
     expect(supersatzVorschlag(q, s3, ["kurzhantel", "kabelzug", "beinstrecker", "beinbeuger_sitzend"], 2).paare).toEqual([[0, 1]])
     expect(supersatzVorschlag(q, s3, ["kurzhantel", "kabelzug", "beinstrecker", "beinbeuger_sitzend"], 6).paare).toEqual([[0, 1], [2, 3]])
+    // frei eingetragene Übung ohne bekannte Muskeln: kein Vorschlag
+    expect(supersatzVorschlag([sp("Eigene Übung", []), sp("Pushdown", ["trizeps"])], s3, ["kurzhantel", "kabelzug"], 10).paare).toEqual([])
     expect(freieGruppe([{ gruppe: "A" }, {}], ["B"])).toBe("C")
   })
 })

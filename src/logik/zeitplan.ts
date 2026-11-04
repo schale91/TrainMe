@@ -191,6 +191,8 @@ export function supersatzVorschlag(plaetze: FuerSupersatz[], saetze: MitZeit[][]
   const geeignet = (i: number) => !plaetze[i].gruppe && SUPERSATZ_ROLLEN.has(plaetze[i].rolle) && plaetze[i].uebung.art !== "mobilitaet" && saetze[i].some((s) => !s.fertig)
   const getrennt = (a: FuerSupersatz["uebung"], b: FuerSupersatz["uebung"]) => {
     const r = (m: string[]) => m.map((x) => REGION[x] ?? x)
+    // Ohne bekannte Muskeln (frei eingetragene Übung) lässt sich nichts sicher sagen
+    if (!a.muskeln.length || !b.muskeln.length) return false
     if ([...a.muskeln, ...b.muskeln].some((m) => m === "ganzkoerper" || m === "herz_kreislauf")) return false
     const alleB = new Set(r([...b.muskeln, ...(b.sekundaer || [])]))
     const alleA = new Set(r([...a.muskeln, ...(a.sekundaer || [])]))
