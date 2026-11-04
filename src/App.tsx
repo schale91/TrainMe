@@ -404,7 +404,12 @@ export default function App() {
             if (f) b[id] = f
             else delete b[id]
             d.bandfarben = b
-          })} satzform={(id, f) => aendern((d) => void (d.satzform = { ...(d.satzform || {}), [id]: f }))} />
+          })} satzform={(id, f) => aendern((d) => void (d.satzform = { ...(d.satzform || {}), [id]: f }))} bandhilfe={(id, f) => aendern((d) => {
+            const b = { ...(d.bandhilfe || {}) }
+            if (f) b[id] = f
+            else delete b[id]
+            d.bandhilfe = b
+          })} bandhilfeKg={(f, kg) => aendern((d) => void (d.bandhilfe_kg = { ...(d.bandhilfe_kg || {}), [f]: kg }))} />
         ) : tab === "heute" ? (
           <Heute daten={daten} aendern={aendern} oeffnen={oeffnen} einstufen={() => setEinstufen(true)} zumWeg={() => setTab("weg")} lebenswelt={lw} />
         ) : tab === "weg" ? (

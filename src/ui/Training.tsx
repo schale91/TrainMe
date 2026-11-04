@@ -20,6 +20,7 @@ import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
 import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
+import { bandhilfeMoeglich, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
 import { bestwert } from "../logik/spiel"
 import { Scheiben } from "./Scheiben"
@@ -67,7 +68,8 @@ function startSaetze(p: Platz, daten: Daten, form: Satzform = "gleich", lasten: 
     if (p.uebung.belastung === "zeit") return { last: null, wdh: 1, rir: v.rir, sekunden: v.last || 30, fertig: false }
     if (p.uebung.belastung === "distanz") return { last: null, wdh: 1, rir: 4, fertig: false }
     // Vorbelegt mit der Mitte des Bereichs: Wer nur abhakt, trägt keine zu optimistischen Werte ein
-    return { last, wdh: mitte(v), rir: v.rir, fertig: false }
+    const band = bandhilfeMoeglich(p.uebung) ? daten.bandhilfe?.[p.uebung.id] : undefined
+    return { last, wdh: mitte(v), rir: v.rir, fertig: false, ...(band ? { hilfe_band: band, hilfe_kg: hilfeKg(daten, band) } : {}) }
   })
   if (form !== "topsatz" || last === null || saetze.length < 2) return saetze
   return saetze.map((s, k) => (k === 0 ? { ...s, art: "top" as const } : { ...s, last: backoffLast(last, lasten), art: "backoff" as const }))
@@ -98,9 +100,10 @@ const BANDFARBEN = [
   { id: "lila", name: "Lila", farbe: "#8e5bd6" },
   { id: "grün", name: "Grün", farbe: "#3fa65a" },
   { id: "blau", name: "Blau", farbe: "#3b7be0" },
+  { id: "orange", name: "Orange", farbe: "#f08a24" },
 ]
 
-export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void }) {
+export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void }) {
   const { daten, einheit } = props
   const profil = daten.profil!
   // Reha: Schmerz je Satz statt Reserve, Schmerz vor dem Training
@@ -202,6 +205,20 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setTimeout(() => document.getElementById("uebung-" + nach)?.scrollIntoView({ behavior: "smooth", block: "start" }), 350)
   }
 
+  /** Band als Unterstützung wählen: gilt für die offenen Sätze dieser Übung und wird für das nächste Mal gemerkt */
+  const hilfeWaehlen = (i: number, farbe: string | null) => {
+    props.bandhilfe?.(plaetze[i].uebung.id, farbe)
+    const kg = farbe ? hilfeKg(daten, farbe) : 0
+    setSaetze(saetze.map((ss, x) => (x !== i ? ss : ss.map((t) => (t.fertig ? t : farbe ? { ...t, hilfe_band: farbe, hilfe_kg: kg } : { ...t, hilfe_band: undefined, hilfe_kg: undefined })))))
+  }
+  /** kg des gewählten Bandes um 1 ändern (eigener Wert je Farbe) */
+  const hilfeKgAendern = (i: number, d: number) => {
+    const farbe = daten.bandhilfe?.[plaetze[i].uebung.id]
+    if (!farbe) return
+    const kg = Math.max(1, hilfeKg(daten, farbe) + d)
+    props.bandhilfeKg?.(farbe, kg)
+    setSaetze(saetze.map((ss, x) => (x !== i ? ss : ss.map((t) => (t.fertig || t.hilfe_band !== farbe ? t : { ...t, hilfe_kg: kg })))))
+  }
   const abhaken = (i: number, k: number) => {
     const s = saetze[i][k]
     const p = plaetze[i]
@@ -225,6 +242,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         a = satzAnpassung(s, v, u.belastung, lasten)
         // Back-off-Sätze sind absichtlich leichter: nur leichter machen, nie schwerer
         if (form === "topsatz" && a?.richtung === "hoch" && s.last) a = { richtung: "gleich", text: "Back-off-Sätze bleiben bewusst leichter: " + zahl(s.last) + " kg beibehalten.", last: s.last }
+      }
+      // Mit Band als Unterstützung: zu leicht oder zu schwer? Dann ein anderes Band vorschlagen
+      if (s.hilfe_band) {
+        const h = hilfeVorschlag(s.hilfe_band, s, v.wdh_von, v.wdh_bis, v.rir)
+        if (h) setToast((h.richtung === "weniger" ? "Mit diesem Band zu leicht. Nimm das nächstschwächere Band: " : "Noch zu schwer. Nimm das nächststärkere Band: ") + (BANDFARBEN.find((x) => x.id === h.farbe)?.name ?? h.farbe) + " (" + hilfeText(hilfeKg(daten, h.farbe)) + ").")
       }
       // Neuer Bestwert schon während der Einheit
       const heute = [...saetze[i].filter((t, y) => t.fertig && y !== k), s].map(({ fertig: _f, ...x }) => x)
@@ -572,6 +594,23 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 ))}
               </div>
             ) : null}
+            {bandhilfeMoeglich(u) ? (
+              <div className="bandwahl" role="group" aria-label="Unterstützung mit Band">
+                <small>Unterstützung mit Band</small>
+                {BANDFARBEN.map((f) => {
+                  const an = daten.bandhilfe?.[u.id] === f.id
+                  return <button key={f.id} type="button" className={"bandfarbe" + (an ? " an" : "")} style={{ background: f.farbe }} aria-label={f.name + ", " + hilfeText(hilfeKg(daten, f.id))} aria-pressed={an} onClick={() => hilfeWaehlen(i, an ? null : f.id)} />
+                })}
+                {daten.bandhilfe?.[u.id] ? (
+                  <span className="hilfewert">
+                    <button type="button" className="textknopf" aria-label="Weniger Unterstützung" onClick={() => hilfeKgAendern(i, -1)}>−</button>
+                    <b>{hilfeText(hilfeKg(daten, daten.bandhilfe[u.id]))}</b>
+                    <button type="button" className="textknopf" aria-label="Mehr Unterstützung" onClick={() => hilfeKgAendern(i, 1)}>+</button>
+                    {daten.bandhilfe_kg?.[daten.bandhilfe[u.id]] === undefined ? <small> geschätzt</small> : null}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
             {p.warum?.length ? (
               <>
                 <button type="button" className="textknopf warumknopf" aria-expanded={warumOffen === i} onClick={() => setWarumOffen(warumOffen === i ? null : i)}>
@@ -622,6 +661,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 <span className="nr">Satz</span>
                 {u.belastung === "gewicht" ? <span className="breit">Gewicht</span> : null}
                 {u.belastung === "zeit" ? <span>{p.rolle === "ausdauer" && v.saetze === 1 ? "Minuten" : "Sekunden"}</span> : null}
+                {u.belastung === "wiederholungen" && saetze[i].some((s) => s.hilfe_kg) ? <span>Hilfe</span> : null}
                 {u.belastung === "gewicht" || u.belastung === "wiederholungen" ? <span>Wdh</span> : null}
                 {zeigeRir ? <span>im Tank</span> : null}
                 {zeigeSchmerz ? <span>Schmerz</span> : null}
@@ -655,6 +695,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                       {s.sekunden ?? 0}
                     </button>
                   ) : null}
+                  {u.belastung === "wiederholungen" && saetze[i].some((x) => x.hilfe_kg) ? <span className="hilfekg">{s.hilfe_kg ? hilfeText(s.hilfe_kg) : "ohne"}</span> : null}
                   {u.belastung === "gewicht" || u.belastung === "wiederholungen" ? (
                     <button type="button" className={"feldknopf" + (pad && pad.i === i && pad.k === k && pad.feld === "wdh" ? " an" : "")} aria-label={"Wiederholungen Satz " + (k + 1)} onClick={() => padOeffnen(i, k, "wdh")}>
                       {s.wdh}

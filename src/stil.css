@@ -2363,6 +2363,26 @@ select.ampel.rot {
   color: var(--leise, #888);
   margin-right: 2px;
 }
+/* Unterstützung mit Band: Farben brechen auf schmalen Handys um, der kg-Wert steht dahinter */
+.bandwahl {
+  flex-wrap: wrap;
+}
+.hilfewert {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.hilfewert .textknopf {
+  min-width: 32px;
+  min-height: 32px;
+  font-size: 18px;
+}
+.satz .hilfekg {
+  color: var(--leise);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
 .bandfarbe {
   /* mindestens 32 px, damit der Finger trifft, auch auf schmalen Handys nicht schrumpfen */
   flex: 0 0 auto;
