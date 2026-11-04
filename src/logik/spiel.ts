@@ -30,6 +30,8 @@ export function stufenName(n: number): string {
 export function bestwert(p: Protokoll): number {
   let best = 0
   for (const s of p.saetze) {
+    // Sätze mit Band als Unterstützung sind kein Wiederholungsrekord ohne Hilfe
+    if (s.hilfe_kg) continue
     const x = s.last ? e1rm(s) : s.sekunden ? s.sekunden : s.wdh
     if (x > best) best = x
   }
