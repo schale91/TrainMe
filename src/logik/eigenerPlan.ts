@@ -42,15 +42,15 @@ export function tagMitNr(plan: EigenerPlan, nr: number): PlanTag | undefined {
   return { ...liste[i], nr }
 }
 
-/** Die nächsten offenen Tage des Plans, ab dem ersten nach dem zuletzt erledigten. */
-export function offenePlanTage(daten: Daten): PlanTag[] {
+/** Die nächsten offenen Tage des Plans, ab dem ersten nach dem zuletzt erledigten (sich wiederholende Pläne: anzahl Tage). */
+export function offenePlanTage(daten: Daten, anzahl = 14): PlanTag[] {
   const plan = daten.eigenerPlan
   if (!plan || !plan.tage.length) return []
   const ab = letzterPlanTag(daten)
   if (plan.wiederholen) {
     const erste = Math.min(...plan.tage.map((t) => t.nr))
     const start = Math.max(ab + 1, erste)
-    return Array.from({ length: 14 }, (_, k) => tagMitNr(plan, start + k) as PlanTag)
+    return Array.from({ length: anzahl }, (_, k) => tagMitNr(plan, start + k) as PlanTag)
   }
   return plan.tage.filter((t) => t.nr > ab).sort((a, b) => a.nr - b.nr)
 }
@@ -224,12 +224,19 @@ export function planWoche(profil: Profil, daten: Daten, montag: string, heute: s
     aus.push(...zusatz(nur))
   }
   if (heute >= ende) return aus.sort((a, b) => (a.datum < b.datum ? -1 : 1))
-  const offen = offenePlanTage(daten)
   const heuteErledigt = daten.erledigt.some((e) => planEintrag(e) && e.datum === heute && e.quelle !== "uebersprungen")
-  let tage = trainingsTage(profil)
-    .map((i) => plusTage(montag, i))
-    .filter((d) => d >= heute && !(d === heute && heuteErledigt))
-  if (profil.folge === "fortlaufend" && !heuteErledigt && heute >= montag && tage[0] !== heute) tage = [heute, ...tage]
+  // offene Trainingstage einer Woche ab heute
+  const termine = (mo: string): string[] => {
+    const t = trainingsTage(profil)
+      .map((i) => plusTage(mo, i))
+      .filter((d) => d >= heute && !(d === heute && heuteErledigt))
+    return profil.folge === "fortlaufend" && !heuteErledigt && heute >= mo && heute < plusTage(mo, 7) && t[0] !== heute ? [heute, ...t] : t
+  }
+  // Spätere Wochen machen dort weiter, wo die Wochen davor (ab heute) aufhören; nach dem letzten Plantag bleibt es leer
+  let vorher = 0
+  for (let w = plusTage(montag, -7); plusTage(w, 7) > heute; w = plusTage(w, -7)) vorher += termine(w).length
+  const tage = termine(montag)
+  const offen = offenePlanTage(daten, vorher + tage.length + 1).slice(vorher)
   tage.forEach((datum, k) => {
     const tag = offen[k]
     if (!tag) return
