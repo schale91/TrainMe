@@ -63,7 +63,7 @@ const vorgebeugt = (kipp: number, knie: number, arme: Winkel, ziele: Ziele): Hal
   }
   return H({ ...B("huefte", [kipp + schien, 6, 0]), ...B("knie", [knie]), ...B("fuss", [schien, 0]), ...FAUST, hals: [-kipp * 0.4, 0, 0], ...arme }, [kipp, 0, 0], { pos: [0, hy + 0.003, hz + dz], boden: false, ziele: { ...fuesse, ...ziele } })
 }
-const koerper = (b: Basis, vor: number, arme: Winkel, ziele: Ziele): Haltung => {
+export const koerper = (b: Basis, vor: number, arme: Winkel, ziele: Ziele): Haltung => {
   if (b === "vorgebeugt") return vorgebeugt(vor, 22, arme, ziele)
   if (b === "sitzvor")
     return H({ ...B("huefte", [90 + vor, 4, 0]), ...B("knie", [80]), ...B("fuss", [4, 0]), ...FAUST, hals: [-30, 0, 0], ...arme }, [vor, 0, 0], {

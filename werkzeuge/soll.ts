@@ -1625,6 +1625,80 @@ const wallSlideSoll = (m: Messung): Pruefung[] => {
 }
 SB_SOLL.wall_slide = wallSlideSoll
 
+// ---------------------------------------------------------------- Bizepscurls
+interface CS {
+  arme?: ("l" | "r")[]
+  stange?: boolean
+  schwung?: boolean
+  /** Ellbogenwinkel oben (innen) */
+  oben?: Bereich
+  neig?: Bereich
+  hinten?: boolean
+  quer?: boolean
+  quelle?: string
+}
+const ellbogenRumpf = (x: Punkte, a: "l" | "r") => amRumpf(x, `g:ellbogen_${a}`)
+const curlSoll = (k: CS) => (m: Messung): Pruefung[] => {
+  const arme = k.arme ?? SEITEN
+  const u = m.alle[0]
+  // oben: für jeden Arm die Haltung mit dem am stärksten gebeugten Ellbogen (beim Wechseln ist das je Arm eine andere)
+  const obenVon = (a: "l" | "r") => m.alle.reduce((x, y) => (ellbogenWinkel(y, a) < ellbogenWinkel(x, a) ? y : x))
+  const o = obenVon(arme[0])
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "Stell dich hüftbreit hin")]
+  const neig = k.neig ?? [-4, 8]
+  for (const x of [u, o]) r.push(pr("Oberkörper aufrecht (°)", rumpfneigung(x), neig[0], neig[1], "Bauch angespannt, aufrecht"))
+  if (!k.schwung) r.push(pr("Ohne Schwung (°)", Math.abs(rumpfneigung(o) - rumpfneigung(u)), 0, 4, "ohne Schwung aus Hüfte oder Oberkörper"))
+  if (k.stange) {
+    r.push(pr("Griff schulterbreit", griffbreite(u) / schulterbreite(u), 0.9, 1.35, "schulterbreit"))
+    r.push(pr("Stange unten vor den Oberschenkeln (m)", amRumpf(u, "stange")[2], 0.04, 0.2, "die Stange hängt vor den Oberschenkeln"))
+  }
+  for (const a of arme) {
+    const o = obenVon(a)
+    r.push(pr(`Arm ${a} unten gestreckt (°)`, ellbogenWinkel(u, a), 158, 180, "bis die Arme wieder ganz gestreckt sind"))
+    const ob = k.oben ?? [22, 56]
+    r.push(pr(`Ellbogen ${a} oben gebeugt (°)`, ellbogenWinkel(o, a), ob[0], ob[1], k.quelle ?? "Oben sind die Unterarme fast senkrecht"))
+    const eu = ellbogenRumpf(u, a), eo = ellbogenRumpf(o, a)
+    r.push(pr(`Ellbogen ${a} wandert nicht (m)`, Math.hypot(eo[1] - eu[1], eo[2] - eu[2]), 0, 0.06, "ohne die Ellbogen nach vorn wandern zu lassen"))
+    if (!k.quer) r.push(pr(`Oberarm ${a} an der Seite (m)`, Math.abs(p(o, `g:ellbogen_${a}`)[0]) - Math.abs(p(o, `g:schulter_${a}`)[0]), -0.04, 0.09, "die Oberarme liegen an den Seiten"))
+    if (k.hinten) r.push(pr(`Oberarm ${a} hinter dem Körper (m)`, Math.max(eu[2], eo[2]), -0.2, -0.03, "der Oberarm bleibt dabei leicht hinter dem Körper"))
+  }
+  if (k.quer) r.push(pr("Hand oben vor der Gegenseite (m)", p(o, "hand_r")[0], -0.06, 0.12, "diagonal vor dem Körper Richtung gegenüberliegende Brust"))
+  return r
+}
+const CURL_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  bizeps_kh: curlSoll({}),
+  bizeps_kh_wechselnd: curlSoll({}),
+  hammercurl: curlSoll({}),
+  supinations_curl: curlSoll({}),
+  zottman_curl: curlSoll({}),
+  zottman_curl_invers: curlSoll({}),
+  hammer_cheat_curl: curlSoll({ schwung: true, neig: [-4, 14] }),
+  langhantel_curl: curlSoll({ stange: true }),
+  sz_curl_untergriff: curlSoll({ stange: true }),
+  sz_curl_obergriff: curlSoll({ stange: true }),
+  curl_exzentrisch: curlSoll({ stange: true }),
+  cheat_curl_langhantel: curlSoll({ stange: true, schwung: true, neig: [-4, 14] }),
+  bizeps_band: curlSoll({}),
+  kabel_curl_sz: curlSoll({ stange: true }),
+  kabel_reverse_curl: curlSoll({ stange: true }),
+  hammercurl_seil: curlSoll({}),
+  kabel_curl_einarmig: curlSoll({ arme: ["r"], oben: [28, 62], quelle: "Curle den Griff nach oben" }),
+  bayesian_curl: curlSoll({ arme: ["r"], oben: [40, 75], neig: [3, 16], hinten: true, quelle: "Curle den Griff nach vorn oben" }),
+  hammercurl_kreuz: curlSoll({ arme: ["r"], oben: [35, 70], quer: true, quelle: "Richtung gegenüberliegende Brust oder Schulter" }),
+  curl_21er: curlSoll({ stange: true }),
+  bizeps_isohold: curlSoll({ oben: [80, 100], quelle: "bis die Unterarme waagerecht sind und der Ellbogen etwa 90 Grad gebeugt ist" }),
+}
+CURL_SOLL.drag_curl = (m) => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "aufrecht hinstellen")]
+  r.push(pr("Griff schulterbreit", griffbreite(u) / schulterbreite(u), 0.9, 1.35, "schulterbreit im Untergriff"))
+  r.push(pr("Stange unten an den Oberschenkeln (m)", amRumpf(u, "stange")[2], 0.04, 0.18, "Die Stange liegt an den Oberschenkeln an"))
+  for (const a of SEITEN) r.push(pr(`Ellbogen ${a} oben hinten (m)`, ellbogenRumpf(o, a)[2], -0.25, -0.08, "Zieh die Ellbogen nach hinten"))
+  r.push(pr("Stange oben am Bauchnabel (m)", amRumpf(o, "stange")[1], -0.38, -0.22, "bis etwa auf Höhe des Bauchnabels oder der unteren Rippen"))
+  r.push(pr("Stange oben am Körper (m)", amRumpf(o, "stange")[2], 0.03, 0.16, "Die Stange bleibt in Kontakt mit dem Körper oder ganz nah daran"))
+  return r
+}
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1744,6 +1818,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...ROT_SOLL,
   ...SHRUG_SOLL,
   ...SB_SOLL,
+  ...CURL_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

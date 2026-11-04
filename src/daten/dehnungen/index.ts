@@ -16,6 +16,7 @@ import { WAND_UEBUNGEN } from "./wand"
 import { SEITSTUETZ } from "./seitstuetz"
 import { ROLLEN } from "./rolle"
 import { KRAFT_UEBERKOPF } from "./kraft_ueberkopf"
+import { KRAFT_CURLS } from "./kraft_curls"
 import { KRAFT_HANG_PULL, KRAFT_HEBEN_ARME, KRAFT_HINTERE_SCHULTER, KRAFT_PIKE, KRAFT_ROTATOREN, KRAFT_SCHULTERBLATT } from "./kraft_heben_arme"
 import { FESTE_PUNKTE } from "./kontakte"
 import { KRAFT_SCHULTER } from "./kraft_schulter"
@@ -31,7 +32,7 @@ import { KRAFT_SCHNELL } from "./kraft_schnell"
 import { KRAFT_LAUF } from "./kraft_lauf"
 import { KRAFT_REST } from "./kraft_rest"
 
-const ALLE: Record<string, Dehnung> = { ...RUECKEN, ...SCHULTER, ...HUEFTE_A, ...HUEFTE_B, ...BEINE, ...FUSS_GOLF, ...KRAFT, ...KRAFT_TRIZEPS, ...KRAFT_SCHULTER, ...KRAFT_ZIEHEN, ...KRAFT_BEINE, ...KRAFT_KNIEBEUGE, ...KRAFT_HUEFTE, ...KRAFT_HEBEN, ...KRAFT_EINBEIN, ...KRAFT_RUMPF, ...KRAFT_GRIFF, ...KRAFT_SCHNELL, ...KRAFT_LAUF, ...KRAFT_REST, ...KRAFT_DRUECKEN, ...KRAFT_ZUG, ...WAND_UEBUNGEN, ...SEITSTUETZ, ...ROLLEN, ...KRAFT_UEBERKOPF, ...KRAFT_HEBEN_ARME, ...KRAFT_HINTERE_SCHULTER, ...KRAFT_ROTATOREN, ...KRAFT_HANG_PULL, ...KRAFT_SCHULTERBLATT, ...KRAFT_PIKE }
+const ALLE: Record<string, Dehnung> = { ...RUECKEN, ...SCHULTER, ...HUEFTE_A, ...HUEFTE_B, ...BEINE, ...FUSS_GOLF, ...KRAFT, ...KRAFT_TRIZEPS, ...KRAFT_SCHULTER, ...KRAFT_ZIEHEN, ...KRAFT_BEINE, ...KRAFT_KNIEBEUGE, ...KRAFT_HUEFTE, ...KRAFT_HEBEN, ...KRAFT_EINBEIN, ...KRAFT_RUMPF, ...KRAFT_GRIFF, ...KRAFT_SCHNELL, ...KRAFT_LAUF, ...KRAFT_REST, ...KRAFT_DRUECKEN, ...KRAFT_ZUG, ...WAND_UEBUNGEN, ...SEITSTUETZ, ...ROLLEN, ...KRAFT_UEBERKOPF, ...KRAFT_HEBEN_ARME, ...KRAFT_HINTERE_SCHULTER, ...KRAFT_ROTATOREN, ...KRAFT_HANG_PULL, ...KRAFT_SCHULTERBLATT, ...KRAFT_PIKE, ...KRAFT_CURLS }
 /** Feste Kontaktpunkte aus kontakte.ts eintragen */
 export const DEHNUNGEN: Record<string, Dehnung> = Object.fromEntries(Object.entries(ALLE).map(([id, d]) => [id, FESTE_PUNKTE[id] && !d.fest ? { ...d, fest: FESTE_PUNKTE[id] } : d]))
 export { TEST_DEHNUNGEN }
