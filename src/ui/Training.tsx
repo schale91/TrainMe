@@ -19,7 +19,7 @@ import { Sym } from "./symbole"
 import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
-import { freieGruppe, hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, schaetzung, supersatzVorschlag, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
+import { freieGruppe, hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, satzMinuten, schaetzung, supersatzVorschlag, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
 import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
 import { bandhilfeMoeglich, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
@@ -361,18 +361,19 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const extra = warmOffen * 1.5 + umbauOffen + (reha && beginn === null ? 7 : 0)
   const prog = beginn !== null ? (() => { const p = prognose(beginn, jetzt, plaetze, saetze, faktor); return { ...p, gesamt: p.gesamt + warmOffen * 1.5 + umbauOffen } })() : { vergangen: 0, offen: 0, gesamt: schaetzung(plaetze, saetze, extra) * gelernt }
   const zuLang = prog.gesamt > budget + 1
-  // Zu lang: zuerst die Pausen der Ergänzungsübungen kürzen (einmal je Einheit), die Hauptübungen behalten ihre Pause
-  useEffect(() => {
-    if (beginn === null || !zuLang || angepasst.indexOf("pausen") >= 0) return
-    const { plaetze: neu, gekuerzt } = pausenKuerzen(plaetze)
+  // Zu lang: die App fragt jedes Mal nach, Schritt für Schritt. Zuerst kürzere Pausen bei den Ergänzungsübungen (die
+  // Hauptübungen behalten ihre Pause), dann Supersätze, zuletzt Weglassen. „Nein“ gilt für diese Einheit; dann kommt
+  // der nächste Schritt.
+  const gefragt = (k: string) => angepasst.indexOf(k) >= 0 || angepasst.indexOf(k + "-nein") >= 0
+  const minJeSatz = satzMinuten(plaetze)
+  const kuerzen = pausenKuerzen(plaetze)
+  const kuerzenSpart = Math.round(plaetze.reduce((n, p, i) => n + (saetze[i].filter((x) => !x.fertig).length * (p.vorgabe.pause_s - kuerzen.plaetze[i].vorgabe.pause_s)) / 60, 0) * faktor)
+  const pausenKuerzenJa = () => {
+    setPlaetze(kuerzen.plaetze)
     setAngepasst([...angepasst, "pausen"])
-    if (!gekuerzt.length) return
-    setPlaetze(neu)
-    setToast("Damit du in " + budget + " Minuten fertig wirst: kürzere Pausen bei " + gekuerzt.join(", ") + ".")
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [beginn, zuLang])
-  // Immer noch zu lang: Ergänzungsübungen mit verschiedenen Muskeln als Supersatz im Wechsel vorschlagen
-  const superVorschlag = zuLang && angepasst.indexOf("supersatz") < 0 ? supersatzVorschlag(plaetze, saetze, plaetze.map((p) => lastGeraet(p.uebung, ort)), prog.gesamt - budget) : { paare: [], spart_min: 0 }
+  }
+  // Ergänzungsübungen mit verschiedenen Muskeln als Supersatz im Wechsel
+  const superVorschlag = zuLang && !gefragt("supersatz") ? supersatzVorschlag(plaetze, saetze, plaetze.map((p) => lastGeraet(p.uebung, ort)), prog.gesamt - budget) : { paare: [], spart_min: 0 }
   const alsSupersatz = () => {
     const neu = plaetze.map((p) => ({ ...p }))
     const vergeben: string[] = []
@@ -387,9 +388,29 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setToast("Im Wechsel ohne Pause dazwischen, die Pause kommt nach der zweiten Übung.")
   }
   const vorschlag = weglassenVorschlag(plaetze, saetze)
+  const weglassenSpart = Math.round(
+    (vorschlag.ganz.reduce((n, i) => n + saetze[i].filter((x) => !x.fertig).length * minJeSatz[i], 0) + vorschlag.einSatz.reduce((n, i) => n + minJeSatz[i], 0)) * faktor,
+  )
   const weglassen = () => {
     setSaetze(saetze.map((ss, i) => (vorschlag.ganz.indexOf(i) >= 0 ? ss.filter((s) => s.fertig) : vorschlag.einSatz.indexOf(i) >= 0 ? (() => { const k = ss.map((s) => s.fertig).lastIndexOf(false); return ss.filter((_, x) => x !== k) })() : ss)))
     setAngepasst([...angepasst, "weglassen"])
+  }
+  const frage: "pausen" | "supersatz" | "weglassen" | null =
+    beginn === null || !zuLang
+      ? null
+      : !gefragt("pausen") && kuerzen.gekuerzt.length && kuerzenSpart >= 1
+        ? "pausen"
+        : !gefragt("supersatz") && superVorschlag.paare.length
+          ? "supersatz"
+          : !gefragt("weglassen") && (vorschlag.ganz.length || vorschlag.einSatz.length)
+            ? "weglassen"
+            : null
+  const frageAntwort = (ja: boolean) => {
+    if (!frage) return
+    if (!ja) return setAngepasst([...angepasst, frage + "-nein"])
+    if (frage === "pausen") pausenKuerzenJa()
+    else if (frage === "supersatz") alsSupersatz()
+    else weglassen()
   }
   const starten = () => {
     const t = Date.now()
@@ -578,7 +599,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               Training starten
             </button>
             <p className="hinweistext klein">
-              Ab dem Start zählt die Zeit, mit Aufwärmen und Aufräumen. Nach Plan brauchst du voraussichtlich etwa {Math.round(prog.gesamt)} min{prog.gesamt > budget + 1 ? ". Das ist mehr als deine Zeit: Die App kürzt dann zuerst die Pausen der Ergänzungsübungen." : "."}
+              Ab dem Start zählt die Zeit, mit Aufwärmen und Aufräumen. Nach Plan brauchst du voraussichtlich etwa {Math.round(prog.gesamt)} min{prog.gesamt > budget + 1 ? ". Das ist mehr als deine Zeit: Nach dem Start fragt dich die App, ob sie zuerst die Pausen der Ergänzungsübungen kürzen soll." : "."}
             </p>
             {superKnopf}
           </>
@@ -588,12 +609,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               <b>{uhr(prog.vergangen)}</b> <span>von {budget} min</span> <span className="leise">· fertig nach etwa {Math.round(prog.gesamt)} min</span>
             </div>
             {angepasst.indexOf("pausen") >= 0 ? <small className="leise">Pausen der Ergänzungsübungen gekürzt, damit es in {budget} min passt. Die Hauptübungen behalten ihre Pause.</small> : null}
-            {angepasst.indexOf("pausen") >= 0 ? superKnopf : null}
-            {zuLang && angepasst.indexOf("pausen") >= 0 && angepasst.indexOf("weglassen") < 0 && !superVorschlag.paare.length && (vorschlag.ganz.length || vorschlag.einSatz.length) ? (
-              <button type="button" className="knopf klein leise" onClick={weglassen}>
-                Immer noch zu lang: {[...vorschlag.ganz.map((i) => plaetze[i].uebung.name), ...(vorschlag.einSatz.length ? ["je einen Satz bei " + vorschlag.einSatz.map((i) => plaetze[i].uebung.name).join(", ")] : [])].join(" und ")} weglassen
-              </button>
-            ) : null}
+            {angepasst.indexOf("weglassen") >= 0 ? <small className="leise">Wie besprochen gekürzt, damit es in {budget} min passt.</small> : null}
+            {zuLang && !frage && angepasst.some((k) => k.endsWith("-nein")) ? <small className="leise">Es wird etwas länger als {budget} min. Du hast entschieden, nichts weiter zu ändern.</small> : null}
             {hauptPausenZuKurz(plaetze, saetze) ? <small className="leise">Deine Pausen bei den Hauptübungen sind deutlich kürzer als vorgesehen. Für die Kraft lieber die volle Pause nehmen.</small> : null}
           </>
         )}
@@ -943,6 +960,33 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           </button>
         </div>
       ) : null}
+
+      {/* Rückfrage bei knapper Zeit: erst nach dem Satz zeigen, nicht während Zahlen eingetippt werden */}
+      <Blatt offen={frage !== null && !pad} onClose={() => frageAntwort(false)} titel={"Es wird knapp: etwa " + Math.round(prog.gesamt) + " von " + budget + " min"}>
+        {frage === "pausen" ? (
+          <>
+            <p className="infokurz">
+              Soll ich die Pausen bei {kuerzen.gekuerzt.join(", ")} kürzen (auf 60 bis 90 s)? Das spart etwa {kuerzenSpart} min. Die Hauptübungen behalten ihre volle Pause.
+            </p>
+          </>
+        ) : frage === "supersatz" ? (
+          <p className="infokurz">
+            Soll ich {superVorschlag.paare.map(([a, b]) => plaetze[a].uebung.name + " und " + plaetze[b].uebung.name).join(" sowie ")} als Supersatz im Wechsel machen? Die Muskelgruppen sind verschieden, das spart etwa {superVorschlag.spart_min} min.
+          </p>
+        ) : frage === "weglassen" ? (
+          <p className="infokurz">
+            Soll ich {[...vorschlag.ganz.map((i) => plaetze[i].uebung.name), ...(vorschlag.einSatz.length ? ["je einen Satz bei " + vorschlag.einSatz.map((i) => plaetze[i].uebung.name).join(", ")] : [])].join(" und ")} weglassen? Das spart etwa {weglassenSpart} min. Die Hauptübungen bleiben vollständig.
+          </p>
+        ) : null}
+        <div className="knopfreihe">
+          <button type="button" className="knopf voll" onClick={() => frageAntwort(true)}>
+            Ja, so machen
+          </button>
+          <button type="button" className="knopf voll leise" onClick={() => frageAntwort(false)}>
+            Nein, so lassen
+          </button>
+        </div>
+      </Blatt>
 
       <Blatt offen={tausch !== null} onClose={() => setTausch(null)} titel="Übung tauschen">
         {tausch !== null ? (

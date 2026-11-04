@@ -3139,3 +3139,11 @@ select.ampel.rot {
   background: var(--superfarbe);
   color: #fff;
 }
+
+/* Rückfrage bei knapper Zeit: zwei Knöpfe untereinander */
+.knopfreihe {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
