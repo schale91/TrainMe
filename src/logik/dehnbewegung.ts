@@ -74,7 +74,8 @@ export type Hilfsmittel =
   /** abstand: Lücke zwischen Punkt und Wand (Meter, sonst 3 cm), z. B. für einen Ball dazwischen */
   | { art: "wand"; an: Punkt; richtung: "vorn" | "hinten" | "links" | "rechts" | "unten"; abstand?: number; ebene?: number; breite?: number; x?: number }
   /** versatz [seitlich, vorn] in Metern, z. B. damit die Hände auf der Vorderkante einer Box liegen */
-  | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number]; quer?: boolean }
+  /** griff: die Hände greifen die Kante (Bankdips), dort zählen sie nicht als Eindringen */
+  | { art: "bank" | "stuhl" | "box"; unter: Punkt; hoehe: number; versatz?: [number, number]; quer?: boolean; griff?: boolean }
   | { art: "stab"; von: Punkt; bis: Punkt }
   | { art: "band"; von: Punkt; bis: Punkt }
   | { art: "rolle" | "ball" | "kissen"; unter: Punkt; laengs?: boolean; versatz?: [number, number]; bei?: [number, number] }
@@ -96,7 +97,8 @@ export type Hilfsmittel =
   | { art: "kabel"; von: Punkt; rolle: V3; turm?: number }
   /** Verstellbare Bank: Sitz unter dem Punkt in der Höhe, Lehne in Richtung des zweiten Punkts (z. B. Schultern); bauch: Brust liegt auf der Lehne */
   /** kante: Helms-Rudern, man steht hinter der Bank, nur die Brust liegt an der oberen Kante, die Lehne fällt nach vorn ab */
-  | { art: "schraegbank"; unter: Punkt; lehne: Punkt; hoehe: number; bauch?: boolean; kante?: boolean }
+  /** lang: Länge der Lehne (Standard 0,86 m), kürzer etwa für Übungen hinter dem Kopf */
+  | { art: "schraegbank"; unter: Punkt; lehne: Punkt; hoehe: number; bauch?: boolean; kante?: boolean; lang?: number }
   /** Wand-Rack hinter dem Punkt (oder bei z), mit Ablagen und J-Hooks in der Höhe */
   | { art: "rack"; an: Punkt; z?: number; ablage?: number; haken?: number }
   /** Medizinball in den Händen */

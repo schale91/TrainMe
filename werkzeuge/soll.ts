@@ -1742,6 +1742,102 @@ const handgelenkSoll = (m: Messung): Pruefung[] => {
 CURL_SOLL.handgelenk_curl = handgelenkSoll
 CURL_SOLL.handgelenk_curl_revers = handgelenkSoll
 
+// ---------------------------------------------------------------- Trizeps
+interface TZS {
+  art: "drueck" | "ueber" | "kabelUeber" | "liegend" | "kick" | "jm" | "kreuz" | "rollen"
+  arme?: ("l" | "r")[]
+  /** gebeugte Lage: Ellbogenwinkel */
+  gebeugt: Bereich
+  quelle: { gebeugt: string; ober: string }
+}
+const trizepsSoll = (k: TZS) => (m: Messung): Pruefung[] => {
+  const arme = k.arme ?? SEITEN
+  const g = m.alle.reduce((x, y) => (ellbogenWinkel(y, arme[0]) < ellbogenWinkel(x, arme[0]) ? y : x))
+  const s = m.alle.reduce((x, y) => (ellbogenWinkel(y, arme[0]) > ellbogenWinkel(x, arme[0]) ? y : x))
+  const r = [...ruhig(m)]
+  if (k.art === "drueck" || k.art === "ueber" || k.art === "kabelUeber" || k.art === "kick") r.push(pr("Füße bleiben (m)", bleibt(m, ["ferse_l", "ferse_r"]), 0, 0.02, "stabil hinstellen"))
+  for (const a of arme) {
+    r.push(pr(`Arm ${a} gestreckt (°)`, ellbogenWinkel(s, a), k.art === "jm" ? 155 : 160, 180, "bis die Arme ganz gestreckt sind"))
+    r.push(pr(`Ellbogen ${a} gebeugt (°)`, ellbogenWinkel(g, a), k.gebeugt[0], k.gebeugt[1], k.quelle.gebeugt))
+    if (k.art !== "jm" && k.art !== "kreuz" && k.art !== "rollen") {
+      const es = amRumpf(s, `g:ellbogen_${a}`), eg = amRumpf(g, `g:ellbogen_${a}`)
+      r.push(pr(`Oberarm ${a} bleibt ruhig (m)`, Math.hypot(es[1] - eg[1], es[2] - eg[2]), 0, k.art === "liegend" ? 0.06 : 0.05, k.quelle.ober))
+    }
+    if (k.art === "drueck") r.push(pr(`Oberarm ${a} an der Seite (°)`, armBeugung(s, a), 0, 22, "Zieh die Ellbogen an die Seiten"))
+    if (k.art === "ueber") r.push(pr(`Oberarm ${a} nah am Kopf nach oben (°)`, armBeugung(s, a), 150, 180, "die Oberarme nah am Kopf"))
+    if (k.art === "ueber") r.push(pr(`Hand ${a} gebeugt hinter dem Kopf (m)`, amRumpf(g, `hand_${a}`)[2] - amRumpf(g, "g:kopf")[2], -0.3, 0.0, "Senke die Hantel hinter dem Kopf ab"))
+    if (k.art === "kick") r.push(pr(`Oberarm ${a} parallel zum Oberkörper (°)`, armBeugung(s, a), 0, 20, "bis er parallel zum Oberkörper ist"))
+    if (k.art === "jm") r.push(pr(`Ellbogen ${a} unten nach vorn zu den Füßen (m)`, -amRumpf(g, `g:ellbogen_${a}`)[1], 0.05, 0.25, "lass die Ellbogen dabei nach vorn Richtung Füße wandern"))
+    if (k.art === "kreuz") r.push(pr("Hand unten vor dem Gesicht zur Gegenseite (m)", p(g, "hand_r")[0], -0.1, 0.12, "quer vor dem Gesicht Richtung gegenüberliegende Schulter"))
+  }
+  if (k.art === "drueck" || k.art === "kick") r.push(pr("Oberkörper ruhig (°)", Math.abs(rumpfneigung(g) - rumpfneigung(s)), 0, 4, "Nur die Unterarme bewegen sich"))
+  if (k.art === "drueck") r.push(pr("Oberkörper leicht vorgeneigt (°)", rumpfneigung(s), 3, 16, "Oberkörper ganz leicht nach vorn geneigt"))
+  if (k.art === "kick") r.push(pr("Oberkörper fast waagerecht (°)", rumpfneigung(s), 68, 92, "Der Oberkörper ist fast waagerecht"))
+  if (k.art === "kick") r.push(pr("Freie Hand stützt sich auf den Oberschenkel (m)", abstand(p(s, "hand_l"), p(s, "oberschenkel_l")), 0, 0.2, "stütz die Hand auf den Oberschenkel"))
+  return r
+}
+const TZ_DRUECK: TZS = { art: "drueck", gebeugt: [70, 105], quelle: { gebeugt: "die Unterarme sind etwa waagerecht oder etwas höher", ober: "Nur die Unterarme bewegen sich" } }
+const TZ_UEBER: TZS = { art: "ueber", gebeugt: [25, 70], quelle: { gebeugt: "bis du eine deutliche Dehnung im Trizeps spürst", ober: "nur die Ellbogen beugen" } }
+const TZ_LIEG: TZS = { art: "liegend", gebeugt: [40, 85], quelle: { gebeugt: "senke die Stange bis knapp hinter den Kopf oder zur Stirn", ober: "Beuge nur die Ellbogen" } }
+const TRIZEPS_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  trizeps_kabel: trizepsSoll(TZ_DRUECK),
+  trizeps_kabel_untergriff: trizepsSoll(TZ_DRUECK),
+  trizeps_kabel_seil: trizepsSoll(TZ_DRUECK),
+  trizeps_kabel_einarmig: trizepsSoll({ ...TZ_DRUECK, arme: ["r"] }),
+  trizeps_pressdown_21er: trizepsSoll(TZ_DRUECK),
+  trizeps_band: trizepsSoll(TZ_DRUECK),
+  trizeps_ueberkopf: trizepsSoll(TZ_UEBER),
+  trizeps_ueberkopf_sz: trizepsSoll(TZ_UEBER),
+  trizeps_ueberkopf_kh_einarmig: trizepsSoll({ ...TZ_UEBER, arme: ["r"] }),
+  trizeps_ueberkopf_band: trizepsSoll(TZ_UEBER),
+  trizeps_ueberkopf_seil: trizepsSoll({ ...TZ_UEBER, art: "kabelUeber", gebeugt: [35, 80], quelle: { gebeugt: "bis du eine deutliche Dehnung spürst", ober: "Die Oberarme bleiben ruhig" } }),
+  trizeps_ueberkopf_kabel_einarmig: trizepsSoll({ ...TZ_UEBER, art: "kabelUeber", arme: ["r"], gebeugt: [35, 80], quelle: { gebeugt: "die Hand liegt hinter dem Kopf", ober: "Rumpf stabil" } }),
+  skull_crusher_sz: trizepsSoll(TZ_LIEG),
+  skull_crusher_exzentrisch: trizepsSoll(TZ_LIEG),
+  skull_crusher_kh: trizepsSoll({ ...TZ_LIEG, quelle: { ...TZ_LIEG.quelle, gebeugt: "Senke die Hanteln neben den Kopf ab" } }),
+  skull_crusher_kabel: trizepsSoll({ ...TZ_LIEG, quelle: { ...TZ_LIEG.quelle, gebeugt: "führe den Griff hinter den Kopf" } }),
+  rolling_extension: trizepsSoll({ ...TZ_LIEG, art: "rollen", gebeugt: [25, 80], quelle: { gebeugt: "Unten liegen die Hanteln fast neben den Ohren", ober: "Rolle die Oberarme zurück nach vorn" } }),
+  jm_press: trizepsSoll({ art: "jm", gebeugt: [25, 62], quelle: { gebeugt: "die Unterarme sind fast senkrecht über den Oberarmen zusammengefaltet", ober: "" } }),
+  trizeps_kreuz_kh_liegend: trizepsSoll({ art: "kreuz", arme: ["r"], gebeugt: [40, 95], quelle: { gebeugt: "Beuge den Ellbogen und senke die Hantel quer vor dem Gesicht", ober: "" } }),
+  trizeps_kickback_kh: trizepsSoll({ art: "kick", arme: ["r"], gebeugt: [70, 110], quelle: { gebeugt: "senke den Unterarm langsam ab", ober: "Der Oberarm bleibt parallel zum Oberkörper" } }),
+  trizeps_kickback_kabel: trizepsSoll({ art: "kick", arme: ["r"], gebeugt: [70, 110], quelle: { gebeugt: "führe den Unterarm langsam zurück", ober: "Der Oberarm bleibt ruhig" } }),
+}
+TRIZEPS_SOLL.dips_trizeps = (m) => {
+  const [o, u] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Hände bleiben auf den Holmen (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.02, "Stütz dich auf die Holme")]
+  r.push(pr("Hände etwa schulterbreit", griffbreite(o) / schulterbreite(o), 0.9, 1.35, "die Hände etwa schulterbreit"))
+  for (const x of [o, u]) r.push(pr("Oberkörper aufrecht (°)", rumpfneigung(x), -2, 14, "Halte den Oberkörper aufrecht"))
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "bis die Ellbogen gestreckt sind"))
+    r.push(pr(`Oberarm ${a} unten etwa waagerecht (m)`, p(u, `g:schulter_${a}`)[1] - p(u, `g:ellbogen_${a}`)[1], -0.04, 0.08, "bis die Oberarme etwa waagerecht sind"))
+    r.push(pr(`Ellbogen ${a} nah am Körper (°)`, abspreizen(u, a), 0, 25, "die Ellbogen zeigen nach hinten und bleiben nah am Körper"))
+  }
+  return r
+}
+TRIZEPS_SOLL.bankdips = (m) => {
+  const [o, u] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Hände und Füße bleiben (m)", bleibt(m, ["hand_l", "hand_r", "ferse_l", "ferse_r"]), 0, 0.02, "die Hände neben der Hüfte, die Füße vor dir")]
+  for (const a of SEITEN) {
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 158, 180, "Drück dich über das Strecken der Arme wieder nach oben"))
+    r.push(pr(`Oberarm ${a} unten etwa waagerecht (m)`, p(u, `g:schulter_${a}`)[1] - p(u, `g:ellbogen_${a}`)[1], -0.05, 0.08, "bis die Oberarme etwa waagerecht sind"))
+    r.push(pr(`Ellbogen ${a} zeigen nach hinten (m)`, p(u, `g:schulter_${a}`)[2] - p(u, `g:ellbogen_${a}`)[2], 0.1, 0.3, "die Ellbogen zeigen nach hinten"))
+    r.push(pr(`Knie ${a} gebeugt (°)`, kniewinkel(o, a), 80, 130, "Knie gebeugt"))
+  }
+  r.push(pr("Rücken dicht an der Bank (m)", Math.abs(p(u, "gesaess")[2] - p(u, "hand_l")[2]), 0, 0.15, "Der Rücken bleibt dicht an der Bank"))
+  r.push(pr("Gesäß vor der Bank (m)", p(o, "gesaess")[2] - p(o, "hand_l")[2], 0.0, 0.2, "Schieb das Gesäß nach vorn von der Bank"))
+  return r
+}
+TRIZEPS_SOLL.sphinx_liegestuetz = (m) => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Hände und Füße bleiben (m)", bleibt(m, ["hand_l", "hand_r", "fuss_l", "fuss_r"]), 0, 0.02, "die Hände flach etwas vor den Schultern")]
+  for (const a of SEITEN) {
+    r.push(pr(`Unterarm ${a} unten am Boden (m)`, p(u, `g:ellbogen_${a}`)[1], 0.02, 0.12, "die Unterarme liegen parallel am Boden"))
+    r.push(pr(`Arm ${a} oben gestreckt (°)`, ellbogenWinkel(o, a), 160, 180, "strecke die Ellbogen, bis du im hohen Stütz auf den Händen bist"))
+  }
+  for (const x of [u, o]) r.push(pr("Körper in einer Linie (°)", koerperLinie(x), 160, 185, "Der Körper bildet eine Linie"))
+  return r
+}
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
@@ -1862,6 +1958,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...SHRUG_SOLL,
   ...SB_SOLL,
   ...CURL_SOLL,
+  ...TRIZEPS_SOLL,
   ...WAND_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),

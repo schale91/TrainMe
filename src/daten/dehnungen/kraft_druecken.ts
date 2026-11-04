@@ -356,15 +356,15 @@ const DIP_HAND = 0.24
 /** Schultergelenk im Becken bei hängenden Armen (gemessen; mit erhobenen Armen 0,366) */
 const DIP_SCHULTER: YZ = [0.352, -0.004]
 const DIP_BEINE: Winkel = { huefte_l: [22, 4, 0], huefte_r: [18, -2, 0], ...B("knie", [75]), ...B("fuss", [-25, 0]) }
-const dipHaltung = (kipp: number, schulter: P3, ell: boolean): Haltung => {
+const dipHaltung = (kipp: number, schulter: P3, ell: boolean, handX = DIP_HAND, aussen = 0.35): Haltung => {
   const [by, bz] = [schulter[1] - dreheYZ(kipp, DIP_SCHULTER)[0], schulter[2] - dreheYZ(kipp, DIP_SCHULTER)[1]]
   const ziele: Ziele = {}
   for (const s of [1, -1] as const) {
     const n = s === 1 ? "l" : "r"
-    const hand: P3 = [s * DIP_HAND, HOLM_Y, 0]
+    const hand: P3 = [s * handX, HOLM_Y, 0]
     ziele[`hand_${n}`] = { pos: hand }
-    // unten: Ellbogen leicht nach außen hinten, Unterarm senkrecht über der Hand
-    if (ell) ziele[`ellbogen_${n}`] = { pos: ellbogenKreis([s * SCHULTER_X, schulter[1], schulter[2]], hand, [s * 0.35, 0, -1]) }
+    // unten: Ellbogen leicht nach außen hinten (aussen), Unterarm senkrecht über der Hand
+    if (ell) ziele[`ellbogen_${n}`] = { pos: ellbogenKreis([s * SCHULTER_X, schulter[1], schulter[2]], hand, [s * aussen, 0, -1]) }
   }
   return H(
     { ...DIP_BEINE, ...B("schulter", ell ? [-60, 20, 0] : [-8, 12, 0]), ...B("ellbogen", [ell ? 95 : 4, HAMMER]), ...B("hand", [0, 0]), ...FAUST, hals: [-kipp * 0.5, 0, 0] },
@@ -384,6 +384,15 @@ const DIP_STEHEN: Haltung = H(
   { pos: [0, 0.93, -0.04], boden: false, ziele: { ...fuesse(0.12, 10, -0.09), hand_l: { pos: [DIP_HAND, HOLM_Y, 0] }, hand_r: { pos: [-DIP_HAND, HOLM_Y, 0] } } },
 )
 const HOLME: Hilfsmittel = { art: "barren", an: "hand_r", breit: DIP_HAND }
+/** Dips am Barren mit wählbarer Neigung, Handbreite und Ellbogenrichtung (Trizeps: aufrecht, schulterbreit, Ellbogen nah am Körper) */
+export const dipPaar = (kipp: number, handX: number, aussen: number): { o: Haltung; u: Haltung; holme: Hilfsmittel } => {
+  const dx = handX - SCHULTER_X
+  return {
+    o: dipHaltung(kipp, [0, HOLM_Y + Math.sqrt(0.497 ** 2 - dx * dx), 0], false, handX),
+    u: dipHaltung(kipp + 4, [0, HOLM_Y + UNTERARM - 0.005, Math.sqrt(OBERARM ** 2 - (dx - 0.005) ** 2) - 0.005], true, handX, aussen),
+    holme: { art: "barren", an: "hand_r", breit: handX },
+  }
+}
 const DIP_TEXTE: [string, string] = ["Vorgeneigt absenken, bis die Oberarme waagerecht sind", "Hochdrücken"]
 
 
