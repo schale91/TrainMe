@@ -458,6 +458,9 @@ export interface Satz {
   art?: "top" | "backoff"
   /** Deutlich über allem Bisherigen und nicht bestätigt (vermutlich vertippt): zählt nicht für Maximum und Steigerung */
   unplausibel?: boolean
+  /** Körpergewichtsübung mit Band als Unterstützung: so viele kg nimmt das Band ab („minus kg“), und seine Farbe */
+  hilfe_kg?: number
+  hilfe_band?: string
 }
 
 export interface Protokoll {
@@ -523,6 +526,9 @@ export interface Daten {
   eigenerPlan?: EigenerPlan
   /** Gewählte Bandfarbe je Übung */
   bandfarben?: Record<string, string>
+  /** Band als Unterstützung je Körpergewichtsübung (Farbe) und eigene kg-Werte je Farbe */
+  bandhilfe?: Record<string, string>
+  bandhilfe_kg?: Record<string, number>
   /** Übernommene ältere 1RM-Werte je Übung (z. B. Phase 1 des Kraftbuchs), nur für die Kurven */
   archiv?: Record<string, { datum: string; kg: number; text?: string }[]>
   /** Einmal erledigte Übernahmen, z. B. kraftbuch → Datum */
