@@ -2720,6 +2720,48 @@ const BRUECKE_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   },
 }
 
+// ---------------------------------------------------------------- Hüfte: Pull-Through, Swing, Kickback, Rückenstrecker
+const fuesseBleiben = (m: Messung, q = "die Füße bleiben stehen") => pr("Füße bleiben (m)", bleibt(m, ["g:fuss_l", "g:fuss_r"]), 0, 0.03, q)
+const huefteSoll = (k: { zwischen?: boolean; brust?: boolean; einarm?: "l" } = {}) => (m: Messung): Pruefung[] => {
+  const u = m.alle.reduce((a, b) => (rumpfneigung(b) > rumpfneigung(a) ? b : a)), o = m.alle.reduce((a, b) => (rumpfneigung(b) < rumpfneigung(a) ? b : a))
+  const hand = (x: Punkte) => (k.einarm ? p(x, `hand_${k.einarm}`) : haendeM(x))
+  const r = [
+    ...ruhig(m), fuesseBleiben(m),
+    pr("Füße etwas breiter als hüftbreit (m)", Math.abs(p(o, "g:fuss_l")[0] - p(o, "g:fuss_r")[0]), 0.18, 0.4, "etwas breiter als hüftbreit"),
+    pr("Unten: Hüfte nach hinten, Oberkörper vorgeneigt (°)", rumpfneigung(u), 45, 80, "Schieb die Hüfte nach hinten, der Oberkörper neigt sich nach vorn"),
+    ...SEITEN.map((s) => pr(`Unten: Knie ${s} leicht gebeugt (°)`, kniewinkel(u, s), 140, 172, "Knie leicht gebeugt")),
+    pr("Oben: aufrecht, Hüfte gestreckt (°)", Math.abs(rumpfneigung(o)), 0, 8, "bis du aufrecht stehst"),
+  ]
+  if (k.zwischen) r.push(pr("Unten: Hände zwischen den Beinen (m)", Math.abs(hand(u)[0]), 0, 0.08, "zwischen den Beinen"), pr("Unten: Hände hinter den Knien (m)", mitte(p(u, "g:knie_l"), p(u, "g:knie_r"))[2] - hand(u)[2], 0.05, 0.45, "die Arme gleiten zwischen den Beinen nach hinten"))
+  if (k.brust) r.push(pr("Oben: Glocke auf Brusthöhe (m)", Math.abs(hand(o)[1] - sm(o)[1]), 0, 0.12, "Die Kettlebell schwingt bis etwa Brusthöhe"), ...(k.einarm ? [pr("Arbeitsarm gestreckt (°)", ellbogenWinkel(o, k.einarm), 160, 181, "Halte die Schulter des Arbeitsarms tief"), pr("Oberkörper dreht nicht mit (°)", Math.abs(schulterDreh(o)), 0, 5, "ohne dass der Oberkörper sich mitdreht")] : SEITEN.map((s) => pr(`Arm ${s} gestreckt oben (°)`, ellbogenWinkel(o, s), 160, 181, "die Arme gestreckt"))))
+  return r
+}
+const HK_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  pull_through_kabel: huefteSoll({ zwischen: true }),
+  pull_through_band: huefteSoll({ zwischen: true }),
+  kb_swing: huefteSoll({ zwischen: true, brust: true }),
+  kb_swing_einarmig: huefteSoll({ zwischen: true, brust: true, einarm: "l" }),
+  kickback_kabel: (m) => {
+    const [a, b] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Oberkörper leicht nach vorn (°)", rumpfneigung(b), 2, 25, "neig den Oberkörper leicht nach vorn"), pr("Standbein leicht gebeugt (°)", kniewinkel(b, "l"), 160, 178, "Das Standbein ist leicht gebeugt"), pr("Bein gestreckt nach hinten (m)", p(a, "g:fuss_r")[2] - p(b, "g:fuss_r")[2], 0.35, 0.8, "Streck das Arbeitsbein nach hinten, bis die Hüfte ganz gestreckt ist"), pr("Knie leicht gebeugt (°)", kniewinkel(b, "r"), 160, 181, "mit leicht gebeugtem Knie"), pr("Standfuß bleibt (m)", bleibt(m, ["g:fuss_l"]), 0, 0.02, "Standbein")]
+  },
+  kickback_vierfuessler: (m) => {
+    const [a, b] = [m.start, m.ziel]
+    return [...ruhig(m), ...vierPruef(a, { hand: ["l", "r"], knie: ["l", "r"] }), pr("Oberschenkel waagerecht (m)", p(b, "g:knie_r")[1] - p(b, "g:huefte_r")[1], -0.06, 0.04, "bis der Oberschenkel waagerecht ist"), pr("Knie 90 Grad (°)", kniewinkel(b, "r"), 80, 100, "mit 90 Grad gebeugtem Knie"), pr("Fußsohle zur Decke (m)", p(b, "g:fuss_r")[1] - p(b, "g:knie_r")[1], 0.35, 0.55, "drück die Fußsohle Richtung Decke"), pr("Becken kippt nicht (m)", beckenKippt(b), 0, 0.03, "ohne dass das Becken kippt"), pr("Stütze bleibt (m)", bleibt(m, ["hand_l", "hand_r", "g:knie_l"]), 0, 0.02, "Vierfüßlerstand")]
+  },
+  rueckenstrecken_bank: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Hüfte an der Bankkante (m)", Math.abs(hm2(o)[2] - (p(o, "g:fuss_l")[2] + 0.3 + 0.55)), 0, 0.1, "so dass die Hüfte genau an der Kante liegt"), pr("Unten: Oberkörper hängt nach unten (°, 90 = waagerecht)", rumpfneigung(u), 115, 160, "Lass den Oberkörper nach unten hängen"), pr("Oben: Oberkörper und Beine in einer Linie (°)", winkelBei(sm(o), hm2(o), mitte(p(o, "g:fuss_l"), p(o, "g:fuss_r"))), 165, 190, "bis er mit den Beinen eine Linie bildet"), pr("Arme vor der Brust verschränkt (m)", abstand(haendeM(o), p(o, "bws")), 0, 0.35, "verschränk die Arme vor der Brust"), pr("Beine bleiben (m)", bleibt(m, ["g:fuss_l", "g:fuss_r"]), 0, 0.08, "Fixiere die Füße")]
+  },
+  reverse_hyper_bank: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Oberkörper liegt auf der Bank (m)", bleibt(m, ["g:schulter_l", "g:schulter_r"]), 0, 0.04, "Leg dich bäuchlings auf eine Bank"), pr("Unten: Füße fast am Boden (m)", Math.min(p(u, "fuss_l")[1], p(u, "fuss_r")[1]), 0.02, 0.3, "bis die Füße fast den Boden berühren"), pr("Oben: Beine etwa waagerecht (m)", mitte(p(o, "g:fuss_l"), p(o, "g:fuss_r"))[1] - hm2(o)[1], -0.08, 0.12, "bis sie etwa waagerecht sind"), ...SEITEN.map((s) => pr(`Bein ${s} gestreckt oben (°)`, kniewinkel(o, s), 160, 181, "die Beine gestreckt oder leicht gebeugt")), pr("Hände vorn an der Bank (m)", Math.min(p(o, "hand_l")[2], p(o, "hand_r")[2]) - sm(o)[2], 0.15, 0.8, "Halte dich mit den Händen vorn an der Bank fest")]
+  },
+  reha_gesaess_anspannen: (m) => [...ruhig(m), pr("Aufrecht (°)", Math.abs(rumpfneigung(m.ziel)), 0, 6, "Stell dich aufrecht hin, ohne ins Hohlkreuz zu gehen"), pr("Füße hüftbreit (m)", Math.abs(p(m.ziel, "g:fuss_l")[0] - p(m.ziel, "g:fuss_r")[0]), 0.12, 0.35, "die Füße hüftbreit"), fuesseBleiben(m)],
+  reha_bein_hinten_stand: (m) => [...ruhig(m), pr("Oberkörper bleibt aufrecht (°)", Math.max(...m.alle.map((x) => Math.abs(rumpfneigung(x)))), 0, 10, "der Oberkörper bleibt dabei aufrecht"), pr("Bein gestreckt nach hinten (m)", p(m.start, "g:fuss_r")[2] - p(m.ziel, "g:fuss_r")[2], 0.15, 0.5, "Führe das andere Bein gestreckt langsam nach hinten"), pr("Bein gestreckt (°)", kniewinkel(m.ziel, "r"), 165, 181, "gestreckt"), pr("Hände an der Lehne (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.03, "halte dich mit beiden Händen an der Lehne fest")],
+  reha_bein_hinten_band: (m) => [...ruhig(m), pr("Oberkörper bleibt aufrecht (°)", Math.max(...m.alle.map((x) => Math.abs(rumpfneigung(x)))), 0, 10, "der Oberkörper bleibt aufrecht"), pr("Bein gestreckt nach hinten (m)", p(m.start, "g:fuss_r")[2] - p(m.ziel, "g:fuss_r")[2], 0.15, 0.5, "Führe das Arbeitsbein gestreckt gegen den Zug nach hinten"), pr("Bein gestreckt (°)", kniewinkel(m.ziel, "r"), 165, 181, "gestreckt"), pr("Hände an der Lehne (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.03, "halte dich mit beiden Händen an der Lehne fest")],
+}
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...BANK_SOLL,
   ...LS_SOLL,
@@ -2754,6 +2796,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...PALLOF_SOLL,
   ...GOLF_SOLL,
   ...BRUECKE_SOLL,
+  ...HK_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),

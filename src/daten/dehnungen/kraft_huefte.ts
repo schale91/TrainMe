@@ -11,6 +11,10 @@ import { ARME_VERSCHRAENKT, B, H, RUECKENLAGE_AUF, SEITLAGE, STAND, VIERFUESSLER
 import { FAUST, HAMMER, KH, OBERGRIFF, kabel } from "./kraftbasis"
 import { ARME_RUECKEN, ARME_SEITE, RACK, STANGE_RUECKEN, STUHL, WAND_HINTEN, ansicht, stand } from "./kraft_beine"
 
+/** Pull-Through und Swing unten: Hände eng zusammen zwischen den Beinen nach hinten, Unterarme an den Oberschenkeln */
+const ZWISCHEN_BEINEN: Winkel = { ...B("schulter", [12, -14, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }
+/** oben: Arme hängen gestreckt vor dem Körper, Hände zusammen */
+const SEIL_VORN: Winkel = { ...B("schulter", [10, -12, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }
 // ---------------------------------------------------------------- Heben vom Boden
 const LH: Hilfsmittel[] = [{ art: "langhantel", von: "hand_l", bis: "hand_r" }]
 /** Arme hängen senkrecht, Hände im Obergriff */
@@ -130,7 +134,8 @@ const HALT_STUHL: Winkel = { ...B("schulter", [34, 8, 0]), ...B("ellbogen", [12,
 
 // ---------------------------------------------------------------- Stehend am Kabel oder Band (rechtes Bein arbeitet)
 const STAND_HALT: Winkel = { ...B("schulter", [50, 10, 0]), ...B("ellbogen", [20, 90]) }
-const standBein = (rechts: Winkel, kipp = 6): Haltung => H({ huefte_l: [4, 6, 0], knie_l: [6], fuss_l: [0, 0], ...STAND_HALT, ...rechts }, [kipp, 0, 0])
+/** Standbein links bleibt senkrecht, auch wenn sich das Becken mit dem Oberkörper nach vorn neigt */
+const standBein = (rechts: Winkel, kipp = 6): Haltung => H({ huefte_l: [kipp - 2, 6, 0], knie_l: [6], fuss_l: [0, 0], ...STAND_HALT, ...rechts }, [kipp, 0, 0])
 
 export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   // Kreuzheben
@@ -195,33 +200,33 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   // Pull-Through und Swing
   pull_through_kabel: wdh(
     "seite",
-    beuge(62, 30, 10, { ...B("schulter", [10, 2, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 20),
-    oben({ ...B("schulter", [10, 2, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 20),
+    mit(beuge(62, 30, 10, ZWISCHEN_BEINEN, 20), { pos: [0, 0.872, -0.102], boden: false }),
+    oben(SEIL_VORN, 3),
     1.2,
     { aus: 1.6, texte: ["Hüfte nach vorn strecken, Seil nach vorn", "Hüfte zurück, Seil zwischen die Beine"], hilfsmittel: kabel("haende", [0, 0.12, -0.75]) },
   ),
   pull_through_band: wdh(
     "seite",
-    beuge(62, 30, 10, { ...B("schulter", [10, 2, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 20),
-    oben({ ...B("schulter", [10, 2, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 20),
+    mit(beuge(62, 30, 10, ZWISCHEN_BEINEN, 20), { pos: [0, 0.872, -0.102], boden: false }),
+    oben(SEIL_VORN, 3),
     1.2,
     { aus: 1.6, texte: ["Hüfte nach vorn strecken", "Hüfte zurück, Band zwischen die Beine"], hilfsmittel: [{ art: "bandanker", von: "haende", anker: [0, 0.1, -0.9] }] },
   ),
   kb_swing: folge(
     "seite",
     [
-      [beuge(66, 30, 14, { ...B("schulter", [30, 2, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 18), 0.5, "Kettlebell zwischen die Beine"],
-      [oben({ ...B("schulter", [88, 2, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 18), 0.6, "Hüfte explosiv nach vorn, Glocke auf Brusthöhe"],
-      [oben({ ...B("schulter", [80, 2, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 18), 0.3],
+      [mit(beuge(66, 26, 10, ZWISCHEN_BEINEN, 18), { pos: [0, 0.875, -0.07], boden: false }), 0.5, "Kettlebell zwischen den Beinen nach hinten, Unterarme an den Oberschenkeln"],
+      [oben({ ...B("schulter", [88, -12, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 3), 0.6, "Hüfte explosiv nach vorn, Glocke schwingt bis Brusthöhe"],
+      [oben({ ...B("schulter", [80, -12, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }, 3), 0.3],
     ],
     { hilfsmittel: [{ art: "hantel", an: "haende" }] },
   ),
   kb_swing_einarmig: folge(
     "seite",
     [
-      [beuge(66, 30, 14, { schulter_l: [30, 2, 0], ellbogen_l: [4, HAMMER], schulter_r: [40, 30, 0], ellbogen_r: [30, 0], ...FAUST }, 18), 0.5, "Kettlebell zwischen die Beine"],
-      [oben({ schulter_l: [88, 4, 0], ellbogen_l: [4, HAMMER], schulter_r: [10, 20, 0], ellbogen_r: [20, 0], ...FAUST }, 18), 0.6, "Hüfte explosiv nach vorn, Schulter bleibt stabil"],
-      [oben({ schulter_l: [80, 4, 0], ellbogen_l: [4, HAMMER], schulter_r: [10, 20, 0], ellbogen_r: [20, 0], ...FAUST }, 18), 0.3],
+      [mit(beuge(66, 26, 10, { schulter_l: [12, -10, 0], ellbogen_l: [4, HAMMER], schulter_r: [40, 30, 0], ellbogen_r: [30, 0], ...FAUST }, 18), { pos: [0, 0.875, -0.07], boden: false }), 0.5, "Kettlebell zwischen den Beinen nach hinten, Schultern parallel zum Boden"],
+      [oben({ schulter_l: [88, 4, 0], ellbogen_l: [4, HAMMER], schulter_r: [10, 20, 0], ellbogen_r: [20, 0], ...FAUST }, 3), 0.6, "Hüfte explosiv nach vorn, Schulter bleibt stabil"],
+      [oben({ schulter_l: [80, 4, 0], ellbogen_l: [4, HAMMER], schulter_r: [10, 20, 0], ellbogen_r: [20, 0], ...FAUST }, 3), 0.3],
     ],
     { seiten: true, hilfsmittel: [{ art: "hantel", an: "hand_l" }] },
   ),
@@ -240,20 +245,20 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   }),
   rueckenstrecken_bank: wdh(
     "seite",
-    H({ ...B("huefte", [80, 6, 0]), ...B("knie", [4]), ...B("fuss", [-30, 0]), ...ARME_VERSCHRAENKT, hals: [-10, 0, 0] }, [170, 0, 0], { pos: [0, 0.56, 0], boden: false }),
+    H({ ...B("huefte", [48, 6, 0]), ...B("knie", [4]), ...B("fuss", [-30, 0]), ...ARME_VERSCHRAENKT, hals: [-10, 0, 0] }, [136, 0, 0], { pos: [0, 0.56, 0], boden: false }),
     H({ ...B("huefte", [-6, 6, 0]), ...B("knie", [4]), ...B("fuss", [-30, 0]), ...ARME_VERSCHRAENKT, hals: [-10, 0, 0] }, [86, 0, 0], { pos: [0, 0.56, 0], boden: false }),
     1.4,
-    { aus: 1.8, texte: ["Oberkörper bis in die Waagerechte heben", "Langsam absenken"], hilfsmittel: [{ art: "bank", unter: "fuss_l", hoehe: 0.45, versatz: [-0.1, 0.1] }] },
+    { aus: 1.8, texte: ["Oberkörper bis in die Waagerechte heben", "Langsam absenken"], hilfsmittel: [{ art: "bank", unter: "fuss_l", hoehe: 0.45, versatz: [-0.1, 0.3] }] },
   ),
   reverse_hyper_bank: wdh(
     "seite",
     H({ ...B("huefte", [50, 6, 0]), ...B("knie", [40]), ...B("fuss", [-30, 0]), ...B("schulter", [150, 20, 0]), ...B("ellbogen", [20, 0]), hals: [-20, 0, 0] }, [90, 0, 0], { pos: [0, 0.6, 0], boden: false }),
     H({ ...B("huefte", [-4, 6, 0]), ...B("knie", [4]), ...B("fuss", [-30, 0]), ...B("schulter", [150, 20, 0]), ...B("ellbogen", [20, 0]), hals: [-20, 0, 0] }, [90, 0, 0], { pos: [0, 0.6, 0], boden: false }),
     1.2,
-    { aus: 1.8, texte: ["Gestreckte Beine nach hinten oben heben", "Langsam absenken"], hilfsmittel: [{ art: "bank", unter: "bws", hoehe: 0.45, versatz: [0, 0.15] }] },
+    { aus: 1.8, texte: ["Gestreckte Beine nach hinten oben heben", "Langsam absenken"], hilfsmittel: [{ art: "bank", unter: "bws", hoehe: 0.45, versatz: [0, 0.35] }] },
   ),
   // Reha im Stand am Stuhl
-  reha_gesaess_anspannen: halte("seite", mit(STAND, { g: B("huefte", [0, 6, 0]) }), mit(STAND, { g: { ...B("huefte", [-3, 6, 4]) } }), { ein: 1, aus: 1.5, hinweis: "Beide Gesäßhälften fest anspannen und halten." }),
+  reha_gesaess_anspannen: halte("seite", mit(STAND, { g: B("huefte", [0, 6, 0]) }), mit(STAND, { g: { ...B("huefte", [-2, 6, 0]) } }), { ein: 1, aus: 1.5, hinweis: "Beide Gesäßhälften fest anspannen und halten." }),
   reha_bein_hinten_stand: wdh("seite", mit(STAND, { g: HALT_STUHL }), mit(STAND, { g: { ...HALT_STUHL, huefte_r: [-22, 6, 0], knie_r: [4] } }), 1.6, {
     aus: 1.8,
     seiten: true,
