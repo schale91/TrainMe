@@ -235,7 +235,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                 .join(" · ")}
               {fokus.plaetze.length > 5 ? " · +" + (fokus.plaetze.length - 5) : ""}
             </span>
-            <span className="losknopf">Training starten</span>
+            <span className="losknopf">Zum Training</span>
           </button>
           {fokus.plan_nr !== undefined && planTag && fokus.plan_nr === planTag.nr ? (
             <button type="button" className="textknopf" onClick={() => props.aendern?.((d) => ueberspringen(d, planTag, tag))}>

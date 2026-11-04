@@ -10,6 +10,8 @@ export const OFFEN = "trainme.offen"
 type Speicher = Pick<Storage, "getItem" | "setItem" | "removeItem">
 interface MitSaetzen {
   saetze?: { fertig?: boolean }[][]
+  /** Zeitpunkt von „Training starten“ */
+  beginn?: number
 }
 
 function lies<T>(sp: Speicher, k: string, sonst: T): T {
@@ -58,9 +60,9 @@ export function entwurfLoeschen(sp: Speicher, schluessel: string): void {
   }
 }
 
-/** Hat der Entwurf mindestens einen abgehakten Satz? */
+/** Läuft das Training schon (gestartet) oder ist mindestens ein Satz abgehakt? */
 export function hatFortschritt(e: MitSaetzen | null): boolean {
-  return !!e?.saetze?.some((l) => l.some((s) => s.fertig))
+  return !!e?.beginn || !!e?.saetze?.some((l) => l.some((s) => s.fertig))
 }
 
 /** Die gerade offene Einheit merken (null: kein Training offen). */

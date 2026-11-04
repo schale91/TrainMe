@@ -19,6 +19,7 @@ import { Sym } from "./symbole"
 import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
+import { hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, schaetzung, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
 import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
 import { bandhilfeMoeglich, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
@@ -29,7 +30,9 @@ import { useWachHalten } from "./wachHalten"
 
 type Eingabe = Satz & { fertig: boolean }
 /** ort: Kennung des Orts (Name, Geräte, Gewichte), für den die Vorgaben gerechnet wurden */
-type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string; warm?: string[] }
+type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string; warm?: string[]; beginn?: number; geschaetzt?: number; angepasst?: string[]; budget?: number }
+/** gemessene Zeit einer Einheit (Millisekunden) mit Zeitbudget und Schätzung in Minuten */
+export type TrainingsZeit = { beginn: number; ende: number; budget: number; geschaetzt: number }
 type Feld = "kg" | "wdh" | "sek" | "min"
 type Pad = Eingabestand & { i: number; k: number; feld: Feld }
 
@@ -103,7 +106,7 @@ const BANDFARBEN = [
   { id: "orange", name: "Orange", farbe: "#f08a24" },
 ]
 
-export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void }) {
+export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number, zeit?: TrainingsZeit) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void }) {
   const { daten, einheit } = props
   const profil = daten.profil!
   // Reha: Schmerz je Satz statt Reserve, Schmerz vor dem Training
@@ -143,15 +146,54 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [warumOffen, setWarumOffen] = useState<number | null>(null)
   const [anpassungen, setAnpassungen] = useState<Record<number, (Anpassung & { satz: number }) | undefined>>({})
   const gepiept = useRef(false)
+  // Trainingszeit: läuft ab „Training starten“; vorher lassen sich keine Sätze abhaken
+  const [beginn, setBeginn] = useState<number | null>(gespeichert?.beginn ?? null)
+  const [geschaetzt] = useState<number>(() => gespeichert?.geschaetzt ?? schaetzung(einheit.plaetze, einheit.plaetze.map((p) => Array(p.vorgabe.saetze).fill(0))))
+  const [angepasst, setAngepasst] = useState<string[]>(gespeichert?.angepasst || [])
+  // Zeitbudget: aus dem Wochenplan, vor dem Start bestätigen oder in 5-Minuten-Schritten ändern
+  const [budget, setBudget] = useState<number>(() => gespeichert?.budget ?? zeitBudget(profil, einheit.datum, einheit.minuten))
+  const gelernt = useMemo(() => lernFaktor(daten), [daten])
+  useEffect(() => {
+    if (beginn === null) return
+    const t = setInterval(() => setJetzt(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [beginn])
+  const gesperrt = beginn === null
+  // Vorhersage: heute gemessen (ab drei Sätzen), sonst aus früheren Einheiten gelernt
+  const faktor = heuteFaktor(plaetze, saetze, gelernt)
+  const prog = beginn !== null ? prognose(beginn, jetzt, plaetze, saetze, faktor) : { vergangen: 0, offen: 0, gesamt: schaetzung(plaetze, saetze) * gelernt }
+  const zuLang = prog.gesamt > budget + 1
+  // Zu lang: zuerst die Pausen der Ergänzungsübungen kürzen (einmal je Einheit), die Hauptübungen behalten ihre Pause
+  useEffect(() => {
+    if (beginn === null || !zuLang || angepasst.indexOf("pausen") >= 0) return
+    const { plaetze: neu, gekuerzt } = pausenKuerzen(plaetze)
+    setAngepasst([...angepasst, "pausen"])
+    if (!gekuerzt.length) return
+    setPlaetze(neu)
+    setToast("Damit du in " + budget + " Minuten fertig wirst: kürzere Pausen bei " + gekuerzt.join(", ") + ".")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [beginn, zuLang])
+  const vorschlag = weglassenVorschlag(plaetze, saetze)
+  const weglassen = () => {
+    setSaetze(saetze.map((ss, i) => (vorschlag.ganz.indexOf(i) >= 0 ? ss.filter((s) => s.fertig) : vorschlag.einSatz.indexOf(i) >= 0 ? (() => { const k = ss.map((s) => s.fertig).lastIndexOf(false); return ss.filter((_, x) => x !== k) })() : ss)))
+    setAngepasst([...angepasst, "weglassen"])
+  }
+  const starten = () => {
+    const t = Date.now()
+    setBeginn(t)
+    setJetzt(t)
+  }
+  const uhr = (min: number) => Math.floor(min) + ":" + String(Math.floor((min * 60) % 60)).padStart(2, "0")
+  const erstStarten = () => setToast("Erst oben „Training starten“ drücken, dann zählt die Zeit und die Sätze lassen sich abhaken.")
 
   useEffect(() => {
     try {
-      entwurfSchreiben(localStorage, schluessel, { schluessel, plaetze, saetze, ort: kennung, warm }, einheit.datum)
+      entwurfSchreiben(localStorage, schluessel, { schluessel, plaetze, saetze, ort: kennung, warm, ...(beginn !== null ? { beginn } : {}), geschaetzt, angepasst, budget }, einheit.datum)
     } catch {
       /* Speicher voll oder gesperrt */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schluessel, plaetze, saetze, kennung, warm])
+  }, [schluessel, plaetze, saetze, kennung, warm, beginn, angepasst, budget])
 
   useEffect(() => {
     if (!toast) return
@@ -220,6 +262,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setSaetze(saetze.map((ss, x) => (x !== i ? ss : ss.map((t) => (t.fertig || t.hilfe_band !== farbe ? t : { ...t, hilfe_kg: kg })))))
   }
   const abhaken = (i: number, k: number) => {
+    if (gesperrt) return erstStarten()
     const s = saetze[i][k]
     const p = plaetze[i]
     const u = p.uebung
@@ -264,7 +307,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         x !== i
           ? ss
           : ss.map((t, y) => {
-              if (y === k) return { ...t, fertig: !t.fertig, unplausibel: pruefen || undefined }
+              if (y === k) return { ...t, fertig: !t.fertig, unplausibel: pruefen || undefined, um: !t.fertig ? Date.now() : undefined }
               if (y > k && !t.fertig && a) return { ...t, ...(a.last !== undefined ? { last: a.last } : {}), ...(a.wdh !== undefined ? { wdh: a.wdh } : {}) }
               return t
             }),
@@ -318,6 +361,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     return aufwaermSaetze(arbeit, lastGeraet(p.uebung, ort), ort.gewichte, lastenAn(p.uebung, ort), i === ersteHaupt)
   }
   const warmHaken = (i: number, k: number, anzahl: number) => {
+    if (gesperrt) return erstStarten()
     const key = i + "-" + k
     const an = warm.indexOf(key) >= 0
     setWarm(an ? warm.filter((x) => x !== key) : [...warm, key])
@@ -327,6 +371,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
 
   // ---------- Zahlenfeld ----------
   const padOeffnen = (i: number, k: number, feld: Feld) => {
+    if (gesperrt) return erstStarten()
     const s = saetze[i][k]
     const wert = feld === "kg" ? s.last : feld === "wdh" ? s.wdh : feld === "sek" ? (s.sekunden ?? 0) : Math.round((s.sekunden || 0) / 60)
     setPad({ i, k, feld, puffer: alsPuffer(wert), frisch: true })
@@ -402,7 +447,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       /* egal */
     }
     void pauseStoppen()
-    props.abschliessen({ ...einheit, plaetze }, protokolle, vollstaendig, schmerzVor ?? undefined)
+    const ende = Date.now()
+    props.abschliessen({ ...einheit, plaetze }, protokolle, vollstaendig, schmerzVor ?? undefined, beginn !== null ? { beginn, ende, budget, geschaetzt } : undefined)
   }
 
   const tauschen = (i: number, id: string, nieWieder: boolean) => {
@@ -471,6 +517,41 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           <div style={{ width: (gesamt ? (erledigt / gesamt) * 100 : 0) + "%" }} />
         </div>
       }>
+      <div className={"zeitkarte" + (beginn !== null && zuLang ? " knapp" : "")}>
+        {beginn === null ? (
+          <>
+            <div className="zeitwahl" role="group" aria-label="Zeit für heute">
+              <span>Zeit für heute</span>
+              <button type="button" className="textknopf" aria-label="5 Minuten weniger" onClick={() => setBudget(Math.max(15, budget - 5))}>
+                −
+              </button>
+              <b>{budget} min</b>
+              <button type="button" className="textknopf" aria-label="5 Minuten mehr" onClick={() => setBudget(Math.min(180, budget + 5))}>
+                +
+              </button>
+            </div>
+            <button type="button" className="knopf voll gross" onClick={starten}>
+              Training starten
+            </button>
+            <p className="hinweistext klein">
+              Ab dem Start zählt die Zeit, mit Aufwärmen und Aufräumen. Nach Plan brauchst du voraussichtlich etwa {Math.round(prog.gesamt)} min{prog.gesamt > budget + 1 ? ". Das ist mehr als deine Zeit: Die App kürzt dann zuerst die Pausen der Ergänzungsübungen." : "."}
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="zeitzeile" role="timer">
+              <b>{uhr(prog.vergangen)}</b> <span>von {budget} min</span> <span className="leise">· fertig nach etwa {Math.round(prog.gesamt)} min</span>
+            </div>
+            {angepasst.indexOf("pausen") >= 0 ? <small className="leise">Pausen der Ergänzungsübungen gekürzt, damit es in {budget} min passt. Die Hauptübungen behalten ihre Pause.</small> : null}
+            {zuLang && angepasst.indexOf("pausen") >= 0 && angepasst.indexOf("weglassen") < 0 && (vorschlag.ganz.length || vorschlag.einSatz.length) ? (
+              <button type="button" className="knopf klein leise" onClick={weglassen}>
+                Immer noch zu lang: {[...vorschlag.ganz.map((i) => plaetze[i].uebung.name), ...(vorschlag.einSatz.length ? ["je einen Satz bei " + vorschlag.einSatz.map((i) => plaetze[i].uebung.name).join(", ")] : [])].join(" und ")} weglassen
+              </button>
+            ) : null}
+            {hauptPausenZuKurz(plaetze, saetze) ? <small className="leise">Deine Pausen bei den Hauptübungen sind deutlich kürzer als vorgesehen. Für die Kraft lieber die volle Pause nehmen.</small> : null}
+          </>
+        )}
+      </div>
       {einheit.hinweise.map((h, i) => (
         <p key={i} className="hinweistext">
           {h}
@@ -769,7 +850,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       })}
 
       <button type="button" className="knopf voll gross" disabled={erledigt === 0} onClick={fertig}>
-        Einheit abschließen
+        Training beenden
       </button>
       {!vollstaendig && erledigt > 0 ? <p className="hinweistext klein mitte">Noch nicht jede Übung eingetragen. Abschließen geht trotzdem, fehlende Übungen zählen dann nicht für den Fortschritt.</p> : null}
 

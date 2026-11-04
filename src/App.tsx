@@ -24,7 +24,7 @@ import ProfilSeite, { type Unterseite } from "./ui/Profil"
 import { jahresplanVorschlag } from "./logik/jahresplan"
 import type { UpdateInfo } from "./logik/update"
 import { updateAusblenden, updateAusgeblendet, updateBekannt, updateSuchen } from "./ui/update"
-import Training from "./ui/Training"
+import Training, { type TrainingsZeit } from "./ui/Training"
 import Einstufung from "./ui/Einstufung"
 import Fehlergrenze from "./ui/Fehlergrenze"
 import { gesundheitLesen } from "./ui/gesundheit"
@@ -288,7 +288,7 @@ export default function App() {
   // Golfhinweise nur, wenn Golf gewählt ist (auch in Teilen ohne Profil, etwa dem Info-Fenster)
   golfSetzen(hatSport(profil, "golf"))
 
-  const fertig = (e: Einheit, protokolle: Protokoll[], _vollstaendig?: boolean, schmerzVor?: number) => {
+  const fertig = (e: Einheit, protokolle: Protokoll[], _vollstaendig?: boolean, schmerzVor?: number, zeit?: TrainingsZeit) => {
     const tag = heute()
     const w = blockWoche(profil, e.datum)
     const vorher = stufe(aktuell.current.spiel.xp).stufe
@@ -306,6 +306,8 @@ export default function App() {
       )
       if (e.datum !== tag) d.erledigt[d.erledigt.length - 1].geplant = e.datum
       if (schmerzVor !== undefined) d.erledigt[d.erledigt.length - 1].schmerz_vor = schmerzVor
+      // gemessene Zeit von „Training starten“ bis „Training beenden“
+      if (zeit) Object.assign(d.erledigt[d.erledigt.length - 1], { beginn: new Date(zeit.beginn).toISOString(), ende: new Date(zeit.ende).toISOString(), dauer_min: Math.round((zeit.ende - zeit.beginn) / 6000) / 10, budget_min: zeit.budget, geschaetzt_min: zeit.geschaetzt })
       einheiten = d.erledigt.length
     })
     setOffen(null)

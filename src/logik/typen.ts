@@ -461,6 +461,8 @@ export interface Satz {
   /** Körpergewichtsübung mit Band als Unterstützung: so viele kg nimmt das Band ab („minus kg“), und seine Farbe */
   hilfe_kg?: number
   hilfe_band?: string
+  /** Zeitpunkt, an dem der Satz abgehakt wurde (Millisekunden seit 1970) */
+  um?: number
 }
 
 export interface Protokoll {
@@ -492,6 +494,12 @@ export interface Erledigt {
   /** Tag im eigenen Plan */
   plan_nr?: number
   quelle?: string
+  /** Gemessene Trainingszeit: „Training starten“ bis „Training beenden“ (ISO), Dauer, Zeitbudget und Schätzung in Minuten */
+  beginn?: string
+  ende?: string
+  dauer_min?: number
+  budget_min?: number
+  geschaetzt_min?: number
 }
 
 export interface Spielstand {
