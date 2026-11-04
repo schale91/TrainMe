@@ -2378,6 +2378,35 @@ select.ampel.rot {
   min-height: 32px;
   font-size: 18px;
 }
+/* Trainingszeit: Start, Zeitwahl, Uhr und Prognose */
+.zeitkarte {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--flaeche2);
+}
+.zeitkarte.knapp {
+  box-shadow: inset 0 0 0 2px var(--gold, #e0a526);
+}
+.zeitwahl,
+.zeitzeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+}
+.zeitwahl .textknopf {
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 22px;
+}
+.zeitzeile b {
+  font-size: 24px;
+}
 .satz .hilfekg {
   color: var(--leise);
   font-variant-numeric: tabular-nums;
