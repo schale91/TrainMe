@@ -8,8 +8,8 @@
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { ARME_VERSCHRAENKT, ATHLETISCH, B, H, HALBKNIESTAND, KNIESTAND, RUECKENLAGE, RUECKENLAGE_AUF, STAND, STUHLSITZ, VIERFUESSLER, folge, halte, mit, wdh } from "./basis"
 import { FAUST, HAMMER, KH, KH_R, OBERGRIFF, ROLLE_OBEN, kabel, kabelstange } from "./kraftbasis"
-import { seitstuetz } from "./kraft_huefte"
 import { stuetzPaar, unterarmStuetz } from "./kraft_druecken"
+import { seitBoden } from "./seitstuetz"
 import { SCHULTER_X } from "./ziele"
 
 // ---------------------------------------------------------------- Stütz
@@ -60,6 +60,9 @@ const armVor = (h: Haltung, arm: "l" | "r", bein?: "l" | "r"): Haltung => ({
   beckenFrei: true,
   drehFrei: true,
 })
+/** Seitstütz (rechts unten): obere Hand auf der Hüfte bzw. oberer Arm senkrecht zur Decke */
+const HAND_HUEFTE: Winkel = { schulter_l: [-10, 14, 0], ellbogen_l: [100, 0] }
+const ARM_DECKE: Winkel = { schulter_l: [0, 90, 0], ellbogen_l: [4, 0] }
 /** Ball unter den Unterarmen: Mitte 12 cm hinter den Händen */
 const BALL_UA: Hilfsmittel = { art: "gymnastikball", an: "haende", vor: -0.12 }
 const STUETZ: Haltung = stuetzPaar({ hand: 0.16 }).o
@@ -237,21 +240,21 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
     ],
   ),
   // ------------------------------------------------------------ Seitstütz (linker Unterarm unten)
-  seitstuetz_knie: halte("vorn", seitstuetz({ ...B("knie", [90]), ...B("fuss", [-30, 0]) }, 80), seitstuetz({ ...B("knie", [90]), ...B("fuss", [-30, 0]) }), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Auf Unterarm und Knien, Becken hoch, Körper von Kopf bis Knie als Linie." }),
-  seitstuetz: halte("vorn", seitstuetz({}, 82), seitstuetz({}), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Ellbogen unter der Schulter, Becken hoch, Körper als Linie." }),
-  seitstuetz_gestreckt: halte("vorn", seitstuetz({}, 82), seitstuetz({ schulter_l: [0, 74, 0], ellbogen_l: [4, 0], hand_l: [-70, 0] }, 70), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Hand unter der Schulter, Arm gestreckt." }),
-  seitstuetz_stern: halte("vorn", seitstuetz({}), seitstuetz({ schulter_l: [0, 74, 0], ellbogen_l: [4, 0], hand_l: [-70, 0], huefte_r: [0, 40, 0], schulter_r: [0, 160, 0], ellbogen_r: [4, 0] }, 70), { ein: 2, aus: 2, seiten: true, hinweis: "Oberes Bein und oberen Arm abspreizen, der Körper bildet einen Stern." }),
-  seitstuetz_hueftheben: wdh("vorn", seitstuetz({ lws: [0, 24, 0], bws: [0, 8, 0] }), seitstuetz({}), 1.0, { aus: 1.6, seiten: true, texte: ["Becken hochdrücken", "Becken langsam absenken"] }),
-  seitstuetz_rotation: wdh("vorn", seitstuetz({ schulter_r: [0, 170, 0], ellbogen_r: [4, 0] }), seitstuetz({ schulter_r: [80, -40, 0], ellbogen_r: [10, 0], bws: [0, 0, -40], lws: [0, 0, -10] }), 1.4, {
+  seitstuetz_knie: halte("seite", seitBoden({ unten: "knie", senken: 0.06 }), seitBoden({ unten: "knie", handOben: "huefte", w: HAND_HUEFTE }), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Ellbogen unter der Schulter, Knie 90 Grad gebeugt, Becken hoch: Kopf bis Knie als Linie." }),
+  seitstuetz: halte("seite", seitBoden({ senken: 0.12 }), seitBoden({ handOben: "huefte", w: HAND_HUEFTE }), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Ellbogen unter der Schulter, Füße übereinander, Becken hoch, Körper als Linie." }),
+  seitstuetz_gestreckt: halte("seite", seitBoden({ stuetz: "hand", senken: 0.18 }), seitBoden({ stuetz: "hand", handOben: "decke", w: ARM_DECKE }), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Hand unter der Schulter, Arm gestreckt, oberer Arm zur Decke." }),
+  seitstuetz_stern: halte("seite", seitBoden({ stuetz: "hand", handOben: "decke", w: ARM_DECKE }), seitBoden({ stuetz: "hand", beinFrei: true, handOben: "decke", w: { ...ARM_DECKE, huefte_l: [0, 22, 0], knie_l: [2], fuss_l: [-10, 0] } }), { ein: 2, aus: 2, seiten: true, hinweis: "Oberen Arm zur Decke, oberes Bein gestreckt abspreizen: der Körper bildet einen Stern." }),
+  seitstuetz_hueftheben: wdh("seite", seitBoden({ senken: 0.1 }), seitBoden({ senken: -0.03 }), 1.0, { aus: 1.6, seiten: true, texte: ["Hüfte über die Linie hinaus hochdrücken", "Hüfte langsam bis knapp über den Boden senken"] }),
+  seitstuetz_rotation: wdh("seite", seitBoden({ fussVor: true, handOben: "decke", w: ARM_DECKE }), seitBoden({ fussVor: true, drehFrei: true, handOben: [-0.02, 0.1, 0.5], w: { schulter_l: [70, -40, 0], ellbogen_l: [6, 0], bws: [0, 0, -20], lws: [0, 0, -5], hals: [0, 8, 0] } }), 1.4, {
     aus: 1.4,
     seiten: true,
-    texte: ["Oberen Arm unter dem Körper durchführen", "Wieder öffnen, Blick zur Hand"],
+    texte: ["Oberen Arm unter dem Körper hindurchfädeln, Hüfte bleibt oben", "Wieder aufdrehen, Arm zur Decke"],
   }),
-  seitstuetz_rudern: wdh("vorn", seitstuetz({ schulter_r: [90, 0, 0], ellbogen_r: [4, 0], ...FAUST }), seitstuetz({ schulter_r: [40, 10, 0], ellbogen_r: [100, 0], ...FAUST }), 1.0, {
+  seitstuetz_rudern: wdh("vorn", seitBoden({ w: { schulter_l: [90, 0, 0], ellbogen_l: [4, 0], ...FAUST } }), seitBoden({ handOben: [0.13, 0.4, 0.47], w: { schulter_l: [-30, 10, 0], ellbogen_l: [100, 0], ...FAUST } }), 1.0, {
     aus: 1.4,
     seiten: true,
-    texte: ["Griff zum Körper rudern, Becken bleibt oben", "Arm wieder strecken"],
-    hilfsmittel: kabel("hand_r", [0, 0.5, 0.9]),
+    texte: ["Griff zur unteren Brust rudern, Becken bleibt oben", "Arm langsam wieder strecken"],
+    hilfsmittel: kabel("hand_l", [0.9, 0.5, 0.6]),
   }),
   // ------------------------------------------------------------ Dead Bug, Bird Dog, Hollow
   dead_bug_fersentippen: folge(

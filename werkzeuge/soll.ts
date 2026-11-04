@@ -2076,6 +2076,75 @@ const STUETZ_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   },
 }
 
+// ---------------------------------------------------------------- Rumpf: Seitstütz (rechte Seite unten)
+/** Abstand der Hüfte über (+) bzw. unter (-) der Linie von der Schultermitte zur Mitte der Knöchel (Knie) */
+const ueberLinie = (x: Punkte, unten: "fuss" | "knie" = "fuss") => {
+  const s = sm(x), f = mitte(p(x, `g:${unten}_l`), p(x, `g:${unten}_r`)), h = mitte(p(x, "g:huefte_l"), p(x, "g:huefte_r"))
+  const t = (h[2] - s[2]) / (f[2] - s[2])
+  return h[1] - (s[1] + (f[1] - s[1]) * t)
+}
+const seitPruef = (x: Punkte, k: { hand?: boolean; knie?: boolean } = {}, w = ""): Pruefung[] => {
+  const r: Pruefung[] = [pr(`Körper gerade${w} (°)`, koerperLinie(x, k.knie ? "knie" : "knoechel"), 165, 185, k.knie ? "Körper von Kopf bis Knie gerade" : "der Körper bildet eine gerade Linie")]
+  r.push(pr(`Hüfte nicht durchgesackt${w} (m)`, ueberLinie(x, k.knie ? "knie" : "fuss"), -0.04, 0.05, "Hüfte vom Boden abheben"))
+  if (k.hand) {
+    r.push(pr(`Stützarm gestreckt${w} (°)`, ellbogenWinkel(x, "r"), 160, 181, "bis der Arm gestreckt ist"))
+    r.push(pr(`Hand unter der Schulter${w} (m)`, Math.hypot(p(x, "g:hand_r")[2] - p(x, "g:schulter_r")[2], p(x, "g:hand_r")[0] - p(x, "g:schulter_r")[0]), 0, 0.1, "die untere Hand direkt unter der Schulter"))
+    r.push(pr(`Hand am Boden${w} (m)`, p(x, "hand_r")[1], 0.03, 0.08, "Hand flach am Boden"))
+  } else {
+    r.push(pr(`Ellbogen unter der Schulter${w} (m)`, Math.hypot(p(x, "g:ellbogen_r")[2] - p(x, "g:schulter_r")[2], p(x, "g:ellbogen_r")[0] - p(x, "g:schulter_r")[0]), 0, 0.06, "den unteren Ellbogen direkt unter der Schulter"))
+    r.push(pr(`Unterarm am Boden${w} (m)`, p(x, "g:ellbogen_r")[1], 0.03, 0.09, "Unterarm liegt am Boden"))
+  }
+  return r
+}
+const handHuefte = (x: Punkte) => pr("Obere Hand auf der Hüfte (m)", abstand(p(x, "hand_l"), p(x, "g:huefte_l")), 0, 0.16, "Leg die obere Hand auf die Hüfte")
+const armDecke = (x: Punkte, w = "") => pr(`Oberer Arm senkrecht zur Decke${w} (m)`, p(x, "g:hand_l")[1] - p(x, "g:schulter_l")[1], 0.38, 0.42, "Streck den oberen Arm senkrecht zur Decke")
+const huefteTief = (x: Punkte, max: number, q: string) => pr("Hüfte unten tief (m)", p(x, "g:huefte_r")[1], 0.06, max, q)
+const SEIT_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  seitstuetz_knie: (m) => [
+    ...ruhig(m),
+    ...seitPruef(m.ziel, { knie: true }),
+    handHuefte(m.ziel),
+    huefteTief(m.start, 0.17, "aus der Seitlage die Hüfte vom Boden abheben"),
+    ...SEITEN.map((s) => pr(`Knie ${s} etwa 90 Grad (°)`, 180 - winkelBei(p(m.ziel, `g:huefte_${s}`), p(m.ziel, `g:knie_${s}`), p(m.ziel, `g:fuss_${s}`)), 75, 105, "Beuge die Knie etwa 90 Grad")),
+    pr("Füße hinter dem Körper (m)", Math.max(p(m.ziel, "g:fuss_l")[0], p(m.ziel, "g:fuss_r")[0]) - sm(m.ziel)[0], -0.7, -0.25, "sodass die Füße hinter dem Körper liegen"),
+  ],
+  seitstuetz: (m) => [...ruhig(m), ...seitPruef(m.ziel), handHuefte(m.ziel), huefteTief(m.start, 0.17, "heb die Hüfte vom Boden ab"), pr("Füße übereinander (m)", Math.abs(p(m.ziel, "g:fuss_l")[0] - p(m.ziel, "g:fuss_r")[0]), 0, 0.06, "Leg die Füße übereinander")],
+  seitstuetz_gestreckt: (m) => [...ruhig(m), ...seitPruef(m.ziel, { hand: true }), armDecke(m.ziel), huefteTief(m.start, 0.25, "Setz dich seitlich auf den Boden")],
+  seitstuetz_stern: (m) => {
+    const z = m.ziel
+    return [...ruhig(m), ...seitPruef(m.start, { hand: true }, " vorher"), armDecke(z), pr("Oberes Bein abgespreizt (m)", p(z, "g:fuss_l")[1] - p(z, "g:fuss_r")[1], 0.3, 0.5, "etwa bis Hüft- oder Schulterbreite über dem unteren Fuß"), pr("Oberes Bein gestreckt (°)", winkelBei(p(z, "g:huefte_l"), p(z, "g:knie_l"), p(z, "g:fuss_l")), 165, 181, "das obere Bein gestreckt"), pr("Becken bleibt (m)", bleibt(m, ["g:becken"]), 0, 0.02, "Becken und Schultern bleiben übereinander gestapelt"), pr("Stützarm gestreckt (°)", ellbogenWinkel(z, "r"), 160, 181, "auf der gestreckten Hand")]
+  },
+  seitstuetz_hueftheben: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [...ruhig(m), ...seitPruef(o, {}, " oben").filter((q) => !q.was.startsWith("Hüfte nicht")), pr("Hüfte oben etwas über der Linie (m)", ueberLinie(o), 0.01, 0.06, "etwas über die gerade Linie hinaus"), huefteTief(u, 0.17, "bis sie den Boden fast berührt"), pr("Ellbogen bleibt (m)", bleibt(m, ["g:ellbogen_r"]), 0, 0.02, "Ellbogen unter der Schulter"), pr("Füße bleiben (m)", bleibt(m, ["g:fuss_r"]), 0, 0.04, "die Füße übereinander")]
+  },
+  seitstuetz_rotation: (m) => {
+    const [a, b] = [m.start, m.ziel]
+    return [
+      ...ruhig(m),
+      ...seitPruef(a, {}, " offen"),
+      armDecke(a, " offen"),
+      pr("Hand unter dem Körper (m)", p(b, "hand_l")[1], 0.03, 0.2, "fädle den Arm unter dem Körper hindurch"),
+      pr("Hand reicht unter den Rumpf (m)", p(b, "hand_l")[0] - p(b, "bws")[0], -0.06, 0.08, "Richtung hintere Wand"),
+      pr("Becken bleibt oben (m)", bleibt(m, ["g:becken"]), 0, 0.03, "Die Hüfte bleibt dabei oben und weitgehend ruhig"),
+      pr("Ellbogen bleibt (m)", bleibt(m, ["g:ellbogen_r"]), 0, 0.02, "der Unterarm bleibt am Boden"),
+      pr("Oberer Fuß vor dem unteren (m)", p(a, "g:fuss_l")[0] - p(a, "g:fuss_r")[0], 0.05, 0.2, "die Füße hintereinander für mehr Stabilität"),
+    ]
+  },
+  seitstuetz_rudern: (m) => {
+    const [a, b] = [m.start, m.ziel]
+    return [
+      ...ruhig(m),
+      ...seitPruef(a, {}, " gestreckt"),
+      ...seitPruef(b, {}, " gezogen"),
+      pr("Arm vorn gestreckt (°)", ellbogenWinkel(a, "l"), 160, 181, "der Arm ist gestreckt"),
+      pr("Griff vorn Richtung Kabel (m)", p(a, "g:hand_l")[0] - p(a, "g:schulter_l")[0], 0.4, 0.6, "mit dem Gesicht zum Kabelzug"),
+      pr("Griff gezogen an der Brust (m)", p(b, "g:hand_l")[0] - p(b, "g:schulter_l")[0], -0.05, 0.2, "Rudere den Griff zur unteren Brust"),
+      pr("Ellbogen zieht nach hinten (m)", p(b, "g:ellbogen_l")[0] - p(b, "g:schulter_l")[0], -0.3, -0.05, "der Ellbogen zieht dicht am Körper nach hinten"),
+    ]
+  },
+}
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...BANK_SOLL,
   ...LS_SOLL,
@@ -2102,6 +2171,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...TRIZEPS_SOLL,
   ...WAND_SOLL,
   ...STUETZ_SOLL,
+  ...SEIT_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),
