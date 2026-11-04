@@ -1935,6 +1935,147 @@ const WAND_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
 
 const KLASSISCH_Q = { stand: "Stell dich hüftbreit hin", zehen: "Zehen leicht nach außen", griff: "Greif die Stange schulterbreit, die Arme hängen direkt außen an den Beinen", huefte: "Hüfte höher als die Knie" }
 
+// ---------------------------------------------------------------- Rumpf: Stütz
+const sm = (x: Punkte) => mitte(p(x, "g:schulter_l"), p(x, "g:schulter_r"))
+/** Becken waagerecht: Höhenunterschied der Hüftgelenke */
+const beckenKippt = (x: Punkte) => Math.abs(p(x, "g:huefte_l")[1] - p(x, "g:huefte_r")[1])
+interface UA {
+  /** Ellbogen vor (+) den Schultern */
+  vor?: Bereich
+  /** Abstand der Füße (m, Fußballen) */
+  fuss?: Bereich
+  /** Ellbogenhöhe (Ball) */
+  ellY?: Bereich
+  linie?: number
+  quelle: Record<string, string>
+}
+const uaPruef = (x: Punkte, k: UA, w = ""): Pruefung[] => {
+  const r: Pruefung[] = [pr(`Körper gerade${w} (°)`, koerperLinie(x), k.linie ?? 165, 185, k.quelle.linie ?? "Kopf, Rücken, Gesäß und Fersen bilden eine Linie")]
+  for (const a of SEITEN) {
+    r.push(pr(`Ellbogen ${a} auf der Stützfläche (m)`, p(x, `g:ellbogen_${a}`)[1], ...(k.ellY ?? [0.06, 0.11]), k.quelle.ell ?? "Unterarme liegen am Boden"))
+    r.push(pr(`Ellbogen ${a} vor der Schulter${w} (m)`, p(x, `g:ellbogen_${a}`)[2] - p(x, `g:schulter_${a}`)[2], ...(k.vor ?? [-0.05, 0.05]), k.quelle.vor ?? "die Ellbogen direkt unter den Schultern"))
+    r.push(pr(`Unterarm ${a} zeigt nach vorn (m)`, p(x, `hand_${a}`)[2] - p(x, `g:ellbogen_${a}`)[2], 0.18, 0.32, "Unterarme parallel nach vorn"))
+  }
+  r.push(pr("Unterarme parallel (m)", Math.abs(Math.abs(p(x, "hand_l")[0] - p(x, "hand_r")[0]) - Math.abs(p(x, "g:ellbogen_l")[0] - p(x, "g:ellbogen_r")[0])), 0, 0.15, "Unterarme parallel"))
+  r.push(pr("Füße: Abstand (m)", Math.abs(p(x, "fuss_l")[0] - p(x, "fuss_r")[0]), ...(k.fuss ?? [0.12, 0.3]), k.quelle.fuss ?? "die Zehen hüftbreit aufgestellt"))
+  for (const a of SEITEN) r.push(pr(`Knie ${a} über dem Boden (m)`, p(x, `knie_${a}`)[1], 0.08, 0.6, "Knie und Hüfte vom Boden abheben"))
+  return r
+}
+const uaSoll = (k: UA) => (m: Messung): Pruefung[] => [...ruhig(m), ...uaPruef(m.ziel, k)]
+const UA_BALL: UA = { ellY: [0.55, 0.72], vor: [-0.06, 0.08], fuss: [0.25, 0.45], quelle: { ell: "Unterarme mittig auf dem Ball", fuss: "Füße etwas breiter als hüftbreit", vor: "die Ellbogen etwa unter den Schultern" } }
+/** Stütz mit gestreckten Armen */
+const hochPruef = (x: Punkte, arme: readonly ("l" | "r")[] = SEITEN, w = ""): Pruefung[] => {
+  const r: Pruefung[] = [pr(`Körper gerade${w} (°)`, koerperLinie(x), 165, 185, "Kopf, Rücken und Fersen in einer Linie")]
+  for (const a of arme) {
+    r.push(pr(`Arm ${a} gestreckt${w} (°)`, ellbogenWinkel(x, a), 160, 180, "Ellbogen gestreckt"))
+    r.push(pr(`Hand ${a} unter der Schulter${w} (m)`, p(x, `g:hand_${a}`)[2] - p(x, `g:schulter_${a}`)[2], -0.05, 0.05, "Hände direkt unter den Schultern"))
+    r.push(pr(`Hand ${a} am Boden${w} (m)`, p(x, `hand_${a}`)[1], 0.03, 0.08, "Hände schulterbreit aufgesetzt"))
+  }
+  return r
+}
+const STUETZ_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  unterarmstuetz: uaSoll({ quelle: {} }),
+  unterarmstuetz_gewicht: uaSoll({ quelle: { fuss: "Füße hüftbreit" } }),
+  unterarmstuetz_lang: uaSoll({ vor: [0.1, 0.22], quelle: { vor: "Ellbogen 10 bis 20 Zentimeter weiter nach vorn" } }),
+  rkc_plank: (m) => {
+    const r = [...ruhig(m), ...uaPruef(m.ziel, { vor: [0.02, 0.1], fuss: [0, 0.14], quelle: { vor: "die Ellbogen etwas vor den Schultern", fuss: "die Füße zusammen" } })]
+    r.push(pr("Ellbogen enger als die Schultern (m)", Math.abs(p(m.ziel, "g:ellbogen_l")[0] - p(m.ziel, "g:ellbogen_r")[0]) - Math.abs(p(m.ziel, "g:schulter_l")[0] - p(m.ziel, "g:schulter_r")[0]), -0.12, -0.02, "enger zusammen als sonst"))
+    return r
+  },
+  unterarmstuetz_ball: uaSoll(UA_BALL),
+  stir_the_pot: (m) => {
+    const r = [...ruhig(m)]
+    for (const x of m.alle) r.push(...uaPruef(x, UA_BALL).filter((q) => !q.was.startsWith("Ellbogen l vor") && !q.was.startsWith("Ellbogen r vor")))
+    const xs = m.alle.map((x) => p(x, "g:ellbogen_l")[0]), zs = m.alle.map((x) => p(x, "g:ellbogen_l")[2])
+    r.push(pr("Kreis seitlich (m)", Math.max(...xs) - Math.min(...xs), 0.05, 0.16, "kleine, langsame Kreise"))
+    r.push(pr("Kreis vor und zurück (m)", Math.max(...zs) - Math.min(...zs), 0.05, 0.16, "kleine, langsame Kreise"))
+    r.push(pr("Becken bleibt ruhig (m)", bleibt(m, ["g:becken"]), 0, 0.03, "Becken und Rücken bleiben vollkommen ruhig"))
+    return r
+  },
+  body_saw: (m) => {
+    const [a, b] = [m.start, m.ziel]
+    const r = [...ruhig(m), ...uaPruef(a, { quelle: {} }, " vorn"), ...uaPruef(b, { vor: [0.1, 0.25], quelle: { vor: "die Schultern wandern hinter die Ellbogen" } }, " hinten")]
+    r.push(pr("Ellbogen bleiben liegen (m)", bleibt(m, ["g:ellbogen_l", "g:ellbogen_r"]), 0, 0.03, "mit den Unterarmen nach hinten drücken"))
+    r.push(pr("Füße gleiten nach hinten (m)", p(a, "fuss_l")[2] - p(b, "fuss_l")[2], 0.1, 0.25, "Füße auf den Gleitscheiben"))
+    return r
+  },
+  stuetz_gestreckt: (m) => [...ruhig(m), ...hochPruef(m.ziel), pr("Füße: Abstand (m)", Math.abs(p(m.ziel, "fuss_l")[0] - p(m.ziel, "fuss_r")[0]), 0.12, 0.3, "Füße etwa hüftbreit")],
+  stuetz_wechsel: (m) => {
+    const r = [...ruhig(m)]
+    const ua = m.alle.filter((x) => p(x, "g:ellbogen_l")[1] < 0.15 && p(x, "g:ellbogen_r")[1] < 0.15)
+    const hoch = m.alle.filter((x) => ellbogenWinkel(x, "l") > 160 && ellbogenWinkel(x, "r") > 160)
+    r.push(pr("Haltungen im Unterarmstütz", ua.length, 1, 9, "Beginne im Unterarmstütz"), pr("Haltungen im hohen Stütz", hoch.length, 1, 9, "bis du im Stütz mit gestreckten Armen bist"))
+    if (ua[0]) r.push(...uaPruef(ua[0], { fuss: [0.25, 0.45], quelle: { fuss: "Füße etwas breiter als hüftbreit" } }))
+    if (hoch[0]) r.push(...hochPruef(hoch[0], SEITEN, " oben"))
+    for (const x of m.alle) r.push(pr("Körper gerade (°)", koerperLinie(x), 160, 185, "Hüfte so ruhig wie möglich"))
+    r.push(pr("Füße bleiben (m)", bleibt(m, ["fuss_l", "fuss_r"]), 0, 0.03, "die Füße bleiben stehen"))
+    return r
+  },
+  stuetz_schultertippen: (m) => {
+    const r = [...ruhig(m), ...hochPruef(m.start)]
+    r.push(pr("Füße: Abstand (m)", Math.abs(p(m.start, "fuss_l")[0] - p(m.start, "fuss_r")[0]), 0.25, 0.45, "Füße etwas breiter als hüftbreit"))
+    for (const [a, b] of [["l", "r"], ["r", "l"]] as const) {
+      const x = m.alle.reduce((q, y) => (p(y, `hand_${a}`)[1] > p(q, `hand_${a}`)[1] ? y : q))
+      r.push(pr(`Hand ${a} an der Schulter ${b} (m)`, abstand(p(x, `hand_${a}`), p(x, `g:schulter_${b}`)), 0, 0.13, "tippe auf die andere Schulter"))
+      r.push(pr(`Becken waagerecht beim Tippen ${a} (m)`, beckenKippt(x), 0, 0.03, "das Becken bleibt dabei waagerecht und ruhig"))
+      r.push(...hochPruef(x, [b], ` beim Tippen ${a}`))
+    }
+    r.push(pr("Füße bleiben (m)", bleibt(m, ["fuss_l", "fuss_r"]), 0, 0.02, "stabile Basis"))
+    return r
+  },
+  unterarmstuetz_armstrecken: (m) => {
+    const r = [...ruhig(m), ...uaPruef(m.start, { fuss: [0.25, 0.45], quelle: { fuss: "Füße etwas breiter als hüftbreit" } })]
+    for (const [a, b] of [["r", "l"], ["l", "r"]] as const) {
+      const x = m.alle.reduce((q, y) => (p(y, `hand_${a}`)[2] > p(q, `hand_${a}`)[2] ? y : q))
+      r.push(pr(`Arm ${a} gestreckt (°)`, ellbogenWinkel(x, a), 160, 180, "Arm lang nach vorn"))
+      r.push(pr(`Arm ${a} in Verlängerung des Körpers (m)`, p(x, `g:hand_${a}`)[1] - p(x, `g:schulter_${a}`)[1], -0.12, 0.1, "etwa in Verlängerung des Körpers"))
+      r.push(pr(`Hand ${a} vor dem Kopf (m)`, p(x, `g:hand_${a}`)[2] - p(x, "g:@kopf")[2], 0.2, 0.7, "nach vorn strecken"))
+      r.push(pr(`Becken waagerecht, Arm ${a} vorn (m)`, beckenKippt(x), 0, 0.03, "ohne dass Becken oder Schultern sich drehen"))
+      r.push(pr(`Körper gerade, Arm ${a} vorn (°)`, koerperLinie(x), 163, 185, "Bauch und Gesäß fest"))
+      r.push(pr(`Ellbogen ${b} bleibt unter der Schulter (m)`, Math.abs(p(x, `g:ellbogen_${b}`)[2] - p(x, `g:schulter_${b}`)[2]), 0, 0.07, "Gewicht auf den anderen Unterarm"))
+    }
+    return r
+  },
+  stuetz_diagonal: (m) => {
+    const r = [...ruhig(m), ...hochPruef(m.start)]
+    for (const [a, b] of [["r", "l"], ["l", "r"]] as const) {
+      const x = m.alle.reduce((q, y) => (p(y, `hand_${a}`)[2] > p(q, `hand_${a}`)[2] ? y : q))
+      r.push(pr(`Arm ${a} auf Körperhöhe (m)`, p(x, `g:hand_${a}`)[1] - p(x, `g:schulter_${a}`)[1], -0.12, 0.1, "den Arm nach vorn, etwa auf Körperhöhe"))
+      r.push(pr(`Bein ${b} auf Körperhöhe (m)`, p(x, `g:fuss_${b}`)[1] - p(x, `g:huefte_${b}`)[1], -0.15, 0.08, "das Bein nach hinten, etwa auf Körperhöhe"))
+      r.push(pr(`Bein ${b} gestreckt (°)`, winkelBei(p(x, `g:huefte_${b}`), p(x, `g:knie_${b}`), p(x, `g:fuss_${b}`)), 160, 181, "das Bein lang nach hinten"))
+      r.push(pr(`Becken waagerecht, Diagonale ${a} (m)`, beckenKippt(x), 0, 0.035, "ohne dass Becken oder Schultern kippen"))
+      r.push(...hochPruef(x, [b], ` Diagonale ${a}`))
+    }
+    return r
+  },
+  baerenstuetz: (m) => {
+    const [a, b] = [m.start, m.ziel]
+    const r = [...ruhig(m)]
+    for (const s of SEITEN) {
+      r.push(pr(`Knie ${s} schwebt (m)`, p(b, `knie_${s}`)[1] - p(a, `knie_${s}`)[1], 0.02, 0.05, "die Knie zwei bis fünf Zentimeter vom Boden"))
+      r.push(pr(`Knie ${s} unter der Hüfte (m)`, p(b, `g:knie_${s}`)[2] - p(b, `g:huefte_${s}`)[2], -0.06, 0.06, "die Knie unter der Hüfte"))
+      r.push(pr(`Hand ${s} unter der Schulter (m)`, p(b, `g:hand_${s}`)[2] - p(b, `g:schulter_${s}`)[2], -0.05, 0.05, "Hände unter den Schultern"))
+      r.push(pr(`Hand ${s} bleibt am Boden (m)`, p(b, `hand_${s}`)[1], 0.03, 0.07, "die Hände in den Boden drücken"))
+    }
+    r.push(pr("Rücken waagerecht: Hüfte minus Schulter (m)", mitte(p(b, "g:huefte_l"), p(b, "g:huefte_r"))[1] - sm(b)[1], -0.04, 0.04, "Rücken und Hüfte bleiben auf derselben Höhe"))
+    return r
+  },
+  baerengang: (m) => {
+    const r = [...ruhig(m)]
+    const st = m.alle[0]
+    for (const x of m.alle) for (const s of SEITEN) r.push(pr(`Knie ${s} über dem Boden (m)`, p(x, `knie_${s}`)[1], 0.055, 0.12, "die Knie wenige Zentimeter über dem Boden"))
+    const hy = m.alle.map((x) => mitte(p(x, "g:huefte_l"), p(x, "g:huefte_r"))[1])
+    r.push(pr("Hüfte bleibt tief und ruhig (m)", Math.max(...hy) - Math.min(...hy), 0, 0.03, "die Hüfte soll weder schaukeln noch nach oben wandern"))
+    for (const [h, f] of [["r", "l"], ["l", "r"]] as const) {
+      const x = m.alle.reduce((q, y) => (p(y, `hand_${h}`)[2] > p(q, `hand_${h}`)[2] ? y : q))
+      r.push(pr(`Hand ${h} rückt vor (m)`, p(x, `hand_${h}`)[2] - p(st, `hand_${h}`)[2], 0.06, 0.15, "eine kleine Schrittlänge, etwa eine Handbreite"))
+      r.push(pr(`Fuß ${f} rückt mit vor (m)`, p(x, `fuss_${f}`)[2] - p(st, `fuss_${f}`)[2], 0.06, 0.15, "gleichzeitig der gegenüberliegende Fuß"))
+      r.push(pr(`Hand ${f} bleibt (m)`, Math.abs(p(x, `hand_${f}`)[2] - p(st, `hand_${f}`)[2]), 0, 0.02, "immer diagonal"))
+    }
+    return r
+  },
+}
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...BANK_SOLL,
   ...LS_SOLL,
@@ -1960,6 +2101,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...CURL_SOLL,
   ...TRIZEPS_SOLL,
   ...WAND_SOLL,
+  ...STUETZ_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),

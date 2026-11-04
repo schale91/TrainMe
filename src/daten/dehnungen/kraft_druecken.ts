@@ -310,6 +310,59 @@ export const stuetzPaar = (k: Stuetz) => {
   }
   return { o: haltung(o, true), u: haltung(u, false, k.seitlich ?? 0), flug, linien: { o, u, dz }, palmeZ }
 }
+/** Höhe des Ellbogengelenks über dem Boden, wenn der Unterarm flach aufliegt */
+export const ELL_BODEN = 0.085
+export interface UnterarmStuetz {
+  /** Ellbogen vor (+) den Schultern (langer Hebel) */
+  vor?: number
+  /** halber Abstand der Füße */
+  fuss?: number
+  art?: "zehen" | "knie"
+  /** halber Abstand der Ellbogen */
+  ellX?: number
+  /** Höhe des Ellbogengelenks (Ball) */
+  ellY?: number
+  /** Hand: halber Abstand, Höhe der Handfläche, Abstand vor dem Ellbogen */
+  hand?: [number, number, number]
+  /** Höhe der Stützfläche der Füße */
+  fussHoch?: number
+  /** Ellbogen in Weltkoordinaten bei diesem z (sonst Becken bei z = 0) */
+  ellZ?: number
+  /** Ellbogen und Hände seitlich und nach vorn verschoben (Kreise auf dem Ball) */
+  versatz?: [number, number]
+  /** freie Winkel, die die Grundwinkel ersetzen (z. B. Fäuste) */
+  w?: Winkel
+}
+/**
+ * Unterarmstütz: Ellbogen am Boden (mit vor: vor die Schultern geschoben, langer Hebel), Unterarme parallel nach vorn,
+ * Hände flach; der Körper bildet eine Linie von den Schultern bis zu den Fußballen (bzw. Knien).
+ */
+export const unterarmStuetz = (k: UnterarmStuetz = {}): Haltung => {
+  const art = k.art ?? "zehen"
+  const vor = k.vor ?? 0
+  const ey = k.ellY ?? ELL_BODEN
+  const dreh: YZ = art === "zehen" ? [(k.fussHoch ?? 0) + BALLEN_Y, 0] : [0.06, 0]
+  const ex = k.ellX ?? 0.14
+  const sy = ey + Math.sqrt(OBERARM ** 2 - vor ** 2 - (SCHULTER_X + 0.03 - ex) ** 2)
+  const l = suche((x) => x.schulter[0] - sy, dreh, art)
+  const dz = k.ellZ === undefined ? -l.becken[1] : k.ellZ - l.schulter[1] - vor
+  const sz = l.schulter[1] + dz
+  const z = (p: YZ): P3 => [0, p[0], p[1] + dz]
+  const ziele: Ziele = {}
+  const [hx0, hy, hz] = k.hand ?? [ex - 0.02, 0.06, UNTERARM - 0.02]
+  const [vx, vz] = k.versatz ?? [0, 0]
+  for (const s of [1, -1] as const) {
+    const n = s === 1 ? "l" : "r"
+    ziele[`ellbogen_${n}`] = { pos: [s * ex + vx, ey, sz + vor + vz] }
+    ziele[`hand_${n}`] = { pos: [s * hx0 + vx, hy, sz + vor + hz + vz] }
+    const kz = z(l.knie), fx = k.fuss ?? 0.1, hx = s * HUEFTE_X
+    ziele[`knie_${n}`] = { pos: [hx + (s * fx - hx) * (art === "zehen" ? OBER / (OBER + UNTER) : 1), kz[1], kz[2]] }
+    if (art === "zehen") ziele[`fuss_${n}`] = { pos: [s * fx, dreh[0], dreh[1] + dz] }
+  }
+  const b = z(l.becken)
+  const w: Winkel = { ...B("schulter", [90 - vor * 100, 10, 0]), ...B("ellbogen", [90, 90]), ...B("hand", [0, 0]), ...B("zehen", [60]), ...B("knie", [art === "knie" ? 70 : 0]), ...B("fuss", [art === "knie" ? -60 : -22, 0]), hals: [-5, 0, 0], ...k.w }
+  return H(w, [90 - l.beta, 0, 0], { pos: [0, b[1], b[2]], boden: false, ziele })
+}
 const LS_TEXTE: [string, string] = ["Brust zum Boden senken", "Hochdrücken"]
 const liegestuetz = (k: Stuetz, extra: Partial<Dehnung> = {}): Dehnung => {
   const { o, u } = stuetzPaar(k)

@@ -6,19 +6,82 @@
 // einfache Figur.
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
-import { ARME_VERSCHRAENKT, ATHLETISCH, B, H, HALBKNIESTAND, KNIESTAND, PLANK, RUECKENLAGE, RUECKENLAGE_AUF, STAND, STUHLSITZ, VIERFUESSLER, folge, halte, mit, wdh } from "./basis"
+import { ARME_VERSCHRAENKT, ATHLETISCH, B, H, HALBKNIESTAND, KNIESTAND, RUECKENLAGE, RUECKENLAGE_AUF, STAND, STUHLSITZ, VIERFUESSLER, folge, halte, mit, wdh } from "./basis"
 import { FAUST, HAMMER, KH, KH_R, OBERGRIFF, ROLLE_OBEN, kabel, kabelstange } from "./kraftbasis"
 import { seitstuetz } from "./kraft_huefte"
+import { stuetzPaar, unterarmStuetz } from "./kraft_druecken"
+import { SCHULTER_X } from "./ziele"
 
 // ---------------------------------------------------------------- Stütz
-/** Unterarmstütz: Ellbogen unter den Schultern, Körper als Linie */
-const unterarm = (schulter = 78, w: Winkel = {}, kipp = 78): Haltung =>
-  H({ ...B("schulter", [schulter, 6, 0]), ...B("ellbogen", [90, 90]), ...B("hand", [0, 0]), ...B("fuss", [-20, 0]), ...B("zehen", [60]), hals: [-8, 0, 0], ...w }, [kipp, 0, 0])
-const UNTERARM: Haltung = unterarm()
-const STUETZ: Haltung = PLANK
-const stuetz = (w: Winkel): Haltung => mit(PLANK, { g: w })
-/** Bärenstütz: Vierfüßler, Knie knapp über dem Boden, Zehen aufgestellt */
-const BAER: Haltung = mit(VIERFUESSLER, { g: { ...B("huefte", [84, 6, 0]), ...B("knie", [66]), ...B("fuss", [36, 0]), ...B("zehen", [60]) } })
+/** Unterarmstütz aus der Ausführung: Ellbogen unter den Schultern, Füße hüftbreit, Körper als Linie */
+const UA: Haltung = unterarmStuetz()
+/** Knie noch am Boden (Ausgangslage vor dem Abheben) */
+const UA_KNIE: Haltung = unterarmStuetz({ art: "knie" })
+/** Unterarme auf dem Gymnastikball (65 cm): Ellbogen auf der Rundung, Hände oben locker zusammen */
+const ballUA = (k: { art?: "knie"; versatz?: [number, number] } = {}): Haltung =>
+  unterarmStuetz({ ellY: 0.665, ellX: 0.11, hand: [0.05, 0.69, 0.25], fuss: 0.16, vor: 0.02, ...k })
+type Z = NonNullable<Haltung["ziele"]>
+/** ganze Haltung samt Zielpunkten längs verschieben */
+const schieben = (h: Haltung, dz: number): Haltung => {
+  const ziele: Z = {}
+  for (const [k, v] of Object.entries(h.ziele ?? {}) as [keyof Z, Z[keyof Z]][]) {
+    const p = v!.pos as number[]
+    ziele[k] = { ...v!, pos: [p[0], p[1], p[2] + dz] } as Z[keyof Z]
+  }
+  return { ...h, pos: h.pos ? [h.pos[0], h.pos[1], h.pos[2] + dz] : h.pos, ziele }
+}
+const fussZ = (h: Haltung): number => (h.ziele?.fuss_l?.pos as number[])[2]
+/** Zielpunkte weglassen (der Arm bzw. das Bein bewegt sich frei nach den Winkeln) */
+const ohne = (h: Haltung, ...weg: (keyof Z)[]): Z => Object.fromEntries(Object.entries(h.ziele ?? {}).filter(([k]) => !weg.includes(k as keyof Z))) as Z
+/** Füße etwas breiter als hüftbreit */
+const UA_BREIT: Haltung = unterarmStuetz({ fuss: 0.16 })
+const SP_BREIT = stuetzPaar({ hand: 0.16, fuss: 0.16 })
+/** Stütz mit gestreckten Armen, Füße an derselben Stelle wie im Unterarmstütz */
+const HOCH_BREIT: Haltung = schieben(SP_BREIT.o, fussZ(UA_BREIT) - fussZ(SP_BREIT.o))
+/** Halb hoch: eine Seite auf der Hand, die andere noch auf dem Unterarm; der Rumpf darf sich dafür neigen */
+const halbHoch = (hand: "l" | "r"): Haltung => {
+  const u = hand === "l" ? "r" : "l"
+  const a = UA_BREIT, b = HOCH_BREIT
+  const ziele: Z = { ...ohne(a, `ellbogen_${hand}`, `hand_${hand}`), [`hand_${hand}`]: b.ziele![`hand_${hand}`], [`ellbogen_${hand}`]: b.ziele![`ellbogen_${hand}`], [`ellbogen_${u}`]: a.ziele![`ellbogen_${u}`] }
+  const m = (x: number[], y: number[]): [number, number, number] => [(x[0] + y[0]) / 2, (x[1] + y[1]) / 2, (x[2] + y[2]) / 2]
+  return { ...a, g: { ...a.g, [`schulter_${hand}`]: [80, 20, 0], [`ellbogen_${hand}`]: [4, 90], [`hand_${hand}`]: [80, 0] }, pos: m(a.pos!, b.pos!), dreh: m(a.dreh!, b.dreh!), ziele, beckenFrei: true, drehFrei: true }
+}
+/** Stütz: eine Hand tippt auf die gegenüberliegende Schulter */
+const tippen = (hand: "l" | "r"): Haltung => {
+  const o = SP_BREIT.o, l = SP_BREIT.linien.o
+  const sx = hand === "r" ? SCHULTER_X : -SCHULTER_X
+  return { ...o, g: { ...o.g, [`schulter_${hand}`]: [60, -40, 0], [`ellbogen_${hand}`]: [130, 90], [`hand_${hand}`]: [0, 0] }, ziele: { ...ohne(o, `hand_${hand}`, `ellbogen_${hand}`), [`hand_${hand}`]: { pos: [sx, l.schulter[0] + 0.07, l.schulter[1] + SP_BREIT.linien.dz] } }, drehFrei: true }
+}
+/** Ein Arm lang nach vorn in Verlängerung des Körpers (Daumen oben), freie Ziele: Rumpf darf leicht verlagern */
+const armVor = (h: Haltung, arm: "l" | "r", bein?: "l" | "r"): Haltung => ({
+  ...h,
+  g: { ...h.g, [`schulter_${arm}`]: [172, 8, 0], [`ellbogen_${arm}`]: [4, 0], [`hand_${arm}`]: [0, 0], ...(bein ? { [`huefte_${bein}`]: [-4, 4, 0], [`knie_${bein}`]: [2], [`fuss_${bein}`]: [-20, 0] } : {}) },
+  ziele: ohne(h, `hand_${arm}`, `ellbogen_${arm}`, ...(bein ? ([`fuss_${bein}`, `knie_${bein}`] as (keyof Z)[]) : [])),
+  beckenFrei: true,
+  drehFrei: true,
+})
+/** Ball unter den Unterarmen: Mitte 12 cm hinter den Händen */
+const BALL_UA: Hilfsmittel = { art: "gymnastikball", an: "haende", vor: -0.12 }
+const STUETZ: Haltung = stuetzPaar({ hand: 0.16 }).o
+/**
+ * Bärenstütz: Hände unter den Schultern, Knie unter der Hüfte, Zehen aufgestellt; die Knie schweben 4 cm über dem
+ * Boden, Rücken waagerecht. Hände und Ballen bleiben am Boden (gemessen am Vierfüßler).
+ */
+const baer = (vor: { hand?: "l" | "r"; fuss?: "l" | "r"; schritt?: number; knieAb?: boolean } = {}): Haltung => {
+  const st = vor.schritt ?? 0.1
+  const ziele: Z = {}
+  for (const [n, x] of [["l", 1], ["r", -1]] as const) {
+    const dh = vor.hand === n ? st : 0, df = vor.fuss === n ? st : 0
+    ziele[`hand_${n}`] = { pos: [x * 0.121, 0.051, 0.46 + dh] }
+    // Knie am Boden: kein Zielpunkt, die Höhe des Beckens legt sie ab
+    if (!vor.knieAb) ziele[`knie_${n}`] = { pos: [x * 0.08, 0.12 + (df ? 0.02 : 0), 0.03 + df] }
+    ziele[`fuss_${n}`] = { pos: [x * 0.1, 0.112, -0.43 + df] }
+  }
+  return H({ ...B("huefte", [88, 3, 0]), ...B("knie", [88]), ...B("fuss", [30, 0]), ...B("zehen", [60]), ...B("schulter", [86, 3, 0]), ...B("ellbogen", [0, 90]), ...B("hand", [85, 0]), hals: [-10, 0, 0] }, [90, 0, 0], { pos: [0, vor.knieAb ? 0.47 : 0.495, 0.02 + ((vor.hand ? st : 0) + (vor.fuss ? st : 0)) / 4], boden: false, ziele, drehFrei: true })
+}
+const BAER: Haltung = baer()
+/** Vierfüßler mit aufgestellten Zehen, Knie noch am Boden */
+const BAER_AB: Haltung = baer({ knieAb: true })
 
 // ---------------------------------------------------------------- Rückenlage
 const TISCH: Winkel = { ...B("huefte", [90, 4, 0]), ...B("knie", [90]), ...B("fuss", [10, 0]) }
@@ -103,23 +166,23 @@ export const DURCHSCHWUNG: Winkel = { schulter_l: [90, 30, 0], ellbogen_l: [90, 
 
 export const KRAFT_RUMPF: Record<string, Dehnung> = {
   // ------------------------------------------------------------ Stütz
-  unterarmstuetz: halte("seite", mit(VIERFUESSLER, { g: { ...B("schulter", [90, 6, 0]), ...B("ellbogen", [90, 90]), ...B("hand", [0, 0]) } }), UNTERARM, { ein: 1.5, aus: 1.5, hinweis: "Körper als Linie, Bauch und Gesäß fest, Ellbogen unter den Schultern." }),
+  unterarmstuetz: halte("seite", UA_KNIE, UA, { ein: 1.5, aus: 1.5, hinweis: "Körper als Linie, Bauch und Gesäß fest, Ellbogen unter den Schultern." }),
   stuetz_gestreckt: halte("seite", VIERFUESSLER, STUETZ, { ein: 1.5, aus: 1.5, hinweis: "Hände unter den Schultern, Körper als Linie." }),
-  unterarmstuetz_lang: halte("seite", UNTERARM, unterarm(112, {}, 82), { ein: 1.5, aus: 1.5, hinweis: "Ellbogen deutlich vor dem Kopf, Becken bleibt in der Linie." }),
-  rkc_plank: halte("seite", UNTERARM, unterarm(70, { ...B("hand", [0, 0]), ...FAUST }), { ein: 1.5, aus: 1.5, hinweis: "Fäuste, Ellbogen Richtung Zehen ziehen, alles maximal anspannen." }),
-  unterarmstuetz_gewicht: halte("seite", UNTERARM, UNTERARM, { ein: 1, aus: 1.5, hinweis: "Scheibe liegt auf dem oberen Rücken.", hilfsmittel: [{ art: "hantelscheibe", an: "bws" }] }),
-  unterarmstuetz_ball: halte("seite", unterarm(60, {}, 58), unterarm(60, {}, 58), { ein: 1, aus: 1.5, hinweis: "Unterarme auf dem Ball, Körper als Linie.", hilfsmittel: [{ art: "gymnastikball", an: "haende" }] }),
+  unterarmstuetz_lang: halte("seite", UA, unterarmStuetz({ vor: 0.15 }), { ein: 1.5, aus: 1.5, hinweis: "Ellbogen deutlich vor dem Kopf, Becken bleibt in der Linie." }),
+  rkc_plank: halte("seite", UA, unterarmStuetz({ vor: 0.05, ellX: 0.1, hand: [0.07, 0.075, 0.24], fuss: 0.05, w: FAUST }), { ein: 1.5, aus: 1.5, hinweis: "Fäuste, Ellbogen Richtung Zehen ziehen, alles maximal anspannen." }),
+  unterarmstuetz_gewicht: halte("seite", UA_KNIE, UA, { ein: 1, aus: 1.5, hinweis: "Scheibe liegt auf dem oberen Rücken.", hilfsmittel: [{ art: "hantelscheibe", an: "bws" }] }),
+  unterarmstuetz_ball: halte("seite", ballUA(), ballUA(), { ein: 1, aus: 1.5, hinweis: "Unterarme auf dem Ball, Körper als Linie.", hilfsmittel: [BALL_UA] }),
   stir_the_pot: folge(
     "schraeg",
     [
-      [unterarm(60, {}, 58), 0.8, "Unterarme auf dem Ball"],
-      [unterarm(66, { bws: [0, 0, 6] }, 58), 0.8, "Kleine Kreise mit den Unterarmen"],
-      [unterarm(54, {}, 58), 0.8],
-      [unterarm(66, { bws: [0, 0, -6] }, 58), 0.8],
+      [ballUA({ versatz: [0, 0.05] }), 0.8, "Unterarme auf dem Ball"],
+      [ballUA({ versatz: [0.05, 0] }), 0.8, "Kleine Kreise mit den Unterarmen"],
+      [ballUA({ versatz: [0, -0.05] }), 0.8],
+      [ballUA({ versatz: [-0.05, 0] }), 0.8],
     ],
-    { hilfsmittel: [{ art: "gymnastikball", an: "haende" }] },
+    { hilfsmittel: [BALL_UA] },
   ),
-  body_saw: wdh("seite", UNTERARM, unterarm(112, {}, 80), 1.6, {
+  body_saw: wdh("seite", UA, unterarmStuetz({ vor: 0.17, ellZ: (UA.ziele?.ellbogen_l?.pos as number[])[2] }), 1.6, {
     aus: 1.6,
     texte: ["Körper auf den Unterarmen nach hinten schieben", "Zurück nach vorn"],
     hilfsmittel: [{ art: "gleitscheibe", an: "fuss_l" }, { art: "gleitscheibe", an: "fuss_r" }],
@@ -127,48 +190,49 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
   stuetz_wechsel: folge(
     "seite",
     [
-      [UNTERARM, 0.8, "Unterarmstütz"],
-      [unterarm(78, { schulter_l: [78, 6, 0], ellbogen_l: [0, 90], hand_l: [80, 0] }, 70), 0.8, "Ein Arm auf die Hand"],
-      [STUETZ, 0.8, "Zweiter Arm, Becken bleibt ruhig"],
-      [unterarm(78, { schulter_r: [78, 6, 0], ellbogen_r: [0, 90], hand_r: [80, 0] }, 70), 0.8, "Zurück auf den Unterarm"],
+      [UA_BREIT, 0.8, "Unterarmstütz"],
+      [halbHoch("r"), 0.8, "Rechte Hand unter die Schulter und hochdrücken"],
+      [HOCH_BREIT, 0.8, "Linke Hand nach, Becken bleibt ruhig"],
+      [halbHoch("l"), 0.8, "Rechts zurück auf den Unterarm"],
+      [UA_BREIT, 0.8, "Links zurück, dann Führungsarm wechseln"],
     ],
   ),
   stuetz_schultertippen: folge(
     "vorn",
     [
-      [STUETZ, 0.6, "Stütz, Füße etwas breiter"],
-      [stuetz({ schulter_r: [80, -30, 0], ellbogen_r: [120, 90], hand_r: [0, 0] }), 0.7, "Hand tippt die andere Schulter"],
-      [STUETZ, 0.5],
-      [stuetz({ schulter_l: [80, -30, 0], ellbogen_l: [120, 90], hand_l: [0, 0] }), 0.7, "Andere Seite, Hüfte bleibt ruhig"],
-      [STUETZ, 0.5],
+      [SP_BREIT.o, 0.6, "Stütz, Füße etwas breiter"],
+      [tippen("l"), 0.7, "Linke Hand tippt die rechte Schulter"],
+      [SP_BREIT.o, 0.5],
+      [tippen("r"), 0.7, "Andere Seite, Becken bleibt waagerecht"],
+      [SP_BREIT.o, 0.5],
     ],
   ),
   unterarmstuetz_armstrecken: folge(
     "seite",
     [
-      [UNTERARM, 0.8, "Unterarmstütz"],
-      [unterarm(78, { schulter_r: [170, 6, 0], ellbogen_r: [4, 90] }), 1.2, "Einen Arm weit nach vorn strecken"],
-      [UNTERARM, 0.8],
-      [unterarm(78, { schulter_l: [170, 6, 0], ellbogen_l: [4, 90] }), 1.2, "Anderer Arm"],
+      [UA_BREIT, 0.8, "Unterarmstütz"],
+      [armVor(UA_BREIT, "r"), 1.2, "Rechten Arm lang nach vorn, Daumen oben"],
+      [UA_BREIT, 0.8],
+      [armVor(UA_BREIT, "l"), 1.2, "Anderer Arm"],
     ],
   ),
   stuetz_diagonal: folge(
     "seite",
     [
-      [STUETZ, 0.8, "Stütz"],
-      [stuetz({ schulter_r: [170, 6, 0], ellbogen_r: [4, 90], hand_r: [0, 0], huefte_l: [-14, 4, 0] }), 1.4, "Arm und gegenüberliegendes Bein heben"],
-      [STUETZ, 0.8],
-      [stuetz({ schulter_l: [170, 6, 0], ellbogen_l: [4, 90], hand_l: [0, 0], huefte_r: [-14, 4, 0] }), 1.4, "Andere Diagonale"],
+      [SP_BREIT.o, 0.8, "Stütz, Füße etwas breiter"],
+      [armVor(SP_BREIT.o, "r", "l"), 1.4, "Rechten Arm und linkes Bein auf Körperhöhe heben"],
+      [SP_BREIT.o, 0.8],
+      [armVor(SP_BREIT.o, "l", "r"), 1.4, "Andere Diagonale"],
     ],
   ),
-  baerenstuetz: halte("seite", VIERFUESSLER, BAER, { ein: 1.5, aus: 1.5, hinweis: "Knie schweben wenige Zentimeter über dem Boden, Rücken flach." }),
+  baerenstuetz: halte("seite", BAER_AB, BAER, { ein: 1.5, aus: 1.5, hinweis: "Knie schweben wenige Zentimeter über dem Boden, Rücken flach." }),
   baerengang: folge(
     "seite",
     [
       [BAER, 0.5, "Knie knapp über dem Boden"],
-      [mit(BAER, { g: { schulter_r: [104, 6, 0], huefte_l: [96, 6, 0], knie_l: [96] } }), 0.6, "Rechte Hand und linker Fuß vor"],
+      [baer({ hand: "r", fuss: "l" }), 0.6, "Rechte Hand und linker Fuß eine Handbreite vor"],
       [BAER, 0.4],
-      [mit(BAER, { g: { schulter_l: [104, 6, 0], huefte_r: [96, 6, 0], knie_r: [96] } }), 0.6, "Andere Diagonale"],
+      [baer({ hand: "l", fuss: "r" }), 0.6, "Andere Diagonale, Hüfte bleibt tief"],
       [BAER, 0.4],
     ],
   ),

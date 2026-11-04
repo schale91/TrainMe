@@ -651,6 +651,13 @@ function beweglicheHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D
       // körperfernen Seite (in Richtung vom Becken zum Fuß)
       const r = 0.32
       const p = k.punkt(h.an)
+      if (h.vor !== undefined) {
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), mat(FARBE.ball, 0.4))
+        ball.position.set(p.x, r, p.z + h.vor)
+        ball.castShadow = true
+        out.push(ball)
+        continue
+      }
       if (h.hinter) {
         const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 32, 24), mat(FARBE.ball, 0.4))
         ball.position.set(p.x, p.y, p.z - 0.34)

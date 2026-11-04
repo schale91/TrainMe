@@ -105,7 +105,7 @@ export type Hilfsmittel =
   | { art: "medizinball"; an: Punkt }
   /** Gymnastikball, rollt am Boden unter dem Punkt mit (z. B. unter den Fersen) */
   /** hinter: Ball zwischen Rücken und Wand (Mitte 34 cm hinter dem Punkt, auf seiner Höhe) */
-  | { art: "gymnastikball"; an: Punkt; hinter?: boolean }
+  | { art: "gymnastikball"; an: Punkt; hinter?: boolean; /** Ballmitte am Boden genau so weit vor (+) dem Punkt */ vor?: number }
   /** Gleitscheibe am Boden unter dem Punkt (Fuß, Ferse) */
   | { art: "gleitscheibe"; an: Punkt }
   /** Hantelscheibe (5 kg, schwarz) in den Händen, zwischen den Handflächen, sonst flach auf dem Körper (hoch: Mitte über dem Punkt, Standard 9 cm) */
