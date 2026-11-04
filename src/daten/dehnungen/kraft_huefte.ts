@@ -364,7 +364,7 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
     H({ ...B("huefte", [48, 6, 0]), ...B("knie", [4]), ...B("fuss", [-30, 0]), ...ARME_VERSCHRAENKT, hals: [-10, 0, 0] }, [136, 0, 0], { pos: [0, 0.56, 0], boden: false }),
     H({ ...B("huefte", [-6, 6, 0]), ...B("knie", [4]), ...B("fuss", [-30, 0]), ...ARME_VERSCHRAENKT, hals: [-10, 0, 0] }, [86, 0, 0], { pos: [0, 0.56, 0], boden: false }),
     1.4,
-    { aus: 1.8, texte: ["Oberkörper bis in die Waagerechte heben", "Langsam absenken"], hilfsmittel: [{ art: "bank", unter: "fuss_l", hoehe: 0.45, versatz: [-0.1, 0.3] }] },
+    { aus: 1.8, texte: ["Oberkörper bis in die Waagerechte heben", "Langsam absenken"], hilfsmittel: [{ art: "bank", unter: "fuss_l", hoehe: 0.45, versatz: [-0.1, 0.3] }, FERSEN_FEST] },
   ),
   reverse_hyper_bank: wdh(
     "seite",
