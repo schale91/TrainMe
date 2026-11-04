@@ -75,20 +75,13 @@ export const FESTE_PUNKTE: Record<string, ZielPunkt[]> = {
   sprunggelenk_rocks_kniestand: FUSS_L,
   sprunggelenk_rocks_gewicht: FUSS_L,
   sprunggelenk_band: FUSS_L,
-  lat_dehnen_bank_kniend: KNIE,
-  golf_bws_streckung_bank_schlaeger: KNIE,
   bank_gebetsdehnung: KNIE,
-  froschdehnung: KNIE,
+  // Noch einzeln mit Zielpunkten umzubauen (festes Halten allein hebt die Figur an): lat_dehnen_bank_kniend,
+  // golf_bws_streckung_bank_schlaeger, froschdehnung, vierfuessler_rock_back, adduktoren_rock_back, handgelenk_wippen,
+  // scheibenwischer, huefte_9090_wechsel, rkc_plank
   frosch_wippen: KNIE,
   // Vierfüßler: Hände und Knie bleiben, nur das Becken geht nach hinten
   kindhaltung: [...HAENDE, ...KNIE],
-  vierfuessler_rock_back: [...HAENDE, ...KNIE],
-  adduktoren_rock_back: [...HAENDE, "knie_l"],
-  handgelenk_wippen: [...HAENDE, ...KNIE],
   mckenzie_liegestuetz: HAENDE,
-  // Unterarmstütz und Rückenlage
-  rkc_plank: ["ellbogen_l", "ellbogen_r", ...FUESSE],
-  scheibenwischer: FUESSE,
-  huefte_9090_wechsel: FUESSE,
   oberschenkel_vorn_dehnen: ["fuss_r", "ferse_r"],
 }
