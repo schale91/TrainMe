@@ -44,7 +44,12 @@ export default class Fehlergrenze extends Component<{ children: ReactNode; berei
           className="knopf voll leise"
           onClick={() => {
             try {
-              localStorage.removeItem("trainme.entwurf")
+              // Absturz im Training: den Zwischenstand verwerfen, damit derselbe Fehler nicht wieder auftritt
+              if (this.props.bereich === "Training") {
+                localStorage.removeItem("trainme.entwurf")
+                localStorage.removeItem("trainme.entwuerfe")
+                localStorage.removeItem("trainme.offen")
+              }
             } catch {
               /* egal */
             }

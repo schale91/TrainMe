@@ -19,6 +19,7 @@ import { Sym } from "./symbole"
 import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
+import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
 import { bestwert } from "../logik/spiel"
 import { Scheiben } from "./Scheiben"
@@ -49,12 +50,9 @@ export function entwurfAnpassen(e: Entwurf, neu: Platz[], start: (p: Platz) => E
   return { plaetze, saetze }
 }
 
-const ENTWURF = "trainme.entwurf"
-
 function ladeEntwurf(schluessel: string): Entwurf | null {
   try {
-    const e = JSON.parse(localStorage.getItem(ENTWURF) || "null") as Entwurf | null
-    return e && e.schluessel === schluessel ? e : null
+    return entwurfLesen<Entwurf>(localStorage, schluessel)
   } catch {
     return null
   }
@@ -145,10 +143,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
 
   useEffect(() => {
     try {
-      localStorage.setItem(ENTWURF, JSON.stringify({ schluessel, plaetze, saetze, ort: kennung, warm }))
+      entwurfSchreiben(localStorage, schluessel, { schluessel, plaetze, saetze, ort: kennung, warm }, einheit.datum)
     } catch {
       /* Speicher voll oder gesperrt */
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schluessel, plaetze, saetze, kennung, warm])
 
   useEffect(() => {
@@ -376,7 +375,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       .map((p, i) => ({ datum: einheit.datum, uebung: p.uebung.id, saetze: saetze[i].filter((s) => s.fertig).map(({ fertig: _f, ...s }) => s), ...(p.uebung.id.startsWith(FREI) ? { name: p.uebung.name } : {}) }))
       .filter((p) => p.saetze.length > 0)
     try {
-      localStorage.removeItem(ENTWURF)
+      entwurfLoeschen(localStorage, schluessel)
     } catch {
       /* egal */
     }

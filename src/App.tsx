@@ -30,6 +30,7 @@ import Fehlergrenze from "./ui/Fehlergrenze"
 import { gesundheitLesen } from "./ui/gesundheit"
 import { anfrage, aufLinkHoeren, bruecke, koppeln, modus, speicherSchluessel } from "./ui/lebenswelt"
 import { abgleichen, neuerStand, type Abgleichstand } from "./logik/abgleich"
+import { offenMerken, offenWiederherstellen } from "./logik/entwurf"
 import { einspielen, uebernehmen, type KbDok } from "./logik/kraftbuch"
 import { maxZusammenfassung, type MaxZeile } from "./logik/zusammenfassung"
 import { ausLebenswelt } from "./logik/koerper"
@@ -63,7 +64,21 @@ export default function App() {
   const [daten, setDatenRoh] = useState<Daten>(() => laden(typeof localStorage !== "undefined" ? localStorage : null, schluessel))
   const aktuell = useRef(daten)
   const [tab, setTab] = useState<Tab>("heute")
-  const [offen, setOffen] = useState<Einheit | null>(null)
+  // Nach einem Neustart im Hintergrund (Android) zurück ins laufende Training, wenn dort schon Sätze abgehakt sind
+  const [offen, setOffen] = useState<Einheit | null>(() => {
+    try {
+      return offenWiederherstellen<Einheit>(localStorage, heute())
+    } catch {
+      return null
+    }
+  })
+  useEffect(() => {
+    try {
+      offenMerken(localStorage, offen)
+    } catch {
+      /* egal */
+    }
+  }, [offen])
   const [belohnung, setBelohnung] = useState<Belohnung | null>(null)
   const [einstufen, setEinstufen] = useState(false)
   const [profilStart, setProfilStart] = useState<Unterseite>(null)
