@@ -19,7 +19,7 @@ import { Sym } from "./symbole"
 import { FREI } from "../daten/uebungen/index"
 import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
-import { hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, schaetzung, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
+import { hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, schaetzung, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
 import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
 import { bandhilfeMoeglich, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
@@ -148,7 +148,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const gepiept = useRef(false)
   // Trainingszeit: läuft ab „Training starten“; vorher lassen sich keine Sätze abhaken
   const [beginn, setBeginn] = useState<number | null>(gespeichert?.beginn ?? null)
-  const [geschaetzt] = useState<number>(() => gespeichert?.geschaetzt ?? schaetzung(einheit.plaetze, einheit.plaetze.map((p) => Array(p.vorgabe.saetze).fill(0))))
+  // Schätzung beim Start (ohne gelernten Faktor): Grundlage, um aus der gemessenen Dauer zu lernen
+  const [geschaetzt, setGeschaetzt] = useState<number>(() => gespeichert?.geschaetzt ?? schaetzung(einheit.plaetze, einheit.plaetze.map((p) => Array(p.vorgabe.saetze).fill(0))))
   const [angepasst, setAngepasst] = useState<string[]>(gespeichert?.angepasst || [])
   // Zeitbudget: aus dem Wochenplan, vor dem Start bestätigen oder in 5-Minuten-Schritten ändern
   const [budget, setBudget] = useState<number>(() => gespeichert?.budget ?? zeitBudget(profil, einheit.datum, einheit.minuten))
@@ -159,31 +160,6 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     return () => clearInterval(t)
   }, [beginn])
   const gesperrt = beginn === null
-  // Vorhersage: heute gemessen (ab drei Sätzen), sonst aus früheren Einheiten gelernt
-  const faktor = heuteFaktor(plaetze, saetze, gelernt)
-  const prog = beginn !== null ? prognose(beginn, jetzt, plaetze, saetze, faktor) : { vergangen: 0, offen: 0, gesamt: schaetzung(plaetze, saetze) * gelernt }
-  const zuLang = prog.gesamt > budget + 1
-  // Zu lang: zuerst die Pausen der Ergänzungsübungen kürzen (einmal je Einheit), die Hauptübungen behalten ihre Pause
-  useEffect(() => {
-    if (beginn === null || !zuLang || angepasst.indexOf("pausen") >= 0) return
-    const { plaetze: neu, gekuerzt } = pausenKuerzen(plaetze)
-    setAngepasst([...angepasst, "pausen"])
-    if (!gekuerzt.length) return
-    setPlaetze(neu)
-    setToast("Damit du in " + budget + " Minuten fertig wirst: kürzere Pausen bei " + gekuerzt.join(", ") + ".")
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [beginn, zuLang])
-  const vorschlag = weglassenVorschlag(plaetze, saetze)
-  const weglassen = () => {
-    setSaetze(saetze.map((ss, i) => (vorschlag.ganz.indexOf(i) >= 0 ? ss.filter((s) => s.fertig) : vorschlag.einSatz.indexOf(i) >= 0 ? (() => { const k = ss.map((s) => s.fertig).lastIndexOf(false); return ss.filter((_, x) => x !== k) })() : ss)))
-    setAngepasst([...angepasst, "weglassen"])
-  }
-  const starten = () => {
-    const t = Date.now()
-    setBeginn(t)
-    setJetzt(t)
-  }
-  const uhr = (min: number) => Math.floor(min) + ":" + String(Math.floor((min * 60) % 60)).padStart(2, "0")
   const erstStarten = () => setToast("Erst oben „Training starten“ drücken, dann zählt die Zeit und die Sätze lassen sich abhaken.")
 
   useEffect(() => {
@@ -359,7 +335,46 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     const arbeit = saetze[i][0]?.last
     if (reha || p.rolle !== "haupt" || p.uebung.belastung !== "gewicht" || !arbeit) return []
     return aufwaermSaetze(arbeit, lastGeraet(p.uebung, ort), ort.gewichte, lastenAn(p.uebung, ort), i === ersteHaupt)
+  }  // Vorhersage: heute gemessen (ab drei Sätzen), sonst aus früheren Einheiten gelernt
+  const faktor = heuteFaktor(plaetze, saetze, gelernt)
+  // Aufwärmsätze der Übungen (etwa 1,5 min je Satz samt kurzer Pause); ein allgemeines Aufwärmen nur in der Reha
+  const warmOffen = plaetze.reduce((n, _, i) => n + (saetze[i].some((x) => x.fertig) ? 0 : aufwaermen(i).filter((_w, k) => warm.indexOf(i + "-" + k) < 0).length), 0)
+  // Auf- und Abbauen: noch nicht begonnene Übungen ganz, angefangene nur noch das Abbauen (die Hälfte)
+  const umbauOffen = plaetze.reduce((n, p, i) => {
+    if (!saetze[i].some((x) => !x.fertig)) return n
+    const geraet = lastGeraet(p.uebung, ort)
+    const stange = stangeVon(geraet, ort.gewichte)
+    const schwer = Math.max(0, ...saetze[i].map((x) => x.last ?? 0))
+    const sch = stange && schwer ? scheibenProSeite(schwer, stange, ort.gewichte.scheiben, ort.gewichte.scheiben_beliebig) : null
+    const min = umbauMin(stange ? (sch ? sch.length : 0) : null)
+    return n + (saetze[i].some((x) => x.fertig) ? min / 2 : min)
+  }, 0)
+  const extra = warmOffen * 1.5 + umbauOffen + (reha && beginn === null ? 7 : 0)
+  const prog = beginn !== null ? (() => { const p = prognose(beginn, jetzt, plaetze, saetze, faktor); return { ...p, gesamt: p.gesamt + warmOffen * 1.5 + umbauOffen } })() : { vergangen: 0, offen: 0, gesamt: schaetzung(plaetze, saetze, extra) * gelernt }
+  const zuLang = prog.gesamt > budget + 1
+  // Zu lang: zuerst die Pausen der Ergänzungsübungen kürzen (einmal je Einheit), die Hauptübungen behalten ihre Pause
+  useEffect(() => {
+    if (beginn === null || !zuLang || angepasst.indexOf("pausen") >= 0) return
+    const { plaetze: neu, gekuerzt } = pausenKuerzen(plaetze)
+    setAngepasst([...angepasst, "pausen"])
+    if (!gekuerzt.length) return
+    setPlaetze(neu)
+    setToast("Damit du in " + budget + " Minuten fertig wirst: kürzere Pausen bei " + gekuerzt.join(", ") + ".")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [beginn, zuLang])
+  const vorschlag = weglassenVorschlag(plaetze, saetze)
+  const weglassen = () => {
+    setSaetze(saetze.map((ss, i) => (vorschlag.ganz.indexOf(i) >= 0 ? ss.filter((s) => s.fertig) : vorschlag.einSatz.indexOf(i) >= 0 ? (() => { const k = ss.map((s) => s.fertig).lastIndexOf(false); return ss.filter((_, x) => x !== k) })() : ss)))
+    setAngepasst([...angepasst, "weglassen"])
   }
+  const starten = () => {
+    const t = Date.now()
+    setGeschaetzt(schaetzung(plaetze, saetze, extra))
+    setBeginn(t)
+    setJetzt(t)
+  }
+  const uhr = (min: number) => Math.floor(min) + ":" + String(Math.floor((min * 60) % 60)).padStart(2, "0")
+
   const warmHaken = (i: number, k: number, anzahl: number) => {
     if (gesperrt) return erstStarten()
     const key = i + "-" + k
@@ -574,7 +589,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         </div>
       ) : null}
       {reha && schmerzVor !== null && schmerzVor >= 7 ? <p className="hinweistext warnung">Heute sind die Schmerzen stark. Mach nur die Beweglichkeit und kurzes Gehen, oder leg einen Ruhetag ein. Bleibt es mehrere Tage so, bitte ärztlich abklären.</p> : null}
-      {einheit.art !== "ausdauer" && einheit.art !== "mobilitaet" ? <p className="hinweistext">{reha ? "Aufwärmen (5 bis 10 min): in der Wohnung gehen oder locker Rad fahren, bis du dich warm fühlst." : "Aufwärmen (etwa 5 min): locker bewegen. Die Aufwärmsätze mit Gewicht stehen bei den Hauptübungen."}</p> : null}
+      {/* Aufwärmen: die Aufwärmsätze stehen bei den Übungen; nur in der Reha zusätzlich ein allgemeines Aufwärmen */}
+      {reha && einheit.art !== "ausdauer" && einheit.art !== "mobilitaet" ? <p className="hinweistext">Aufwärmen (5 bis 10 min): in der Wohnung gehen oder locker Rad fahren, bis du dich warm fühlst.</p> : null}
 
       {plaetze.map((p, i) => {
         const u = p.uebung

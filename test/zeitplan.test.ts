@@ -45,3 +45,19 @@ describe("Trainingszeit", () => {
     expect(hauptPausenZuKurz(p, [[{ fertig: true, um: 0 }, { fertig: true, um: 4 * min }, { fertig: true, um: 8 * min }]])).toBe(false)
   })
 })
+
+describe("Umbauzeit", () => {
+  test("160 kg Kreuzheben mit 20er-Scheiben: 4 Scheiben je Seite auf und ab", async () => {
+    const { umbauMin } = await import("../src/logik/zeitplan")
+    expect(umbauMin(4)).toBeCloseTo(0.5 + (4 * 2 * 2 * 8) / 60, 5)
+    expect(umbauMin(0)).toBe(0.5)
+    expect(umbauMin(null)).toBe(0.3)
+  })
+  test("Wechsel zwischen Übungen zählen nicht zum gemessenen Tempo", () => {
+    const p = [platz("Kreuzheben", "haupt", 180, 2), platz("Rudern", "neben", 120, 2)]
+    // Kreuzheben 2 Sätze im Plan-Abstand, dann 6 min Umbau, Rudern 2 Sätze im Plan-Abstand
+    const s = [[{ fertig: true, um: 0 }, { fertig: true, um: (220 / 60) * min }], [{ fertig: true, um: 10 * min }, { fertig: true, um: 10 * min + (160 / 60) * min }]]
+    // nur zwei Messungen: noch der gelernte Faktor
+    expect(heuteFaktor(p, s, 1.1)).toBe(1.1)
+  })
+})

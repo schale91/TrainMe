@@ -18,6 +18,18 @@ interface MitZeit {
   um?: number
 }
 
+/** Sekunden je Scheibe auflegen oder abnehmen (greifen, aufschieben, Verschluss) */
+export const SCHEIBE_S = 8
+/**
+ * Auf- und Abbauen einer Übung in Minuten: an der Stange (Langhantel, SZ, Trap Bar) eine halbe Minute für Stange,
+ * Verschlüsse und Platz und je Scheibe zweimal (auf und ab) auf beiden Seiten; sonst kurzes Umstellen (Hanteln
+ * holen, Kabel umhängen). scheibenJeSeite: Scheiben für den schwersten Satz, null ohne Stange.
+ */
+export function umbauMin(scheibenJeSeite: number | null): number {
+  if (scheibenJeSeite === null) return 0.3
+  return 0.5 + (scheibenJeSeite * 2 * 2 * SCHEIBE_S) / 60
+}
+
 /** Geplante Dauer eines Satzes samt Pause in Minuten (etwa 40 Sekunden Arbeit) */
 export const satzMin = (p: Pick<Platz, "vorgabe">) => (40 + p.vorgabe.pause_s) / 60
 
@@ -27,9 +39,12 @@ export function zeitBudget(profil: Pick<Profil, "woche">, datum: string, sonst: 
   return tag && tag.art === "training" && tag.minuten && tag.minuten > 0 ? tag.minuten : sonst
 }
 
-/** Geschätzte Dauer der ganzen Einheit nach Plan in Minuten (wie die Anzeige in der Wochenübersicht) */
-export function schaetzung(plaetze: Pick<Platz, "vorgabe">[], saetze: unknown[][]): number {
-  return Math.round(8 + plaetze.reduce((s, p, i) => s + (saetze[i]?.length ?? p.vorgabe.saetze) * satzMin(p), 0))
+/**
+ * Geschätzte Dauer der ganzen Einheit nach Plan in Minuten: Arbeitssätze mit Pause, Aufräumen und extra (Minuten für
+ * Aufwärmsätze, in der Reha ein allgemeines Aufwärmen). Ohne extra wie die Anzeige in der Wochenübersicht (8 min).
+ */
+export function schaetzung(plaetze: Pick<Platz, "vorgabe">[], saetze: unknown[][], extra?: number): number {
+  return Math.round((extra === undefined ? 8 : AUFRAEUMEN_MIN + extra) + plaetze.reduce((s, p, i) => s + (saetze[i]?.length ?? p.vorgabe.saetze) * satzMin(p), 0))
 }
 
 const median = (x: number[]) => {
@@ -49,19 +64,23 @@ export function lernFaktor(daten: Pick<Daten, "erledigt">): number {
 }
 
 /**
- * Heute gemessen: Zeit zwischen zwei abgehakten Sätzen im Verhältnis zur geplanten Dauer (ab drei Messungen,
- * Abstände über zehn Minuten zählen nicht, etwa nach einem Gespräch). Ohne genug Messungen der gelernte Faktor.
+ * Heute gemessen: Zeit zwischen zwei Sätzen derselben Übung im Verhältnis zur geplanten Dauer (ab drei Messungen;
+ * Wechsel zwischen Übungen zählen nicht, die deckt die Umbauzeit ab; Abstände über zehn Minuten zählen nicht). Im
+ * Supersatz ist eine Runde aller Übungen der Gruppe geplant. Ohne genug Messungen der gelernte Faktor.
  */
-export function heuteFaktor(plaetze: Pick<Platz, "vorgabe">[], saetze: MitZeit[][], gelernt = 1): number {
-  const ticks = saetze.flatMap((l, i) => l.filter((s) => s.fertig && s.um !== undefined).map((s) => ({ um: s.um as number, plan: satzMin(plaetze[i]) }))).sort((a, b) => a.um - b.um)
+export function heuteFaktor(plaetze: (Pick<Platz, "vorgabe"> & { gruppe?: string })[], saetze: MitZeit[][], gelernt = 1): number {
   let ist = 0, plan = 0, n = 0
-  for (let k = 1; k < ticks.length; k++) {
-    const d = (ticks[k].um - ticks[k - 1].um) / 60000
-    if (d <= 0 || d > 10) continue
-    ist += d
-    plan += ticks[k].plan
-    n++
-  }
+  plaetze.forEach((p, i) => {
+    const runde = p.gruppe ? plaetze.filter((x) => x.gruppe === p.gruppe).reduce((s, x) => s + satzMin(x), 0) : satzMin(p)
+    const um = saetze[i].filter((s) => s.fertig && s.um !== undefined).map((s) => s.um as number).sort((a, b) => a - b)
+    for (let k = 1; k < um.length; k++) {
+      const d = (um[k] - um[k - 1]) / 60000
+      if (d <= 0 || d > 10) continue
+      ist += d
+      plan += runde
+      n++
+    }
+  })
   return n >= 3 && plan > 0 ? Math.min(1.8, Math.max(0.5, ist / plan)) : gelernt
 }
 
