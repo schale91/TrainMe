@@ -24,6 +24,10 @@ describe("Bandhilfe", () => {
     expect(hilfeVorschlag("grün", { wdh: 7, rir: 1 }, 6, 8, 1)).toBeNull()
     expect(hilfeVorschlag("rot", { wdh: 3, rir: 0 }, 6, 8, 1)).toEqual({ farbe: "schwarz", richtung: "mehr" })
     expect(hilfeVorschlag("gelb", { wdh: 12, rir: 3 }, 6, 8, 1)).toBeNull()
+    // Orange ist das stärkste Band, Blau das nächstschwächere
+    expect(hilfeVorschlag("orange", { wdh: 10, rir: 1 }, 6, 8, 1)).toEqual({ farbe: "blau", richtung: "weniger" })
+    expect(hilfeVorschlag("blau", { wdh: 3, rir: 0 }, 6, 8, 1)).toEqual({ farbe: "orange", richtung: "mehr" })
+    expect(hilfeVorschlag("orange", { wdh: 3, rir: 0 }, 6, 8, 1)).toBeNull()
   })
 
   test("Sätze mit Band zählen nicht als Wiederholungsrekord", () => {

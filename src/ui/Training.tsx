@@ -100,6 +100,7 @@ const BANDFARBEN = [
   { id: "lila", name: "Lila", farbe: "#8e5bd6" },
   { id: "grün", name: "Grün", farbe: "#3fa65a" },
   { id: "blau", name: "Blau", farbe: "#3b7be0" },
+  { id: "orange", name: "Orange", farbe: "#f08a24" },
 ]
 
 export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void }) {

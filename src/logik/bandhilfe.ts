@@ -6,10 +6,10 @@
 import type { Daten, Satz, Uebung } from "./typen"
 
 /** Farben von leicht (wenig Hilfe) bis schwer (viel Hilfe), wie in der Bandwahl des Trainings */
-export const HILFE_FARBEN = ["gelb", "rot", "schwarz", "lila", "grün", "blau"] as const
+export const HILFE_FARBEN = ["gelb", "rot", "schwarz", "lila", "grün", "blau", "orange"] as const
 
 /** Grobe Startwerte in kg, die ein Band im gedehnten Zustand etwa abnimmt (je nach Hersteller sehr verschieden) */
-export const HILFE_KG_START: Record<string, number> = { gelb: 5, rot: 11, schwarz: 18, lila: 25, "grün": 35, blau: 45 }
+export const HILFE_KG_START: Record<string, number> = { gelb: 5, rot: 11, schwarz: 18, lila: 25, "grün": 35, blau: 45, orange: 55 }
 
 /** Körpergewichtsübungen, bei denen ein Band als Unterstützung üblich ist */
 const MIT_BANDHILFE = new Set([
