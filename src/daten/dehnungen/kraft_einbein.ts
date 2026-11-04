@@ -115,6 +115,8 @@ const stepUp = (last: Last, hilfsmittel: Hilfsmittel[], frei?: Winkel, text = "N
 
 // ---------------------------------------------------------------- Auf einem Bein (links)
 const einbeinFuss = (z = FERSE_Z): Ziele => fuss(1, 0.08, z, 8)
+/** Step-down von einer 20-cm-Stufe (Text: 15 bis 30 cm); die Box reicht nur bis knapp vor die Fußspitze */
+const STEP_DOWN_H = 0.2
 /** Pistol: tief, Ferse am Boden, freies Bein gestreckt vorn knapp über dem Boden */
 const PISTOL_OBEN: Haltung = H({ ...B("huefte", [0, 4, 0, 0]), huefte_r: [30, 4, 0], knie_r: [6], ...vorWelt(0) }, [0, 0, 0], { pos: [0.03, 0.95, 0.02], boden: false, ziele: einbeinFuss() })
 const pistolUnten = (w: Winkel = {}): Haltung =>
@@ -196,14 +198,16 @@ export const KRAFT_EINBEIN: Record<string, Dehnung> = {
   step_up_kniehub: stepUp("huefte", [], { huefte_r: [92, 4, 0], knie_r: [90], fuss_r: [10, 0] }, "Hoch, freies Knie auf Hüfthöhe, kurz halten"),
   step_down: wdh(
     "seite",
-    H({ huefte_l: [2, 4, 0, 0], knie_l: [4], fuss_l: [0, 0], huefte_r: [24, 4, 0], knie_r: [10], fuss_r: [-20, 0], ...vorWelt(0) }, [0, 0, 0], { pos: [0.04, 0.935 + 0.25, -0.01], boden: false, ziele: fuss(1, SPUR, FERSE_Z, 5, 0, 0.25) }),
-    H({ ...beinStart(0.93, -0.12, 14, 0.076 + 0.25, FERSE_Z + KNOECHEL_Z, 5, "l"), huefte_r: [36, 4, 0], knie_r: [4], fuss_r: [0, 0], ...vorWelt(14) }, [14, 0, 0], {
-      pos: [0.04, 0.93, -0.12],
+    H({ huefte_l: [2, 4, 0, 0], knie_l: [4], fuss_l: [0, 0], huefte_r: [24, 4, 0], knie_r: [10], fuss_r: [-20, 0], ...vorWelt(0) }, [0, 0, 0], { pos: [0.04, 0.935 + STEP_DOWN_H, -0.01], boden: false, ziele: fuss(1, SPUR, FERSE_Z, 5, 0, STEP_DOWN_H) }),
+    // die freie Ferse tippt knapp vor der Box auf den Boden: Standbein gut gebeugt, Becken sinkt mit
+    H({ ...beinStart(0.85, -0.1, 14, 0.076 + STEP_DOWN_H, FERSE_Z + KNOECHEL_Z, 5, "l"), huefte_r: [30, 4, 0], knie_r: [4], fuss_r: [0, 0], ...vorWelt(14) }, [14, 0, 0], {
+      pos: [0.04, 0.85, -0.1],
       boden: false,
-      ziele: { ...fuss(1, SPUR, FERSE_Z, 5, 0, 0.25), ferse_r: { pos: [-SPUR, 0.03, 0.36] } },
+      beckenFrei: true,
+      ziele: { ...fuss(1, SPUR, FERSE_Z, 5, 0, STEP_DOWN_H), ferse_r: { pos: [-SPUR, 0.03, 0.26] } },
     }),
     3.0,
-    { aus: 1.6, seiten: true, texte: ["Standbein in 3 s beugen, freie Ferse tippt vorn auf den Boden", "Aus dem Standbein hoch"], hilfsmittel: [{ art: "box", unter: "fuss_l", hoehe: 0.25 }] },
+    { aus: 1.6, seiten: true, texte: ["Standbein in 3 s beugen, freie Ferse tippt vorn auf den Boden", "Aus dem Standbein hoch"], hilfsmittel: [{ art: "box", unter: "fuss_l", hoehe: STEP_DOWN_H, versatz: [0, -0.1] }] },
   ),
   // ------------------------------------------------------------ Einbeinig tief
   pistol: wdh("seite", PISTOL_OBEN, pistolUnten(), 2.4, { aus: 1.8, seiten: true, texte: ["Auf einem Bein ganz tief, Ferse bleibt am Boden", "Ohne Schwung hoch"] }),
@@ -213,7 +217,7 @@ export const KRAFT_EINBEIN: Record<string, Dehnung> = {
     texte: ["Tief, das Gewicht weiter nach vorn schieben", "Gleichmäßig hoch"],
     hilfsmittel: [{ art: "hantel", an: "haende" }],
   }),
-  einbein_box_kniebeuge: wdh("seite", PISTOL_OBEN, H({ ...beinStart(0.55, -0.24, 34, 0.076, FERSE_Z + KNOECHEL_Z, 8, "l"), huefte_r: [100, 4, 0], knie_r: [4], ...vorWelt(34) }, [34, 0, 0], { pos: [0.03, 0.56, -0.24], boden: false, ziele: einbeinFuss() }), 2.2, {
+  einbein_box_kniebeuge: wdh("seite", PISTOL_OBEN, H({ ...beinStart(0.55, -0.24, 34, 0.076, FERSE_Z + KNOECHEL_Z, 8, "l"), huefte_r: [100, 4, 0], knie_r: [4], ...vorWelt(34) }, [34, 0, 0], { pos: [0.03, 0.54, -0.24], boden: false, ziele: einbeinFuss() }), 2.2, {
     aus: 1.6,
     seiten: true,
     halten: 0.5,
@@ -223,7 +227,7 @@ export const KRAFT_EINBEIN: Record<string, Dehnung> = {
   skater_squat: wdh(
     "seite",
     H({ ...B("huefte", [0, 4, 0]), huefte_r: [-10, 4, 0], knie_r: [80], ...vorWelt(0) }, [0, 0, 0], { pos: [0.03, 0.935, 0], boden: false, ziele: einbeinFuss() }),
-    H({ ...beinStart(0.42, -0.2, 40, 0.076, FERSE_Z + KNOECHEL_Z, 8, "l"), huefte_r: [20, 4, 0], knie_r: [110], fuss_r: [-40, 0], ...vorWelt(40) }, [40, 0, 0], { pos: [0.03, 0.43, -0.2], boden: false, ziele: { ...einbeinFuss(), knie_r: { pos: [-0.08, 0.06, -0.12] } } }),
+    H({ ...beinStart(0.46, -0.2, 40, 0.076, FERSE_Z + KNOECHEL_Z, 8, "l"), huefte_r: [20, 4, 0], knie_r: [100], fuss_r: [10, 0], ...vorWelt(40) }, [40, 0, 0], { pos: [0.03, 0.46, -0.2], boden: false, beckenFrei: true, ziele: { ...einbeinFuss(), knie_r: { pos: [-0.08, 0.12, -0.12] }, fuss_r: { pos: [-0.1, 0.24, -0.6] } } }),
     2.2,
     { aus: 1.6, seiten: true, texte: ["Hinteres Knie tippt die Matte", "Aus dem Standbein hoch"], hilfsmittel: [{ art: "kissen", unter: "knie_r" }] },
   ),

@@ -236,6 +236,8 @@ const standBein = (rechts: Winkel, kipp = 6): Haltung => H({ huefte_l: [kipp - 2
  * Linie und kippt um die Knie nach vorn (vor = Neigung aus der Senkrechten), Hände vor der Brust.
  */
 const KNIE_KISSEN_Y = 0.091 + 0.05
+/** Fersen unter einer Sofakante, einem Polster oder von einem Partner gehalten */
+const FERSEN_FEST: Hilfsmittel = { art: "fixierung", an: "ferse_l", ueber: 0.07 }
 const nordicLage = (vor: number): Haltung => {
   const r = (vor * Math.PI) / 180
   const ziele: NonNullable<Haltung["ziele"]> = {}
@@ -410,12 +412,12 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   nordic: wdh("seite", nordicLage(0), nordicLage(70), 3.0, {
     aus: 1.4,
     texte: ["Körper als Linie so langsam wie möglich nach vorn sinken lassen, mit den Beinbeugern bremsen", "Mit den Händen abfangen und zurückdrücken"],
-    hilfsmittel: [{ art: "kissen", unter: "knie_l" }, { art: "kissen", unter: "knie_r" }],
+    hilfsmittel: [{ art: "kissen", unter: "knie_l" }, { art: "kissen", unter: "knie_r" }, FERSEN_FEST],
   }),
   nordic_band: wdh("seite", nordicLage(0), nordicLage(62), 3.0, {
     aus: 1.6,
     texte: ["Langsam nach vorn sinken, das Band unter den Achseln hilft beim Bremsen", "Mit den Beinbeugern und dem Band zurück in den Kniestand"],
-    hilfsmittel: [{ art: "kissen", unter: "knie_l" }, { art: "kissen", unter: "knie_r" }, { art: "bandanker", von: "bws", anker: [0, 1.9, -0.6] }],
+    hilfsmittel: [{ art: "kissen", unter: "knie_l" }, { art: "kissen", unter: "knie_r" }, FERSEN_FEST, { art: "bandanker", von: "bws", anker: [0, 1.9, -0.6] }],
   }),
   beinbeuger_rutschen: wdh("seite", brueckeOben(), brueckeFersen(0.2, [0.04, 0.925], { ...B("knie", [8]), ...B("fuss", [-10, 0]) }), 2.0, {
     aus: 1.4,

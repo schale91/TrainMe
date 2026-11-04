@@ -425,6 +425,12 @@ function festeHilfsmittel(k: Koerper, liste: Hilfsmittel[]): THREE.Object3D[] {
       const p = k.punkt(h.unter)
       if (h.versatz) p.add(new THREE.Vector3(h.versatz[0], 0, h.versatz[1]))
       out.push(kiste(new THREE.Vector3(p.x, 0.03, p.z), [0.3, 0.05, 0.25], FARBE.polster))
+    } else if (h.art === "fixierung") {
+      // Querholz mittig über beiden Fersen, darunter zwei Stützen bis zum Boden
+      const p = k.punkt(h.an)
+      const y = p.y + (h.ueber ?? 0.075)
+      out.push(zylinder(new THREE.Vector3(-0.28, y, p.z), new THREE.Vector3(0.28, y, p.z), 0.045, FARBE.polster))
+      for (const sx of [-0.3, 0.3]) out.push(kiste(new THREE.Vector3(sx, y / 2, p.z), [0.04, y, 0.06], FARBE.stahl))
     } else if (h.art === "tuer") {
       const p = k.punkt(h.an)
       for (const dz of [-0.04, 0.04]) out.push(kiste(new THREE.Vector3(p.x + (p.x >= 0 ? 0.04 : -0.04), 1.05, p.z + dz), [0.06, 2.1, 0.06], FARBE.wand))
