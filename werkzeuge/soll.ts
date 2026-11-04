@@ -2923,7 +2923,58 @@ const AB_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   reha_abspreizen_band: abspreizenStand,
 }
 
+// ---------------------------------------------------------------- Hüfte: Wade und Schienbein
+/** Fußneigung: Ferse über (+) bzw. unter (-) dem Ballen in Grad */
+const fersenWinkel = (x: Punkte, s: "l" | "r") => { const f = p(x, `ferse_${s}`), b = p(x, `fuss_${s}`); return grad(Math.atan2(f[1] - b[1], Math.hypot(f[0] - b[0], f[2] - b[2]))) }
+const wadeStufeSoll = (k: { einbein?: boolean; untenEinbein?: boolean; knie?: [number, number] }) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const seiten = (x: Punkte, ein?: boolean): ("l" | "r")[] => (ein ? ["l"] : ["l", "r"])
+  const knie = k.knie ?? [165, 181]
+  return [
+    ...ruhig(m),
+    ...seiten(u, k.untenEinbein).map((s) => pr(`Unten: Ferse ${s} unter der Kante (°)`, fersenWinkel(u, s), -35, -15, "Senke die Ferse so tief wie möglich ab")),
+    ...seiten(u, k.untenEinbein).map((s) => pr(`Unten: Ferse ${s} frei unter der Kantenhöhe (m)`, 0.2 - p(u, `ferse_${s}`)[1], 0.01, 0.1, "die Ferse ragt frei über die Kante")),
+    ...seiten(o, k.einbein).map((s) => pr(`Oben: hoch auf den Zehenspitzen ${s} (°)`, fersenWinkel(o, s), 30, 50, "Drück dich so hoch wie möglich auf die Zehenspitzen")),
+    pr("Ballen bleibt auf der Kante (m)", bleibt(m, ["fuss_l"]) , 0, 0.07, "Fußballen auf der Stufe"),
+    pr("Knie gestreckt (°)", Math.min(kniewinkel(u, "l"), kniewinkel(o, "l")), knie[0], knie[1], "Knie gestreckt, aber nicht durchgedrückt"),
+    ...(k.einbein ? [pr("Anderes Bein angehoben (m)", p(o, "g:fuss_r")[1] - p(o, "g:fuss_l")[1], 0.15, 0.6, "Das andere Bein hebst du an")] : []),
+    aufrechtImmer(m, 8),
+  ]
+}
+const WADE_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  wadenheben: (m) => [...wadeStufeSoll({ einbein: true, untenEinbein: true })(m), pr("Hantel in der Hand der Arbeitsseite (m)", p(m.ziel, "g:hand_l")[1] - p(m.ziel, "g:huefte_l")[1], -0.35, 0, "Halte die Kurzhantel in der Hand der Arbeitsseite"), pr("Andere Hand an der Wand (m)", p(m.ziel, "hand_r")[2] - sm(m.ziel)[2], 0.3, 0.7, "mit der anderen Hand hältst du dich an der Wand fest")],
+  wadenheben_multipresse: (m) => [...wadeStufeSoll({})(m), ...m.alle.flatMap((h) => { const st = amRumpf(h, "stange"); return [pr("Stange hinter der Schulter (m)", -st[2], 0.03, 0.1, "Leg die Stange auf den oberen Rücken"), pr("Stange über der Schulter (m)", st[1], 0, 0.08, "wie bei der Kniebeuge auf den oberen Rücken")] })],
+  wadenheben_stepper: (m) => [...wadeStufeSoll({})(m), pr("Füße hüftbreit (m)", Math.abs(p(m.start, "fuss_l")[0] - p(m.start, "fuss_r")[0]), 0.18, 0.32, "hüftbreit")],
+  wadenheben_einbeinig_kg: wadeStufeSoll({ einbein: true, untenEinbein: true }),
+  wadenheben_exzentrisch: (m) => [...wadeStufeSoll({ untenEinbein: true })(m), pr("Unten: Gewicht auf einem Bein (m)", p(m.start, "g:fuss_r")[1] - p(m.start, "g:fuss_l")[1], 0.15, 0.6, "Nimm das Gewicht auf ein Bein und heb das andere leicht an")],
+  wadenheben_sitzend_kh: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Sitzt vorn auf der Bank (m)", hm2(u)[1], 0.55, 0.62, "Setz dich vorn auf eine Bank"), ...SEITEN.map((s) => pr(`Unten: Ferse ${s} tiefer als der Ballen (°)`, fersenWinkel(u, s), -35, -12, "Senke die Fersen bis in die volle Dehnung")), ...SEITEN.map((s) => pr(`Oben: auf den Fußballen ${s} (°)`, fersenWinkel(o, s), 30, 50, "Drück dich so hoch wie möglich auf die Fußballen")), pr("Ballen bleiben auf der Scheibe (m)", bleibt(m, ["fuss_l", "fuss_r"]), 0, 0.08, "die Fußballen stehen auf einer Hantelscheibe"), pr("Hanteln knapp über den Knien (m)", Math.max(abstand(p(o, "hand_l"), p(o, "g:knie_l")), abstand(p(o, "hand_r"), p(o, "g:knie_r"))), 0.03, 0.2, "Leg die Kurzhanteln senkrecht auf die Oberschenkel knapp über den Knien")]
+  },
+  wadenheben_isometrisch_gebeugt: (m) => {
+    const o = m.ziel
+    return [...ruhig(m), pr("Knie 30 bis 45 Grad gebeugt (°)", 180 - kniewinkel(o, "l"), 28, 47, "Beuge das Knie etwa 30 bis 45 Grad"), pr("Ferse auf halber Höhe (°)", fersenWinkel(o, "l"), 12, 30, "halte die Ferse auf etwa halber Höhe"), pr("Auf einem Bein (m)", p(o, "g:fuss_r")[1] - p(o, "g:fuss_l")[1], 0.15, 0.6, "Stell dich auf ein Bein"), pr("Hand an der Wand (m)", p(o, "hand_l")[2] - sm(o)[2], 0.25, 0.7, "mit den Händen an der Wand")]
+  },
+  tibialis_heben: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Füße ein bis zwei Fußlängen vor der Wand (m)", p(u, "ferse_l")[2] - p(u, "gesaess")[2], 0.25, 0.55, "die Füße stehen etwa ein bis zwei Fußlängen vor der Wand"), ...SEITEN.map((s) => pr(`Bein ${s} gestreckt (°)`, kniewinkel(o, s), 165, 181, "Die Beine sind gestreckt")), pr("Fersen bleiben am Boden (m)", bleibt(m, ["ferse_l", "ferse_r"]) + Math.max(p(o, "ferse_l")[1], p(o, "ferse_r")[1]), 0, 0.03, "die Fersen stehen fest am Boden"), pr("Vorfuß nach oben (m)", p(o, "fuss_l")[1] - p(u, "fuss_l")[1], 0.04, 0.12, "Zieh die Zehen und den Vorfuß so weit wie möglich nach oben")]
+  },
+  tibialis_heben_gewicht: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Füße berühren den Boden nicht (m)", Math.min(...m.alle.flatMap((x) => [p(x, "ferse_l")[1], p(x, "fuss_l")[1], p(x, "ferse_r")[1], p(x, "fuss_r")[1]])), 0.08, 0.4, "so dass die Unterschenkel frei hängen und die Füße den Boden nicht berühren"), pr("Unten: Zehen zeigen nach unten (°)", fersenWinkel(u, "l"), 15, 60, "Lass den Fuß nach unten sinken"), pr("Oben: Vorfuß zum Schienbein (°)", fersenWinkel(o, "l"), -50, -10, "Zieh den Vorfuß so weit wie möglich nach oben"), pr("Sitzt hoch (m)", hm2(u)[1], 0.68, 0.8, "Setz dich hoch auf einen Kasten")]
+  },
+  reha_fersenheben_stuhl: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Hüftbreit (m)", Math.abs(p(u, "fuss_l")[0] - p(u, "fuss_r")[0]), 0.18, 0.32, "Stell dich hüftbreit hinter einen Stuhl"), pr("Hände auf der Lehne (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.03, "lege beide Hände auf die Lehne"), ...SEITEN.map((s) => pr(`Oben auf den Fußballen ${s} (°)`, fersenWinkel(o, s), 25, 50, "Drücke dich langsam auf die Fußballen hoch")), pr("Unten: Fersen am Boden (m)", Math.max(p(u, "ferse_l")[1], p(u, "ferse_r")[1]), 0, 0.02, "bis sie den Boden berühren"), pr("Ballen bleiben (m)", bleibt(m, ["fuss_l", "fuss_r"]), 0, 0.08, "Fußballen")]
+  },
+  reha_fersenheben_einbeinig: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Hände an der Lehne (m)", bleibt(m, ["hand_l", "hand_r"]), 0, 0.03, "halte dich mit beiden Händen an der Lehne fest"), pr("Fuß leicht angehoben (m)", p(u, "g:fuss_r")[1] - p(u, "g:fuss_l")[1], 0.1, 0.5, "Hebe einen Fuß leicht an"), pr("Oben auf dem Fußballen (°)", fersenWinkel(o, "l"), 25, 50, "Drücke dich auf dem Standbein langsam auf den Fußballen hoch"), pr("Unten: Ferse am Boden (m)", p(u, "ferse_l")[1], 0, 0.02, "Senke die Ferse langsam ab"), pr("Ballen bleibt (m)", bleibt(m, ["fuss_l"]), 0, 0.08, "Fußballen")]
+  },
+}
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  ...WADE_SOLL,
   ...AB_SOLL,
   ...BANK_SOLL,
   ...LS_SOLL,

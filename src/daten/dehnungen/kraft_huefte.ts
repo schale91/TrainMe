@@ -8,9 +8,10 @@
 
 import type { Dehnung, Haltung, Hilfsmittel, Winkel } from "../../logik/dehnbewegung"
 import { seitBoden } from "./seitstuetz"
+import { haendeSchultern } from "./ziele"
 import { ARME_VERSCHRAENKT, B, H, RUECKENLAGE_AUF, SEITLAGE, STAND, VIERFUESSLER, folge, halte, mit, wdh } from "./basis"
 import { FAUST, HAMMER, KH, OBERGRIFF, kabel } from "./kraftbasis"
-import { ARME_RUECKEN, ARME_SEITE, RACK, STANGE_RUECKEN, STUHL, WAND_HINTEN, ansicht, stand } from "./kraft_beine"
+import { ARME_RUECKEN, RACK, STANGE_RUECKEN, STUHL, WAND_HINTEN, ansicht, stand } from "./kraft_beine"
 
 /** Pull-Through und Swing unten: Hände eng zusammen zwischen den Beinen nach hinten, Unterarme an den Oberschenkeln */
 const ZWISCHEN_BEINEN: Winkel = { ...B("schulter", [12, -14, 0]), ...B("ellbogen", [4, HAMMER]), ...FAUST }
@@ -116,25 +117,79 @@ const KNIE_AUF: NonNullable<Haltung["ziele"]> = { ferse_r: { pos: [-0.627, 0.229
 const OBERER_FUSS_VORN: NonNullable<Haltung["ziele"]> = { ferse_r: { pos: [-0.5, 0.03, 0.3] } }
 
 // ---------------------------------------------------------------- Wade
-/** Fußballen auf der Kante der Box (20 cm), Ferse frei: tief = Ferse unter der Kante, hoch = auf den Zehen */
-const STUFE: Hilfsmittel = { art: "box", unter: "fuss_l", hoehe: 0.2, versatz: [-0.1, -0.12] }
-const wadeTief = (w: Winkel = {}): Haltung => H({ ...B("huefte", [0, 8, 0]), ...B("knie", [2]), ...B("fuss", [20, 0]), ...B("zehen", [-10]), ...w }, [0, 0, 0], { pos: [0, 1.15, 0], boden: false })
-const wadeHoch = (w: Winkel = {}): Haltung => H({ ...B("huefte", [0, 8, 0]), ...B("knie", [2]), ...B("fuss", [-40, 0]), ...B("zehen", [-30]), ...w }, [0, 0, 0], { pos: [0, 1.29, 0], boden: false })
-const wade = (w: Winkel, hilfsmittel: Hilfsmittel[], einbein = false, extra: Partial<Dehnung> = {}): Dehnung => {
-  const frei: Winkel = einbein ? { huefte_r: [10, 8, 0], knie_r: [70], fuss_r: [-20, 0] } : {}
-  return wdh(ansicht(hilfsmittel), wadeTief({ ...w, ...frei }), wadeHoch({ ...w, ...frei }), 1.0, {
+/** Fußballen auf der hinteren Kante der Box (20 cm), Ferse frei dahinter: tief = Ferse unter der Kante, hoch = auf den Zehen */
+const KANTE_Y = 0.2
+const WADE_X = 0.13
+const WADE_Z = 0.06
+const STUFE: Hilfsmittel = { art: "box", unter: "fuss_l", hoehe: KANTE_Y, versatz: [-WADE_X, 0.2] }
+/** Ballen- und Fersenmarke auf der Kante: Ferse 25 Grad unter bzw. 40 Grad über dem Ballen (Abstand der Marken 12 cm) */
+const fussAufKante = (s: "l" | "r", hoch: boolean, y = KANTE_Y, x = WADE_X, z = WADE_Z): NonNullable<Haltung["ziele"]> => {
+  const sx = s === "l" ? x : -x
+  // der Fuß ist starr: auf den Zehenspitzen liegt die Marke so hoch, dass die Zehenspitzen gerade aufliegen
+  const by = y + 0.017 + (hoch ? 0.065 : 0)
+  const w = ((hoch ? 38 : -25) * Math.PI) / 180
+  return { [`fuss_${s}`]: { pos: [sx, by, z] }, [`ferse_${s}`]: { pos: [sx, by + 0.12 * Math.sin(w), z - 0.12 * Math.cos(w)] } }
+}
+/** freies Bein (rechts) angehoben, Fuß hinter dem Standbein */
+/** auf den Zehenspitzen liegen die Zehen flach auf (Zehengelenk gestreckt) */
+const ZEHEN_HOCH = 35
+const FREI_BEIN: Winkel = { huefte_r: [10, 4, 0], knie_r: [70], fuss_r: [-20, 0] }
+const wadeStufe = (hoch: boolean, w: Winkel, einbein: boolean, ziele: NonNullable<Haltung["ziele"]> = {}): Haltung =>
+  H({ ...B("huefte", [0, 2, 0]), ...B("knie", [2]), ...B("fuss", [hoch ? -40 : 20, 0]), ...B("zehen", [hoch ? ZEHEN_HOCH : 0]), ...w, ...(einbein ? FREI_BEIN : {}) }, [0, 0, 0], {
+    pos: [0, hoch ? 1.24 : 1.11, 0],
+    boden: false,
+    beckenFrei: true,
+    ziele: { ...fussAufKante("l", hoch), ...(einbein ? {} : fussAufKante("r", hoch)), ...ziele },
+  })
+/** Halt mit der rechten Hand an der Wand vor dem Körper */
+const HALT_WAND_R: Winkel = { schulter_r: [70, 10, 0], ellbogen_r: [10, 90], hand_r: [-70, 0] }
+const WAND_R: Hilfsmittel = { art: "wand", an: "hand_r", richtung: "vorn" }
+/** Sitz vorn auf der Bank, Fußballen auf einer Scheibe (5 cm), Hanteln senkrecht auf den Oberschenkeln knapp über den Knien */
+const wadeSitz = (hoch: boolean): Haltung => {
+  const ky = hoch ? 0.6 : 0.56
+  return H({ ...B("huefte", [86, 6, 0]), ...B("knie", [80]), ...B("fuss", [hoch ? -30 : 20, 0]), ...B("zehen", [hoch ? ZEHEN_HOCH : 0]), ...B("schulter", [40, 12, 0]), ...B("ellbogen", [40, HAMMER]), ...FAUST }, undefined, {
+    pos: [0, 0.578, 0],
+    boden: false,
+    ziele: {
+      ...fussAufKante("l", hoch, 0.05, WADE_X, 0.46),
+      ...fussAufKante("r", hoch, 0.05, WADE_X, 0.46),
+      hand_l: { pos: [0.12, ky + 0.14, 0.33] },
+      hand_r: { pos: [-0.12, ky + 0.14, 0.33] },
+    },
+  })
+}
+/** Tibialis an der Wand: Fersen fest am Boden, eineinhalb Fußlängen vor der Wand; oben zeigen die Zehen zum Schienbein */
+const TIB_UNTEN: NonNullable<Haltung["ziele"]> = { ferse_l: { pos: [0.13, 0.007, 0.4] }, ferse_r: { pos: [-0.13, 0.007, 0.4] }, fuss_l: { pos: [0.13, 0.025, 0.518] }, fuss_r: { pos: [-0.13, 0.025, 0.518] } }
+const TIB_OBEN: NonNullable<Haltung["ziele"]> = { ferse_l: { pos: [0.13, 0.007, 0.4] }, ferse_r: { pos: [-0.13, 0.007, 0.4] }, fuss_l: { pos: [0.13, 0.085, 0.5] }, fuss_r: { pos: [-0.13, 0.085, 0.5] } }
+/** Hände stützen neben dem Gesäß auf dem Kasten (60 cm) */
+const KASTEN_HAENDE: NonNullable<Haltung["ziele"]> = { hand_l: { pos: [0.24, 0.625, -0.02] }, hand_r: { pos: [-0.24, 0.625, -0.02] } }
+const wade = (w: Winkel, hilfsmittel: Hilfsmittel[], einbein = false, extra: Partial<Dehnung> = {}, untenEinbein = einbein, ziele: NonNullable<Haltung["ziele"]> = {}): Dehnung =>
+  wdh(ansicht(hilfsmittel), wadeStufe(false, w, untenEinbein, ziele), wadeStufe(true, w, einbein, ziele), 1.0, {
     aus: 2.0,
     halten: 1,
-    seiten: einbein,
+    seiten: untenEinbein,
     texte: ["Hoch auf die Zehenspitzen", "Ferse langsam unter die Kante"],
     hilfsmittel: [STUFE, ...hilfsmittel],
     ...extra,
   })
-}
 /** Wadenheben am Boden mit Halt an der Stuhllehne */
-const STUHL_VORN: Hilfsmittel = { art: "stuhl", unter: "haende", hoehe: 0.45, versatz: [0, 0.28] }
+// die Hände liegen oben auf der Lehne (Lehne 44 cm über der Sitzfläche, Stuhl steht vor dem Körper)
+const STUHL_VORN: Hilfsmittel = { art: "stuhl", unter: "haende", hoehe: 0.48, versatz: [0, 0.2] }
 /** Standbein (links) leicht gebeugt */
 const STANDBEIN_WEICH: Winkel = { huefte_l: [8, 4, 0], knie_l: [12], fuss_l: [6, 0] }
+/** Fersenheben hinter dem Stuhl: Ballen bleiben am Boden, Hände bleiben auf der Lehne */
+const fersenStuhl = (hoch: boolean, einbein: boolean): Haltung => {
+  const fuss = (s: "l" | "r"): NonNullable<Haltung["ziele"]> => {
+    const x = s === "l" ? 0.126 : -0.126
+    return hoch ? { [`fuss_${s}`]: { pos: [x, 0.088, 0.067] }, [`ferse_${s}`]: { pos: [x, 0.163, -0.03] } } : { [`fuss_${s}`]: { pos: [x, 0.017, 0.067] }, [`ferse_${s}`]: { pos: [x, 0.007, -0.053] } }
+  }
+  return H({ ...B("huefte", [0, 4, 0]), ...B("knie", [2]), ...B("fuss", [hoch ? -30 : 0, 0]), ...B("zehen", [hoch ? ZEHEN_HOCH : 0]), ...HALT_STUHL, ...(einbein ? { huefte_r: [10, 6, 0], knie_r: [70], fuss_r: [-20, 0] } : {}) }, [0, 0, 0], {
+    pos: [0, hoch ? 1.03 : 0.937, 0],
+    boden: false,
+    beckenFrei: true,
+    ziele: { ...fuss("l"), ...(einbein ? {} : fuss("r")), hand_l: { pos: [0.172, 0.97, 0.349] }, hand_r: { pos: [-0.172, 0.97, 0.349] } },
+  })
+}
 const HALT_STUHL: Winkel = { ...B("schulter", [34, 8, 0]), ...B("ellbogen", [12, 90]), ...B("hand", [40, 0]) }
 
 // ---------------------------------------------------------------- Stehend am Kabel oder Band (rechtes Bein arbeitet)
@@ -523,19 +578,18 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
 
 
   // ------------------------------------------------------------ Wade
-  wadenheben: wade({ schulter_l: [10, 10, 0], ellbogen_l: [10, 90], ...B("hand", [0, 0]), schulter_r: [2, 8, 0], ellbogen_r: [6, HAMMER], ...FAUST }, [{ art: "hantel", an: "hand_r" }], true),
-  wadenheben_multipresse: wade(ARME_RUECKEN, [...STANGE_RUECKEN, RACK]),
-  wadenheben_stepper: wade(ARME_SEITE, []),
-  wadenheben_einbeinig_kg: wade({ schulter_l: [10, 10, 0], ellbogen_l: [10, 90], schulter_r: [4, 10, 0], ellbogen_r: [10, 0] }, [], true),
-  wadenheben_exzentrisch: wade(ARME_SEITE, [], false, { ein: 1.0, aus: 4.0, texte: ["Mit beiden Beinen auf die Zehen", "Auf einem Bein langsam absenken (3 bis 5 s)"] }),
-  wadenheben_sitzend_kh: wdh(
-    "seite",
-    H({ ...B("huefte", [90, 6, 0]), ...B("knie", [90]), ...B("fuss", [20, 0]), ...B("zehen", [-10]), ...B("schulter", [58, 12, 0]), ...B("ellbogen", [6, HAMMER]), ...FAUST }, undefined, { pos: [0, 0.5, 0], boden: false }),
-    H({ ...B("huefte", [90, 6, 0]), ...B("knie", [90]), ...B("fuss", [-30, 0]), ...B("zehen", [-30]), ...B("schulter", [58, 12, 0]), ...B("ellbogen", [6, HAMMER]), ...FAUST }, undefined, { pos: [0, 0.56, 0], boden: false }),
-    1.0,
-    { aus: 2.0, halten: 1, texte: ["Fersen hoch, Hanteln liegen auf den Knien", "Fersen langsam senken"], hilfsmittel: [{ art: "bank", unter: "gesaess", hoehe: 0.45, quer: true }, ...KH] },
-  ),
-  wadenheben_isometrisch_gebeugt: halte("seite", mit(STAND, { g: { huefte_r: [10, 8, 0], knie_r: [70] } }), H({ huefte_l: [30, 8, 0], knie_l: [40], fuss_l: [-25, 0], zehen_l: [-30], huefte_r: [10, 8, 0], knie_r: [70], fuss_r: [-20, 0], schulter_l: [70, 10, 0], ellbogen_l: [10, 90] }, [4, 0, 0]), {
+  wadenheben: wade({ ...HALT_WAND_R, schulter_l: [2, 8, 0], ellbogen_l: [6, HAMMER], ...B("finger", [90, 0]) }, [{ art: "hantel", an: "hand_l" }, WAND_R], true),
+  wadenheben_multipresse: wade(ARME_RUECKEN, [...STANGE_RUECKEN, RACK], false, {}, false, haendeSchultern(0.26, 0.04, -0.06)),
+  wadenheben_stepper: wade({ ...HALT_WAND_R, schulter_l: [2, 8, 0], ellbogen_l: [6, HAMMER] }, [WAND_R]),
+  wadenheben_einbeinig_kg: wade({ ...HALT_WAND_R, schulter_l: [4, 10, 0], ellbogen_l: [10, 0] }, [WAND_R], true),
+  wadenheben_exzentrisch: wade({ ...HALT_WAND_R, schulter_l: [2, 8, 0], ellbogen_l: [6, HAMMER] }, [WAND_R], false, { ein: 1.0, aus: 4.0, texte: ["Mit beiden Beinen auf die Zehen", "Auf einem Bein langsam absenken (3 bis 5 s)"] }, true),
+  wadenheben_sitzend_kh: wdh("seite", wadeSitz(false), wadeSitz(true), 1.0, {
+    aus: 2.0,
+    halten: 1,
+    texte: ["Fersen hoch, Hanteln liegen auf den Knien", "Fersen langsam senken"],
+    hilfsmittel: [{ art: "bank", unter: "gesaess", hoehe: 0.45, quer: true }, { art: "box", unter: "fuss_l", hoehe: 0.05, versatz: [-WADE_X, 0.2] }, ...KH],
+  }),
+  wadenheben_isometrisch_gebeugt: halte("seite", mit(STAND, { g: { huefte_r: [10, 8, 0], knie_r: [70] } }), H({ huefte_l: [30, 4, 0], knie_l: [40], fuss_l: [-12, 0], zehen_l: [20], huefte_r: [10, 8, 0], knie_r: [70], fuss_r: [-20, 0], schulter_l: [70, 10, 0], ellbogen_l: [10, 90] }, [4, 0, 0], { pos: [0, 0.9, 0], boden: false, beckenFrei: true, ziele: { fuss_l: { pos: [0.126, 0.062, 0.067] }, ferse_l: { pos: [0.126, 0.112, -0.044] } } }), {
     ein: 1.5,
     aus: 2,
     seiten: true,
@@ -544,25 +598,25 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   }),
   tibialis_heben: wdh(
     "seite",
-    H({ ...B("huefte", [24, 8, 0]), ...B("knie", [4]), ...B("fuss", [-20, 0]), ...B("schulter", [4, 10, 0]) }, [-6, 0, 0]),
-    H({ ...B("huefte", [24, 8, 0]), ...B("knie", [4]), ...B("fuss", [14, 0]), ...B("schulter", [4, 10, 0]) }, [-6, 0, 0]),
+    H({ ...B("huefte", [24, 4, 0]), ...B("knie", [4]), ...B("fuss", [-20, 0]), ...B("schulter", [4, 10, 0]) }, [-6, 0, 0], { pos: [0, 0.81, 0.02], boden: false, beckenFrei: true, ziele: TIB_UNTEN }),
+    H({ ...B("huefte", [24, 4, 0]), ...B("knie", [4]), ...B("fuss", [14, 0]), ...B("schulter", [4, 10, 0]) }, [-6, 0, 0], { pos: [0, 0.81, 0.02], boden: false, beckenFrei: true, ziele: TIB_OBEN }),
     0.8,
     { aus: 1.4, texte: ["Fußspitzen zum Schienbein ziehen", "Langsam absenken"], hilfsmittel: [WAND_HINTEN] },
   ),
   tibialis_heben_gewicht: wdh(
     "seite",
-    H({ ...B("huefte", [90, 6, 0]), ...B("knie", [40]), ...B("fuss", [-40, 0]), ...B("schulter", [10, 30, 0]), ...B("ellbogen", [10, 0]) }, undefined, { pos: [0, 0.5, 0], boden: false }),
-    H({ ...B("huefte", [90, 6, 0]), ...B("knie", [40]), ...B("fuss", [20, 0]), ...B("schulter", [10, 30, 0]), ...B("ellbogen", [10, 0]) }, undefined, { pos: [0, 0.5, 0], boden: false }),
+    H({ ...B("huefte", [90, 4, 0]), ...B("knie", [90]), ...B("fuss", [-40, 0]), ...B("schulter", [10, 30, 0]), ...B("ellbogen", [10, 0]) }, undefined, { pos: [0, 0.725, 0], boden: false, ziele: KASTEN_HAENDE }),
+    H({ ...B("huefte", [90, 4, 0]), ...B("knie", [90]), ...B("fuss", [20, 0]), ...B("schulter", [10, 30, 0]), ...B("ellbogen", [10, 0]) }, undefined, { pos: [0, 0.725, 0], boden: false, ziele: KASTEN_HAENDE }),
     0.8,
-    { aus: 1.6, texte: ["Fußspitzen mit dem Gewicht anheben", "Langsam senken"], hilfsmittel: [{ art: "bank", unter: "gesaess", hoehe: 0.45, quer: true }, { art: "hantel", an: "fuesse" }] },
+    { aus: 1.6, texte: ["Fußspitzen mit dem Gewicht anheben", "Langsam senken"], hilfsmittel: [{ art: "box", unter: "gesaess", hoehe: 0.6, versatz: [0, -0.06] }, { art: "hantel", an: "fuesse" }] },
   ),
-  reha_fersenheben_stuhl: wdh("seite", mit(STAND, { g: HALT_STUHL }), H({ ...B("huefte", [0, 6, 0]), ...B("fuss", [-30, 0]), ...B("zehen", [-30]), ...HALT_STUHL }), 1.0, {
+  reha_fersenheben_stuhl: wdh("seite", fersenStuhl(false, false), fersenStuhl(true, false), 1.0, {
     aus: 2.0,
     halten: 1,
     texte: ["Beide Fersen anheben", "Langsam senken"],
     hilfsmittel: [STUHL_VORN],
   }),
-  reha_fersenheben_einbeinig: wdh("seite", mit(STAND, { g: { ...HALT_STUHL, huefte_r: [10, 6, 0], knie_r: [70] } }), H({ huefte_l: [0, 6, 0], fuss_l: [-30, 0], zehen_l: [-30], huefte_r: [10, 6, 0], knie_r: [70], ...HALT_STUHL }), 1.0, {
+  reha_fersenheben_einbeinig: wdh("seite", fersenStuhl(false, true), fersenStuhl(true, true), 1.0, {
     aus: 2.0,
     halten: 1,
     seiten: true,
