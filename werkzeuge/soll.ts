@@ -2508,7 +2508,7 @@ const ROLL_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
 
 // ---------------------------------------------------------------- Rumpf: Pallof, Holzhacker, Rotation
 const haendeM = (x: Punkte) => mitte(p(x, "hand_l"), p(x, "hand_r"))
-/** Drehung der Schulterachse um die Senkrechte (°, positiv: linke Schulter nach hinten = nach rechts gedreht) */
+/** Drehung der Schulterachse um die Senkrechte (°, positiv: linke Schulter nach vorn = nach rechts gedreht) */
 const schulterDreh = (x: Punkte) => grad(Math.atan2(p(x, "g:schulter_l")[2] - p(x, "g:schulter_r")[2], p(x, "g:schulter_l")[0] - p(x, "g:schulter_r")[0]))
 const beckenDreh = (x: Punkte) => grad(Math.atan2(p(x, "g:huefte_l")[2] - p(x, "g:huefte_r")[2], p(x, "g:huefte_l")[0] - p(x, "g:huefte_r")[0]))
 const pallofSoll = (k: { basis: "stand" | "halb" | "knie"; extra?: (m: Messung) => Pruefung[] }) => (m: Messung): Pruefung[] => {
@@ -2603,6 +2603,56 @@ const PALLOF_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   },
 }
 
+// ---------------------------------------------------------------- Rumpf: Golf (Rechtshänder: Ziel links bei +x, hinteres Bein rechts)
+const golfHaltung = (x: Punkte, w = ""): Pruefung[] => [
+  pr(`Golfhaltung: aus der Hüfte gebeugt${w} (°)`, rumpfneigung(x), 22, 50, "Hüfte gebeugt, Rücken lang"),
+  ...SEITEN.map((s) => pr(`Golfhaltung: Knie ${s} locker${w} (°)`, kniewinkel(x, s), 140, 178, "Knie locker")),
+]
+const vorneBein = (x: Punkte, vorn: "l" | "r") => pr(`Ausfallschritt: ${vorn === "r" ? "rechtes" : "linkes"} Bein vorn (m)`, p(x, `g:fuss_${vorn}`)[2] - p(x, `g:fuss_${vorn === "r" ? "l" : "r"}`)[2], 0.25, 0.9, "Ausfallschritt-Stand")
+const GOLF_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  golf_haltung_wand: (m) => [...ruhig(m), ...golfHaltung(m.ziel), ...SEITEN.map((s) => pr(`Arm ${s} hängt senkrecht unter der Schulter (m)`, Math.abs(p(m.ziel, `g:hand_${s}`)[2] - p(m.ziel, `g:schulter_${s}`)[2]), 0, 0.1, "Lass die Arme senkrecht unter den Schultern hängen")), pr("Gewicht über der Fußmitte (m)", Math.abs(mitte(p(m.ziel, "g:huefte_l"), p(m.ziel, "g:huefte_r"))[2] - mittelfuss(m.ziel)[2]), 0, 0.25, "das Gewicht liegt über der Fußmitte")],
+  golf_kabel_rotation_ansprechhaltung: (m) => [...ruhig(m), ...golfHaltung(m.start), pr("Erst zum Zug gedreht (rechts) (°)", schulterDreh(m.start), 15, 60, "Dreh Hüfte und Oberkörper zum Zug hin wie in den Rückschwung"), pr("Dann Richtung Ziel (°)", schulterDreh(m.ziel), -45, -5, "Dreh dann kontrolliert kräftig Richtung Ziel"), ...SEITEN.map((s) => pr(`Arm ${s} gestreckt (°)`, ellbogenWinkel(m.ziel, s), 155, 181, "Arme hängen gestreckt vor der Brust"))],
+  golf_kabel_rueckschwung: (m) => [...ruhig(m), ...golfHaltung(m.start), pr("Hände vor dem vorderen Knie (m)", haendeM(m.start)[1] - mitte(p(m.start, "g:knie_l"), p(m.start, "g:knie_r"))[1], 0, 0.45, "lass die Arme vor dem vorderen Knie hängen"), pr("Rückschwung: Hände etwa auf Schulterhöhe (m)", haendeM(m.ziel)[1] - sm(m.ziel)[1], -0.25, 0.25, "die Hände bewegen sich diagonal nach oben bis etwa Schulterhöhe"), pr("Rückschwung: Hände nach rechts (m)", haendeM(m.ziel)[0], -0.7, -0.2, "Dreh Oberkörper und Hüfte vom Zug weg"), pr("Rückschwung: Oberkörper gedreht (°)", schulterDreh(m.ziel), 35, 100, "in Richtung Rückschwung")],
+  golf_kabel_abschwung: (m) => [...ruhig(m), pr("Start: Hände auf Schulterhöhe rechts (m)", haendeM(m.start)[0], -0.7, -0.2, "Hände etwa auf Schulterhöhe, Oberkörper gedreht"), pr("Start: Oberkörper gedreht (°)", schulterDreh(m.start), 35, 100, "Oberkörper gedreht"), pr("Treffmoment: Hände vor dem Körper (m)", Math.abs(haendeM(m.ziel)[0]), 0, 0.25, "Zieh den Griff diagonal nach unten vor den Körper"), pr("Treffmoment: Hände unten (m)", sm(m.ziel)[1] - haendeM(m.ziel)[1], 0.3, 0.8, "diagonal nach unten")],
+  golf_holzhacker_ausfallschritt: (m) => [...hackSoll({ von: "oben", drehung: [10, 45] })(m), vorneBein(m.start, "r"), pr("Becken nach vorn ausgerichtet (°)", Math.max(...m.alle.map((x) => Math.abs(beckenDreh(x)))), 0, 6, "Halte das Becken nach vorn ausgerichtet")],
+  golf_lift_ausfallschritt: (m) => [...hackSoll({ von: "unten", drehung: [10, 45] })(m), vorneBein(m.start, "r"), pr("Becken stabil nach vorn (°)", Math.max(...m.alle.map((x) => Math.abs(beckenDreh(x)))), 0, 6, "Halte das Becken stabil nach vorn ausgerichtet"), pr("Oberkörper aufrecht (°)", Math.max(rumpfneigung(m.start), rumpfneigung(m.ziel)), -5, 25, "der Oberkörper bleibt aufrecht")],
+  golf_kabel_rudern_rotation: (m) => {
+    const [a, b] = [m.start, m.ziel]
+    return [...ruhig(m), pr("Rechtes Bein hinten (m)", p(a, "g:fuss_l")[2] - p(a, "g:fuss_r")[2], 0.25, 0.9, "das Bein auf der Zugseite steht hinten"), pr("Arm vorn gestreckt (°)", ellbogenWinkel(a, "r"), 155, 181, "der Arm ist gestreckt"), pr("Ellbogen zieht nach hinten (m)", p(b, "g:ellbogen_r")[2] - p(b, "g:becken")[2], -0.3, 0.05, "Zieh den Ellbogen nach hinten an der Seite vorbei"), pr("Ellbogen gebeugt am Körper (°)", ellbogenWinkel(b, "r"), 60, 110, "Zieh den Ellbogen nach hinten"), pr("Oberkörper dreht auf (°)", schulterDreh(b) - schulterDreh(a), 25, 90, "dreh dabei den Oberkörper auf")]
+  },
+  golf_pallof_ansprechhaltung: (m) => [...ruhig(m), ...golfHaltung(m.start), ...SEITEN.map((s) => pr(`Arm ${s} vorn gestreckt (°)`, ellbogenWinkel(m.ziel, s), 160, 181, "mit gestreckten Armen nach vorn")), pr("Griff gerade nach vorn (m)", Math.abs(haendeM(m.ziel)[0]), 0, 0.04, "drück ihn langsam nach vorn"), pr("Schultern drehen nicht zum Zug (°)", Math.max(...m.alle.map((x) => Math.abs(schulterDreh(x)))), 0, 4, "ohne dass Schultern oder Hüfte zum Zug drehen")],
+  golf_pallof_einbeinig: (m) => [...ruhig(m), pr("Auf dem kabelfernen (rechten) Bein (m)", p(m.start, "fuss_l")[1] - p(m.start, "fuss_r")[1], 0.08, 0.4, "stell dich auf das Bein, das weiter vom Zug entfernt ist"), pr("Standknie leicht gebeugt (°)", kniewinkel(m.start, "r"), 150, 178, "Beuge das Standknie leicht"), pr("Becken waagerecht (m)", Math.max(...m.alle.map(beckenKippt)), 0, 0.03, "halte das Becken waagerecht"), ...SEITEN.map((s) => pr(`Arm ${s} vorn gestreckt (°)`, ellbogenWinkel(m.ziel, s), 160, 181, "mit gestreckten Armen nach vorn"))],
+  golf_iso_rueckschwung: (m) => [...ruhig(m), pr("Rückschwung: Oberkörper gedreht (°)", schulterDreh(m.ziel), 35, 100, "Oberkörper gedreht"), pr("Hände etwa auf Schulterhöhe (m)", haendeM(m.ziel)[1] - sm(m.ziel)[1], -0.25, 0.25, "Hände etwa auf Schulterhöhe")],
+  golf_iso_treffmoment: (m) => [...ruhig(m), pr("Hände vor dem vorderen Oberschenkel (m)", haendeM(m.ziel)[0], -0.05, 0.25, "Hände vor dem vorderen Oberschenkel"), pr("Hände unten (m)", sm(m.ziel)[1] - haendeM(m.ziel)[1], 0.3, 0.8, "Treffmomentposition"), ...SEITEN.map((s) => pr(`Arm ${s} gestreckt (°)`, ellbogenWinkel(m.ziel, s), 155, 181, "die Arme sind gestreckt"))],
+  golf_vorderes_bein_stemmen_band: (m) => [...ruhig(m), pr("Vorderes Knie streckt sich (°)", kniewinkel(m.ziel, "l") - kniewinkel(m.start, "l"), 5, 40, "strecke dabei das vordere Knie zunehmend"), pr("Becken öffnet zum Ziel (°)", -beckenDreh(m.ziel), 5, 50, "Dreh die vordere Hüfte nach hinten")],
+  golf_hueftdrehung_band_rueckschwung: (m) => [...ruhig(m), pr("Becken dreht in die hintere Hüfte (°)", beckenDreh(m.ziel), 10, 45, "Dreh das Becken in die hintere Hüfte"), pr("Hinteres Knie bleibt gebeugt (°)", kniewinkel(m.ziel, "r"), 140, 175, "Halte das hintere Knie leicht gebeugt und stabil über dem Fuß"), pr("Füße bleiben (m)", bleibt(m, ["fuss_l", "fuss_r"]), 0, 0.03, "stabil")],
+  golf_beckenrotation_band: (m) => [...ruhig(m), pr("Becken dreht Richtung Ziel (°)", -beckenDreh(m.ziel), 10, 45, "Dreh das Becken kräftig gegen den Zug Richtung Ziel"), pr("Schultern bleiben still (°)", Math.abs(schulterDreh(m.ziel) - schulterDreh(m.start)), 0, 8, "Halte die Schultern und den Kopf dabei so still wie möglich"), pr("Füße bleiben (m)", bleibt(m, ["fuss_l", "fuss_r"]), 0, 0.03, "Golfhaltung")],
+  golf_ball_rotation_bruecke: (m) => {
+    const [a, b] = [m.start, m.ziel]
+    return [
+      ...ruhig(m),
+      pr("Knie, Hüfte und Schultern in einer Linie (°)", winkelBei(mitte(p(a, "g:knie_l"), p(a, "g:knie_r")), mitte(p(a, "g:huefte_l"), p(a, "g:huefte_r")), sm(a)), 160, 190, "bis Knie, Hüfte und Schultern eine Linie bilden"),
+      pr("Schultern auf dem Ball (m)", p(a, "bws")[1], 0.6, 0.75, "bis Kopf und Schultern auf dem Ball liegen"),
+      ...SEITEN.map((s) => pr(`Fuß ${s} am Boden (m)`, p(a, `ferse_${s}`)[1], 0, 0.09, "die Füße stehen schulterbreit")),
+      pr("Arme senkrecht nach oben (m)", haendeM(a)[1] - sm(a)[1], 0.38, 0.55, "Streck die Arme senkrecht nach oben"),
+      pr("Hände gefaltet (m)", abstand(p(a, "hand_l"), p(a, "hand_r")), 0, 0.15, "mit gefalteten Händen"),
+      // in Rückenlage zeigt sich die Drehung um die Längsachse als Höhenunterschied der Schultern
+      pr("Oberkörper dreht zur Seite (°)", grad(Math.asin(Math.min(1, Math.abs(p(b, "g:schulter_l")[1] - p(b, "g:schulter_r")[1]) / abstand(p(b, "g:schulter_l"), p(b, "g:schulter_r"))))), 20, 70, "Dreh den Oberkörper zu einer Seite"),
+      pr("Becken bleibt oben und waagerecht (m)", Math.max(bleibt(m, ["g:becken"]), beckenKippt(b)), 0, 0.03, "Halte das Becken oben und waagerecht"),
+    ]
+  },
+  reha_bauchspannung_sitz: (m) => {
+    const z = m.ziel
+    return [
+      ...ruhig(m),
+      pr("Oberkörper aufrecht (°)", Math.abs(rumpfneigung(z)), 0, 12, "Setz dich aufrecht, der Rücken bleibt gerade"),
+      ...SEITEN.map((s) => pr(`Hand ${s} kurz vor dem Knie (m)`, abstand(p(z, `hand_${s}`), p(z, `g:knie_${s}`)), 0, 0.15, "Lege beide Hände auf die Oberschenkel kurz vor den Knien")),
+      ...SEITEN.map((s) => pr(`Fuß ${s} am Boden (m)`, p(z, `ferse_${s}`)[1], 0, 0.09, "die Füße stehen hüftbreit auf dem Boden")),
+      pr("Füße hüftbreit (m)", Math.abs(p(z, "g:fuss_l")[0] - p(z, "g:fuss_r")[0]), 0.12, 0.35, "hüftbreit"),
+    ]
+  },
+}
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...BANK_SOLL,
   ...LS_SOLL,
@@ -2635,6 +2685,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...CRUNCH_SOLL,
   ...ROLL_SOLL,
   ...PALLOF_SOLL,
+  ...GOLF_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),

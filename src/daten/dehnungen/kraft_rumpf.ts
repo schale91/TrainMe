@@ -279,6 +279,8 @@ const hacken = (basis: (w: Winkel) => Haltung, von: Winkel, bis: Winkel, rolle: 
     texte,
     hilfsmittel: zug === "kabel" ? [kabelstange(), ...kabel("haende", rolle)] : [{ art: "bandanker", von: "haende", anker: rolle }],
   })
+/** Golf-Ausfallschritt: rechtes Bein vorn, linkes hinten, beide Knie leicht gebeugt */
+const GOLF_AUSFALL = (w: Winkel): Haltung => H({ huefte_r: [40, 8, 0], knie_r: [40], fuss_r: [10, 0], huefte_l: [-10, 8, 0], knie_l: [20], fuss_l: [-20, 0], ...w }, [10, 0, 0])
 const STAND_HACK = (w: Winkel): Haltung => H({ ...BREIT, ...w }, [8, 0, 0])
 /** Chop und Lift im Halbknien: Oberkörper bleibt aufrecht und dreht sich kaum */
 const CHOP_OBEN: Winkel = { ...HACK_OBEN, ...dreh(12) }
@@ -294,6 +296,17 @@ const twist = (seite: -1 | 0 | 1): Haltung => {
     : undefined
   return H(w, [-45, 0, 0], { pos: [0, 0.108, 0], boden: false, ...(ziele ? { ziele } : {}) })
 }
+/**
+ * Ballbrücke (Golf): Kopf und Schultern auf dem Gymnastikball, Becken oben in einer Linie mit Knien und Schultern, Füße
+ * schulterbreit flach am Boden, Arme mit gefalteten Händen senkrecht nach oben; gedreht rollt die Figur über die Schulter.
+ */
+const BRUECKE_Y = 0.72
+const ballBruecke = (drehung: 0 | 1): Haltung =>
+  H(
+    { ...B("huefte", [6, 10, 0]), ...B("knie", [90]), ...B("fuss", [0, 0]), ...B("schulter", [88, -20, 0]), ...B("ellbogen", [4, 0]), ...FAUST, hals: [16, 0, 0], ...(drehung ? { bws: [0, 0, 40], lws: [0, 0, 8] } : {}) },
+    [-86, 0, 0],
+    { pos: [0, BRUECKE_Y, 0], boden: false, ziele: { ferse_l: { pos: [0.17, 0.066, 0.5] }, ferse_r: { pos: [-0.17, 0.066, 0.5] }, hand_l: { pos: [0.03, 0.02, 0.5], bezug: "schultern" }, hand_r: { pos: [-0.03, 0.02, 0.5], bezug: "schultern" } } },
+  )
 /** Gewicht mit fast gestreckten Armen vor dem Brustbein */
 const KH_VOR: Winkel = { ...B("schulter", [80, -10, 0]), ...B("ellbogen", [22, 0]), ...FAUST }
 const ROTATION_ARME: Winkel = { ...B("schulter", [86, -8, 0]), ...B("ellbogen", [6, 0]), ...FAUST }
@@ -301,6 +314,9 @@ const ROTATION_ARME: Winkel = { ...B("schulter", [86, -8, 0]), ...B("ellbogen", 
 // ---------------------------------------------------------------- Golf: Ansprechhaltung
 export const GOLF_ARME: Winkel = { ...B("schulter", [38, -12, 0]), ...B("ellbogen", [6, 0]), ...FAUST }
 export const golf = (w: Winkel = {}): Haltung => mit(ATHLETISCH, { g: { ...GOLF_ARME, ...w } })
+/** Golfhaltung mit festen Füßen (gemessen): das Becken dreht (laengs > 0 Richtung Ziel) bzw. verschiebt sich über den Füßen */
+const GOLF_FUESSE: NonNullable<Haltung["ziele"]> = { fuss_l: { pos: [0.15, 0.015, 0.058] }, fuss_r: { pos: [-0.15, 0.015, 0.058] }, ferse_l: { pos: [0.16, -0.015, -0.058] }, ferse_r: { pos: [-0.16, -0.015, -0.058] } }
+const golfFest = (w: Winkel, laengs: number, pos: [number, number, number] = [0, 0.905, 0]): Haltung => mit(golf(w), { dreh: [35, laengs, 0], pos, boden: false, ziele: GOLF_FUESSE })
 /** Rückschwung: Oberkörper rechts gedreht, Hände hoch rechts; Treffmoment: Hüfte offen, Hände vor dem Körper */
 export const RUECKSCHWUNG: Winkel = { schulter_l: [110, -40, 0], ellbogen_l: [6, 0], schulter_r: [90, 30, 0], ellbogen_r: [90, 0], ...dreh(-80), hals: [-20, 0, 50] }
 export const TREFFMOMENT: Winkel = { ...GOLF_ARME, ...dreh(30), huefte_l: [40, 6, 20], huefte_r: [50, 6, -10] }
@@ -603,32 +619,31 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
   ),
   // ------------------------------------------------------------ Golf
   golf_haltung_wand: halte("seite", mit(STAND, { g: GOLF_ARME }), golf(), { ein: 2, aus: 2, hinweis: "Gesäß leicht an der Wand, Rücken lang, Golfhaltung halten.", hilfsmittel: [{ art: "wand", an: "gesaess", richtung: "hinten" }] }),
-  golf_kabel_rotation_ansprechhaltung: wdh("vorn", golf(dreh(20)), golf(dreh(-40)), 1.0, { aus: 1.6, seiten: true, texte: ["In der Golfhaltung gegen den Zug drehen", "Kontrolliert zurück"], hilfsmittel: kabel("haende", [0.9, 0.9, 0.2]) }),
+  golf_kabel_rotation_ansprechhaltung: wdh("vorn", golf(dreh(-40)), golf(dreh(25)), 1.0, { aus: 1.6, seiten: true, texte: ["Kontrolliert kräftig Richtung Ziel drehen, Arme bleiben gestreckt", "Zurück zum Zug wie in den Rückschwung"], hilfsmittel: kabel("haende", [-0.9, 1.0, 0.2]) }),
   golf_kabel_rueckschwung: wdh("vorn", golf(), golf(RUECKSCHWUNG), 1.2, { aus: 1.6, seiten: true, texte: ["In den Rückschwung drehen", "Zurück in die Ansprechhaltung"], hilfsmittel: kabel("haende", [0.8, 0.12, 0.3]) }),
   golf_kabel_abschwung: wdh("vorn", golf(RUECKSCHWUNG), golf(TREFFMOMENT), 1.0, { aus: 1.8, seiten: true, texte: ["Aus dem Rückschwung bis zum Treffmoment ziehen", "Zurück in den Rückschwung"], hilfsmittel: kabel("haende", [-0.9, 1.6, 0.2]) }),
-  golf_holzhacker_ausfallschritt: hacken((w) => H({ huefte_l: [40, 8, 0], knie_l: [40], fuss_l: [10, 0], huefte_r: [-10, 8, 0], knie_r: [20], fuss_r: [-20, 0], ...w }, [10, 0, 0]), HACK_OBEN, HACK_UNTEN, [0.7, 2.0, -0.2], ["Diagonal von oben hinten nach unten vorn", "Kontrolliert zurück"]),
-  golf_lift_ausfallschritt: hacken((w) => H({ huefte_l: [40, 8, 0], knie_l: [40], fuss_l: [10, 0], huefte_r: [-10, 8, 0], knie_r: [20], fuss_r: [-20, 0], ...w }, [10, 0, 0]), HACK_UNTEN, HACK_OBEN, [-0.7, 0.12, 0.3], ["Diagonal von unten nach oben über die Schulter", "Kontrolliert zurück"]),
+  golf_holzhacker_ausfallschritt: hacken(GOLF_AUSFALL, { ...HACK_OBEN, ...dreh(15) }, { ...HACK_UNTEN, ...dreh(-15) }, [0.7, 2.0, -0.2], ["Seil diagonal vor dem Körper nach unten zur Außenseite des vorderen Knies, Becken bleibt nach vorn", "Kontrolliert zurück"]),
+  golf_lift_ausfallschritt: hacken(GOLF_AUSFALL, { ...HACK_UNTEN, ...dreh(-15) }, { ...HACK_OBEN, ...dreh(15) }, [-0.7, 0.12, 0.3], ["Seil diagonal zur Brust und weiter über die linke Schulter, Oberkörper aufrecht", "Kontrolliert zurück"]),
   golf_kabel_rudern_rotation: wdh(
     "oben",
     H({ huefte_l: [30, 8, 0], knie_l: [30], fuss_l: [10, 0], huefte_r: [-10, 8, 0], knie_r: [16], fuss_r: [-20, 0], schulter_r: [88, 4, 0], ellbogen_r: [4, 0], ...LOCKER_L, ...FAUST, ...dreh(20) }, [10, 0, 0]),
-    H({ huefte_l: [30, 8, 0], knie_l: [30], fuss_l: [10, 0], huefte_r: [-10, 8, 0], knie_r: [16], fuss_r: [-20, 0], schulter_r: [40, 20, 0], ellbogen_r: [100, 0], ...LOCKER_L, ...FAUST, ...dreh(-30) }, [10, 0, 0]),
+    H({ huefte_l: [30, 8, 0], knie_l: [30], fuss_l: [10, 0], huefte_r: [-10, 8, 0], knie_r: [16], fuss_r: [-20, 0], schulter_r: [5, 18, 0], ellbogen_r: [110, 0], ...LOCKER_L, ...FAUST, ...dreh(-30) }, [10, 0, 0]),
     1.0,
     { aus: 1.6, seiten: true, texte: ["Rudern, Oberkörper dreht mit", "Arm wieder strecken"], hilfsmittel: kabel("hand_r", [0, 1.1, 0.9]) },
   ),
   golf_pallof_ansprechhaltung: pallof((arme) => golf(arme), KABEL_SEITE),
-  golf_pallof_einbeinig: pallof((arme) => H({ huefte_l: [12, 6, 0], knie_l: [16], fuss_l: [6, 0], huefte_r: [60, 6, 0], knie_r: [80], ...arme }, [6, 0, 0]), KABEL_SEITE),
-  golf_iso_rueckschwung: halte("vorn", golf(), golf(RUECKSCHWUNG), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Position am Ende des Rückschwungs gegen den Zug halten.", hilfsmittel: [{ art: "bandanker", von: "haende", anker: [-0.9, 1.4, 0.2] }] }),
-  golf_iso_treffmoment: halte("vorn", golf(), golf(TREFFMOMENT), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Treffmoment halten, das Band zieht zur Rückschwungseite.", hilfsmittel: [{ art: "bandanker", von: "haende", anker: [0.9, 0.9, 0.2] }] }),
-  golf_vorderes_bein_stemmen_band: wdh("vorn", golf(), golf({ ...TREFFMOMENT, ...DURCHSCHWUNG }), 1.2, { aus: 1.6, seiten: true, texte: ["Vordere Hüfte nach hinten drehen, gegen den Zug stemmen", "Zurück"], hilfsmittel: [{ art: "bandanker", von: "becken", anker: [-0.9, 0.9, 0] }] }),
-  golf_hueftdrehung_band_rueckschwung: wdh("vorn", golf(), golf({ ...RUECKSCHWUNG, huefte_l: [50, 6, -10], huefte_r: [40, 6, 20] }), 1.2, { aus: 1.6, seiten: true, texte: ["Kontrolliert in die hintere Hüfte drehen", "Zurück"], hilfsmittel: [{ art: "bandanker", von: "becken", anker: [0.9, 0.9, 0] }] }),
-  golf_beckenrotation_band: wdh("vorn", golf(), golf({ huefte_l: [40, 6, 20], huefte_r: [50, 6, -10], ...dreh(-20) }), 1.0, { aus: 1.6, seiten: true, texte: ["Becken gegen den Zug drehen, Oberkörper bleibt", "Zurück"], hilfsmittel: [{ art: "bandanker", von: "becken", anker: [-0.9, 0.9, 0] }] }),
-  golf_ball_rotation_bruecke: wdh(
-    "vorn",
-    H({ ...B("huefte", [0, 8, 0]), ...B("knie", [90]), ...B("fuss", [0, 0]), ...B("schulter", [90, -10, 0]), ...B("ellbogen", [4, 0]), ...FAUST, hals: [20, 0, 0] }, [-90, 0, 0], { pos: [0, 0.5, 0], boden: false }),
-    H({ ...B("huefte", [0, 8, 0]), ...B("knie", [90]), ...B("fuss", [0, 0]), ...B("schulter", [90, -10, 0]), ...B("ellbogen", [4, 0]), ...FAUST, hals: [20, 0, 0], ...dreh(60) }, [-90, 0, 0], { pos: [0, 0.5, 0], boden: false }),
-    1.4,
-    { aus: 1.4, seiten: true, texte: ["Schultern auf dem Ball, Oberkörper zur Seite drehen", "Zurück zur Mitte"], hilfsmittel: [{ art: "ball", unter: "bws" }] },
-  ),
+  golf_pallof_einbeinig: pallof((arme) => H({ huefte_r: [12, 6, 0], knie_r: [16], fuss_r: [6, 0], huefte_l: [40, 6, 0], knie_l: [60], ...arme }, [6, 0, 0]), KABEL_SEITE),
+  golf_iso_rueckschwung: halte("vorn", golf(), golf(RUECKSCHWUNG), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Position am Ende des Rückschwungs gegen den Zug halten.", hilfsmittel: [{ art: "bandanker", von: "haende", anker: [-0.7, 1.4, -0.7] }] }),
+  golf_iso_treffmoment: halte("vorn", golf(), golf(TREFFMOMENT), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "Treffmoment halten, das Band zieht zur Rückschwungseite.", hilfsmittel: [{ art: "bandanker", von: "haende", anker: [-0.9, 0.9, -0.2] }] }),
+  golf_vorderes_bein_stemmen_band: wdh("vorn", golf(), golfFest({ ...GOLF_ARME, ...B("knie", [8]), ...dreh(-12) }, 22, [0.04, 0.918, 0]), 1.2, { aus: 1.6, seiten: true, texte: ["Gewicht auf das vordere Bein, vordere Hüfte nach hinten drehen, vorderes Knie streckt sich", "Zurück in die Golfhaltung"], hilfsmittel: [{ art: "bandanker", von: "becken", anker: [0.9, 0.9, 0] }] }),
+  golf_hueftdrehung_band_rueckschwung: wdh("vorn", golf(), golfFest({ ...GOLF_ARME, ...dreh(14) }, -24, [0, 0.88, 0]), 1.2, { aus: 1.6, seiten: true, texte: ["Becken in die hintere Hüfte drehen, hinteres Knie bleibt über dem Fuß", "Langsam zurück"], hilfsmittel: [{ art: "bandanker", von: "becken", anker: [-0.9, 0.9, 0] }] }),
+  golf_beckenrotation_band: wdh("vorn", golf(ARME_VERSCHRAENKT), golfFest({ ...ARME_VERSCHRAENKT, ...dreh(-24) }, 24), 1.0, { aus: 1.6, seiten: true, texte: ["Becken kräftig gegen den Zug Richtung Ziel drehen, Schultern und Kopf bleiben still", "Becken langsam zurückdrehen lassen"], hilfsmittel: [{ art: "bandanker", von: "becken", anker: [-0.8, 0.9, -0.6] }] }),
+  golf_ball_rotation_bruecke: wdh("vorn", ballBruecke(0), ballBruecke(1), 1.4, {
+    aus: 1.4,
+    seiten: true,
+    texte: ["Oberkörper zur Seite drehen und über die Schulter auf den Ball rollen, Arme gestreckt, Becken oben", "Zurück zur Mitte"],
+    hilfsmittel: [{ art: "ball", unter: "bws" }],
+  }),
   // ------------------------------------------------------------ Reha
   reha_bauchspannung_sitz: halte("seite", STUHLSITZ, mit(STUHLSITZ, { g: { ...B("schulter", [40, 8, 0]), ...B("ellbogen", [20, 90]), ...B("hand", [40, 0]), bws: [4, 0, 0] } }), {
     ein: 1,
