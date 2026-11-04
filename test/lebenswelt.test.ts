@@ -1,9 +1,9 @@
 // TrainMe in der Lebenswelt: Abgleich mit der Datenbank, Übernahme aus dem Kraftbuch, eigener Plan.
 import { abgleichen, neuerStand, pruefsumme, stabil, tagZusammen, teilen, zusammensetzen, type Anfrage, type TagEintrag } from "../src/logik/abgleich"
 import { einspielen, nameKey, prozent, uebernehmen, wiederholungen, zuordnen, type KbDok } from "../src/logik/kraftbuch"
-import { einheitAusPlan, idVon, maximum, naechsterPlanTag, offenePlanTage, planAusText, planZuEnde, planZuText, ueberspringen } from "../src/logik/eigenerPlan"
+import { einheitAusPlan, idVon, maximum, naechsterPlanTag, offenePlanTage, planAusText, planWoche, planZuEnde, planZuText, ueberspringen } from "../src/logik/eigenerPlan"
 import { leer, neuesProfil } from "../src/logik/speicher"
-import { wochenplan } from "../src/logik/plan"
+import { plusTage, wochenplan } from "../src/logik/plan"
 import type { Daten, Protokoll } from "../src/logik/typen"
 
 /** Kleiner Server nach den Regeln des Add-ons (trainme.js): Stamm neuere Zeit, Tage zusammenführen. */
@@ -311,6 +311,23 @@ Etwas Unbekanntes`
     expect(planZuEnde(d)).toBe(false)
     const [n3, n4] = offenePlanTage(d)
     expect([n3.nr, n3.titel, n4.nr, n4.titel]).toEqual([3, "Hüfte", 4, "Kraft"])
+  })
+
+  test("Spätere Wochen setzen den Plan fort, nach dem letzten Plantag bleibt die Woche leer", () => {
+    const d = mitProfil()
+    d.eigenerPlan = planAusText(["Tag 1: A", "Kniebeuge 3 x 5", "Tag 2: B", "Kniebeuge 3 x 5", "Tag 3: C", "Kniebeuge 3 x 5", "Tag 4: D", "Kniebeuge 3 x 5", "Tag 5: E", "Kniebeuge 3 x 5"].join("\n"), "Block", zuordnen)
+    const p = d.profil!
+    p.planart = "eigen"
+    const trainingstage = p.woche.filter((t) => t.art === "training").length
+    const woche = (montag: string) => planWoche(p, d, montag, "2026-10-26", plusTage, () => []).map((e) => e.titel)
+    const alle = ["A", "B", "C", "D", "E"]
+    expect(woche("2026-10-26")).toEqual(alle.slice(0, trainingstage))
+    expect(woche("2026-11-02")).toEqual(alle.slice(trainingstage, 2 * trainingstage))
+    // zehn Wochen später ist der Plan längst durch: keine Einheiten mehr, statt immer wieder dieselben Tage
+    expect(woche("2027-01-04")).toEqual([])
+    // ein Plan, der sich wiederholt, läuft in der zweiten Woche reihum weiter
+    d.eigenerPlan.wiederholen = true
+    expect(woche("2026-11-02")).toEqual([...alle, ...alle].slice(trainingstage, 2 * trainingstage))
   })
 
   test("Zusätzliche TrainMe-Tage neben dem Plan, in der Reha erst nach der Freigabe", () => {
