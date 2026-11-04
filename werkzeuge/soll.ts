@@ -2251,6 +2251,61 @@ const DB_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   },
 }
 
+// ---------------------------------------------------------------- Rumpf: Stange und Barren
+const STANGE_GRIFF: V = [0.21, 2.09, 0]
+const amStange = (m: Messung, haende: ("l" | "r")[] = ["l", "r"]) =>
+  pr("Hände an der Stange (m)", Math.max(...m.alle.filter((x) => p(x, "g:schulter_l")[1] > 1.3).flatMap((x) => haende.map((s) => abstand(p(x, `hand_${s}`), [s === "l" ? STANGE_GRIFF[0] : -STANGE_GRIFF[0], STANGE_GRIFF[1], STANGE_GRIFF[2]])))), 0, 0.03, "Häng dich schulterbreit an die Klimmzugstange")
+const hangStart = (x: Punkte): Pruefung[] => [
+  ...SEITEN.map((s) => pr(`Arm ${s} gestreckt (°)`, ellbogenWinkel(x, s), 160, 181, "die Arme gestreckt")),
+  pr("Füße frei über dem Boden (m)", Math.min(p(x, "fuss_l")[1], p(x, "fuss_r")[1]), 0.05, 0.6, "ruhiges Hängen"),
+]
+const beinHoehe = (x: Punkte) => mitte(p(x, "g:fuss_l"), p(x, "g:fuss_r"))[1] - mitte(p(x, "g:huefte_l"), p(x, "g:huefte_r"))[1]
+const kniehoehe = (x: Punkte) => mitte(p(x, "g:knie_l"), p(x, "g:knie_r"))[1] - mitte(p(x, "g:huefte_l"), p(x, "g:huefte_r"))[1]
+const gestreckt = (x: Punkte, q: string) => SEITEN.map((s) => pr(`Bein ${s} gestreckt (°)`, kniewinkel(x, s), 165, 181, q))
+const STANGE_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  l_sitz_haengend: (m) => [...ruhig(m), amStange(m), ...hangStart(m.start), pr("Beine waagerecht (m)", beinHoehe(m.ziel), -0.08, 0.12, "bis sie etwa waagerecht sind"), ...gestreckt(m.ziel, "die gestreckten Beine")],
+  knieheben_haengend: (m) => [...ruhig(m), amStange(m), ...hangStart(m.start), pr("Knie über der Hüfte (m)", kniehoehe(m.ziel), 0.05, 0.4, "Zieh die Knie nach oben Richtung Brust"), ...SEITEN.map((s) => pr(`Knie ${s} gebeugt (°)`, kniewinkel(m.ziel, s), 40, 100, "die Knie zur Brust"))],
+  beinheben_haengend: (m) => [...ruhig(m), amStange(m), ...hangStart(m.start), pr("Beine mindestens waagerecht (m)", beinHoehe(m.ziel), -0.03, 0.8, "bis sie mindestens waagerecht sind"), ...gestreckt(m.ziel, "die Beine gestreckt und geschlossen"), pr("Becken eingerollt (m)", p(m.ziel, "g:becken")[2] - p(m.start, "g:becken")[2], 0.03, 0.25, "Roll im oberen Teil das Becken ein")],
+  toes_to_bar: (m) => [...ruhig(m), amStange(m), ...hangStart(m.start), pr("Zehen an der Stange (m)", Math.min(abstand(p(m.ziel, "fuss_l"), [0.1, 2.12, 0]), abstand(p(m.ziel, "fuss_r"), [-0.1, 2.12, 0])), 0, 0.22, "führ die Zehen bis an die Stange"), ...gestreckt(m.ziel, "die gestreckten Beine")],
+  knieheben_haengend_schraeg: (m) => {
+    const [, re, li] = m.alle
+    return [
+      ...ruhig(m), amStange(m), ...hangStart(m.start),
+      pr("Knie oben zur rechten Seite (m)", mitte(p(re, "g:knie_l"), p(re, "g:knie_r"))[0], -0.25, -0.06, "schräg zur rechten Schulter"),
+      pr("Knie oben zur linken Seite (m)", mitte(p(li, "g:knie_l"), p(li, "g:knie_r"))[0], 0.06, 0.25, "wechsle beim nächsten Mal die Seite"),
+      pr("Knie hoch (m)", kniehoehe(re), 0.15, 0.5, "Zieh die Knie nach oben"),
+      pr("Becken dreht mit (m)", Math.abs(p(re, "g:huefte_l")[2] - p(re, "g:huefte_r")[2]), 0.03, 0.2, "das Becken dreht dabei mit"),
+    ]
+  },
+  scheibenwischer_haengend: (m) => {
+    const [oben, re, li] = m.alle
+    return [
+      ...ruhig(m), amStange(m),
+      pr("Füße auf Höhe der Stange (m)", Math.min(...[oben, re, li].map((x) => mitte(p(x, "g:fuss_l"), p(x, "g:fuss_r"))[1])), 1.85, 2.3, "bis die Füße etwa auf Höhe der Stange sind"),
+      pr("Beine zur rechten Seite (m)", mitte(p(re, "g:fuss_l"), p(re, "g:fuss_r"))[0], -0.5, -0.2, "Schwenke die Beine zur rechten Seite"),
+      pr("Beine zur linken Seite (m)", mitte(p(li, "g:fuss_l"), p(li, "g:fuss_r"))[0], 0.2, 0.5, "auf die linke Seite"),
+      ...[re, li].map((x, i) => pr(`Oberkörper zur Stange ${i ? "links" : "rechts"} (m)`, Math.abs(p(x, "g:schulter_l")[2] - p(x, "g:schulter_r")[2]), 0, 0.05, "der Oberkörper bleibt zur Stange ausgerichtet")),
+      pr("Becken dreht mit (m)", Math.abs(p(re, "g:huefte_l")[2] - p(re, "g:huefte_r")[2]), 0.05, 0.2, "das Becken dreht mit"),
+    ]
+  },
+  l_sitz_boden: (m) => {
+    const [u, o] = [m.start, m.ziel]
+    return [
+      ...ruhig(m),
+      ...SEITEN.map((s) => pr(`Hand ${s} neben der Hüfte (m)`, Math.abs(p(o, `hand_${s}`)[2] - p(o, `g:huefte_${s}`)[2]), 0, 0.1, "die Hände flach neben der Hüfte")),
+      ...SEITEN.map((s) => pr(`Hand ${s} am Boden (m)`, p(o, `hand_${s}`)[1], 0.03, 0.08, "die Hände flach")),
+      ...SEITEN.map((s) => pr(`Arm ${s} gestreckt (°)`, ellbogenWinkel(o, s), 160, 181, "Streck die Arme durch")),
+      pr("Gesäß hebt ab (m)", p(o, "gesaess")[1] - p(u, "gesaess")[1], 0.02, 0.1, "heb das Gesäß vom Boden ab"),
+      pr("Fersen verlassen den Boden (m)", Math.min(p(o, "ferse_l")[1], p(o, "ferse_r")[1]) - Math.min(p(u, "ferse_l")[1], p(u, "ferse_r")[1]), 0.005, 0.1, "bis auch die Fersen den Boden verlassen"),
+      pr("Beine waagerecht (m)", beinHoehe(o), -0.06, 0.1, "die Beine waagerecht"),
+      ...gestreckt(o, "die gestreckten Beine"),
+    ]
+  },
+  l_sitz_dip: (m) => [...ruhig(m), ...SEITEN.map((s) => pr(`Arm ${s} gestreckt (°)`, ellbogenWinkel(m.ziel, s), 160, 181, "die Arme gestreckt")), pr("Oberkörper aufrecht (°)", rumpfneigung(m.ziel), -5, 20, "der Oberkörper bleibt aufrecht, nur leicht nach vorn geneigt"), pr("Beine waagerecht (m)", beinHoehe(m.ziel), -0.08, 0.1, "Streck die Beine nach vorn, bis sie etwa waagerecht sind"), ...gestreckt(m.ziel, "die Beine gestreckt")],
+  knieheben_dip: (m) => [...ruhig(m), ...SEITEN.map((s) => pr(`Arm ${s} gestreckt (°)`, ellbogenWinkel(m.ziel, s), 160, 181, "drück die Schultern nach unten")), pr("Knie zur Brust (m)", kniehoehe(m.ziel), 0.05, 0.4, "Zieh die Knie nach oben zur Brust"), pr("Beine hängen unten (m)", beinHoehe(m.start), -1, -0.6, "Lass die Beine locker hängen")],
+  beinheben_dip: (m) => [...ruhig(m), ...SEITEN.map((s) => pr(`Arm ${s} gestreckt (°)`, ellbogenWinkel(m.ziel, s), 160, 181, "die Schultern nach unten gedrückt")), pr("Beine mindestens waagerecht (m)", beinHoehe(m.ziel), -0.03, 0.5, "bis sie mindestens waagerecht sind"), ...gestreckt(m.ziel, "die gestreckten Beine"), pr("Beine hängen unten (m)", beinHoehe(m.start), -1, -0.6, "Lass die Beine gestreckt nach unten hängen")],
+}
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...BANK_SOLL,
   ...LS_SOLL,
@@ -2279,6 +2334,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...STUETZ_SOLL,
   ...SEIT_SOLL,
   ...DB_SOLL,
+  ...STANGE_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),

@@ -41,7 +41,7 @@ export const KRAFT_GRIFF: Record<string, Dehnung> = {
   // ------------------------------------------------------------ Hängen und Tragen
   totes_haengen: halte("schraeg", mit(STAND, { g: B("schulter", [170, 14, 0]) }), hang(), { ein: 1.5, aus: 1.5, hinweis: "Gestreckte Arme, locker hängen, Schultern leicht aktiv.", hilfsmittel: [STANGE] }),
   handtuch_haengen: halte("schraeg", mit(STAND, { g: B("schulter", [170, 14, 0]) }), hang(B("ellbogen", [4, HAMMER])), { ein: 1.5, aus: 1.5, hinweis: "An zwei Handtüchern über der Stange hängen, dicker Griff.", hilfsmittel: [STANGE] }),
-  haengen_einarmig: halte("schraeg", hang(), hang({ schulter_r: [20, 20, 0], ellbogen_r: [40, 0], lws: [0, 6, 0] }), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "An einer Hand hängen, Schulter aktiv, Körper ruhig.", hilfsmittel: [STANGE] }),
+  haengen_einarmig: halte("schraeg", hang(), hang({ schulter_r: [20, 20, 0], ellbogen_r: [40, 0], lws: [0, 6, 0] }, 0, ["l"]), { ein: 1.5, aus: 1.5, seiten: true, hinweis: "An einer Hand hängen, Schulter aktiv, Körper ruhig.", hilfsmittel: [STANGE] }),
   farmers_walk: gehen(SEITE, KH, 20, "Schwere Gewichte in beiden Händen, aufrecht gehen"),
   pinch_carry: gehen(PINCH, SCHEIBEN, 20, "Scheiben im Pinzettengriff, aufrecht gehen"),
   scheiben_pinch: halte("schraeg", mit(STAND_W, { g: { ...PINCH, ...B("finger", [10, 0]) } }), mit(STAND_W, { g: PINCH }), { ein: 1, aus: 1.5, hinweis: "Scheiben zwischen Daumen und Fingern halten.", hilfsmittel: SCHEIBEN }),

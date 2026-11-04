@@ -119,15 +119,35 @@ const HOLLOW: Haltung = mit(RUECKENLAGE, { g: { ...B("huefte", [HOLLOW_HUEFTE, 4
 
 // ---------------------------------------------------------------- Hang und Stütz am Gerät
 export const STANGE: Hilfsmittel = { art: "rack", an: "becken", z: -0.08 }
-const RICHTUNG = -1
-/** Hang an der Klimmzugstange (2,12 m): lehnt sich der Körper zurück (kipp < 0), bleiben die Hände an der Stange */
-const RUMPF_LANG = 0.52
-const ARM_LANG = 0.62
-export const hang = (w: Winkel = {}, kipp = 0): Haltung => {
+/**
+ * Hang an der Klimmzugstange (2,12 m): die Fäuste greifen die Stange (Handflächen 3 cm unter der Mitte), die Schultern
+ * hängen darunter; lehnt sich der Körper zurück (kipp < 0), bleiben die Hände an der Stange.
+ */
+const HAND_STANGE_Y = 2.09
+/** Schulter bis Handflächenmarke bei gestrecktem Arm mit Faust (gemessen) */
+const ARM_FAUST = 0.515
+const GRIFF_X = 0.21
+/** Becken bis Schultergelenk bei erhobenen Armen (gemessen, das Schultergelenk sitzt höher) */
+const SCHULTER_RUMPF = 0.402
+export const hang = (w: Winkel = {}, kipp = 0, haende: ("l" | "r")[] = ["l", "r"], laengs = 0): Haltung => {
   const r = (kipp * Math.PI) / 180
-  const pos: [number, number, number] = [0, 2.12 - RUMPF_LANG * Math.cos(r) - ARM_LANG, RICHTUNG * RUMPF_LANG * Math.sin(r)]
-  return H({ ...B("huefte", [6, 4, 0]), ...B("knie", [10]), ...B("fuss", [-20, 0]), ...B("schulter", [176 + kipp, 14, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST, hals: [-8, 0, 0], ...w }, [kipp, 0, 0], { pos, boden: false })
+  const sy = HAND_STANGE_Y - Math.sqrt(ARM_FAUST ** 2 - (GRIFF_X - SCHULTER_X) ** 2)
+  const ziele: NonNullable<Haltung["ziele"]> = {}
+  for (const n of haende) ziele[`hand_${n}`] = { pos: [n === "l" ? GRIFF_X : -GRIFF_X, HAND_STANGE_Y, 0] }
+  return H({ ...B("huefte", [6, 4, 0]), ...B("knie", [10]), ...B("fuss", [-20, 0]), ...B("schulter", [176 + kipp, 14, 0]), ...B("ellbogen", [4, OBERGRIFF]), ...FAUST, hals: [-8, 0, 0], ...w }, [kipp, laengs, 0], { pos: [0, sy - SCHULTER_RUMPF * Math.cos(r), -SCHULTER_RUMPF * Math.sin(r)], boden: false, ziele })
 }
+/** Ruhiges Hängen an der Stange (2,12 m): Knie leicht gebeugt, damit die Füße frei über dem Boden sind */
+const HANG: Haltung = hang({ ...B("knie", [30]), ...B("fuss", [-30, 0]) })
+/**
+ * L-Sitz am Boden: Hände flach neben der Hüfte (Finger nach vorn), Arme gestreckt; oben schweben Gesäß und Fersen
+ * knapp über dem Boden, die gestreckten Beine waagerecht. Unten sitzt die Figur mit gestreckten Beinen.
+ */
+const lSitzBoden = (oben: boolean): Haltung =>
+  H(
+    { ...B("huefte", [oben ? 99 : 88, 4, 0]), ...B("knie", [2]), ...B("fuss", [-30, 0]), ...B("schulter", [-6, 12, 0]), ...B("ellbogen", [2, 0]), ...B("hand", [80, 0]), bws: [oben ? 14 : 4, 0, 0], hals: [-10, 0, 0] },
+    [oben ? 8 : -4, 0, 0],
+    { pos: [0, oben ? 0.145 : 0.115, 0], boden: false, ziele: { hand_l: { pos: [0.2, 0.055, 0.04] }, hand_r: { pos: [-0.2, 0.055, 0.04] } } },
+  )
 const BARREN: Hilfsmittel = { art: "barren", an: "hand_r" }
 const barren = (w: Winkel = {}): Haltung => H({ ...B("huefte", [6, 4, 0]), ...B("knie", [20]), ...B("fuss", [-20, 0]), ...B("schulter", [-8, 8, 0]), ...B("ellbogen", [4, 0]), ...B("hand", [80, 0]), ...w }, [0, 0, 0], { pos: [0, 1.2, 0], boden: false })
 
@@ -312,23 +332,23 @@ export const KRAFT_RUMPF: Record<string, Dehnung> = {
   l_sitz_dip: halte("seite", barren(), barren({ ...B("huefte", [90, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]) }), { ein: 1.5, aus: 1.5, hinweis: "Im Stütz die gestreckten Beine waagerecht halten.", hilfsmittel: [BARREN] }),
   knieheben_dip: wdh("seite", barren(), barren({ ...B("huefte", [110, 4, 0]), ...B("knie", [110]) }), 1.0, { aus: 1.6, texte: ["Knie zur Brust heben", "Langsam senken"], hilfsmittel: [BARREN] }),
   beinheben_dip: wdh("seite", barren(), barren({ ...B("huefte", [90, 4, 0]), ...B("knie", [2]) }), 1.2, { aus: 1.8, texte: ["Gestreckte Beine bis waagerecht heben", "Langsam senken"], hilfsmittel: [BARREN] }),
-  l_sitz_boden: halte("seite", H({ ...B("huefte", [90, 4, 0]), ...B("knie", [2]), ...B("schulter", [0, 8, 0]), ...B("ellbogen", [4, 0]), ...B("hand", [80, 0]) }), H({ ...B("huefte", [96, 4, 0]), ...B("knie", [2]), ...B("fuss", [-20, 0]), ...B("schulter", [-4, 8, 0]), ...B("ellbogen", [2, 0]), ...B("hand", [80, 0]), bws: [10, 0, 0] }, [-6, 0, 0]), {
+  l_sitz_boden: halte("seite", lSitzBoden(false), lSitzBoden(true), {
     ein: 1.5,
     aus: 1.5,
-    hinweis: "Hände neben der Hüfte, Gesäß und gestreckte Beine vom Boden heben.",
+    hinweis: "Hände flach neben der Hüfte, Arme gestreckt, Gesäß und gestreckte Beine vom Boden heben.",
   }),
-  l_sitz_haengend: halte("schraeg", hang(), hang({ ...B("huefte", [90, 4, 0]), ...B("knie", [2]) }, -6), { ein: 1.5, aus: 1.5, hinweis: "Im Hang die gestreckten Beine waagerecht halten.", hilfsmittel: [STANGE] }),
-  knieheben_haengend: wdh("schraeg", hang(), hang({ ...B("huefte", [110, 4, 0]), ...B("knie", [110]) }, -8), 1.0, { aus: 1.6, texte: ["Knie zur Brust ziehen, nicht schwingen", "Langsam senken"], hilfsmittel: [STANGE] }),
-  beinheben_haengend: wdh("schraeg", hang(), hang({ ...B("huefte", [110, 4, 0]), ...B("knie", [4]) }, -14), 1.4, { aus: 1.8, texte: ["Gestreckte Beine nach vorn oben heben", "Langsam senken"], hilfsmittel: [STANGE] }),
-  toes_to_bar: wdh("schraeg", hang(), hang({ ...B("huefte", [150, 4, 0]), ...B("knie", [4]), lws: [20, 0, 0], bws: [10, 0, 0] }, -30), 1.4, { aus: 1.8, texte: ["Zehen bis an die Stange", "Langsam senken"], hilfsmittel: [STANGE] }),
-  knieheben_haengend_schraeg: folge("schraeg", [[hang(), 0.6, "Hängen"], [hang({ ...B("huefte", [100, 4, -20]), ...B("knie", [110]), lws: [0, 0, 14] }, -8), 1.0, "Knie schräg zur einen Seite"], [hang(), 0.8], [hang({ ...B("huefte", [100, 4, 20]), ...B("knie", [110]), lws: [0, 0, -14] }, -8), 1.0, "Zur anderen Seite"], [hang(), 0.8]], { hilfsmittel: [STANGE] }),
+  l_sitz_haengend: halte("schraeg", HANG, hang({ ...B("huefte", [90, 4, 0]), ...B("knie", [2]) }, -6), { ein: 1.5, aus: 1.5, hinweis: "Im Hang die gestreckten Beine waagerecht halten.", hilfsmittel: [STANGE] }),
+  knieheben_haengend: wdh("schraeg", HANG, hang({ ...B("huefte", [110, 4, 0]), ...B("knie", [110]) }, -8), 1.0, { aus: 1.6, texte: ["Knie zur Brust ziehen, nicht schwingen", "Langsam senken"], hilfsmittel: [STANGE] }),
+  beinheben_haengend: wdh("schraeg", HANG, hang({ ...B("huefte", [110, 4, 0]), ...B("knie", [4]) }, -14), 1.4, { aus: 1.8, texte: ["Gestreckte Beine nach vorn oben heben", "Langsam senken"], hilfsmittel: [STANGE] }),
+  toes_to_bar: wdh("schraeg", HANG, hang({ ...B("huefte", [150, 4, 0]), ...B("knie", [4]), lws: [20, 0, 0], bws: [10, 0, 0] }, -30), 1.4, { aus: 1.8, texte: ["Zehen bis an die Stange", "Langsam senken"], hilfsmittel: [STANGE] }),
+  knieheben_haengend_schraeg: folge("schraeg", [[HANG, 0.6, "Hängen"], [hang({ ...B("huefte", [105, 4, 0]), ...B("knie", [110]), lws: [0, 0, 16], bws: [0, 0, 6] }, -8, ["l", "r"], -22), 1.0, "Knie schräg zur rechten Schulter, Becken dreht mit"], [HANG, 0.8], [hang({ ...B("huefte", [105, 4, 0]), ...B("knie", [110]), lws: [0, 0, -16], bws: [0, 0, -6] }, -8, ["l", "r"], 22), 1.0, "Zur anderen Seite"], [HANG, 0.8]], { hilfsmittel: [STANGE] }),
   scheibenwischer_haengend: folge(
     "vorn",
     [
       [hang({ ...B("huefte", [140, 4, 0]), ...B("knie", [4]) }, -30), 1.0, "Beine über Stangenhöhe heben"],
-      [hang({ ...B("huefte", [140, 4, 0]), ...B("knie", [4]), lws: [0, 0, 30], bws: [0, 0, 10] }, -30), 1.0, "Zur einen Seite schwenken"],
-      [hang({ ...B("huefte", [140, 4, 0]), ...B("knie", [4]), lws: [0, 0, -30], bws: [0, 0, -10] }, -30), 1.6, "Zur anderen Seite"],
-      [hang(), 1.2, "Langsam senken"],
+      [hang({ ...B("huefte", [140, 4, 0]), ...B("knie", [4]), lws: [0, 0, 26], bws: [0, 0, 10] }, -30, ["l", "r"], -36), 1.0, "Beine zur rechten Seite schwenken, Oberkörper bleibt zur Stange"],
+      [hang({ ...B("huefte", [140, 4, 0]), ...B("knie", [4]), lws: [0, 0, -26], bws: [0, 0, -10] }, -30, ["l", "r"], 36), 1.6, "Über die Mitte zur linken Seite"],
+      [HANG, 1.2, "Langsam senken"],
     ],
     { hilfsmittel: [STANGE] },
   ),
