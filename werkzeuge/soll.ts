@@ -2653,6 +2653,73 @@ const GOLF_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   },
 }
 
+// ---------------------------------------------------------------- Hüfte: Hip Thrust und Beckenheben
+const hm2 = (x: Punkte) => mitte(p(x, "g:huefte_l"), p(x, "g:huefte_r"))
+const km2 = (x: Punkte, s?: "l" | "r") => (s ? p(x, `g:knie_${s}`) : mitte(p(x, "g:knie_l"), p(x, "g:knie_r")))
+/** Linie Schultern, Hüfte, Knie in der Seitenansicht (seitlicher Versatz der Knie zählt nicht) */
+const seitlich = (v: V): V => [0, v[1], v[2]]
+const linieSHK = (x: Punkte, s?: "l" | "r") => winkelBei(seitlich(sm(x)), seitlich(hm2(x)), seitlich(km2(x, s)))
+const schienbeinLot = (x: Punkte, s: "l" | "r") => { const k = p(x, `g:knie_${s}`), f = p(x, `g:fuss_${s}`); return grad(Math.atan2(Math.abs(k[2] - f[2]), k[1] - f[1])) }
+const thrustSoll = (k: { frei?: "r"; stange?: boolean } = {}) => (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const steh = SEITEN.filter((s) => s !== k.frei)
+  const r = [
+    ...ruhig(m),
+    pr("Schulterblätter bleiben auf der Bankkante (m)", bleibt(m, ["bws"]), 0, 0.03, "die Unterkante der Schulterblätter liegt an der Bankkante"),
+    pr("Rücken auf der Bank (m)", p(o, "bws")[1], 0.43, 0.5, "Lehn den oberen Rücken an die Bankkante"),
+    pr("Oben: Oberkörper und Oberschenkel in einer Linie (°)", linieSHK(o, steh[0]), 165, 190, "bis Oberkörper und Oberschenkel eine Linie bilden"),
+    pr("Oben: Oberkörper waagerecht (°)", Math.abs(grad(Math.atan2(sm(o)[1] - hm2(o)[1], hm2(o)[2] - sm(o)[2]))), 0, 12, "die Hüfte ist gestreckt"),
+    ...steh.map((s) => pr(`Oben: Schienbein ${s} senkrecht (°)`, schienbeinLot(o, s), 0, 12, "so dass die Schienbeine oben senkrecht stehen")),
+    ...steh.map((s) => pr(`Fuß ${s} bleibt flach am Boden (m)`, Math.max(...m.alle.map((x) => p(x, `ferse_${s}`)[1])), 0, 0.04, "Drück dich über die Fersen nach oben")),
+    pr("Unten: Gesäß sinkt (m)", p(o, "gesaess")[1] - p(u, "gesaess")[1], 0.15, 0.45, "Senke die Hüfte kontrolliert ab"),
+  ]
+  if (!k.frei) r.push(pr("Füße hüftbreit (m)", Math.abs(p(o, "ferse_l")[0] - p(o, "ferse_r")[0]), 0.15, 0.35, "Stell die Füße hüftbreit auf"))
+  else r.push(pr("Becken waagerecht (m)", Math.max(...m.alle.map(beckenKippt)), 0, 0.03, "Halte das Becken waagerecht"), pr("Freies Bein vom Boden (m)", p(o, "ferse_r")[1], 0.15, 1.0, "das andere Knie ziehst du zur Brust oder streckst das Bein aus"))
+  if (k.stange) r.push(...[u, o].map((x, i) => pr(`Stange in der Hüftbeuge${i ? " oben" : ""} (m)`, abstand(haendeM(x), hm2(x)), 0, 0.22, "Roll die Langhantel bis in die Hüftbeuge")))
+  return r
+}
+const brueckeSoll = (k: { frei?: "l" | "r"; frosch?: boolean; bank?: boolean; stange?: boolean } = {}) => (m: Messung): Pruefung[] => {
+  const o = m.alle.reduce((a, b) => (hm2(b)[1] > hm2(a)[1] ? b : a)), u = m.alle.reduce((a, b) => (hm2(b)[1] < hm2(a)[1] ? b : a))
+  const steh = SEITEN.filter((s) => s !== k.frei)
+  const r = [
+    ...ruhig(m),
+    pr("Schultern bleiben am Boden (m)", Math.max(...m.alle.map((x) => Math.max(p(x, "g:schulter_l")[1], p(x, "g:schulter_r")[1]))), 0.08, 0.14, "Schultern bleiben am Boden"),
+    pr("Kopf bleibt liegen (m)", Math.max(...m.alle.map((x) => p(x, "kopf")[1])), 0.05, 0.16, "Leg dich auf den Rücken"),
+    pr("Becken hebt sich (m)", hm2(o)[1] - hm2(u)[1], 0.12, 0.4, "Drück dich über die Fersen nach oben"),
+    ...steh.map((s) => pr(`Ferse ${s} bleibt (m)`, bleibt({ ...m, alle: m.alle.filter((x) => p(x, `ferse_${s}`)[1] < (k.bank ? 0.6 : 0.2)) }, [`ferse_${s}`]), 0, 0.03, k.bank ? "stell die Fersen hüftbreit auf die Kante" : "die Fersen etwa eine Handbreit vor dem Gesäß")),
+  ]
+  if (!k.frosch) r.push(pr("Oben: Schultern, Hüfte und Knie in einer Linie (°)", linieSHK(o, steh[0]), 160, 190, "bis Schultern, Hüfte und Knie eine Linie bilden"))
+  else r.push(pr("Fußsohlen aneinander (m)", Math.abs(p(o, "ferse_l")[0] - p(o, "ferse_r")[0]), 0, 0.14, "leg die Fußsohlen aneinander"), pr("Knie weit nach außen (m)", Math.abs(p(o, "g:knie_l")[0] - p(o, "g:knie_r")[0]), 0.45, 0.9, "lass die Knie weit nach außen fallen"), pr("Oben: Hüfte gestreckt (°)", winkelBei(sm(o), hm2(o), km2(o)), 140, 190, "bis die Hüfte gestreckt ist"))
+  if (k.bank) r.push(...SEITEN.map((s) => pr(`Ferse ${s} auf der Bank (m)`, p(u, `ferse_${s}`)[1], 0.45, 0.52, "stell die Fersen hüftbreit auf die Kante")), pr("Unten: Gesäß fast am Boden (m)", p(u, "gesaess")[1], 0, 0.1, "bis das Gesäß fast den Boden berührt"))
+  if (k.frei) r.push(pr("Becken waagerecht (m)", Math.max(...m.alle.map(beckenKippt)), 0, 0.03, "Halte das Becken waagerecht"))
+  if (k.stange) r.push(...[u, o].map((x, i) => pr(`Stange in der Hüftbeuge${i ? " oben" : ""} (m)`, abstand(haendeM(x), hm2(x)), 0, 0.25, "Roll die Langhantel bis in die Hüftbeuge")))
+  return r
+}
+const BRUECKE_SOLL: Record<string, (m: Messung) => Pruefung[]> = {
+  hip_thrust_lh: thrustSoll({ stange: true }),
+  hip_thrust_multipresse: thrustSoll({ stange: true }),
+  hip_thrust_kh: thrustSoll({ stange: true }),
+  hip_thrust_band: thrustSoll(),
+  hip_thrust_kg: thrustSoll(),
+  hip_thrust_einbeinig: thrustSoll({ frei: "r" }),
+  glute_bridge: brueckeSoll(),
+  glute_bridge_einbeinig: (m) => [...brueckeSoll({ frei: "r" })(m), pr("Freies Bein in Verlängerung des Oberschenkels (°)", kniewinkel(m.ziel, "r"), 165, 181, "das andere Bein ist gestreckt")],
+  glute_bridge_lh: brueckeSoll({ stange: true }),
+  glute_bridge_isohold: brueckeSoll(),
+  glute_bridge_miniband: (m) => [...brueckeSoll()(m), pr("Knie über den Füßen, leicht nach außen (m)", Math.abs(p(m.ziel, "g:knie_l")[0] - p(m.ziel, "g:knie_r")[0]) - Math.abs(p(m.ziel, "g:fuss_l")[0] - p(m.ziel, "g:fuss_r")[0]), -0.02, 0.12, "Drück die Knie leicht nach außen, die Knie bleiben über den Füßen")],
+  glute_bridge_marsch: (m) => {
+    const r = [...ruhig(m), pr("Schultern bleiben am Boden (m)", Math.max(...m.alle.map((x) => Math.max(p(x, "g:schulter_l")[1], p(x, "g:schulter_r")[1]))), 0.08, 0.14, "Becken oben halten"), pr("Becken bleibt ruhig (m)", bleibt(m, ["g:becken"]), 0, 0.02, "Halte das Becken dabei ganz ruhig und waagerecht"), pr("Becken waagerecht (m)", Math.max(...m.alle.map(beckenKippt)), 0, 0.03, "als stünde ein Glas Wasser auf deinem Bauch"), pr("Oben: Linie Schultern, Hüfte, Knie (°)", linieSHK(m.start), 160, 190, "bis Schultern, Hüfte und Knie eine Linie bilden")]
+    for (const s of SEITEN) { const x = m.alle.reduce((a, b) => (p(b, `g:knie_${s}`)[1] > p(a, `g:knie_${s}`)[1] ? b : a)); r.push(pr(`Oberschenkel ${s} senkrecht (°)`, oberschenkelLot(x, s), 0, 15, "zieh das Knie Richtung Brust, bis der Oberschenkel senkrecht ist")) }
+    return r
+  },
+  glute_bridge_fuesse_erhoeht: brueckeSoll({ bank: true }),
+  frog_pump: brueckeSoll({ frosch: true }),
+  golf_bruecke_beinstreckung: (m) => {
+    const lang = m.alle.reduce((a, b) => (p(b, "ferse_r")[1] > p(a, "ferse_r")[1] ? b : a))
+    return [...brueckeSoll({ frei: "r" })({ ...m, alle: m.alle }), pr("Bein in Verlängerung des Oberschenkels (°)", kniewinkel(lang, "r"), 165, 181, "Strecke ein Knie aus, sodass das Bein in Verlängerung des Oberschenkels schwebt"), pr("Linie Knie, Hüfte, Schultern (°)", linieSHK(lang, "l"), 160, 190, "Knie, Hüfte und Schultern bilden eine Linie")]
+  },
+}
+
 export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...BANK_SOLL,
   ...LS_SOLL,
@@ -2686,6 +2753,7 @@ export const SOLL: Record<string, (m: Messung) => Pruefung[]> = {
   ...ROLL_SOLL,
   ...PALLOF_SOLL,
   ...GOLF_SOLL,
+  ...BRUECKE_SOLL,
   split_squat_kh: splitSoll({ fest: "beide" }),
   split_squat_kg: splitSoll({ fest: "beide" }),
   split_squat_lh: splitSoll({ fest: "beide" }),

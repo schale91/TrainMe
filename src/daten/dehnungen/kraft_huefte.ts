@@ -28,31 +28,72 @@ const oben = (arme: Winkel, breit = 10): Haltung => stand(arme, breit)
 
 // ---------------------------------------------------------------- Hip Thrust, Beckenheben
 /** Oberer Rücken an der quer stehenden Bank, Füße flach am Boden unter den Knien */
-const BANK_QUER: Hilfsmittel = { art: "bank", unter: "bws", hoehe: 0.42, quer: true }
-const ARME_BANK: Winkel = { ...B("schulter", [-60, 40, 0]), ...B("ellbogen", [80, 0]) }
+// die Kante liegt unter der Unterkante der Schulterblätter, die Bank selbst steht dahinter
+const BANK_QUER: Hilfsmittel = { art: "bank", unter: "bws", hoehe: 0.45, quer: true, versatz: [0, -0.16] }
+/** Füße flach und hüftbreit, oben senkrecht unter den Knien (Ferse und Ballen am Boden) */
+const THRUST_FUESSE = (frei?: "r"): NonNullable<Haltung["ziele"]> => {
+  const z: NonNullable<Haltung["ziele"]> = { ferse_l: { pos: [0.12, 0.0, THRUST_FERSE_Z] }, fuss_l: { pos: [0.13, 0.02, THRUST_FERSE_Z + 0.12] } }
+  if (!frei) Object.assign(z, { ferse_r: { pos: [-0.12, 0.0, THRUST_FERSE_Z] }, fuss_r: { pos: [-0.13, 0.02, THRUST_FERSE_Z + 0.12] } })
+  return z
+}
+const THRUST_FERSE_Z = 0.36
+const THRUST_OBEN_Y = 0.55
+/** Arme seitlich ausgestreckt auf der Bank */
+const ARME_BANK: Winkel = { ...B("schulter", [0, 80, 0]), ...B("ellbogen", [10, 0]) }
 const ARME_STANGE_HUEFTE: Winkel = { ...B("schulter", [28, 34, 0]), ...B("ellbogen", [30, OBERGRIFF]), ...FAUST }
-const thrustOben = (w: Winkel): Haltung => H({ ...B("huefte", [0, 10, 0]), ...B("knie", [92]), ...B("fuss", [2, 0]), hals: [22, 0, 0], ...w }, [-90, 0, 0], { pos: [0, 0.5, 0], boden: false })
-const thrustUnten = (w: Winkel): Haltung => H({ ...B("huefte", [78, 10, 0]), ...B("knie", [100]), ...B("fuss", [-23, 0]), hals: [22, 0, 0], ...w }, [-45, 0, 0], { pos: [0, 0.25, -0.1], boden: false })
-const thrust = (arme: Winkel, hilfsmittel: Hilfsmittel[], extra: Partial<Dehnung> = {}): Dehnung =>
-  wdh("seite", thrustUnten(arme), thrustOben(arme), 1.2, { aus: 1.8, halten: 1, texte: ["Hüfte nach oben strecken, Kinn zur Brust", "Becken kontrolliert absenken"], hilfsmittel: [BANK_QUER, ...hilfsmittel], ...extra })
+/** Oben: Oberkörper und Oberschenkel waagerecht in einer Linie, Schienbeine senkrecht, Kinn zur Brust */
+const thrustOben = (w: Winkel, frei?: "r", haende?: NonNullable<Haltung["ziele"]>): Haltung => H({ ...B("huefte", [0, 10, 0]), ...B("knie", [92]), ...B("fuss", [2, 0]), hals: [22, 0, 0], ...w }, [-90, 0, 0], { pos: [0, THRUST_OBEN_Y, 0], boden: false, ziele: { ...THRUST_FUESSE(frei), ...haende } })
+/** Unten: der Oberkörper dreht um die Bankkante, das Gesäß sinkt Richtung Boden */
+const thrustUnten = (w: Winkel, frei?: "r", haende?: NonNullable<Haltung["ziele"]>): Haltung => H({ ...B("huefte", [70, 10, 0]), ...B("knie", [100]), ...B("fuss", [-23, 0]), hals: [22, 0, 0], ...w }, [THRUST_UNTEN_KIPP, 0, 0], { pos: THRUST_UNTEN_POS, boden: false, ziele: { ...THRUST_FUESSE(frei), ...haende } })
+// unten dreht der Rumpf um die Unterkante der Schulterblätter auf der Bankkante (gemessen: oben y 0,453, z -0,248)
+const THRUST_UNTEN_KIPP = -40
+const THRUST_UNTEN_POS: [number, number, number] = [0, 0.311, -0.03]
+/** Hände an der Stange bzw. Hantel in der Hüftbeuge (im Rahmen des Beckens) */
+const haendeHuefte = (x: number): NonNullable<Haltung["ziele"]> => ({ hand_l: { pos: [x, -0.07, 0.15], bezug: "becken" }, hand_r: { pos: [-x, -0.07, 0.15], bezug: "becken" } })
+const thrust = (arme: Winkel, hilfsmittel: Hilfsmittel[], extra: Partial<Dehnung> = {}, haende?: NonNullable<Haltung["ziele"]>): Dehnung =>
+  wdh("seite", thrustUnten(arme, undefined, haende), thrustOben(arme, undefined, haende), 1.2, { aus: 1.8, halten: 1, texte: ["Hüfte nach oben strecken, Kinn zur Brust", "Becken kontrolliert absenken"], hilfsmittel: [BANK_QUER, ...hilfsmittel], ...extra })
 
 /** Rückenlage, Füße aufgestellt; oben: Schultern, Hüfte und Knie in einer Linie */
 const ARME_BODEN: Winkel = { ...B("schulter", [0, 14, 0]), ...B("ellbogen", [4, OBERGRIFF]) }
 const ARME_BODEN_OBEN: Winkel = { ...B("schulter", [-8, 14, 0]), ...B("ellbogen", [4, OBERGRIFF]) }
 const brueckeUnten = (w: Winkel = {}): Haltung => mit(RUECKENLAGE_AUF, { g: { ...ARME_BODEN, ...w } })
-const brueckeOben = (w: Winkel = {}): Haltung =>
-  mit(RUECKENLAGE_AUF, { dreh: [-118, 0, 0], g: { ...ARME_BODEN_OBEN, ...B("huefte", [4, 4, 0]), ...B("knie", [100]), ...B("fuss", [10, 0]), bws: [22, 0, 0], hals: [6, 0, 0], ...w } })
-const bruecke = (unten: Winkel, obenW: Winkel, extra: Partial<Dehnung> = {}): Dehnung =>
-  wdh("seite", brueckeUnten(unten), brueckeOben(obenW), 1.2, { aus: 1.6, halten: 1, texte: ["Becken heben, Gesäß fest anspannen", "Langsam ablegen"], ...extra })
+/** Rückenlage mit festen Fersen (wie oben) und optional Händen an der Stange in der Hüftbeuge */
+const brueckeUntenFest = (w: Winkel = {}, haende: NonNullable<Haltung["ziele"]> = {}): Haltung =>
+  mit(RUECKENLAGE_AUF, { pos: [0, 0.119, 0], boden: false, g: { ...ARME_BODEN, ...w }, ziele: { ferse_l: { pos: [0.119, 0.066, 0.595] }, ferse_r: { pos: [-0.119, 0.066, 0.595] }, ...haende } })
+/**
+ * Brücke oben: die Schultern bleiben am Boden (Schultergelenk 11 cm hoch, wie in der Rückenlage), das Becken steigt auf
+ * die Höhe h, der Rumpf kippt um die Schultern; die Fersen bleiben, wo sie in der Rückenlage stehen.
+ */
+const SCHULTER_BODEN = 0.112
+const SCHULTER_RUHE_Z = -0.353
+const RUMPF_HS = 0.355
+const brueckeLage = (h: number, fersen: [number, number] = [0.066, 0.595], frei?: "l" | "r", fx = 0.119): Partial<Haltung> => {
+  const th = Math.asin(Math.min(0.99, (h - SCHULTER_BODEN) / RUMPF_HS))
+  const ziele: NonNullable<Haltung["ziele"]> = {}
+  for (const [n, x] of [["l", 1], ["r", -1]] as const) if (n !== frei) ziele[`ferse_${n}`] = { pos: [x * fx, fersen[0], fersen[1]] }
+  return { dreh: [-90 - (th * 180) / Math.PI, 0, 0], pos: [0, h, SCHULTER_RUHE_Z + RUMPF_HS * Math.cos(th)], boden: false, ziele }
+}
+/** Hals nickt um den Kippwinkel des Rumpfs, damit der Kopf am Boden liegen bleibt */
+const halsBruecke = (h: number): Winkel => ({ hals: [(Math.asin(Math.min(0.99, (h - SCHULTER_BODEN) / RUMPF_HS)) * 180) / Math.PI + 6, 0, 0] })
+const BRUECKE_H = 0.3
+const brueckeOben = (w: Winkel = {}, frei?: "l" | "r", frosch = false): Haltung =>
+  mit(RUECKENLAGE_AUF, { ...(frosch ? brueckeLage(BRUECKE_H, [0.05, 0.42], undefined, 0.05) : brueckeLage(BRUECKE_H, undefined, frei)), g: { ...ARME_BODEN_OBEN, ...B("huefte", [4, 4, 0]), ...B("knie", [100]), ...B("fuss", [10, 0]), ...halsBruecke(BRUECKE_H), ...w } })
+const bruecke = (unten: Winkel, obenW: Winkel, extra: Partial<Dehnung> = {}, frei?: "r", frosch = false): Dehnung =>
+  wdh("seite", brueckeUnten(unten), brueckeOben(obenW, frei, frosch), 1.2, { aus: 1.6, halten: 1, texte: ["Becken heben, Gesäß fest anspannen", "Langsam ablegen"], ...extra })
 /** Freies rechtes Bein gestreckt in Verlängerung des Oberschenkels */
 const EINBEIN_UNTEN: Winkel = { huefte_r: [60, 4, 0], knie_r: [0], fuss_r: [10, 0] }
 /** Beine fast gestreckt, Fersen am Boden, Becken bleibt oben */
 const GESTRECKT: Winkel = { ...B("huefte", [-24, 4, 0]), ...B("knie", [4]), ...B("fuss", [-10, 0]), bws: [10, 0, 0] }
 const mit2 = (ansicht: Dehnung["ansicht"], d: Dehnung): Dehnung => ({ ...d, ansicht })
 const EINBEIN_OBEN: Winkel = { huefte_r: [4, 4, 0], knie_r: [0], fuss_r: [10, 0] }
-/** Füße erhöht auf dem Kasten (40 cm) */
-const FUESSE_HOCH_UNTEN: Winkel = { ...B("huefte", [30, 4, 0]), ...B("knie", [40]), ...B("fuss", [-30, 0]) }
-const FUESSE_HOCH_OBEN: Winkel = { ...B("huefte", [0, 4, 0]), ...B("knie", [60]), ...B("fuss", [-62, 0]), bws: [22, 0, 0], hals: [6, 0, 0] }
+/** Fersen hüftbreit auf der Kante der quer stehenden Flachbank (45 cm), Knie etwa 90 Grad */
+const BANK_FERSE_Z = 0.62
+const fuesseBank = (oben: boolean): Haltung =>
+  H(
+    { ...B("huefte", [oben ? 20 : 80, 4, 0]), ...B("knie", [90]), ...B("fuss", [20, 0]), ...(oben ? { ...ARME_BODEN_OBEN, ...halsBruecke(0.39) } : ARME_BODEN) },
+    [-90, 0, 0],
+    oben ? brueckeLage(0.39, [0.47, BANK_FERSE_Z]) : { pos: [0, 0.13, 0], boden: false, ziele: { ferse_l: { pos: [0.119, 0.47, BANK_FERSE_Z] }, ferse_r: { pos: [-0.119, 0.47, BANK_FERSE_Z] } } },
+  )
 /** Beckenheben mit den Fersen auf dem Gymnastikball (oben gestreckte Beine, dann Knie beugen) */
 const BALL_GESTRECKT: Haltung = mit(RUECKENLAGE_AUF, { dreh: [-112, 0, 0], g: { ...ARME_BODEN_OBEN, ...B("huefte", [0, 4, 0]), ...B("knie", [4]), ...B("fuss", [-10, 0]), bws: [10, 0, 0], hals: [8, 0, 0] } })
 const BALL_GEBEUGT: Haltung = mit(RUECKENLAGE_AUF, { dreh: [-122, 0, 0], g: { ...ARME_BODEN_OBEN, ...B("huefte", [4, 4, 0]), ...B("knie", [100]), ...B("fuss", [20, 0]), bws: [24, 0, 0], hals: [6, 0, 0] } })
@@ -95,12 +136,12 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   // Kreuzheben
   // Hüftbeugen aus dem Stand
   // Hip Thrust an der Bank
-  hip_thrust_lh: thrust(ARME_STANGE_HUEFTE, LH),
-  hip_thrust_multipresse: thrust(ARME_STANGE_HUEFTE, LH),
-  hip_thrust_kh: thrust({ ...B("schulter", [-6, 30, 0]), ...B("ellbogen", [20, HAMMER]), ...FAUST }, [{ art: "hantel", an: "haende" }]),
+  hip_thrust_lh: thrust(ARME_STANGE_HUEFTE, LH, {}, haendeHuefte(0.3)),
+  hip_thrust_multipresse: thrust(ARME_STANGE_HUEFTE, LH, {}, haendeHuefte(0.3)),
+  hip_thrust_kh: thrust({ ...B("schulter", [-6, 30, 0]), ...B("ellbogen", [60, HAMMER]), ...FAUST }, [{ art: "hantel", an: "haende" }], {}, haendeHuefte(0.13)),
   hip_thrust_band: thrust(ARME_BANK, [{ art: "bandanker", von: "becken", anker: [0.3, 0.02, 0.05] }, { art: "bandanker", von: "becken", anker: [-0.3, 0.02, 0.05] }]),
   hip_thrust_kg: thrust(ARME_BANK, []),
-  hip_thrust_einbeinig: wdh("seite", thrustUnten({ ...ARME_BANK, huefte_r: [130, 10, 0], knie_r: [100] }), thrustOben({ ...ARME_BANK, huefte_r: [40, 10, 0], knie_r: [100] }), 1.2, {
+  hip_thrust_einbeinig: wdh("seite", thrustUnten({ ...ARME_BANK, huefte_r: [130, 10, 0], knie_r: [100] }, "r"), thrustOben({ ...ARME_BANK, huefte_r: [40, 10, 0], knie_r: [100] }, "r"), 1.2, {
     aus: 1.8,
     halten: 1,
     seiten: true,
@@ -109,10 +150,12 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
   }),
   // Beckenheben am Boden
   glute_bridge: bruecke({}, {}),
-  glute_bridge_einbeinig: bruecke(EINBEIN_UNTEN, EINBEIN_OBEN, { seiten: true, texte: ["Über eine Ferse hochdrücken, Becken waagerecht", "Langsam ablegen"] }),
-  glute_bridge_lh: bruecke(ARME_STANGE_HUEFTE, ARME_STANGE_HUEFTE, { hilfsmittel: LH }),
+  glute_bridge_einbeinig: bruecke(EINBEIN_UNTEN, EINBEIN_OBEN, { seiten: true, texte: ["Über die Ferse des Standbeins hochdrücken, Becken waagerecht", "Langsam ablegen"] }, "r"),
+  glute_bridge_lh: wdh("seite", brueckeUntenFest(ARME_STANGE_HUEFTE, haendeHuefte(0.3)), mit(brueckeOben(ARME_STANGE_HUEFTE), { ziele: { ...brueckeLage(BRUECKE_H).ziele, ...haendeHuefte(0.3) } }), 1.2, { aus: 1.6, halten: 1, texte: ["Becken mit der Stange in der Hüftbeuge heben, Gesäß anspannen", "Absenken, bis das Gesäß den Boden leicht berührt"], hilfsmittel: LH }),
   glute_bridge_isohold: halte("seite", brueckeUnten(), brueckeOben(), { ein: 1.5, aus: 2, hinweis: "Becken oben halten, Gesäß bleibt angespannt." }),
-  glute_bridge_miniband: bruecke(B("huefte", [60, 12, 0]), B("huefte", [4, 12, 0]), {
+  glute_bridge_miniband: wdh("seite", brueckeUntenFest(B("huefte", [60, 12, 0])), brueckeOben(B("huefte", [4, 12, 0])), 1.2, {
+    aus: 1.6,
+    halten: 1,
     texte: ["Becken heben, Knie gegen das Band nach außen", "Langsam ablegen"],
     hilfsmittel: [{ art: "band", von: "knie_l", bis: "knie_r" }],
   }),
@@ -120,28 +163,30 @@ export const KRAFT_HUEFTE: Record<string, Dehnung> = {
     "seite",
     [
       [brueckeOben(), 1.2, "Becken oben halten"],
-      [brueckeOben({ huefte_r: [70, 4, 0], knie_r: [90] }), 0.8, "Ein Knie anheben, Becken bleibt ruhig"],
+      [brueckeOben({ huefte_r: [70, 4, 0], knie_r: [90] }, "r"), 0.8, "Rechtes Knie anheben, bis der Oberschenkel senkrecht ist, Becken bleibt ruhig"],
       [brueckeOben(), 0.6],
-      [brueckeOben({ huefte_l: [70, 4, 0], knie_l: [90] }), 0.8, "Anderes Knie anheben"],
+      [brueckeOben({ huefte_l: [70, 4, 0], knie_l: [90] }, "l"), 0.8, "Anderes Knie anheben"],
       [brueckeOben(), 0.6],
     ],
   ),
-  glute_bridge_fuesse_erhoeht: wdh("seite", brueckeUnten(FUESSE_HOCH_UNTEN), mit(RUECKENLAGE_AUF, { dreh: [-125, 0, 0], g: { ...ARME_BODEN_OBEN, ...FUESSE_HOCH_OBEN } }), 1.2, {
+  glute_bridge_fuesse_erhoeht: wdh("seite", fuesseBank(false), fuesseBank(true), 1.2, {
     aus: 1.6,
     halten: 1,
-    texte: ["Fersen auf den Kasten drücken, Becken heben", "Langsam ablegen"],
-    hilfsmittel: [{ art: "box", unter: "fuss_l", hoehe: 0.3, versatz: [-0.1, 0.05] }],
+    texte: ["Fersen in die Bank drücken, Becken heben, bis Schultern, Hüfte und Knie eine Linie bilden", "Langsam absenken, bis das Gesäß fast den Boden berührt"],
+    hilfsmittel: [{ art: "bank", unter: "ferse_l", hoehe: 0.45, quer: true, versatz: [-0.12, 0.1] }],
   }),
-  frog_pump: mit2("schraeg", bruecke({ ...B("huefte", [50, 45, -40]), ...B("knie", [110]), ...B("fuss", [10, 30]) }, { ...B("huefte", [0, 45, -40]), ...B("knie", [110]), ...B("fuss", [10, 30]) }, {
-    texte: ["Fußsohlen zusammen, Becken kurz und kräftig heben", "Ablegen"],
+  frog_pump: mit2("schraeg", wdh("seite", mit(brueckeUnten({ ...B("huefte", [60, 45, -40]), ...B("knie", [125]), ...B("fuss", [10, 30]) }), { pos: [0, 0.119, 0], boden: false, ziele: { ferse_l: { pos: [0.05, 0.05, 0.42] }, ferse_r: { pos: [-0.05, 0.05, 0.42] } } }), brueckeOben({ ...B("huefte", [10, 45, -40]), ...B("knie", [125]), ...B("fuss", [10, 30]) }, undefined, true), 1.2, {
+    aus: 1.6,
+    halten: 1,
+    texte: ["Fußsohlen zusammen, Becken schnell und kräftig heben, oben Gesäß anspannen", "Ablegen und direkt weiter"],
   })),
   golf_bruecke_beinstreckung: folge(
     "seite",
     [
       [brueckeUnten(), 0.8, "Rückenlage, Füße aufgestellt"],
       [brueckeOben(), 1.2, "Becken heben"],
-      [brueckeOben(EINBEIN_OBEN), 1.0, "Ein Bein strecken, Becken bleibt waagerecht"],
-      [brueckeOben(EINBEIN_OBEN), 2.0, "Halten", true],
+      [brueckeOben(EINBEIN_OBEN, "r"), 1.0, "Ein Bein strecken, Becken bleibt waagerecht"],
+      [brueckeOben(EINBEIN_OBEN, "r"), 2.0, "Halten", true],
       [brueckeOben(), 0.8, "Fuß zurück"],
       [brueckeUnten(), 1.2, "Ablegen"],
     ],
