@@ -124,3 +124,55 @@ export const KRAFT_CURLS: Record<string, Dehnung> = {
   drag_curl: drag(),
   bizeps_isohold: halte("schraeg", stand(UNTEN, UNTERGRIFF), stand(MITTE, UNTERGRIFF), { texte: ["Bis die Unterarme waagerecht sind", "Ruhig halten, Oberarme an der Seite"], hilfsmittel: KH }),
 }
+
+// ---------------------------------------------------------------- Curls im Sitzen
+/** sitzend mit Lehne: vor < 0 lehnt zurück (Schrägbank 45 bis 60 Grad: Rumpf etwa 40 Grad hinter der Senkrechten) */
+const sitz = (c: Curl, dreh: number, vor: number, extra: Ziele = {}): Haltung => {
+  const ziele: Ziele = { ...extra }
+  curlZiele(c, "beide", ziele)
+  const h = koerper("sitz", vor, curlWinkel(c, dreh), ziele)
+  // zurückgelehnt sitzt das Gesäß etwas höher auf der Sitzfläche (sonst drückt der Sitz die Figur hoch)
+  return vor < -20 ? { ...h, pos: [0, 0.58, 0] } : h
+}
+const LEHNE: Hilfsmittel = { art: "schraegbank", unter: "gesaess", lehne: "bws", hoehe: 0.45 }
+/** an der Schrägbank hängen die Oberarme senkrecht zum Boden, also hinter dem Körper */
+const SCHRAEG = -40
+const schraegCurl = (dreh: number, texte: [string, string]): Dehnung =>
+  wdh("seite", sitz({ winkel: 4, oberarm: SCHRAEG, ellAussen: 0.02 }, dreh, SCHRAEG), sitz({ winkel: 140, oberarm: SCHRAEG, ellAussen: 0.02, aussen: 0.02 }, dreh, SCHRAEG), 1.3, { aus: 2.6, halten: 0.5, texte, hilfsmittel: [...KH, LEHNE] })
+/** Konzentrationscurl: breit am Bankende, Oberkörper leicht vorgeneigt, rechter Oberarm an der Innenseite des rechten
+ * Oberschenkels, die linke Hand stützt sich auf den linken Oberschenkel */
+const KONZ_FUESSE: Ziele = {
+  ferse_l: { pos: [0.3, 0.022, 0.4] },
+  fuss_l: { pos: [0.33, 0.034, 0.52] },
+  ferse_r: { pos: [-0.3, 0.022, 0.4] },
+  fuss_r: { pos: [-0.33, 0.034, 0.52] },
+}
+const KONZ_ELL: P3 = [-0.16, 0.66, 0.245]
+const konz = (oben: boolean): Haltung => {
+  const h: P3 = oben ? [-0.2, 0.9, 0.31] : [-0.16, 0.385, 0.3]
+  const ziele: Ziele = { ...KONZ_FUESSE, ellbogen_r: { pos: KONZ_ELL }, hand_r: { pos: h }, hand_l: { pos: [0.22, 0.62, 0.3] } }
+  const k = koerper("sitz", 28, { schulter_r: [40, -8, 0], ellbogen_r: [oben ? 138 : 10, UNTERGRIFF], schulter_l: [50, 14, 0], ellbogen_l: [50, 30], ...B("huefte", [118, 24, 0]) }, ziele)
+  return k
+}
+/** Handgelenkcurl: Unterarme liegen auf den Oberschenkeln, die Handgelenke ragen über die Knie; nur die Hand bewegt sich */
+const HG_ELL: P3 = [0.15, 0.63, 0.2]
+const HG_GELENK: P3 = [0.15, 0.615, 0.4]
+const handgelenk = (winkel: number, dreh: number): Haltung => {
+  const d: P3 = [0, Math.sin(rad(winkel)), Math.cos(rad(winkel))]
+  const p = plus(HG_GELENK, d, 0.08)
+  const ziele: Ziele = {}
+  for (const sx of [1, -1] as const) {
+    const n = sx === 1 ? "l" : "r"
+    ziele[`ellbogen_${n}`] = { pos: [sx * HG_ELL[0], HG_ELL[1], HG_ELL[2]] }
+    ziele[`hand_${n}`] = { pos: [sx * p[0], p[1], p[2]] }
+  }
+  return koerper("sitz", 32, { ...B("schulter", [40, 8, 0]), ...B("ellbogen", [70, dreh]), ...B("hand", [dreh === UNTERGRIFF ? -winkel : winkel, 0]) }, ziele)
+}
+export const KRAFT_CURLS_SITZ: Record<string, Dehnung> = {
+  handgelenk_curl: wdh("schraeg", handgelenk(-50, UNTERGRIFF), handgelenk(40, UNTERGRIFF), 1.0, { aus: 1.8, halten: 0.6, texte: ["Handgelenk so weit es geht nach oben beugen", "Langsam nach unten sinken lassen"], hilfsmittel: [...KH, { art: "bank", unter: "gesaess", hoehe: 0.45 }] }),
+  handgelenk_curl_revers: wdh("schraeg", handgelenk(-45, OBERGRIFF), handgelenk(35, OBERGRIFF), 1.0, { aus: 1.8, halten: 0.6, texte: ["Handrücken nach oben heben, bis das Handgelenk gestreckt ist", "Langsam wieder absenken"], hilfsmittel: [...KH, { art: "bank", unter: "gesaess", hoehe: 0.45 }] }),
+  konzentrationscurl: wdh("schraeg", konz(false), konz(true), 1.3, { aus: 2.2, halten: 1.0, seiten: true, texte: ["Richtung Schulter curlen, der Oberarm bleibt am Bein", "Langsam ablassen, bis der Arm ganz gestreckt ist"], hilfsmittel: [...KH_R, { art: "bank", unter: "gesaess", hoehe: 0.45 }] }),
+  bizeps_kh_sitzend: wdh("schraeg", sitz({ winkel: 4, oberarm: 2, ellAussen: 0.06, aussen: 0.04 }, UNTERGRIFF, -4), sitz({ winkel: 146, oberarm: 2, ellAussen: 0.05, aussen: 0.03 }, UNTERGRIFF, -4), 1.3, { aus: 2.4, halten: 0.6, texte: ["Hochcurlen, die Oberarme bleiben an der Lehne senkrecht", "Langsam ablassen, bis die Arme gestreckt sind"], hilfsmittel: [...KH, LEHNE] }),
+  schraegbank_curl: schraegCurl(UNTERGRIFF, ["Hochcurlen, ohne die Ellbogen nach vorn zu schieben", "Langsam in die tiefe Dehnung absenken"]),
+  hammercurl_schraegbank: schraegCurl(HAMMER, ["Im neutralen Griff hochcurlen, Oberarme senkrecht zum Boden", "Langsam absenken, bis die Arme ganz gestreckt sind"]),
+}

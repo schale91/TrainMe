@@ -1699,6 +1699,49 @@ CURL_SOLL.drag_curl = (m) => {
   return r
 }
 
+// ---------------------------------------------------------------- Curls im Sitzen, Konzentration, Handgelenk
+/** Oberarm gegen die Senkrechte, von der Seite gesehen (nach vorn oder hinten) */
+const oberarmLot = (m: Punkte, a: "l" | "r") => {
+  const sh = p(m, `g:schulter_${a}`), e = p(m, `g:ellbogen_${a}`)
+  return grad(Math.atan2(Math.abs(e[2] - sh[2]), sh[1] - e[1]))
+}
+const sitzCurlSoll = (schraeg: boolean) => (m: Messung): Pruefung[] => {
+  const r = curlSoll({ neig: schraeg ? [-48, -30] : [-10, 2], hinten: schraeg, quelle: "Oben kurz anspannen" })(m)
+  for (const x of [m.start, m.ziel]) for (const a of SEITEN) r.push(pr(`Oberarm ${a} senkrecht zum Boden (°)`, oberarmLot(x, a), 0, 14, schraeg ? "die Oberarme zeigen senkrecht zum Boden, also leicht hinter den Körper" : "die Oberarme bleiben an der Lehne entlang senkrecht"))
+  if (!schraeg) for (const a of SEITEN) r.push(pr(`Hantel ${a} neben der Bank (m)`, Math.abs(p(m.start, `hand_${a}`)[0]), 0.2, 0.4, "die Kurzhanteln hängen seitlich neben der Bank"))
+  return r
+}
+CURL_SOLL.bizeps_kh_sitzend = sitzCurlSoll(false)
+CURL_SOLL.schraegbank_curl = sitzCurlSoll(true)
+CURL_SOLL.hammercurl_schraegbank = sitzCurlSoll(true)
+CURL_SOLL.konzentrationscurl = (m) => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Sitz und Füße bleiben (m)", bleibt(m, ["g:becken", "ferse_l", "ferse_r"]), 0, 0.02, "die Füße stehen breit auf dem Boden")]
+  r.push(pr("Füße breit (m)", fussbreite(u), 0.45, 0.8, "die Füße stehen breit auf dem Boden"))
+  r.push(pr("Oberkörper leicht vorgeneigt (°)", rumpfneigung(u), 15, 40, "der Oberkörper ist leicht nach vorn geneigt"))
+  for (const x of [u, o]) {
+    r.push(pr("Oberarm am Oberschenkel (m)", abstand(p(x, "g:ellbogen_r"), p(x, "oberschenkel_r")), 0, 0.18, "Lege die Rückseite des Oberarms an die Innenseite des Oberschenkels"))
+    r.push(pr("Ellbogen innen am Bein (m)", Math.abs(p(x, "g:knie_r")[0]) - Math.abs(p(x, "g:ellbogen_r")[0]), 0.0, 0.15, "an die Innenseite des Oberschenkels"))
+  }
+  r.push(pr("Ellbogen bleibt am Bein (m)", bleibt(m, ["g:ellbogen_r"]), 0, 0.02, "der Oberarm bleibt am Bein"))
+  r.push(pr("Arm unten gestreckt (°)", ellbogenWinkel(u, "r"), 158, 180, "bis der Arm ganz gestreckt ist"))
+  r.push(pr("Oben Richtung Schulter (°)", ellbogenWinkel(o, "r"), 18, 62, "Curle die Hantel Richtung Schulter"))
+  r.push(pr("Freie Hand auf dem Oberschenkel (m)", abstand(p(u, "hand_l"), p(u, "oberschenkel_l")), 0, 0.2, "die freie Hand stützt sich ab"))
+  return r
+}
+const handgelenkSoll = (m: Messung): Pruefung[] => {
+  const [u, o] = [m.start, m.ziel]
+  const r = [...ruhig(m), pr("Unterarme bleiben liegen (m)", bleibt(m, ["g:ellbogen_l", "g:ellbogen_r", "g:hand_l", "g:hand_r"]), 0, 0.03, "Die Unterarme bleiben während des ganzen Satzes ruhig liegen")]
+  for (const a of SEITEN) {
+    r.push(pr(`Handgelenk ${a} über dem Knie (m)`, p(u, `g:hand_${a}`)[2] - p(u, `g:knie_${a}`)[2], 0.0, 0.12, "die Handgelenke ragen über die Kante"))
+    r.push(pr(`Unterarm ${a} auf dem Oberschenkel (m)`, p(u, `g:ellbogen_${a}`)[1] - p(u, `g:knie_${a}`)[1], 0.03, 0.15, "leg die Unterarme auf die Oberschenkel"))
+    r.push(pr(`Hand ${a} bewegt sich auf und ab (m)`, p(o, `hand_${a}`)[1] - p(u, `hand_${a}`)[1], 0.06, 0.18, "Lass das Handgelenk nach unten sinken und beuge es nach oben"))
+  }
+  return r
+}
+CURL_SOLL.handgelenk_curl = handgelenkSoll
+CURL_SOLL.handgelenk_curl_revers = handgelenkSoll
+
 // ---------------------------------------------------------------- An der Wand (Fläche bei z = 0,5)
 const WAND_Z = 0.5
 const anWand = (m: Punkte, n: string, ab = 0.07) => WAND_Z - p(m, n)[2] <= ab
