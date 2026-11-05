@@ -13,6 +13,7 @@ const ampel = (n: number) => (n > 5 ? "ampel rot" : n >= 3 ? "ampel gelb" : "amp
 import type { Daten, Einheit, Platz, Protokoll, Satz, Satzform, Uebung, Vorgabe } from "../logik/typen"
 import { Blatt, Gruppe, Icon, Seite, useEbene, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
+import { alleTage, formSchwach, tageswerte } from "../logik/gesundheit"
 import { ebeneOeffnen } from "./navigation"
 import { bruecke } from "./lebenswelt"
 import { ROLLE, datumText, grundText, zahl } from "./texte"
@@ -446,9 +447,32 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setEntfernt({})
     setAngepasst([...angepasst, "zurueck"])
   }
-  const frage: "pausen" | "supersatz" | "weglassen" | "zurueck" | "vollepausen" | null =
+  // Tagesform aus der Uhr (Schlaf, Ruhepuls, HRV): deutlich schwach → vor dem Start fragen, ob die Gewichte heute
+  // nicht steigen (höchstens wie beim letzten Mal) und eine Wiederholung mehr im Tank bleibt
+  const form = useMemo(() => {
+    if (reha) return { punkte: 0, gruende: [] as string[] }
+    const vorher = Object.entries(alleTage(daten)).filter(([d]) => d < einheit.datum).sort(([a], [b]) => (a < b ? -1 : 1)).map(([, w]) => w)
+    return formSchwach(tageswerte(daten, einheit.datum), vorher)
+  }, [daten, einheit.datum, reha])
+  const formAnpassen = () => {
+    setPlaetze(plaetze.map((p) => (p.uebung.belastung === "gewicht" ? { ...p, vorgabe: { ...p.vorgabe, rir: Math.min(4, (p.vorgabe.rir ?? 2) + 1) } } : p)))
+    setSaetze(
+      saetze.map((ss, i) => {
+        const p = plaetze[i]
+        if (p.uebung.belastung !== "gewicht") return ss
+        const v = verlauf(daten, p.uebung.id, einheit.datum)
+        const vorige = v.length ? Math.max(0, ...v[v.length - 1].saetze.map((x) => x.last ?? 0)) : 0
+        return ss.map((x) => (x.fertig ? x : { ...x, ...(vorige > 0 && x.last && x.last > vorige ? { last: vorige } : {}), rir: Math.min(4, (x.rir ?? 2) + 1) }))
+      }),
+    )
+    setAngepasst([...angepasst, "form"])
+    setToast("Heute ohne Steigerung und mit einer Wiederholung mehr im Tank. Fühlt es sich gut an, darfst du trotzdem nach oben anpassen.")
+  }
+  const frage: "form" | "pausen" | "supersatz" | "weglassen" | "zurueck" | "vollepausen" | null =
     beginn === null
-      ? null
+      ? !gefragt("form") && form.punkte >= 2 && !saetze.some((ss) => ss.some((x) => x.fertig))
+        ? "form"
+        : null
       : zuLang
         ? !gefragt("pausen") && kuerzen.gekuerzt.length && kuerzenSpart >= 1
           ? "pausen"
@@ -465,7 +489,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const frageAntwort = (ja: boolean) => {
     if (!frage) return
     if (!ja) return setAngepasst([...angepasst, ...(frage === "supersatz" ? paarMarken : []), frage + "-nein"])
-    if (frage === "pausen") pausenKuerzenJa()
+    if (frage === "form") formAnpassen()
+    else if (frage === "pausen") pausenKuerzenJa()
     else if (frage === "supersatz") alsSupersatz()
     else if (frage === "weglassen") weglassen()
     else if (frage === "zurueck") zurueckHolen()
@@ -1106,7 +1131,12 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       ) : null}
 
       {/* Rückfrage bei knapper Zeit: erst nach dem Satz zeigen, nicht während Zahlen eingetippt werden */}
-      <Blatt offen={frage !== null && !pad && aufraeumenAb === null} onClose={() => frageAntwort(false)} titel={(frage === "zurueck" || frage === "vollepausen" ? "Du liegst gut in der Zeit: etwa " : "Es wird knapp: etwa ") + Math.round(prog.gesamt) + " von " + budget + " min"}>
+      <Blatt offen={frage !== null && !pad && aufraeumenAb === null} onClose={() => frageAntwort(false)} titel={frage === "form" ? "Tagesform heute schwach" : (frage === "zurueck" || frage === "vollepausen" ? "Du liegst gut in der Zeit: etwa " : "Es wird knapp: etwa ") + Math.round(prog.gesamt) + " von " + budget + " min"}>
+        {frage === "form" ? (
+          <p className="infokurz">
+            Laut Uhr: {form.gruende.join(", ")}. Soll ich die Gewichte heute nicht steigern (höchstens wie beim letzten Mal) und eine Wiederholung mehr im Tank lassen? Die Sätze und Pausen bleiben wie geplant.
+          </p>
+        ) : null}
         {frage === "pausen" ? (
           <>
             <p className="infokurz">
