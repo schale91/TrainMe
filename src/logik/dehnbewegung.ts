@@ -57,6 +57,12 @@ export interface Haltung {
    * Die Winkel in g sind der Startwert.
    */
   ziele?: Partial<Record<ZielPunkt, Ziel>>
+  /**
+   * Nur für gelöste Zwischenhaltungen: Richtung, in die Knie bzw. Ellbogen von der Linie Hüfte–Knöchel bzw.
+   * Schulter–Handgelenk weg zeigen sollen (gemischt aus Anfang und Ende der Bewegung). Ohne diese Vorgabe kann das
+   * Gelenk um die Linie frei drehen und wackelt dann von Bild zu Bild.
+   */
+  pole?: Partial<Record<"knie_l" | "knie_r" | "ellbogen_l" | "ellbogen_r", V3>>
 }
 
 export type ZielPunkt = "fuss_l" | "fuss_r" | "ferse_l" | "ferse_r" | "knie_l" | "knie_r" | "hand_l" | "hand_r" | "ellbogen_l" | "ellbogen_r"
