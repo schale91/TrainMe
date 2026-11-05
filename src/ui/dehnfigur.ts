@@ -9,7 +9,7 @@
 import * as THREE from "three"
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { clone as skelettKlon } from "three/examples/jsm/utils/SkeletonUtils.js"
-import { POS_GRUND, mische, mischeEinfach, standZu, zwischenDa, zwischenSetzen, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand, type Winkel, type Ziel, type ZielPunkt } from "../logik/dehnbewegung"
+import { POS_GRUND, ablauf, mische, mischeEinfach, standZu, zwischenDa, zwischenSetzen, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand, type Winkel, type Ziel, type ZielPunkt } from "../logik/dehnbewegung"
 import { LOCKER, Modellfigur, NACKT, RASTER } from "./modellfigur"
 
 /** Geriggtes Modell, das statt der gezeichneten Figur gezeigt wird (falls geladen). */
@@ -865,6 +865,9 @@ function zwischenOrt(n: ZielPunkt, za: Ziel, zb: Ziel, u: number, oa: Record<str
   const va = new THREE.Vector3(...za.pos).sub(a0), vb = new THREE.Vector3(...zb.pos).sub(b0)
   const la = va.length(), lb = vb.length()
   if (la < 0.05 || lb < 0.05) return gerade
+  // Nur Drehbewegungen um das Gelenk (Abstand bleibt etwa gleich, z. B. Überzug, Frontheben). Ziehen und Drücken
+  // (Hand kommt deutlich näher, z. B. Face Pull, Rudern) laufen wirklich gerade.
+  if (Math.max(la, lb) / Math.min(la, lb) > 1.3) return gerade
   const da = va.clone().divideScalar(la), db = vb.clone().divideScalar(lb)
   // fast entgegengesetzt: Bogen nicht eindeutig, dann gerade
   if (da.dot(db) < -0.95) return gerade
@@ -872,6 +875,33 @@ function zwischenOrt(n: ZielPunkt, za: Ziel, zb: Ziel, u: number, oa: Record<str
   const dir = da.applyQuaternion(new THREE.Quaternion().slerp(q, u))
   const mitte = a0.clone().lerp(b0, u)
   return mitte.addScaledVector(dir, la + (lb - la) * u).toArray() as [number, number, number]
+}
+
+/**
+ * Punkt im Bogen um ein mitbewegtes Gelenk (Hand um den Ellbogen, Fuß um das Knie). Der Unterarm (Unterschenkel)
+ * wird mit dem Oberarm (Oberschenkel) mitgedreht, und nur die Beugung dazwischen ändert sich gleichmäßig, wie bei
+ * einem Scharniergelenk. ra, rb: Schulter bzw. Hüfte an Anfang und Ende.
+ */
+function bogenUm(ga: THREE.Vector3, gb: THREE.Vector3, g: THREE.Vector3, pa: THREE.Vector3, pb: THREE.Vector3, u: number, ra?: THREE.Vector3, rb?: THREE.Vector3): [number, number, number] {
+  const gerade = pa.clone().lerp(pb, u).toArray() as [number, number, number]
+  const va = pa.clone().sub(ga), vb = pb.clone().sub(gb)
+  const la = va.length(), lb = vb.length()
+  if (la < 0.02 || lb < 0.02) return gerade
+  const a = va.divideScalar(la), b = vb.divideScalar(lb)
+  // Drehung des oberen Glieds von Anfang bis jetzt (und bis zum Ende)
+  let qJetzt = new THREE.Quaternion(), qEnde = new THREE.Quaternion()
+  if (ra && rb) {
+    const oa = ga.clone().sub(ra).normalize(), ob = gb.clone().sub(rb).normalize()
+    if (oa.dot(ob) > -0.95) {
+      qEnde = new THREE.Quaternion().setFromUnitVectors(oa, ob)
+      qJetzt = new THREE.Quaternion().slerp(qEnde, u)
+    }
+  }
+  const f0 = a.clone().applyQuaternion(qJetzt)
+  const f1 = b.clone().applyQuaternion(qEnde.clone().invert()).applyQuaternion(qJetzt)
+  if (f0.dot(f1) < -0.95) return gerade
+  const q = new THREE.Quaternion().setFromUnitVectors(f0, f1)
+  return g.clone().addScaledVector(f0.applyQuaternion(new THREE.Quaternion().slerp(q, u)), la + (lb - la) * u).toArray() as [number, number, number]
 }
 
 class Buehne {
@@ -1035,12 +1065,32 @@ class Buehne {
         for (const [n, za] of Object.entries(a.ziele) as [ZielPunkt, Ziel][]) {
           const zb = b.ziele[n]
           if (!zb || (zb.bezug ?? "welt") !== (za.bezug ?? "welt")) continue
-          // Ellbogen und Knie folgen dazwischen der Hand und dem Fuß: gerade gemischt läge der Punkt innerhalb der
-          // Kette und wäre mit den Gliedlängen nicht erreichbar
-          if (n.startsWith("ellbogen_") && a.ziele[`hand_${n.slice(-1)}` as ZielPunkt]) continue
-          if (n.startsWith("knie_") && (a.ziele[`fuss_${n.slice(-1)}` as ZielPunkt] || a.ziele[`ferse_${n.slice(-1)}` as ZielPunkt])) continue
+          // Ellbogen und Knie mit Hand bzw. Fuß: als Kette (siehe unten), sonst folgen sie frei
+          const sx = n.slice(-1)
+          if (n.startsWith("ellbogen_") && a.ziele[`hand_${sx}` as ZielPunkt]) continue
+          if (n.startsWith("knie_") && (a.ziele[`fuss_${sx}` as ZielPunkt] || a.ziele[`ferse_${sx}` as ZielPunkt])) continue
           ziele[n] = { bezug: za.bezug, pos: zwischenOrt(n, za, zb, u, oa, ob) }
         }
+        // Kette Schulter–Ellbogen–Hand bzw. Hüfte–Knie–Fuß, wenn beide Enden Ellbogen und Hand (Knie und Fuß) vorgeben
+        // und sich die Hand (der Fuß) bewegt: Ellbogen im Bogen um die Schulter, Hand im Bogen um den Ellbogen. Die
+        // Gliedlängen bleiben so erhalten, und der Ellbogen bleibt auf seiner Bahn (etwa beim Skull Crusher fest).
+        // Bleibt die Hand (der Fuß) stehen, folgt das mittlere Gelenk wie bisher frei.
+        for (const sx of ["l", "r"] as const)
+          for (const [mitte, enden] of [
+            [`ellbogen_${sx}`, [`hand_${sx}`]],
+            [`knie_${sx}`, [`fuss_${sx}`, `ferse_${sx}`]],
+          ] as [ZielPunkt, ZielPunkt[]][]) {
+            const ma = a.ziele[mitte], mb = b.ziele[mitte]
+            if (!ma || !mb || (ma.bezug ?? "welt") !== (mb.bezug ?? "welt")) continue
+            const da = enden.filter((e) => a.ziele![e] && b.ziele![e] && (a.ziele![e]!.bezug ?? "welt") === (ma.bezug ?? "welt"))
+            if (!da.length) continue
+            const bewegt = da.some((e) => new THREE.Vector3(...a.ziele![e]!.pos).distanceTo(new THREE.Vector3(...b.ziele![e]!.pos)) > 0.01)
+            if (!bewegt) continue
+            const m0 = zwischenOrt(mitte, ma, mb, u, oa, ob)
+            ziele[mitte] = { bezug: ma.bezug, pos: m0 }
+            const wurzel = (ma.bezug || "welt") + ":" + (mitte.startsWith("ellbogen_") ? "schulter_" : "huefte_") + sx
+            for (const e of da) ziele[e] = { bezug: ma.bezug, pos: bogenUm(new THREE.Vector3(...ma.pos), new THREE.Vector3(...mb.pos), new THREE.Vector3(...m0), new THREE.Vector3(...a.ziele![e]!.pos), new THREE.Vector3(...b.ziele![e]!.pos), u, oa[wurzel], ob[wurzel]) }
+          }
         // Startwert: Mischung der gelösten Enden. Ohne Beckenlage (Figur liegt, kniet oder sitzt auf dem Boden) bleibt
         // auch die Zwischenhaltung auf dem Boden, sonst stünde sie auf der Grundhöhe des Beckens und schwebte.
         const ml = mische(la, lb, u)
@@ -1823,12 +1873,21 @@ export function _bahn(d: Dehnung, n = 120): Record<string, [number, number, numb
   const namen = (["l", "r"] as const).flatMap((s) => ["huefte_", "knie_", "fuss_", "schulter_", "ellbogen_", "hand_"].map((x) => x + s))
   const aus: Record<string, [number, number, number]>[] = []
   for (let i = 0; i < n; i++) {
-    const st = standZu(b.d, (i / n) * gesamt * 0.999)
+    const t = (i / n) * gesamt * 0.999
+    const st = standZu(b.d, t)
     b.koerper.wurzel.position.set(0, 0, 0)
     b.stelleStand(st)
     b.modell?.uebernehmen(st.haltung.boden !== false)
     b.szene.updateMatrixWorld(true)
     const bild: Record<string, [number, number, number]> = {}
+    // Phase der Bewegung (Nummer des Schritts), damit die Messung Hin und Her innerhalb einer Phase findet
+    let rest = t, phase = 0
+    for (const s of ablauf(b.d)) {
+      if (rest <= s.s) break
+      rest -= s.s
+      phase++
+    }
+    bild._phase = [phase, 0, 0]
     for (const m of namen) {
       const v = b.gelenkOrt(m)
       bild[m] = [v.x, v.y, v.z]
