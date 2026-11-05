@@ -214,6 +214,15 @@ export function zwischenSetzen(a: Haltung, b: Haltung, liste: Haltung[]) {
 }
 
 export function mische(a: Haltung, b: Haltung, u: number): Haltung {
+  const p = mischPaar(a, b, u)
+  return mischeEinfach(p.a, p.b, p.u)
+}
+
+/**
+ * Die zwei benachbarten Haltungen, zwischen denen bei u überblendet wird (mit gelösten Zwischenhaltungen das Stück
+ * der Kette), und der Anteil dazwischen. Die Figur dreht damit Schulter und Hüfte als Ganzes (siehe Koerper).
+ */
+export function mischPaar(a: Haltung, b: Haltung, u: number): { a: Haltung; b: Haltung; u: number } {
   const hin = ZWISCHEN.get(a)?.get(b)
   const her = hin ? undefined : ZWISCHEN.get(b)?.get(a)
   if ((hin || her) && u > 0 && u < 1) {
@@ -221,12 +230,12 @@ export function mische(a: Haltung, b: Haltung, u: number): Haltung {
     const v = hin ? u : 1 - u
     const n = kette.length - 1
     const i = Math.min(n - 1, Math.floor(v * n))
-    return mischeEinfach(kette[i], kette[i + 1], v * n - i)
+    return { a: kette[i], b: kette[i + 1], u: v * n - i }
   }
-  return mischeEinfach(a, b, u)
+  return { a, b, u }
 }
 
-function mischeEinfach(a: Haltung, b: Haltung, u: number): Haltung {
+export function mischeEinfach(a: Haltung, b: Haltung, u: number): Haltung {
   const g: Winkel = {}
   for (const k of GELENKE) {
     const n = Math.max(a.g[k]?.length ?? 0, b.g[k]?.length ?? 0)
@@ -264,6 +273,8 @@ export interface Stand {
   gespiegelt: boolean
   /** Atmung 0 bis 1 */
   atem: number
+  /** Beim Überblenden: die beiden Haltungen und der Anteil (für das Drehen von Schulter und Hüfte als Ganzes) */
+  paar?: { a: Haltung; b: Haltung; u: number }
 }
 
 /** Die Abfolge einer Dehnung als Schritte, eine Seite. haltenS: Haltezeit aus der Vorgabe. */
@@ -303,9 +314,14 @@ export function standZu(d: Dehnung, t: number, haltenS?: number): Stand {
   let haltung = vorher
   let text = ""
   let rest: number | null = null
+  let paar: Stand["paar"]
   for (const s of schritte) {
     if (x <= s.s) {
-      haltung = s.halten ? s.h : mische(vorher, s.h, weich(x / s.s))
+      if (s.halten) haltung = s.h
+      else {
+        paar = mischPaar(vorher, s.h, weich(x / s.s))
+        haltung = mischeEinfach(paar.a, paar.b, paar.u)
+      }
       text = s.text || ""
       rest = s.halten && s.s >= 3 ? Math.ceil(s.s - x) : null
       break
@@ -316,5 +332,6 @@ export function standZu(d: Dehnung, t: number, haltenS?: number): Stand {
   }
   // Ruhige Atmung, etwa 5 Sekunden je Atemzug
   const atem = (1 - Math.cos((2 * Math.PI * t) / 5)) / 2
-  return { haltung: gespiegelt ? spiegel(haltung) : haltung, text: (d.seiten ? (gespiegelt ? "Andere Seite: " : "Erste Seite: ") : "") + text, rest, gespiegelt, atem }
+  if (paar && gespiegelt) paar = { a: spiegel(paar.a), b: spiegel(paar.b), u: paar.u }
+  return { haltung: gespiegelt ? spiegel(haltung) : haltung, paar, text: (d.seiten ? (gespiegelt ? "Andere Seite: " : "Erste Seite: ") : "") + text, rest, gespiegelt, atem }
 }
