@@ -59,6 +59,18 @@ export function PlanSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void
           />
         </div>
       </Gruppe>
+      <Gruppe titel="Aufwärmsätze" fuss={profil.aufwaermen === "grosse_vier" ? "Nur bei Kniebeuge, Bankdrücken, Überkopfdrücken und Kreuzheben mit der Langhantel, jeweils bei der ersten ihrer Art am Tag. Danach sind die Muskeln warm." : "Bei der ersten Hauptübung des Tages, aufsteigend bis zum Arbeitsgewicht."}>
+        <div className="segmentzeile">
+          <Segment
+            werte={[
+              { id: "plan", name: "Erste Hauptübung" },
+              { id: "grosse_vier", name: "Große Langhantelübungen" },
+            ]}
+            wert={profil.aufwaermen || "plan"}
+            onChange={(x) => props.aendern((d) => void (d.profil!.aufwaermen = x))}
+          />
+        </div>
+      </Gruppe>
       <Gruppe titel="Eigener Plan" fuss="Je Zeile eine Übung, z. B. „Brücke 3 x 12“, „Wandsitzen 3 x 30 s“, „Kniebeuge 4 x 5 75 %“, „Curl 3 x 10-12, 2 im Tank“. „Tag 1: Name“ beginnt einen Tag, „A1:“ und „A2:“ bilden einen Supersatz.">
         <Zeile titel="Nach dem letzten Tag von vorn" untertitel="Für Pläne, die sich wiederholen, z. B. von der Physiotherapie" rechts={<Schalter an={!!daten.eigenerPlan?.wiederholen} onChange={(an) => props.aendern((d) => void (d.eigenerPlan && (d.eigenerPlan.wiederholen = an)))} />} />
       </Gruppe>

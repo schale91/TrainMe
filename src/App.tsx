@@ -307,7 +307,7 @@ export default function App() {
       if (e.datum !== tag) d.erledigt[d.erledigt.length - 1].geplant = e.datum
       if (schmerzVor !== undefined) d.erledigt[d.erledigt.length - 1].schmerz_vor = schmerzVor
       // gemessene Zeit von „Training starten“ bis „Training beenden“
-      if (zeit) Object.assign(d.erledigt[d.erledigt.length - 1], { beginn: new Date(zeit.beginn).toISOString(), ende: new Date(zeit.ende).toISOString(), dauer_min: Math.round((zeit.ende - zeit.beginn) / 6000) / 10, budget_min: zeit.budget, geschaetzt_min: zeit.geschaetzt })
+      if (zeit) Object.assign(d.erledigt[d.erledigt.length - 1], { beginn: new Date(zeit.beginn).toISOString(), ende: new Date(zeit.ende).toISOString(), dauer_min: Math.round((zeit.ende - zeit.beginn) / 6000) / 10, budget_min: zeit.budget, geschaetzt_min: zeit.geschaetzt, ...zeit.messung })
       einheiten = d.erledigt.length
     })
     setOffen(null)

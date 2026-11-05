@@ -13,6 +13,9 @@ export const PAUSE_MIN_S = 60
 /** längste Pause der Ergänzungsübungen nach dem Kürzen (Sekunden) */
 export const PAUSE_KURZ_S = 90
 
+/** Abstände unter 15 Sekunden sind nachträglich abgehakt, keine echten Sätze hintereinander: zählen nicht */
+export const NACHTRAG_MIN = 0.25
+
 interface MitZeit {
   fertig: boolean
   um?: number
@@ -95,7 +98,7 @@ export function heuteFaktor(plaetze: MitGruppe[], saetze: MitZeit[][], gelernt =
     const um = saetze[i].filter((s) => s.fertig && s.um !== undefined).map((s) => s.um as number).sort((a, b) => a - b)
     for (let k = 1; k < um.length; k++) {
       const d = (um[k] - um[k - 1]) / 60000
-      if (d <= 0 || d > 10) continue
+      if (d < NACHTRAG_MIN || d > 10) continue
       ist += d
       plan += runde
       n++
@@ -141,7 +144,7 @@ export function hauptPausenZuKurz(plaetze: Pick<Platz, "vorgabe" | "rolle">[], s
   plaetze.forEach((p, i) => {
     if (p.rolle !== "haupt") return
     const um = saetze[i].filter((s) => s.fertig && s.um !== undefined).map((s) => s.um as number).sort((a, b) => a - b)
-    for (let k = 1; k < um.length; k++) r.push((um[k] - um[k - 1]) / 60000 / satzMin(p))
+    for (let k = 1; k < um.length; k++) if ((um[k] - um[k - 1]) / 60000 >= NACHTRAG_MIN) r.push((um[k] - um[k - 1]) / 60000 / satzMin(p))
   })
   return r.length >= 2 && median(r) < 0.6
 }
@@ -183,9 +186,10 @@ const SUPERSATZ_ROLLEN = new Set(["neben", "isolation", "praevention"])
  * (keine Hauptmuskelgruppe der einen ist Haupt- oder Hilfsmuskelgruppe der anderen), abwechselnd mit einer Pause je Runde.
  * Agonist und Antagonist im Wechsel erhalten die Leistung (Robbins et al. 2010; Paz et al. 2017) und sparen etwa die
  * Hälfte der Zeit (Weakley et al. 2017). Nicht mit demselben Gerät (eine Stange, ein Kabelzug), sonst wird ständig
- * umgebaut. geraet: das Lastgerät je Platz. Gibt Paare zurück, bis die Ersparnis fehlt_min erreicht.
+ * umgebaut. geraet: das Lastgerät je Platz. Gibt Paare zurück, bis die Ersparnis fehlt_min erreicht; Paare in
+ * ausgenommen („i-j“) wurden schon gefragt.
  */
-export function supersatzVorschlag(plaetze: FuerSupersatz[], saetze: MitZeit[][], geraet: (string | null)[], fehlt_min: number): { paare: [number, number][]; spart_min: number } {
+export function supersatzVorschlag(plaetze: FuerSupersatz[], saetze: MitZeit[][], geraet: (string | null)[], fehlt_min: number, ausgenommen: string[] = []): { paare: [number, number][]; spart_min: number } {
   const paare: [number, number][] = []
   let spart = 0
   const geeignet = (i: number) => !plaetze[i].gruppe && SUPERSATZ_ROLLEN.has(plaetze[i].rolle) && plaetze[i].uebung.art !== "mobilitaet" && saetze[i].some((s) => !s.fertig)
@@ -200,7 +204,7 @@ export function supersatzVorschlag(plaetze: FuerSupersatz[], saetze: MitZeit[][]
   }
   for (let i = 0; i + 1 < plaetze.length && spart < fehlt_min; i++) {
     const j = i + 1
-    if (!geeignet(i) || !geeignet(j) || !getrennt(plaetze[i].uebung, plaetze[j].uebung)) continue
+    if (ausgenommen.indexOf(i + "-" + j) >= 0 || !geeignet(i) || !geeignet(j) || !getrennt(plaetze[i].uebung, plaetze[j].uebung)) continue
     if (geraet[i] && geraet[i] === geraet[j] && !MEHRFACH.has(geraet[i] as string)) continue
     const runden = Math.min(saetze[i].filter((s) => !s.fertig).length, saetze[j].filter((s) => !s.fertig).length)
     const s = (runden * (Math.min(plaetze[i].vorgabe.pause_s, plaetze[j].vorgabe.pause_s) - SUPERSATZ_WECHSEL_S)) / 60
@@ -217,4 +221,105 @@ export function freieGruppe(plaetze: { gruppe?: string }[], schon: string[] = []
   const belegt = new Set([...plaetze.map((p) => p.gruppe).filter(Boolean), ...schon])
   for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") if (!belegt.has(b)) return b
   return "S" + belegt.size
+}
+
+/** Die vier großen Langhantelübungen samt Varianten: Kniebeuge, Bankdrücken, Überkopfdrücken, Kreuzheben */
+export type GrosseVier = "kniebeuge" | "bank" | "ueberkopf" | "kreuzheben"
+export function grosseVier(u: { id: string; name: string; muster: string }, geraet: string | null): GrosseVier | null {
+  if (geraet !== "langhantel" && geraet !== "trap_bar") return null
+  if (u.muster === "hueftstreckung" && /kreuzheben|rdl|rack_pull|deadlift/i.test(u.id + " " + u.name)) return "kreuzheben"
+  if (geraet !== "langhantel") return null
+  if (u.muster === "kniebeuge") return "kniebeuge"
+  if (u.muster === "druecken_horizontal") return "bank"
+  if (u.muster === "druecken_vertikal") return "ueberkopf"
+  return null
+}
+
+/** Grundzeit eines Übungswechsels ohne Aufwärmen und Umbau: hingehen, einstellen, Pause vor dem ersten Satz */
+export const WECHSEL_MIN = 1.5
+/** Minuten je Aufwärmsatz samt kurzer Pause */
+export const AUFWAERM_MIN = 1.5
+
+/**
+ * Aus früheren Einheiten gelernt, getrennt nach dem, was wirklich verschieden ist: das Tempo von Satz zu Satz
+ * (gemessen gegen die geplante Pause), die Wechsel zwischen den Übungen (samt Aufwärmen und Umbau, gegen die
+ * Schätzung) und die Minuten vom letzten Satz bis „Training beenden“ (Aufräumen).
+ */
+export interface Gelernt {
+  tempo: number
+  wechsel: number
+  abschluss: number
+}
+export const GELERNT_START: Gelernt = { tempo: 1, wechsel: 1, abschluss: AUFRAEUMEN_MIN }
+
+/** Median der letzten sechs gemessenen Einheiten, sonst die Startwerte */
+export function gelerntAus(daten: Pick<Daten, "erledigt">): Gelernt {
+  const letzte = (k: "tempo" | "wechsel" | "abschluss_min") => daten.erledigt.map((e) => e[k]).filter((x): x is number => typeof x === "number" && Number.isFinite(x)).slice(-6)
+  const m = (k: "tempo" | "wechsel" | "abschluss_min", sonst: number, von: number, bis: number) => {
+    const x = median(letzte(k))
+    return Number.isFinite(x) ? Math.min(bis, Math.max(von, x)) : sonst
+  }
+  return { tempo: m("tempo", 1, 0.6, 1.6), wechsel: m("wechsel", 1, 0.3, 2), abschluss: m("abschluss_min", AUFRAEUMEN_MIN, 0, 10) }
+}
+
+/** Blöcke in der Reihenfolge des Plans: eine Übung allein oder alle Übungen eines Supersatzes zusammen */
+export function bloecke(plaetze: { gruppe?: string }[]): number[][] {
+  const aus: number[][] = []
+  const gesehen = new Set<string>()
+  plaetze.forEach((p, i) => {
+    if (!p.gruppe) return void aus.push([i])
+    if (gesehen.has(p.gruppe)) return
+    gesehen.add(p.gruppe)
+    aus.push(plaetze.map((x, k) => (x.gruppe === p.gruppe ? k : -1)).filter((k) => k >= 0))
+  })
+  return aus
+}
+
+/**
+ * Restdauer in Minuten (vor dem Start: die ganze Einheit). Je Block, der noch nicht begonnen hat, ein Wechsel bis
+ * zum ersten Satz (Grundzeit, Aufwärmsätze und Umbau, mal dem gelernten Wechselfaktor); dann die übrigen Sätze samt
+ * Pause davor mal dem Tempo; die Pause nach dem letzten Satz steckt im nächsten Wechsel; am Ende der Abschluss. warm: offene Aufwärmsätze je Übung,
+ * umbau: Minuten Auf- und Abbau je Übung (bei begonnenen nur noch das Abbauen).
+ */
+export function restDauer(plaetze: MitGruppe[], saetze: MitZeit[][], l: Gelernt, warm: number[], umbau: number[], tempo = l.tempo): number {
+  const m = satzMinuten(plaetze)
+  let t = 0
+  for (const b of bloecke(plaetze)) {
+    const offen = b.reduce((n, i) => n + saetze[i].filter((x) => !x.fertig).length, 0)
+    const begonnen = b.some((i) => saetze[i].some((x) => x.fertig))
+    if (!offen) continue
+    // Der Wechsel reicht bis zum ersten abgehakten Satz des Blocks (samt dessen Arbeit); danach je Satz Pause und
+    // Arbeit. Bei begonnenen Blöcken zählt nur noch das Abbauen.
+    const saetzeZeit = b.reduce((n, i) => n + saetze[i].filter((x) => !x.fertig).length * m[i], 0)
+    if (!begonnen) t += (WECHSEL_MIN + b.reduce((n, i) => n + (warm[i] || 0) * AUFWAERM_MIN + (umbau[i] || 0), 0)) * l.wechsel + (saetzeZeit - m[b[b.length - 1]]) * tempo
+    else t += b.reduce((n, i) => n + (umbau[i] || 0), 0) * l.wechsel + saetzeZeit * tempo
+  }
+  return t + l.abschluss
+}
+
+/**
+ * Messwerte einer fertigen Einheit zum Lernen: Tempo (ab drei Messungen), Wechselfaktor (tatsächlicher Wechsel bis
+ * zum ersten Satz eines Blocks gegen die Schätzung, ab zwei Wechseln) und Minuten vom letzten Satz bis zum Ende.
+ * warm: geplante Aufwärmsätze je Übung, umbau: Minuten Auf- und Abbau je Übung.
+ */
+export function messen(plaetze: MitGruppe[], saetze: MitZeit[][], beginn: number, ende: number, warm: number[], umbau: number[]): { tempo?: number; wechsel?: number; abschluss_min?: number } {
+  const aus: { tempo?: number; wechsel?: number; abschluss_min?: number } = {}
+  const t = heuteFaktor(plaetze, saetze, NaN)
+  if (Number.isFinite(t)) aus.tempo = Math.round(t * 100) / 100
+  const zeiten = (b: number[]) => b.flatMap((i) => saetze[i].filter((x) => x.fertig && x.um !== undefined).map((x) => x.um as number))
+  const reihe = bloecke(plaetze)
+    .map((b) => ({ b, z: zeiten(b) }))
+    .filter((x) => x.z.length)
+    .sort((a, c) => Math.min(...a.z) - Math.min(...c.z))
+  const r: number[] = []
+  let vorher = beginn
+  for (const { b, z } of reihe) {
+    const ist = (Math.min(...z) - vorher) / 60000
+    const plan = WECHSEL_MIN + b.reduce((n, i) => n + (warm[i] || 0) * AUFWAERM_MIN + (umbau[i] || 0), 0)
+    if (ist > 0 && ist < 20) r.push(ist / plan)
+    vorher = Math.max(...z)
+  }
+  if (r.length >= 2) aus.wechsel = Math.round(median(r) * 100) / 100
+  if (reihe.length && ende >= vorher) aus.abschluss_min = Math.round(Math.min(15, (ende - vorher) / 60000) * 10) / 10
+  return aus
 }
