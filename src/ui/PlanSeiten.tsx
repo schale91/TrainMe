@@ -71,6 +71,20 @@ export function PlanSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void
           />
         </div>
       </Gruppe>
+      <Gruppe titel="Aufräumen am Ende" fuss={profil.aufraeumen_min ? "Nach dem letzten Satz läuft ein Countdown, der sich nicht wegklicken lässt. Erst danach lässt sich das Training beenden. Die Minuten zählen zur Trainingszeit." : "Aus: „Training beenden“ geht sofort nach dem letzten Satz."}>
+        <div className="segmentzeile">
+          <Segment
+            werte={[
+              { id: "0", name: "Aus" },
+              { id: "3", name: "3 min" },
+              { id: "5", name: "5 min" },
+              { id: "10", name: "10 min" },
+            ]}
+            wert={String(profil.aufraeumen_min || 0)}
+            onChange={(x) => props.aendern((d) => void (d.profil!.aufraeumen_min = Number(x) || undefined))}
+          />
+        </div>
+      </Gruppe>
       <Gruppe titel="Eigener Plan" fuss="Je Zeile eine Übung, z. B. „Brücke 3 x 12“, „Wandsitzen 3 x 30 s“, „Kniebeuge 4 x 5 75 %“, „Curl 3 x 10-12, 2 im Tank“. „Tag 1: Name“ beginnt einen Tag, „A1:“ und „A2:“ bilden einen Supersatz.">
         <Zeile titel="Nach dem letzten Tag von vorn" untertitel="Für Pläne, die sich wiederholen, z. B. von der Physiotherapie" rechts={<Schalter an={!!daten.eigenerPlan?.wiederholen} onChange={(an) => props.aendern((d) => void (d.eigenerPlan && (d.eigenerPlan.wiederholen = an)))} />} />
       </Gruppe>

@@ -3147,3 +3147,39 @@ select.ampel.rot {
   gap: 8px;
   margin-top: 12px;
 }
+
+/* Aufräumen am Ende: deckt alles ab, lässt sich nicht wegklicken */
+.aufraeumen {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(10, 8, 24, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.aufraeumenkarte {
+  background: var(--flaeche);
+  border-radius: var(--gross);
+  padding: 24px 18px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.aufraeumenkarte h2 {
+  margin: 0;
+}
+.aufraeumenuhr {
+  font-size: 4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--akzent);
+}
+.aufraeumenkarte p {
+  margin: 0;
+  color: var(--leise);
+}
