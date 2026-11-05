@@ -1107,26 +1107,28 @@ class Buehne {
         versuche.push({ bogen: { ...basis, ziele }, gerade: { ...basis, ziele: zieleGerade } })
       }
       // Bogen und Kette nur, wo sie die Bewegung wirklich ruhiger machen: entscheidend ist, wie weit Ellbogen und Knie
-      // über den ganzen Übergang seitlich hin und her schwenken. Läuft die gerade Fassung ruhiger (etwa wenn sich der
-      // ganze Körper mitbewegt wie beim Bärengang) oder trifft der Bogen seine Ziele deutlich schlechter, bleibt es
-      // gerade wie früher. Je Bewegung eine Fassung, gemischt je Bild gäbe Sprünge.
+      // über den ganzen Übergang seitlich hin und her schwenken. Erst gerade wie früher; nur wenn das wackelt, auch im
+      // Bogen rechnen und den nehmen, wenn er ruhiger läuft und seine Ziele nicht deutlich schlechter trifft (läuft etwa
+      // der ganze Körper mit wie beim Bärengang, bleibt es gerade). Je Bewegung eine Fassung, gemischt je Bild gäbe
+      // Sprünge. So kostet der Bogen nur dort Rechenzeit, wo er etwas bringt.
       const rest0 = this.restfehler, wo0 = this.restWo
-      const bogen = versuche.map((v) => this.loese(v.bogen))
-      const restB = Math.max(0, ...bogen.map((h) => RESTE.get(h) ?? 0))
-      const wB = this.schwenk([la, ...bogen, lb])
-      if (restB <= 0.006 && wB < 0.003) liste.push(...bogen)
+      const gerade = versuche.map((v) => this.loese(v.gerade))
+      const wG = this.schwenk([la, ...gerade, lb])
+      if (wG < 0.003) liste.push(...gerade)
       else {
+        const restG = Math.max(0, ...gerade.map((h) => RESTE.get(h) ?? 0))
         const restA = this.restfehler, woA = this.restWo
         this.restfehler = rest0
         this.restWo = wo0
-        const gerade = versuche.map((v) => this.loese(v.gerade))
-        const restG = Math.max(0, ...gerade.map((h) => RESTE.get(h) ?? 0))
-        const wG = this.schwenk([la, ...gerade, lb])
-        if (wB < wG - 0.002 && restB <= restG + 0.01) {
+        const bogen = versuche.map((v) => this.loese(v.bogen))
+        const restB = Math.max(0, ...bogen.map((h) => RESTE.get(h) ?? 0))
+        const wB = this.schwenk([la, ...bogen, lb])
+        if (wB < wG - 0.002 && restB <= restG + 0.01) liste.push(...bogen)
+        else {
           this.restfehler = restA
           this.restWo = woA
-          liste.push(...bogen)
-        } else liste.push(...gerade)
+          liste.push(...gerade)
+        }
       }
       zwischenSetzen(la, lb, liste)
     }
