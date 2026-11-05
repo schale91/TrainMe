@@ -13,6 +13,7 @@ const ampel = (n: number) => (n > 5 ? "ampel rot" : n >= 3 ? "ampel gelb" : "amp
 import type { Daten, Einheit, Platz, Protokoll, Satz, Satzform, Uebung, Vorgabe } from "../logik/typen"
 import { Blatt, Gruppe, Icon, Seite, useEbene, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
+import { ebeneOeffnen } from "./navigation"
 import { ROLLE, datumText, grundText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
@@ -33,7 +34,7 @@ type Eingabe = Satz & { fertig: boolean }
 /** Farben der Supersatz-Gruppen (A, B, C, …), gut unterscheidbar in hell und dunkel */
 const SUPER_FARBEN = ["#7c5cff", "#ff8a3d", "#18a999", "#e2479b", "#3d8bff"]
 
-type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string; warm?: string[]; beginn?: number; geschaetzt?: number; angepasst?: string[]; budget?: number; entfernt?: Record<number, number> }
+type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string; warm?: string[]; beginn?: number; geschaetzt?: number; angepasst?: string[]; budget?: number; entfernt?: Record<number, number>; aufraeumenAb?: number }
 /** gemessene Zeit einer Einheit (Millisekunden) mit Zeitbudget und Schätzung in Minuten */
 export type TrainingsZeit = { beginn: number; ende: number; budget: number; geschaetzt: number; messung: { tempo?: number; wechsel?: number; abschluss_min?: number } }
 type Feld = "kg" | "wdh" | "sek" | "min"
@@ -156,7 +157,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [angepasst, setAngepasst] = useState<string[]>(gespeichert?.angepasst || [])
   // Zeitbudget: aus dem Wochenplan, vor dem Start bestätigen oder in 5-Minuten-Schritten ändern
   const [budget, setBudget] = useState<number>(() => gespeichert?.budget ?? zeitBudget(profil, einheit.datum, einheit.minuten))
-  const gelernt = useMemo(() => gelerntAus(daten), [daten])
+  // Aufräumen am Ende: feste Minuten aus dem Profil statt gelernt
+  const aufrMin = profil.aufraeumen_min && profil.aufraeumen_min > 0 ? profil.aufraeumen_min : 0
+  const gelernt = useMemo(() => {
+    const l = gelerntAus(daten)
+    return aufrMin ? { ...l, abschluss: aufrMin } : l
+  }, [daten, aufrMin])
+  const [aufraeumenAb, setAufraeumenAb] = useState<number | null>(gespeichert?.aufraeumenAb ?? null)
   // Weggelassene Sätze je Übung, damit sie zurückkommen können, wenn wieder Zeit ist
   const [entfernt, setEntfernt] = useState<Record<number, number>>(gespeichert?.entfernt || {})
   useEffect(() => {
@@ -169,12 +176,12 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
 
   useEffect(() => {
     try {
-      entwurfSchreiben(localStorage, schluessel, { schluessel, plaetze, saetze, ort: kennung, warm, ...(beginn !== null ? { beginn } : {}), geschaetzt, angepasst, budget, entfernt }, einheit.datum)
+      entwurfSchreiben(localStorage, schluessel, { schluessel, plaetze, saetze, ort: kennung, warm, ...(beginn !== null ? { beginn } : {}), geschaetzt, angepasst, budget, entfernt, ...(aufraeumenAb !== null ? { aufraeumenAb } : {}) }, einheit.datum)
     } catch {
       /* Speicher voll oder gesperrt */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schluessel, plaetze, saetze, kennung, warm, beginn, angepasst, budget, entfernt])
+  }, [schluessel, plaetze, saetze, kennung, warm, beginn, angepasst, budget, entfernt, aufraeumenAb])
 
   useEffect(() => {
     if (!toast) return
@@ -556,7 +563,49 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   }
   const vollstaendig = saetze.every((ss) => ss.some((s) => s.fertig))
 
+  // Aufräumen: nach dem letzten Satz (oder mit „Training beenden“) beginnt ein Countdown; erst danach lässt sich das
+  // Training beenden. Zurück geht nur, um doch noch weiterzutrainieren.
+  const alleFertig = erledigt > 0 && saetze.every((ss) => ss.every((s) => s.fertig))
+  const aufrRest = aufraeumenAb !== null ? Math.max(0, aufraeumenAb + aufrMin * 60000 - jetzt) : 0
+  const aufraeumenStarten = () => {
+    const t = Date.now()
+    setAufraeumenAb(t)
+    setJetzt(t)
+    setPauseBis(null)
+    setWechsel(null)
+    void pauseStarten(t + aufrMin * 60000, "Aufräumen", "Danach Training beenden")
+  }
+  useEffect(() => {
+    if (beginn !== null && aufrMin > 0 && alleFertig && aufraeumenAb === null) aufraeumenStarten()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alleFertig])
+  const zurueckZumTraining = () => {
+    setAufraeumenAb(null)
+    void pauseStoppen()
+    if (!alleFertig) return
+    // sonst den zuletzt abgehakten Satz wieder öffnen, damit das Aufräumen nicht sofort neu beginnt
+    let bi = -1, bk = -1, bu = -Infinity
+    saetze.forEach((ss, i) => ss.forEach((x, k) => {
+      const u = x.um ?? 0
+      if (x.fertig && u >= bu) [bi, bk, bu] = [i, k, u]
+    }))
+    if (bi >= 0) setSaetze(saetze.map((ss, i) => (i !== bi ? ss : ss.map((x, k) => (k === bk ? { ...x, fertig: false, um: undefined } : x)))))
+  }
+  const [sperrNr, setSperrNr] = useState(0)
+  useEffect(() => {
+    if (aufraeumenAb === null) return
+    // Zurückgeste schließt das Aufräumen nicht: Hinweis zeigen und die Ebene neu öffnen
+    return ebeneOeffnen(() => {
+      setToast("Erst aufräumen, dann lässt sich das Training beenden.")
+      setSperrNr((n) => n + 1)
+    }, "blatt")
+  }, [aufraeumenAb, sperrNr])
+  const beendenDruecken = () => {
+    if (beginn !== null && aufrMin > 0 && aufraeumenAb === null) return aufraeumenStarten()
+    fertig()
+  }
   const fertig = () => {
+    if (aufrMin > 0 && aufraeumenAb !== null && aufrRest > 0) return
     const protokolle: Protokoll[] = plaetze
       .map((p, i) => ({ datum: einheit.datum, uebung: p.uebung.id, saetze: saetze[i].filter((s) => s.fertig).map(({ fertig: _f, ...s }) => s), ...(p.uebung.id.startsWith(FREI) ? { name: p.uebung.name } : {}) }))
       .filter((p) => p.saetze.length > 0)
@@ -999,7 +1048,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         )
       })}
 
-      <button type="button" className="knopf voll gross" disabled={erledigt === 0} onClick={fertig}>
+      <button type="button" className="knopf voll gross" disabled={erledigt === 0} onClick={beendenDruecken}>
         Training beenden
       </button>
       {!vollstaendig && erledigt > 0 ? <p className="hinweistext klein mitte">Noch nicht jede Übung eingetragen. Abschließen geht trotzdem, fehlende Übungen zählen dann nicht für den Fortschritt.</p> : null}
@@ -1025,8 +1074,26 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         </div>
       ) : null}
 
+      {aufraeumenAb !== null ? (
+        <div className="aufraeumen" role="dialog" aria-modal="true" aria-label="Aufräumen">
+          <div className="aufraeumenkarte">
+            <h2>Aufräumen</h2>
+            <div className="aufraeumenuhr" role="timer">
+              {Math.floor(aufrRest / 60000)}:{String(Math.floor((aufrRest % 60000) / 1000)).padStart(2, "0")}
+            </div>
+            <p>Scheiben abnehmen, Hanteln und Stange zurück, Bank und Griffe abwischen. Erst danach lässt sich das Training beenden.</p>
+            <button type="button" className="knopf voll gross" disabled={aufrRest > 0} onClick={fertig}>
+              {aufrRest > 0 ? "Training beenden geht nach dem Aufräumen" : "Training beenden"}
+            </button>
+            <button type="button" className="textknopf" onClick={zurueckZumTraining}>
+              Doch noch nicht fertig: zurück zum Training
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Rückfrage bei knapper Zeit: erst nach dem Satz zeigen, nicht während Zahlen eingetippt werden */}
-      <Blatt offen={frage !== null && !pad} onClose={() => frageAntwort(false)} titel={(frage === "zurueck" || frage === "vollepausen" ? "Du liegst gut in der Zeit: etwa " : "Es wird knapp: etwa ") + Math.round(prog.gesamt) + " von " + budget + " min"}>
+      <Blatt offen={frage !== null && !pad && aufraeumenAb === null} onClose={() => frageAntwort(false)} titel={(frage === "zurueck" || frage === "vollepausen" ? "Du liegst gut in der Zeit: etwa " : "Es wird knapp: etwa ") + Math.round(prog.gesamt) + " von " + budget + " min"}>
         {frage === "pausen" ? (
           <>
             <p className="infokurz">

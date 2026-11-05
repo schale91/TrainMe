@@ -318,6 +318,8 @@ export interface Profil {
    * Langhantelübungen (Kniebeuge, Bankdrücken, Überkopfdrücken, Kreuzheben), jeweils bei der ersten ihrer Art am Tag.
    */
   aufwaermen?: "plan" | "grosse_vier"
+  /** Minuten Aufräumen nach dem letzten Satz, mit Countdown, der sich nicht wegklicken lässt (0 oder fehlt: aus) */
+  aufraeumen_min?: number
 }
 
 /** Eine Übung in einem eigenen Plan (zum Beispiel vom Coach oder aus einem Heft). */
