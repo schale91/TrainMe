@@ -9,7 +9,7 @@
 import * as THREE from "three"
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { clone as skelettKlon } from "three/examples/jsm/utils/SkeletonUtils.js"
-import { POS_GRUND, mische, standZu, zwischenDa, zwischenSetzen, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand, type Winkel, type Ziel, type ZielPunkt } from "../logik/dehnbewegung"
+import { POS_GRUND, mische, mischeEinfach, standZu, zwischenDa, zwischenSetzen, type Dehnung, type Haltung, type Hilfsmittel, type Punkt, type Stand, type Winkel, type Ziel, type ZielPunkt } from "../logik/dehnbewegung"
 import { LOCKER, Modellfigur, NACKT, RASTER } from "./modellfigur"
 
 /** Geriggtes Modell, das statt der gezeichneten Figur gezeigt wird (falls geladen). */
@@ -248,7 +248,27 @@ class Koerper {
   }
 
   /** Haltung einnehmen und auf den Boden setzen. */
-  stelle(h: Haltung, atem = 0) {
+  /** Kugelgelenke, die beim Überblenden als Ganzes gedreht werden (kürzester Weg statt Winkel für Winkel) */
+  static readonly KUGEL = ["schulter_l", "schulter_r", "huefte_l", "huefte_r"]
+
+  /**
+   * Zwischen zwei Haltungen überblenden. Schultern und Hüften drehen auf dem kürzesten Weg (Slerp der Drehung),
+   * nicht Winkel für Winkel: Werden Heben, Ebene und Drehung einzeln überblendet, schwenkt der Ellbogen bzw. das
+   * Knie unterwegs seitlich aus und wieder zurück, obwohl Anfang und Ende stimmen.
+   */
+  stelleGemischt(a: Haltung, b: Haltung, u: number, atem = 0) {
+    const lies = (h: Haltung) => {
+      this.stelle(h, 0, true)
+      return Koerper.KUGEL.map((n) => this.k[n].quaternion.clone())
+    }
+    const qa = lies(a), qb = lies(b)
+    const dreh: Record<string, THREE.Quaternion> = {}
+    Koerper.KUGEL.forEach((n, i) => (dreh[n] = qa[i].slerp(qb[i], u)))
+    this.stelle(mischeEinfach(a, b, u), atem, false, dreh)
+  }
+
+  /** ohneBoden: nur die Gelenke setzen (zum Auslesen); dreh: Drehung einzelner Gelenke statt aus den Winkeln */
+  stelle(h: Haltung, atem = 0, ohneBoden = false, dreh?: Record<string, THREE.Quaternion>) {
     const w = h.g
     const v = (name: keyof typeof w, i: number) => w[name]?.[i] ?? 0
     const setz = (name: string, e: THREE.Euler) => this.k[name].quaternion.setFromEuler(e)
@@ -270,6 +290,7 @@ class Koerper {
       // Finger beugen zur Handfläche (zur Körpermitte), strecken zum Handrücken
       setz("finger_" + seite, new THREE.Euler(0, 0, rad(-s * (g("finger", 0) - g("finger", 1))), "XYZ"))
     }
+    if (dreh) for (const [n, q] of Object.entries(dreh)) this.k[n].quaternion.copy(q)
     for (const n of ["lws", "bws", "hals"] as const) setz(n, new THREE.Euler(rad(v(n, 0)), rad(v(n, 2)), rad(-v(n, 1)), "YXZ"))
     setz("kopf", new THREE.Euler(rad(v("kopf", 0)), 0, 0))
     const d = h.dreh || [0, 0, 0]
@@ -279,6 +300,7 @@ class Koerper {
     this.becken.position.set(p[0], p[1], p[2])
     this.brustkorb.scale.set(1 + atem * 0.018, 1, 0.7 * (1 + atem * 0.03))
     this.wurzel.updateMatrixWorld(true)
+    if (ohneBoden) return
     // Pferdeschwanz nach unten, leicht vom Kopf weg
     const kopfQ = this.k.kopf.getWorldQuaternion(new THREE.Quaternion())
     const unten = new THREE.Vector3(0, -1, 0).applyQuaternion(kopfQ.clone().invert())
@@ -828,6 +850,30 @@ const BLICK: Record<string, [number, number, number]> = {
   oben: [0.55, 1.1, 0.55],
 }
 
+/**
+ * Zielpunkt einer Zwischenhaltung. Hände und Ellbogen bewegen sich um die Schulter, Füße, Fersen und Knie um die
+ * Hüfte: Richtung auf dem kürzesten Bogen, Abstand gleichmäßig. Gerade gemischt liefe etwa die Hand beim Überzug oder
+ * Frontheben auf der Sehne näher an der Schulter vorbei, der Arm müsste unterwegs einknicken und der Ellbogen schwenkte
+ * zur Seite aus. Gerechnet wird im Rahmen des Zielpunkts (Welt, Schultern, Becken oder Brustkorb).
+ */
+function zwischenOrt(n: ZielPunkt, za: Ziel, zb: Ziel, u: number, oa: Record<string, THREE.Vector3>, ob: Record<string, THREE.Vector3>): [number, number, number] {
+  const gerade = [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number]
+  const seite = n.slice(-1)
+  const wurzel = (za.bezug || "welt") + ":" + (n.startsWith("hand_") || n.startsWith("ellbogen_") ? "schulter_" : "huefte_") + seite
+  const a0 = oa[wurzel], b0 = ob[wurzel]
+  if (!a0 || !b0) return gerade
+  const va = new THREE.Vector3(...za.pos).sub(a0), vb = new THREE.Vector3(...zb.pos).sub(b0)
+  const la = va.length(), lb = vb.length()
+  if (la < 0.05 || lb < 0.05) return gerade
+  const da = va.clone().divideScalar(la), db = vb.clone().divideScalar(lb)
+  // fast entgegengesetzt: Bogen nicht eindeutig, dann gerade
+  if (da.dot(db) < -0.95) return gerade
+  const q = new THREE.Quaternion().setFromUnitVectors(da, db)
+  const dir = da.applyQuaternion(new THREE.Quaternion().slerp(q, u))
+  const mitte = a0.clone().lerp(b0, u)
+  return mitte.addScaledVector(dir, la + (lb - la) * u).toArray() as [number, number, number]
+}
+
 class Buehne {
   szene = new THREE.Scene()
   koerper = new Koerper()
@@ -980,7 +1026,8 @@ class Buehne {
       const la = this.loese(a), lb = this.loese(b)
       if (zwischenDa(la, lb)) continue
       const liste: Haltung[] = []
-      const pa = this.polRichtungen(la), pb = this.polRichtungen(lb)
+      // Schultern und Hüften an Anfang und Ende: Hände und Füße laufen dazwischen auf einem Bogen um sie herum
+      const oa = this.wurzelOrte(la), ob = this.wurzelOrte(lb)
       for (let k = 1; k < 6; k++) {
         const u = k / 6
         const m = mische(a, b, u)
@@ -992,20 +1039,12 @@ class Buehne {
           // Kette und wäre mit den Gliedlängen nicht erreichbar
           if (n.startsWith("ellbogen_") && a.ziele[`hand_${n.slice(-1)}` as ZielPunkt]) continue
           if (n.startsWith("knie_") && (a.ziele[`fuss_${n.slice(-1)}` as ZielPunkt] || a.ziele[`ferse_${n.slice(-1)}` as ZielPunkt])) continue
-          ziele[n] = { bezug: za.bezug, pos: [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number] }
+          ziele[n] = { bezug: za.bezug, pos: zwischenOrt(n, za, zb, u, oa, ob) }
         }
         // Startwert: Mischung der gelösten Enden. Ohne Beckenlage (Figur liegt, kniet oder sitzt auf dem Boden) bleibt
         // auch die Zwischenhaltung auf dem Boden, sonst stünde sie auf der Grundhöhe des Beckens und schwebte.
         const ml = mische(la, lb, u)
-        // Knie und Ellbogen, die nur der Hand bzw. dem Fuß folgen: Richtung von Anfang und Ende gemischt vorgeben
-        const pole: Haltung["pole"] = {}
-        for (const n of Object.keys(pa) as (keyof typeof pa)[]) {
-          const x = pa[n], y = pb[n]
-          if (!x || !y || ziele[n as ZielPunkt]) continue
-          const v = new THREE.Vector3(...x).multiplyScalar(1 - u).add(new THREE.Vector3(...y).multiplyScalar(u))
-          if (v.lengthSq() > 1e-6) pole[n] = v.normalize().toArray() as [number, number, number]
-        }
-        liste.push(this.loese({ ...m, pole, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ...(a.drehFrei || b.drehFrei ? { pos: ml.pos, dreh: ml.dreh, drehFrei: true } : {}), ziele, boden: m.pos ? false : m.boden }))
+        liste.push(this.loese({ ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ...(a.drehFrei || b.drehFrei ? { pos: ml.pos, dreh: ml.dreh, drehFrei: true } : {}), ziele, boden: m.pos ? false : m.boden }))
       }
       zwischenSetzen(la, lb, liste)
     }
@@ -1098,31 +1137,21 @@ class Buehne {
     return { ...d, start: m(d.start)!, ziel: m(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: m(x.h)! })) }
   }
 
-  /** Glieder für die Pol-Richtung: Gelenk in der Mitte, oberes und unteres Ende */
-  private static readonly GLIEDER = (["l", "r"] as const).flatMap((s) => [
-    ["knie_" + s, "huefte_" + s, "fuss_" + s],
-    ["ellbogen_" + s, "schulter_" + s, "hand_" + s],
-  ]) as [keyof NonNullable<Haltung["pole"]>, string, string][]
-
-  /** Richtung, in die Knie und Ellbogen von der Linie ihrer Enden weg zeigen (nur, wo das Glied gebeugt ist) */
-  private polRichtungen(h: Haltung): NonNullable<Haltung["pole"]> {
+  /** Schulter- und Hüftgelenke einer gelösten Haltung in dem Rahmen, in dem der Löser rechnet (ohne Absenken) */
+  private wurzelOrte(h: Haltung): Record<string, THREE.Vector3> {
     this.koerper.wurzel.position.set(0, 0, 0)
-    this.koerper.stelle(h)
+    this.koerper.stelle({ ...h, boden: false, pos: h.pos ?? POS_GRUND }, 0, true)
     this.modell?.uebernehmen(false)
-    const aus: NonNullable<Haltung["pole"]> = {}
-    for (const [m, o, u] of Buehne.GLIEDER) {
-      const p = this.polVon(m, o, u)
-      if (p.length() > 0.03) aus[m] = p.normalize().toArray() as [number, number, number]
+    // je Bezugsrahmen der Zielpunkte (Welt, Schultern, Becken, Brustkorb) die Lage der Gelenke in diesem Rahmen
+    const rahmen: Record<string, (v: THREE.Vector3) => THREE.Vector3> = {
+      welt: (v) => v,
+      schultern: (v) => v.sub(this.gelenkOrt("schulter_l").add(this.gelenkOrt("schulter_r")).multiplyScalar(0.5)).applyQuaternion(this.koerper.k.bws.getWorldQuaternion(new THREE.Quaternion()).invert()),
+      becken: (v) => v.sub(this.gelenkOrt("becken")).applyQuaternion(this.koerper.becken.getWorldQuaternion(new THREE.Quaternion()).invert()),
+      bws: (v) => v.sub(this.gelenkOrt("bws")).applyQuaternion(this.koerper.k.bws.getWorldQuaternion(new THREE.Quaternion()).invert()),
     }
+    const aus: Record<string, THREE.Vector3> = {}
+    for (const [r, f] of Object.entries(rahmen)) for (const s of ["l", "r"]) for (const n of ["schulter_", "huefte_"]) aus[r + ":" + n + s] = f(this.gelenkOrt(n + s))
     return aus
-  }
-
-  /** Abstand des mittleren Gelenks von der Linie oben–unten, als Vektor */
-  private polVon(m: string, o: string, u: string): THREE.Vector3 {
-    const oben = this.gelenkOrt(o)
-    const achse = this.gelenkOrt(u).sub(oben).normalize()
-    const p = this.gelenkOrt(m).sub(oben)
-    return p.sub(achse.multiplyScalar(p.dot(achse)))
   }
 
   /**
@@ -1200,18 +1229,6 @@ class Buehne {
         // erst mit gebeugtem Knie sinnvoll: gestreckt liegt das Knie auf der Linie Hüfte–Knöchel
         const beuge = Math.min(1, Math.max(0, (g[`knie_${s}`]?.[0] ?? 0) / 50))
         r.push(this.gelenkOrt(`knie_${s}`).sub(this.gelenkOrt(`fuss_${s}`)).dot(quer) * 7 * beuge)
-      }
-      // Zwischenhaltung: Knie und Ellbogen in die vorgegebene Richtung (seitlicher Abstand in m, halb so stark wie ein Ziel)
-      for (const [m, o, u] of Buehne.GLIEDER) {
-        const soll = h.pole?.[m]
-        if (!soll) continue
-        const p = this.polVon(m, o, u)
-        const achse = this.gelenkOrt(u).sub(this.gelenkOrt(o)).normalize()
-        const s = new THREE.Vector3(...soll)
-        s.sub(achse.clone().multiplyScalar(s.dot(achse)))
-        if (s.lengthSq() < 1e-6) continue
-        const abw = p.clone().sub(s.normalize().multiplyScalar(p.length()))
-        r.push(abw.x * 5, abw.y * 5, abw.z * 5)
       }
       // sanft beim Startwert bleiben
       x.forEach((v, j) => r.push((v - start[j]) * (j < params.length ? 0.002 : 0.004)))
@@ -1359,7 +1376,7 @@ class Buehne {
     for (let i = 0; i <= 24; i++) {
       const st = standZu(this.d, (i / 24) * gesamt * 0.999, this.haltenS)
       this.koerper.wurzel.position.set(0, 0, 0)
-      this.koerper.stelle(st.haltung)
+      this.stelleStand({ ...st, atem: 0 })
       this.modell?.uebernehmen(st.haltung.boden !== false)
       lagen.push(this.punkte())
     }
@@ -1422,6 +1439,12 @@ class Buehne {
   }
 
   /** Eine Haltung direkt zeigen (Werkzeug): mit Zielpunkten gelöst, Gegenstände wie im Ablauf */
+  /** Ein Bild der Bewegung stellen: beim Überblenden mit gedrehten Kugelgelenken, sonst die Haltung */
+  stelleStand(st: Stand) {
+    if (st.paar && st.paar.u > 0 && st.paar.u < 1) this.koerper.stelleGemischt(st.paar.a, st.paar.b, st.paar.u, st.atem)
+    else this.koerper.stelle(st.haltung, st.atem)
+  }
+
   stelleHaltung(h: Haltung) {
     const g = this.zuordnung.get(h) ?? this.loese(h)
     this.koerper.wurzel.position.set(0, 0, 0)
@@ -1447,7 +1470,7 @@ class Buehne {
   stelle(t: number): Stand {
     const st = standZu(this.d, t, this.haltenS)
     this.koerper.wurzel.position.set(0, 0, 0)
-    this.koerper.stelle(st.haltung, st.atem)
+    this.stelleStand(st)
     this.modell?.uebernehmen(st.haltung.boden !== false)
     // Nur nötig mit Gegenständen oder ohne Bodenkontakt (sonst steht die Figur schon auf dem Boden)
     this.schub.set(0, 0, 0)
@@ -1802,7 +1825,7 @@ export function _bahn(d: Dehnung, n = 120): Record<string, [number, number, numb
   for (let i = 0; i < n; i++) {
     const st = standZu(b.d, (i / n) * gesamt * 0.999)
     b.koerper.wurzel.position.set(0, 0, 0)
-    b.koerper.stelle(st.haltung)
+    b.stelleStand(st)
     b.modell?.uebernehmen(st.haltung.boden !== false)
     b.szene.updateMatrixWorld(true)
     const bild: Record<string, [number, number, number]> = {}
