@@ -19,7 +19,7 @@ let gefragt = false
 export async function pauseStarten(ende: number, titel: string, text: string): Promise<void> {
   // In der Lebenswelt stellt sie den Wecker und zeigt die Pause, auch wenn TrainMe zu ist
   const b = bruecke()
-  if (b?.pause) return b.pause(ende, text || titel)
+  if (b?.pause) return b.pause(ende, text || titel, titel)
   if (!nativ) return
   try {
     if (!gefragt) {

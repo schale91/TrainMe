@@ -16,7 +16,11 @@ export interface Bruecke {
   person?: string
   name?: string
   /** Pause läuft bis ende (ms) oder ist vorbei (null) */
-  pause?(ende: number | null, text: string): void
+  pause?(ende: number | null, text: string, titel?: string): void
+  /** Schwebende Pausenanzeige über anderen Apps erlaubt? undefined: diese Version der Lebenswelt-App kann das nicht */
+  ueberApps?(): boolean | undefined
+  /** Öffnet die Android-Einstellung „Über anderen Apps einblenden“ */
+  ueberAppsErlauben?(): void
   /** Etwas wurde gespeichert und liegt in der Datenbank */
   gespeichert?(): void
   /** Maximum je Hauptübung, mit dem das Kraftbuch ohne eigenen Eintrag gerechnet hat */

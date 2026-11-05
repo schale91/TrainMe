@@ -14,6 +14,7 @@ import type { Daten, Einheit, Platz, Protokoll, Satz, Satzform, Uebung, Vorgabe 
 import { Blatt, Gruppe, Icon, Seite, useEbene, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
 import { ebeneOeffnen } from "./navigation"
+import { bruecke } from "./lebenswelt"
 import { ROLLE, datumText, grundText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
@@ -591,6 +592,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     }))
     if (bi >= 0) setSaetze(saetze.map((ss, i) => (i !== bi ? ss : ss.map((x, k) => (k === bk ? { ...x, fertig: false, um: undefined } : x)))))
   }
+  // Pausenanzeige über anderen Apps (Lebenswelt-App): erlaubt? Nach der Rückkehr aus den Einstellungen neu prüfen
+  const [ueberApps, setUeberApps] = useState<boolean | undefined>(() => bruecke()?.ueberApps?.())
+  useEffect(() => {
+    const f = () => document.visibilityState === "visible" && setUeberApps(bruecke()?.ueberApps?.())
+    document.addEventListener("visibilitychange", f)
+    return () => document.removeEventListener("visibilitychange", f)
+  }, [])
   const [sperrNr, setSperrNr] = useState(0)
   useEffect(() => {
     if (aufraeumenAb === null) return
@@ -717,6 +725,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             {angepasst.indexOf("pausen") >= 0 ? <small className="leise">Pausen der Ergänzungsübungen gekürzt, damit es in {budget} min passt. Die Hauptübungen behalten ihre Pause.</small> : null}
             {angepasst.indexOf("weglassen") >= 0 ? <small className="leise">Wie besprochen gekürzt, damit es in {budget} min passt.</small> : null}
             {zuLang && !frage && angepasst.some((k) => k.endsWith("-nein")) ? <small className="leise">Es wird etwas länger als {budget} min. Du hast entschieden, nichts weiter zu ändern.</small> : null}
+            {ueberApps === false ? (
+              <button type="button" className="knopf klein leise" onClick={() => bruecke()?.ueberAppsErlauben?.()}>
+                Pausen-Timer auch über YouTube und anderen Apps anzeigen: erlauben
+              </button>
+            ) : null}
             {hauptPausenZuKurz(plaetze, saetze) ? <small className="leise">Deine Pausen bei den Hauptübungen sind deutlich kürzer als vorgesehen. Für die Kraft lieber die volle Pause nehmen.</small> : null}
           </>
         )}
