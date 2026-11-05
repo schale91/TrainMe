@@ -858,6 +858,8 @@ const BLICK: Record<string, [number, number, number]> = {
  */
 function zwischenOrt(n: ZielPunkt, za: Ziel, zb: Ziel, u: number, oa: Record<string, THREE.Vector3>, ob: Record<string, THREE.Vector3>): [number, number, number] {
   const gerade = [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number]
+  // ruhender Punkt (etwa die freie Hand an der Hüfte) bleibt genau stehen
+  if (Math.hypot(za.pos[0] - zb.pos[0], za.pos[1] - zb.pos[1], za.pos[2] - zb.pos[2]) < 0.005) return gerade
   const seite = n.slice(-1)
   const wurzel = (za.bezug || "welt") + ":" + (n.startsWith("hand_") || n.startsWith("ellbogen_") ? "schulter_" : "huefte_") + seite
   const a0 = oa[wurzel], b0 = ob[wurzel]
@@ -903,6 +905,9 @@ function bogenUm(ga: THREE.Vector3, gb: THREE.Vector3, g: THREE.Vector3, pa: THR
   const q = new THREE.Quaternion().setFromUnitVectors(f0, f1)
   return g.clone().addScaledVector(f0.applyQuaternion(new THREE.Quaternion().slerp(q, u)), la + (lb - la) * u).toArray() as [number, number, number]
 }
+
+/** Restfehler je gelöster Haltung (m), für den Rückfall bei unerreichbaren Zwischenzielen */
+const RESTE = new WeakMap<Haltung, number>()
 
 class Buehne {
   szene = new THREE.Scene()
@@ -1058,10 +1063,13 @@ class Buehne {
       const liste: Haltung[] = []
       // Schultern und Hüften an Anfang und Ende: Hände und Füße laufen dazwischen auf einem Bogen um sie herum
       const oa = this.wurzelOrte(la), ob = this.wurzelOrte(lb)
+      const versuche: { bogen: Haltung; gerade: Haltung }[] = []
       for (let k = 1; k < 6; k++) {
         const u = k / 6
         const m = mische(a, b, u)
         const ziele: Haltung["ziele"] = {}
+        // Rückfall: gerade gemischt wie früher, falls Bogen oder Kette nicht erreichbar sind
+        const zieleGerade: Haltung["ziele"] = {}
         for (const [n, za] of Object.entries(a.ziele) as [ZielPunkt, Ziel][]) {
           const zb = b.ziele[n]
           if (!zb || (zb.bezug ?? "welt") !== (za.bezug ?? "welt")) continue
@@ -1070,6 +1078,7 @@ class Buehne {
           if (n.startsWith("ellbogen_") && a.ziele[`hand_${sx}` as ZielPunkt]) continue
           if (n.startsWith("knie_") && (a.ziele[`fuss_${sx}` as ZielPunkt] || a.ziele[`ferse_${sx}` as ZielPunkt])) continue
           ziele[n] = { bezug: za.bezug, pos: zwischenOrt(n, za, zb, u, oa, ob) }
+          zieleGerade[n] = { bezug: za.bezug, pos: [0, 1, 2].map((i) => za.pos[i] + (zb.pos[i] - za.pos[i]) * u) as [number, number, number] }
         }
         // Kette Schulter–Ellbogen–Hand bzw. Hüfte–Knie–Fuß, wenn beide Enden Ellbogen und Hand (Knie und Fuß) vorgeben
         // und sich die Hand (der Fuß) bewegt: Ellbogen im Bogen um die Schulter, Hand im Bogen um den Ellbogen. Die
@@ -1094,7 +1103,30 @@ class Buehne {
         // Startwert: Mischung der gelösten Enden. Ohne Beckenlage (Figur liegt, kniet oder sitzt auf dem Boden) bleibt
         // auch die Zwischenhaltung auf dem Boden, sonst stünde sie auf der Grundhöhe des Beckens und schwebte.
         const ml = mische(la, lb, u)
-        liste.push(this.loese({ ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ...(a.drehFrei || b.drehFrei ? { pos: ml.pos, dreh: ml.dreh, drehFrei: true } : {}), ziele, boden: m.pos ? false : m.boden }))
+        const basis = { ...m, g: ml.g, ...(a.beckenFrei || b.beckenFrei ? { pos: ml.pos, beckenFrei: true } : {}), ...(a.drehFrei || b.drehFrei ? { pos: ml.pos, dreh: ml.dreh, drehFrei: true } : {}), boden: m.pos ? false : m.boden }
+        versuche.push({ bogen: { ...basis, ziele }, gerade: { ...basis, ziele: zieleGerade } })
+      }
+      // Bogen und Kette nur, wo sie die Bewegung wirklich ruhiger machen: entscheidend ist, wie weit Ellbogen und Knie
+      // über den ganzen Übergang seitlich hin und her schwenken. Läuft die gerade Fassung ruhiger (etwa wenn sich der
+      // ganze Körper mitbewegt wie beim Bärengang) oder trifft der Bogen seine Ziele deutlich schlechter, bleibt es
+      // gerade wie früher. Je Bewegung eine Fassung, gemischt je Bild gäbe Sprünge.
+      const rest0 = this.restfehler, wo0 = this.restWo
+      const bogen = versuche.map((v) => this.loese(v.bogen))
+      const restB = Math.max(0, ...bogen.map((h) => RESTE.get(h) ?? 0))
+      const wB = this.schwenk([la, ...bogen, lb])
+      if (restB <= 0.006 && wB < 0.003) liste.push(...bogen)
+      else {
+        const restA = this.restfehler, woA = this.restWo
+        this.restfehler = rest0
+        this.restWo = wo0
+        const gerade = versuche.map((v) => this.loese(v.gerade))
+        const restG = Math.max(0, ...gerade.map((h) => RESTE.get(h) ?? 0))
+        const wG = this.schwenk([la, ...gerade, lb])
+        if (wB < wG - 0.002 && restB <= restG + 0.01) {
+          this.restfehler = restA
+          this.restWo = woA
+          liste.push(...bogen)
+        } else liste.push(...gerade)
       }
       zwischenSetzen(la, lb, liste)
     }
@@ -1185,6 +1217,43 @@ class Buehne {
       return neu.get(h)!
     }
     return { ...d, start: m(d.start)!, ziel: m(d.ziel), schritte: d.schritte?.map((x) => ({ ...x, h: m(x.h)! })) }
+  }
+
+  /**
+   * Wie weit Ellbogen und Knie über eine Folge gelöster Haltungen seitlich um die Linie Schulter–Hand bzw. Hüfte–Fuß
+   * hin und her schwenken (m, Summe über alle vier Glieder): Weg minus Nettodrehung, mitbewegt mit der Linie.
+   */
+  private schwenk(folge: Haltung[]): number {
+    const glieder = (["l", "r"] as const).flatMap((s) => [["schulter_" + s, "ellbogen_" + s, "hand_" + s], ["huefte_" + s, "knie_" + s, "fuss_" + s]])
+    const bilder = folge.map((h) => {
+      this.koerper.wurzel.position.set(0, 0, 0)
+      this.koerper.stelle({ ...h, boden: false, pos: h.pos ?? POS_GRUND }, 0, true)
+      this.modell?.uebernehmen(false)
+      const o: Record<string, THREE.Vector3> = {}
+      for (const g of glieder) for (const n of g) o[n] = this.gelenkOrt(n)
+      return o
+    })
+    let summe = 0
+    for (const [oben, mitte, unten] of glieder) {
+      let vorher: THREE.Vector3 | null = null, weg = 0, netto = 0
+      for (const b of bilder) {
+        const a = b[unten].clone().sub(b[oben]).normalize()
+        const v = b[mitte].clone().sub(b[oben])
+        const p = v.addScaledVector(a, -v.dot(a))
+        if (p.length() < 0.03) { vorher = null; continue }
+        if (vorher) {
+          const q = vorher.clone().addScaledVector(a, -vorher.dot(a))
+          if (q.length() > 0.02) {
+            const w = Math.atan2(q.clone().cross(p).dot(a), q.dot(p)) * (p.length() + q.length()) / 2
+            weg += Math.abs(w)
+            netto += w
+          }
+        }
+        vorher = p
+      }
+      summe += weg - Math.abs(netto)
+    }
+    return summe
   }
 
   /** Schulter- und Hüftgelenke einer gelösten Haltung in dem Rahmen, in dem der Löser rechnet (ohne Absenken) */
@@ -1338,6 +1407,7 @@ class Buehne {
       ...(nDreh ? { dreh: dreh.map((v) => Math.round(v * 10) / 10) as [number, number, number] } : {}),
     }
     this.geloest.set(h, fertigH)
+    RESTE.set(fertigH, groesster)
     return fertigH
   }
 

@@ -25,9 +25,9 @@
     let weg = 0, wegCm = 0, sprungCm = 0, kum = 0, kumCm = 0, min = 0, max = 0, minCm = 0, maxCm = 0
     let vorher = null
     // je Phase: Weg und Netto (eine Phase bewegt sich nur in eine Richtung, Hin und Her darin ist Wackeln)
-    let phase = -1, pWeg = 0, pNetto = 0, wackelCm = 0
+    let phase = -1, pWeg = 0, pNetto = 0, wackelCm = 0, puffer = 0
     for (const b of bahn) {
-      if (b._phase[0] !== phase) { wackelCm += Math.max(0, pWeg - Math.abs(pNetto)); pWeg = 0; pNetto = 0; phase = b._phase[0] }
+      if (b._phase[0] !== phase) { wackelCm += Math.max(0, pWeg - Math.abs(pNetto)); pWeg = 0; pNetto = 0; puffer = 0; phase = b._phase[0] }
       const a = norm(sub(b[unten], b[oben]))
       const p = senk(sub(b[mitte], b[oben]), a)
       const l = len(p)
@@ -39,7 +39,10 @@
           const d = (Math.atan2(dot(kreuz(q, p), a), dot(q, p)) * 180) / Math.PI
           const cm = ((Math.abs(d) * Math.PI) / 180) * ((l + len(q)) / 2) * 100
           weg += Math.abs(d); wegCm += cm; sprungCm = Math.max(sprungCm, cm)
-          kum += d; kumCm += Math.sign(d) * cm; pWeg += cm; pNetto += Math.sign(d) * cm
+          kum += d; kumCm += Math.sign(d) * cm
+          // Rauschschwelle: erst ab 3 mm Bewegung in eine Richtung zählt sie für das Hin und Her
+          puffer += Math.sign(d) * cm
+          if (Math.abs(puffer) >= 0.3) { pWeg += Math.abs(puffer); pNetto += puffer; puffer = 0 }
           min = Math.min(min, kum); max = Math.max(max, kum); minCm = Math.min(minCm, kumCm); maxCm = Math.max(maxCm, kumCm)
         }
       }
@@ -55,6 +58,7 @@
     if (!d) continue
     try {
       const bahn = _bahn(d, n)
+      if (q.get("bahn")) { aus[id] = bahn; continue }
       const r = {}
       for (const s of ["l", "r"]) {
         r["knie_" + s] = glied(bahn, "huefte_" + s, "knie_" + s, "fuss_" + s)
