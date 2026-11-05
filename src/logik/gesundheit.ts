@@ -35,3 +35,35 @@ export function alleTage(daten: Daten): Record<string, Tageswerte> {
   }
   return aus
 }
+
+/**
+ * Schwache Tagesform aus den Werten der Uhr, gegen die eigenen letzten Tage: wenig Schlaf, Ruhepuls deutlich über
+ * dem Schnitt, HRV deutlich unter dem Schnitt. Je Zeichen ein oder zwei Punkte; ab zwei Punkten gilt die Form als
+ * schwach. Schlafmangel senkt die Leistung nachweislich (Craven et al. 2022); ein erhöhter Ruhepuls und eine niedrige
+ * HRV gegenüber dem eigenen Schnitt deuten auf unvollständige Erholung (Plews et al. 2013). Für die Last selbst bleibt
+ * die Reserve im Tank das Maß, deshalb ist das nur ein Vorschlag.
+ */
+export function formSchwach(heute?: Tageswerte, vorher: Tageswerte[] = []): { punkte: number; gruende: string[] } {
+  const gruende: string[] = []
+  let punkte = 0
+  if (!heute) return { punkte, gruende }
+  const schnitt = (k: "ruhepuls" | "hrv") => {
+    const l = vorher.slice(-7).map((t) => t[k]).filter((x): x is number => !!x)
+    return l.length >= 3 ? l.reduce((a, b) => a + b, 0) / l.length : undefined
+  }
+  if (heute.schlaf_min !== undefined && heute.schlaf_min < 360) {
+    punkte += heute.schlaf_min < 300 ? 2 : 1
+    gruende.push("nur " + Math.floor(heute.schlaf_min / 60) + " h " + (heute.schlaf_min % 60) + " min Schlaf")
+  }
+  const puls = schnitt("ruhepuls")
+  if (heute.ruhepuls && puls && heute.ruhepuls > puls + 5) {
+    punkte += heute.ruhepuls > puls + 8 ? 2 : 1
+    gruende.push("Ruhepuls " + heute.ruhepuls + " statt sonst etwa " + Math.round(puls))
+  }
+  const hrv = schnitt("hrv")
+  if (heute.hrv && hrv && heute.hrv < hrv * 0.85) {
+    punkte += heute.hrv < hrv * 0.75 ? 2 : 1
+    gruende.push("HRV " + heute.hrv + " ms statt sonst etwa " + Math.round(hrv))
+  }
+  return { punkte, gruende }
+}
