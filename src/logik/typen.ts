@@ -313,6 +313,11 @@ export interface Profil {
    * nächste offene Einheit, egal an welchem Tag.
    */
   folge?: "wochentage" | "fortlaufend"
+  /**
+   * Aufwärmsätze: wie vorgesehen bei der ersten Hauptübung (Standard) oder nur bei den vier großen
+   * Langhantelübungen (Kniebeuge, Bankdrücken, Überkopfdrücken, Kreuzheben), jeweils bei der ersten ihrer Art am Tag.
+   */
+  aufwaermen?: "plan" | "grosse_vier"
 }
 
 /** Eine Übung in einem eigenen Plan (zum Beispiel vom Coach oder aus einem Heft). */
@@ -500,6 +505,12 @@ export interface Erledigt {
   dauer_min?: number
   budget_min?: number
   geschaetzt_min?: number
+  /** Gemessenes Tempo von Satz zu Satz gegen die geplante Pause (1 = wie geplant) */
+  tempo?: number
+  /** Gemessene Wechsel zwischen den Übungen (samt Aufwärmen und Umbau) gegen die Schätzung */
+  wechsel?: number
+  /** Minuten vom letzten Satz bis „Training beenden“ */
+  abschluss_min?: number
 }
 
 export interface Spielstand {
