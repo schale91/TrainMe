@@ -2544,7 +2544,7 @@ export const RUMPF: Uebung[] = [
   },
   {
     id: "rollout_schlingentrainer",
-    name: "Rollout am Schlingentrainer",
+    name: "Rollout am Schlingentrainer (TRX)",
     auch: ["TRX Fallout", "Suspension Trainer Rollout", "TRX Rollout"],
     muster: "rumpf",
     art: "kraft",

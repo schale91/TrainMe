@@ -1258,7 +1258,7 @@ export const MOBIL_OBEN: Uebung[] = [
   },
   {
     id: "brust_dehnen_schlingentrainer",
-    name: "Brustdehnung im Schlingentrainer",
+    name: "Brustdehnung im Schlingentrainer (TRX)",
     auch: ["TRX Chest Stretch", "Suspension Trainer Pec Stretch"],
     muster: "mobilitaet_schulter",
     art: "mobilitaet",
@@ -1516,7 +1516,7 @@ export const MOBIL_OBEN: Uebung[] = [
   },
   {
     id: "lat_dehnen_schlingentrainer",
-    name: "Latissimus-Dehnung im Schlingentrainer",
+    name: "Latissimus-Dehnung im Schlingentrainer (TRX)",
     auch: ["TRX Lat Stretch", "Suspension Trainer Lat Stretch"],
     muster: "mobilitaet_schulter",
     art: "mobilitaet",

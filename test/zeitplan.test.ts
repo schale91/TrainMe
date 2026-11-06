@@ -1,6 +1,6 @@
 // Trainingszeit: Budget je Tag, Vorhersage aus gemessenen Sätzen, Kürzen der Pausen, Hinweis auf zu kurze Pausen
-import { describe, expect, test } from "vitest"
-import { freieGruppe, hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, satzMinuten, schaetzung, supersatzVorschlag, weglassenVorschlag, zeitBudget } from "../src/logik/zeitplan"
+import { describe, expect, it, test } from "vitest"
+import { BEIDSEITIG, beidseitigLast, beidseitigVorschlag, freieGruppe, hauptPausenZuKurz, heuteFaktor, lernFaktor, pausenKuerzen, prognose, satzMinuten, schaetzung, supersatzVorschlag, weglassenVorschlag, zeitBudget } from "../src/logik/zeitplan"
 
 const platz = (name: string, rolle: "haupt" | "neben", pause_s: number, saetze = 3) => ({ uebung: { name }, rolle, vorgabe: { pause_s, saetze } as { pause_s: number; saetze: number } as never as import("../src/logik/typen").Vorgabe })
 const min = 60000
@@ -88,5 +88,44 @@ describe("Umbauzeit", () => {
     // frei eingetragene Übung ohne bekannte Muskeln: kein Vorschlag
     expect(supersatzVorschlag([sp("Eigene Übung", []), sp("Pushdown", ["trizeps"])], s3, ["kurzhantel", "kabelzug"], 10).paare).toEqual([])
     expect(freieGruppe([{ gruppe: "A" }, {}], ["B"])).toBe("C")
+  })
+})
+
+describe("einseitig zu beidseitig bei knapper Zeit", () => {
+  it("alle Zuordnungen zeigen auf echte Übungen: einseitig zu beidseitig", async () => {
+    const { uebung } = await import("../src/daten/uebungen/index")
+    for (const [id, b] of Object.entries(BEIDSEITIG)) {
+      expect(uebung(id)?.einseitig, id).toBe(true)
+      for (const z of b.ids) expect(uebung(z) && !uebung(z)!.einseitig, z).toBe(true)
+    }
+  })
+  it("rechnet die Last um: Kabel gut 1,8-fach, Hanteln je Hand etwas leichter", () => {
+    expect(beidseitigLast(15, "stapel")).toBeCloseTo(27)
+    expect(beidseitigLast(30, "jeHand")).toBeCloseTo(27)
+    expect(beidseitigLast(12, "gleich")).toBe(12)
+    expect(beidseitigLast(null, "stapel")).toBe(null)
+  })
+  it("schlägt nur noch nicht begonnene einseitige Übungen vor und spart je Satz eine Seite", () => {
+    const u = (id: string, einseitig?: boolean) => ({ id, einseitig })
+    const plaetze = [
+      { uebung: u("latzug_einarmig", true), rolle: "neben" },
+      { uebung: u("bayesian_curl", true), rolle: "isolation" },
+      { uebung: u("rudern_kh", true), rolle: "neben" },
+    ]
+    const offen = [{ fertig: false }, { fertig: false }, { fertig: false }]
+    const saetze = [offen, offen, [{ fertig: true }, { fertig: false }]]
+    const v = beidseitigVorschlag(plaetze, saetze, (id) => (id === "latzug" ? u("latzug") : undefined), (g) => g === "kabelturm", 10)
+    expect(v.tausch.map((t) => [t.i, t.ersatz?.id ?? null, t.art])).toEqual([
+      [0, "latzug", "stapel"],
+      [1, null, "gleichzeitig"],
+    ])
+    expect(v.spart_min).toBe(4)
+    // ohne Kabelturm nicht gleichzeitig; schon gefragte Plätze nicht noch einmal
+    expect(beidseitigVorschlag(plaetze, saetze, () => undefined, () => false, 10, [0]).tausch).toEqual([])
+  })
+  it("einseitige Sätze dauern länger, gleichzeitig wie beidseitig", () => {
+    const v = { saetze: 3, wdh_von: 10, wdh_bis: 12, pause_s: 80, rir: 2, last: null } as never
+    expect(satzMinuten([{ vorgabe: v, uebung: { einseitig: true } }])[0]).toBeCloseTo(160 / 60)
+    expect(satzMinuten([{ vorgabe: v, uebung: { einseitig: true }, gleichzeitig: true }])[0]).toBeCloseTo(2)
   })
 })

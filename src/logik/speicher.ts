@@ -47,6 +47,7 @@ export function pruefen(x: unknown): Daten {
   d.messungen = Array.isArray(o.messungen) ? o.messungen.filter((m) => m && typeof m.test === "string" && typeof m.wert === "number") : []
   if (o.eigenerPlan && typeof o.eigenerPlan === "object" && Array.isArray(o.eigenerPlan.tage)) d.eigenerPlan = { ...o.eigenerPlan, tage: o.eigenerPlan.tage.filter((t) => t && typeof t.nr === "number" && Array.isArray(t.uebungen)) }
   if (o.bandfarben && typeof o.bandfarben === "object") d.bandfarben = { ...o.bandfarben }
+  if (o.ersatz && typeof o.ersatz === "object") d.ersatz = Object.fromEntries(Object.entries(o.ersatz).filter(([a, b]) => typeof b === "string" && a !== b))
   if (o.archiv && typeof o.archiv === "object") d.archiv = { ...o.archiv }
   if (o.uebernahmen && typeof o.uebernahmen === "object") d.uebernahmen = { ...o.uebernahmen }
   if (o.satzform && typeof o.satzform === "object") d.satzform = { ...o.satzform }

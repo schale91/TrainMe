@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { POSITIONEN, SPORTARTEN, positionVon } from "../daten/vorlagen"
 import { hatSport, hatZiel, mitPositionen, mitSporten, mitZielen, positionen, sporte, ziele } from "../logik/auswahl"
-import { LAST_GERAETE } from "../logik/gewichte"
+import { BANDFARBEN, LAST_GERAETE } from "../logik/gewichte"
 import { moeglicheUebungen } from "../logik/plan"
 import { neuerOrt, studio } from "../logik/speicher"
 import type { Beschwerde, Geraet, Gelenk, Gewichte, Ort, Profil, Wochentag } from "../logik/typen"
@@ -298,7 +298,8 @@ function OrtKarte(props: { ort: Ort; aendern: (o: Ort) => void; entfernen?: () =
       ) : null}
       {hat("band") ? (
         <Feld titel="Anzahl Bänder (leicht bis schwer)">
-          <WertWahl werte={[1, 2, 3, 4, 5, 6]} wert={g.baender} min={1} max={8} onChange={(baender) => setG({ baender })} />
+          <WertWahl werte={[1, 2, 3, 4, 5, 6, 7]} wert={g.baender} min={1} max={BANDFARBEN.length} onChange={(baender) => setG({ baender })} />
+          <small className="leise">Farben: {BANDFARBEN.slice(0, g.baender).map((b) => b.name).join(", ")}</small>
         </Feld>
       ) : null}
       {o.geraete.some((x) => LAST_GERAETE.indexOf(x) >= 0) ? null : <p className="hinweis">Ohne Gewichte plant TrainMe mit Körpergewicht und steigert über Wiederholungen und schwerere Varianten.</p>}

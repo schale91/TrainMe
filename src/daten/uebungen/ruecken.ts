@@ -2554,7 +2554,7 @@ export const RUECKEN: Uebung[] = [
   },
   {
     id: "rudern_schlingentrainer",
-    name: "Rudern am Schlingentrainer",
+    name: "Rudern am Schlingentrainer (TRX)",
     auch: ["TRX Row", "Suspension Trainer Row", "Ring Row"],
     muster: "ziehen_horizontal",
     art: "kraft",
@@ -2599,7 +2599,7 @@ export const RUECKEN: Uebung[] = [
   },
   {
     id: "rudern_schlingentrainer_einarmig",
-    name: "Einarmiges Rudern am Schlingentrainer",
+    name: "Einarmiges Rudern am Schlingentrainer (TRX)",
     auch: ["Single-Arm TRX Row", "One-Arm Suspension Row"],
     muster: "ziehen_horizontal",
     art: "kraft",
@@ -2862,7 +2862,7 @@ export const RUECKEN: Uebung[] = [
   // ---------- Ergänzungen Ziehen ----------
   {
     id: "klimmzug_schlingentrainer",
-    name: "Klimmzug am Schlingentrainer mit Fußkontakt",
+    name: "Klimmzug am Schlingentrainer mit Fußkontakt (TRX)",
     auch: ["TRX Assisted Pull-Up", "Suspension Pull-Up", "TRX Pull-Up"],
     muster: "ziehen_vertikal",
     art: "kraft",

@@ -420,6 +420,8 @@ export interface Platz {
   gruppe?: string
   /** Vorgabe im Wortlaut aus dem eigenen Plan */
   plantext?: string
+  /** Einseitige Übung heute mit beiden Seiten gleichzeitig (Zeit sparen) */
+  gleichzeitig?: boolean
 }
 
 /** Ein Grund für die Auswahl einer Übung, als Text aufbereitet in der Oberfläche. */
@@ -547,6 +549,8 @@ export interface Daten {
   eigenerPlan?: EigenerPlan
   /** Gewählte Bandfarbe je Übung */
   bandfarben?: Record<string, string>
+  /** Dauerhaft getauschte Übungen („Immer“ beim Tauschen): alte ID → neue ID, gilt auch im eigenen Plan */
+  ersatz?: Record<string, string>
   /** Band als Unterstützung je Körpergewichtsübung (Farbe) und eigene kg-Werte je Farbe */
   bandhilfe?: Record<string, string>
   bandhilfe_kg?: Record<string, number>

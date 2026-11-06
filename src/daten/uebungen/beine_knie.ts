@@ -2057,7 +2057,7 @@ export const BEINE_KNIE: Uebung[] = [
   },
   {
     id: "bulgarisch_schlinge",
-    name: "Split-Kniebeuge im Schlingentrainer",
+    name: "Split-Kniebeuge im Schlingentrainer (TRX)",
     auch: ["TRX Split Squat", "Suspended Lunge", "Suspension Bulgarian Split Squat"],
     muster: "einbeinig",
     art: "kraft",

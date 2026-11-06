@@ -87,10 +87,29 @@ export function passendeGruppe(u: Uebung, vorhanden: Geraet[]): { gruppe: Geraet
   return null
 }
 
+/**
+ * Widerstandsbänder in ihren Kennfarben, leicht bis schwer, wie im Kraftbuch. Als Last zählt die Stufe: 1 = Gelb,
+ * 2 = Rot, 3 = Schwarz, 4 = Lila, 5 = Grün, 6 = Blau, 7 = Orange.
+ */
+export const BANDFARBEN = [
+  { id: "gelb", name: "Gelb", farbe: "#f2c94c" },
+  { id: "rot", name: "Rot", farbe: "#e05252" },
+  { id: "schwarz", name: "Schwarz", farbe: "#2b2b2b" },
+  { id: "lila", name: "Lila", farbe: "#8e5bd6" },
+  { id: "grün", name: "Grün", farbe: "#3fa65a" },
+  { id: "blau", name: "Blau", farbe: "#3b7be0" },
+  { id: "orange", name: "Orange", farbe: "#f08a24" },
+] as const
+
+/** Band zu einer Stufe (1 = leichtestes) */
+export const bandVonStufe = (stufe: number | null | undefined) => (stufe ? BANDFARBEN[Math.round(stufe) - 1] : undefined)
+/** Stufe zu einer Bandfarbe, 0 wenn unbekannt */
+export const stufeVonBand = (id: string | undefined) => BANDFARBEN.findIndex((b) => b.id === id) + 1
+
 /** Anzeige einer Last mit Einheit. */
 export function lastText(last: number | null, geraet: Geraet | null): string {
   if (last === null) return "Körpergewicht"
-  if (geraet === "band") return "Band Stufe " + last
+  if (geraet === "band") return "Band " + (bandVonStufe(last)?.name ?? "Stufe " + last)
   const zahl = String(last).replace(".", ",")
   return geraet === "kurzhantel" ? zahl + " kg je Hand" : zahl + " kg"
 }

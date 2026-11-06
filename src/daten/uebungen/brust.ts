@@ -2136,7 +2136,7 @@ export const BRUST: Uebung[] = [
   },
   {
     id: "liegestuetz_schlingentrainer",
-    name: "Liegestütz am Schlingentrainer",
+    name: "Liegestütz am Schlingentrainer (TRX)",
     auch: ["Ring Push-Up", "TRX Push-Up", "Suspension Push-Up"],
     muster: "druecken_horizontal",
     art: "kraft",
@@ -2594,7 +2594,7 @@ export const BRUST: Uebung[] = [
   },
   {
     id: "dips_schlingentrainer",
-    name: "Dips an Ringen oder am Schlingentrainer",
+    name: "Dips an Ringen oder am Schlingentrainer (TRX)",
     auch: ["Ring Dips", "TRX Dips", "Suspension Dips"],
     muster: "druecken_horizontal",
     art: "kraft",
@@ -3317,7 +3317,7 @@ export const BRUST: Uebung[] = [
   },
   {
     id: "schlingentrainer_flys",
-    name: "Brust-Flys am Schlingentrainer",
+    name: "Brust-Flys am Schlingentrainer (TRX)",
     auch: ["TRX Chest Fly", "Suspension Chest Fly", "Ring Fly"],
     muster: "brust_iso",
     art: "kraft",

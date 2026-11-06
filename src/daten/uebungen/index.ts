@@ -7,6 +7,10 @@ export const UEBUNGEN: Uebung[] = Object.keys(module)
   .sort()
   .flatMap((pfad) => Object.values(module[pfad]).filter(Array.isArray).flat() as Uebung[])
 
+// Schlingentrainer heißt im Studio meist TRX: unter beiden Namen findbar
+for (const u of UEBUNGEN)
+  if (u.geraete.some((g) => g.indexOf("schlingentrainer") >= 0) && !(u.auch || []).some((a) => /trx/i.test(a))) u.auch = [...(u.auch || []), "TRX", "Schlingentrainer"]
+
 const NACH_ID = new Map(UEBUNGEN.map((u) => [u.id, u]))
 
 /** Freie Übungen aus einem eigenen Plan heißen „frei:<Name>“: Sie haben keinen Eintrag, aber einen Verlauf. */
