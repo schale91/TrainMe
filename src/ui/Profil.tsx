@@ -104,6 +104,7 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
       </Gruppe>
       <Gruppe titel="Plan" fuss={profil.planart === "eigen" ? "Mit eigenem Plan gibt der Plan Tage und Übungen vor. Kraftwerte zählen weiter für Prozentangaben." : "Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Die laufende Phase beginnt dann von vorn, der Jahresplan rückt nach hinten."}>
         <Zeile symbol={<SymKachel name="bausteine" farbe="#4f68f0" />} titel="Woher der Plan kommt" wert={profil.planart === "eigen" ? props.daten.eigenerPlan?.name || "Eigener Plan" : "TrainMe plant"} onClick={() => setSeite("plan")} />
+        <Zeile symbol={<SymKachel name="puls" farbe="#e0663b" />} titel="Zusatzeinheiten" untertitel="z. B. morgens laufen, je Woche zusätzlich oder statt Kraft" wert={profil.bausteine?.length ? String(profil.bausteine.length) : "keine"} onClick={() => setSeite("plan")} />
         <Zeile symbol={<SymKachel name="kalender" farbe="#2aa58a" />} titel="Jahresplan" wert={phase ? phaseInfo(phase, profil.sport).name : "festlegen"} onClick={() => setSeite("jahresplan")} />
         {vorgemerkt ? (
           <Zeile
