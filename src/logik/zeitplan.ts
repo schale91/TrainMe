@@ -33,13 +33,16 @@ export function umbauMin(scheibenJeSeite: number | null): number {
   return 0.5 + (scheibenJeSeite * 2 * 2 * SCHEIBE_S) / 60
 }
 
-/** Geplante Dauer eines Satzes samt Pause in Minuten (etwa 40 Sekunden Arbeit) */
-export const satzMin = (p: Pick<Platz, "vorgabe">) => (40 + p.vorgabe.pause_s) / 60
+/** Arbeit je Satz in Sekunden: etwa 40, einseitig beide Seiten nacheinander (doppelt), außer beide gleichzeitig */
+const arbeitS = (p: { uebung?: { einseitig?: boolean; id?: string; name?: string }; gleichzeitig?: boolean }) => (p.uebung?.einseitig && !p.gleichzeitig ? 80 : 40)
+
+/** Geplante Dauer eines Satzes samt Pause in Minuten (etwa 40 Sekunden Arbeit, einseitig je Seite) */
+export const satzMin = (p: Pick<Platz, "vorgabe"> & { uebung?: { einseitig?: boolean; id?: string; name?: string }; gleichzeitig?: boolean }) => (arbeitS(p) + p.vorgabe.pause_s) / 60
 
 /** Sekunden für den Wechsel zwischen den Übungen eines Supersatzes (ohne Pause, nur hinübergehen) */
 export const SUPERSATZ_WECHSEL_S = 20
 
-type MitGruppe = Pick<Platz, "vorgabe"> & { gruppe?: string }
+type MitGruppe = Pick<Platz, "vorgabe"> & { gruppe?: string; uebung?: { einseitig?: boolean; id?: string; name?: string }; gleichzeitig?: boolean }
 
 /**
  * Dauer eines Satzes samt Pause je Platz in Minuten. Im Supersatz folgt die nächste Übung der Gruppe ohne Pause
@@ -50,7 +53,7 @@ export function satzMinuten(plaetze: MitGruppe[]): number[] {
     if (!p.gruppe) return satzMin(p)
     const gruppe = plaetze.map((x, k) => (x.gruppe === p.gruppe ? k : -1)).filter((k) => k >= 0)
     if (gruppe.length < 2) return satzMin(p)
-    return gruppe[gruppe.length - 1] === i ? satzMin(p) : (40 + SUPERSATZ_WECHSEL_S) / 60
+    return gruppe[gruppe.length - 1] === i ? satzMin(p) : (arbeitS(p) + SUPERSATZ_WECHSEL_S) / 60
   })
 }
 
@@ -139,7 +142,7 @@ export function weglassenVorschlag(plaetze: (Pick<Platz, "rolle"> & { uebung: { 
 }
 
 /** Pausen der Hauptübungen deutlich kürzer als geplant? (Median der Abstände unter 60 % der geplanten Dauer) */
-export function hauptPausenZuKurz(plaetze: Pick<Platz, "vorgabe" | "rolle">[], saetze: MitZeit[][]): boolean {
+export function hauptPausenZuKurz(plaetze: (Pick<Platz, "vorgabe" | "rolle"> & { uebung?: { einseitig?: boolean; id?: string; name?: string } })[], saetze: MitZeit[][]): boolean {
   const r: number[] = []
   plaetze.forEach((p, i) => {
     if (p.rolle !== "haupt") return
@@ -214,6 +217,101 @@ export function supersatzVorschlag(plaetze: FuerSupersatz[], saetze: MitZeit[][]
     i++
   }
   return { paare, spart_min: Math.round(spart) }
+}
+
+/**
+ * Einseitige Übung einmalig beidseitig, wenn die Zeit knapp wird: beide Seiten in einem Satz statt nacheinander spart
+ * je Satz etwa die Arbeitszeit einer Seite. art: wie sich das Gewicht umrechnet.
+ * - stapel: eine Last für beide Seiten (Kabel, Maschine, Stange): etwa doppelt so viel, abzüglich des bilateralen
+ *   Defizits (beidseitig gleichzeitig bringt jede Seite etwas weniger Kraft auf als allein, Übersicht: Škarabot et al.
+ *   2016, Eur J Appl Physiol), also gut 1,8-fach.
+ * - jeHand: je Hand eine Hantel bzw. ein Griff wie vorher, wegen des Defizits etwa 10 % weniger.
+ * - gleich: dasselbe Gerät mit gleicher Last (Band, Kettlebell).
+ * - ohne: Körpergewicht, nichts umzurechnen.
+ * - gleichzeitig: dieselbe Übung mit beiden Seiten zugleich (zwei Kabel am Turm, zwei Hanteln), je Seite die Last wie vorher.
+ */
+export type BeidseitigArt = "stapel" | "jeHand" | "gleich" | "ohne" | "gleichzeitig"
+export const BEIDSEITIG: Record<string, { ids: string[]; art: BeidseitigArt; geraet?: string }> = {
+  latzug_einarmig: { ids: ["latzug"], art: "stapel" },
+  latzug_kniend_einarmig: { ids: ["latzug_kniend"], art: "stapel" },
+  rudern_kabel_einarmig: { ids: ["rudern_kabel"], art: "stapel" },
+  trizeps_kabel_einarmig: { ids: ["trizeps_kabel"], art: "stapel" },
+  trizeps_ueberkopf_kabel_einarmig: { ids: ["trizeps_ueberkopf_seil"], art: "stapel" },
+  trizeps_ueberkopf_kh_einarmig: { ids: ["trizeps_ueberkopf"], art: "stapel" },
+  kabel_curl_einarmig: { ids: ["kabel_curl_sz"], art: "stapel" },
+  scottcurl_kh: { ids: ["scottcurl_sz"], art: "stapel" },
+  brustpresse_einarmig: { ids: ["brustpresse"], art: "stapel" },
+  butterfly_einarmig: { ids: ["butterfly_maschine"], art: "stapel" },
+  beinpresse_einbeinig: { ids: ["beinpresse"], art: "stapel" },
+  beinstrecker_einbeinig: { ids: ["beinstrecker"], art: "stapel" },
+  rudern_kh: { ids: ["rudern_kh_brust", "rudern_kh_vorgebeugt"], art: "jeHand" },
+  rudern_kh_schwer: { ids: ["rudern_kh_brust", "rudern_kh_vorgebeugt"], art: "jeHand" },
+  rudern_kh_brust_einarmig: { ids: ["rudern_kh_brust"], art: "jeHand" },
+  floor_press_kh_einarmig: { ids: ["floor_press_kh"], art: "jeHand" },
+  schraegbankdruecken_kh_einarmig: { ids: ["schraegbankdruecken_kh"], art: "jeHand" },
+  kh_bankdruecken_einarmig: { ids: ["bankdruecken_kh"], art: "jeHand" },
+  schulterdruecken_kh_einarmig: { ids: ["schulterdruecken_kh_stehend"], art: "jeHand" },
+  reverse_flye_kabel_einarmig: { ids: ["reverse_flye_kabel"], art: "jeHand" },
+  kabel_flys_einarmig: { ids: ["kabel_flys_mitte"], art: "jeHand" },
+  seitheben_kabel_einarmig: { ids: ["seitheben_kabel_beidarmig"], art: "jeHand" },
+  rudern_band_einarmig: { ids: ["rudern_band"], art: "gleich" },
+  kb_swing_einarmig: { ids: ["kb_swing"], art: "gleich" },
+  rudern_schlingentrainer_einarmig: { ids: ["rudern_schlingentrainer"], art: "ohne" },
+  glute_bridge_einbeinig: { ids: ["glute_bridge"], art: "ohne" },
+  beinbeuger_rutschen_einbeinig: { ids: ["beinbeuger_rutschen"], art: "ohne" },
+  beinbeuger_gymnastikball_einbeinig: { ids: ["beinbeuger_gymnastikball"], art: "ohne" },
+  // beide Seiten zugleich: an zwei Kabeln (Kabelturm) oder mit zwei Hanteln
+  bayesian_curl: { ids: [], art: "gleichzeitig", geraet: "kabelturm" },
+  trizeps_kickback_kabel: { ids: [], art: "gleichzeitig", geraet: "kabelturm" },
+  seitheben_lean_away_kabel: { ids: [], art: "gleichzeitig", geraet: "kabelturm" },
+  trizeps_kickback_kh: { ids: [], art: "gleichzeitig" },
+  hammercurl_kreuz: { ids: [], art: "gleichzeitig" },
+}
+
+/** Bilaterales Defizit: beidseitig gleichzeitig etwa 90 % der Summe beider Seiten allein */
+export const BILATERAL = 0.9
+
+/** Last nach dem Wechsel auf beidseitig (vor dem Runden auf vorhandene Gewichte) */
+export function beidseitigLast(last: number | null | undefined, art: BeidseitigArt): number | null {
+  if (last == null || art === "ohne") return last ?? null
+  if (art === "stapel") return last * 2 * BILATERAL
+  if (art === "jeHand") return last * BILATERAL
+  return last
+}
+
+/**
+ * Vorschlag bei knapper Zeit: noch nicht begonnene einseitige Übungen einmalig beidseitig. finde: die Übung, wenn sie
+ * erlaubt und am Ort machbar ist; geraetDa: ob ein Gerät am Ort steht. Gibt die Tausche zurück, bis fehlt_min erreicht
+ * ist; Plätze in ausgenommen wurden schon gefragt.
+ */
+export function beidseitigVorschlag<U extends { id: string; einseitig?: boolean }>(
+  plaetze: { uebung: U; gleichzeitig?: boolean; rolle: string }[],
+  saetze: MitZeit[][],
+  finde: (id: string) => U | undefined,
+  geraetDa: (g: string) => boolean,
+  fehlt_min: number,
+  ausgenommen: number[] = [],
+): { tausch: { i: number; ersatz: U | null; art: BeidseitigArt }[]; spart_min: number } {
+  const tausch: { i: number; ersatz: U | null; art: BeidseitigArt }[] = []
+  let spart = 0
+  for (let i = 0; i < plaetze.length && spart < fehlt_min; i++) {
+    const p = plaetze[i]
+    const b = BEIDSEITIG[p.uebung.id]
+    if (!b || !p.uebung.einseitig || p.gleichzeitig || ausgenommen.indexOf(i) >= 0) continue
+    const offen = saetze[i].filter((s) => !s.fertig).length
+    if (!offen || saetze[i].some((s) => s.fertig)) continue
+    let ersatz: U | null = null
+    if (b.art === "gleichzeitig") {
+      if (b.geraet && !geraetDa(b.geraet)) continue
+    } else {
+      ersatz = b.ids.map(finde).find((u): u is U => !!u && !u.einseitig) ?? null
+      if (!ersatz) continue
+    }
+    tausch.push({ i, ersatz, art: b.art })
+    // je Satz entfällt die Arbeit einer Seite (etwa 40 s)
+    spart += (offen * 40) / 60
+  }
+  return { tausch, spart_min: Math.round(spart) }
 }
 
 /** Freier Buchstabe für eine neue Supersatz-Gruppe (A, B, …), der im Plan noch nicht vorkommt */

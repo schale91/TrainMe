@@ -1449,7 +1449,7 @@ export const ARME: Uebung[] = [
   },
   {
     id: "bizeps_schlingentrainer",
-    name: "Bizepscurl im Schlingentrainer",
+    name: "Bizepscurl im Schlingentrainer (TRX)",
     auch: ["Suspension Trainer Biceps Curl", "TRX Biceps Curl", "Bodyweight Curl"],
     muster: "bizeps",
     art: "kraft",

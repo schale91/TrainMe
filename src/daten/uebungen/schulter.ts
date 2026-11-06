@@ -2475,7 +2475,7 @@ export const SCHULTER: Uebung[] = [
   },
   {
     id: "reverse_flye_schlingentrainer",
-    name: "Reverse Flye am Schlingentrainer",
+    name: "Reverse Flye am Schlingentrainer (TRX)",
     auch: ["TRX Reverse Fly", "Suspension Trainer Reverse Flye", "TRX T-Fly"],
     muster: "schulter_gesund",
     art: "kraft",
@@ -2810,7 +2810,7 @@ export const SCHULTER: Uebung[] = [
   },
   {
     id: "y_raise_schlingentrainer",
-    name: "Y-Raise am Schlingentrainer",
+    name: "Y-Raise am Schlingentrainer (TRX)",
     auch: ["TRX Y-Fly", "TRX Y Raise", "Suspension Trainer Y Raise"],
     muster: "schulter_gesund",
     art: "kraft",

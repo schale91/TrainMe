@@ -401,7 +401,16 @@ export default function App() {
         {einstufen ? (
           <Einstufung daten={daten} aendern={aendern} fertig={() => setEinstufen(false)} zurueck={() => setEinstufen(false)} />
         ) : offen ? (
-          <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id) => aendern((d) => void (d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen, id]))} bandfarbe={(id, f) => aendern((d) => {
+          <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id, neu) => aendern((d) => {
+            d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen.filter((x) => x !== id && x !== neu), id]
+            // dauerhafter Tausch, auch im eigenen Plan; ein früherer Tausch zur neuen Übung zurück wird aufgehoben
+            const e = { ...(d.ersatz || {}) }
+            if (neu) {
+              e[id] = neu
+              if (e[neu] === id) delete e[neu]
+            }
+            d.ersatz = e
+          })} bandfarbe={(id, f) => aendern((d) => {
             const b = { ...(d.bandfarben || {}) }
             if (f) b[id] = f
             else delete b[id]

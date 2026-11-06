@@ -2,8 +2,8 @@
 
 import { hatSport } from "../logik/auswahl"
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
-import { alternativen, lastGeraet, lastenAn, platzMit, verlauf } from "../logik/plan"
-import { hoeher, lastText, niedriger } from "../logik/gewichte"
+import { alternativen, erlaubt, lastGeraet, lastenAn, mitAlltag, passtAnOrt, platzMit, verlauf } from "../logik/plan"
+import { abrunden, BANDFARBEN, bandVonStufe, hoeher, lastText, niedriger, stufeVonBand } from "../logik/gewichte"
 import { pauseNachSatz, satzAnpassung, type Anpassung } from "../logik/progression"
 import { aufwaermSaetze, backoffLast, backoffNachTopsatz, neuerBestwert, satzformVon, scheibenProSeite, stangeVon, unplausibel } from "../logik/satzhilfen"
 import { rehaAktiv, rehaAnpassung } from "../logik/reha"
@@ -19,10 +19,10 @@ import { bruecke } from "./lebenswelt"
 import { ROLLE, datumText, grundText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
-import { FREI } from "../daten/uebungen/index"
+import { FREI, uebung as uebungMit } from "../daten/uebungen/index"
 import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
-import { freieGruppe, gelerntAus, grosseVier, hauptPausenZuKurz, heuteFaktor, messen, pausenKuerzen, restDauer, satzMinuten, schaetzung, supersatzVorschlag, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
+import { beidseitigLast, beidseitigVorschlag, freieGruppe, gelerntAus, grosseVier, hauptPausenZuKurz, heuteFaktor, messen, pausenKuerzen, restDauer, satzMinuten, schaetzung, supersatzVorschlag, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
 import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
 import { bandhilfeMoeglich, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
@@ -101,18 +101,11 @@ function piep() {
   }
 }
 
-/** Übliche Kennfarben von Widerstandsbändern, leicht bis schwer (wie im Kraftbuch). */
-const BANDFARBEN = [
-  { id: "gelb", name: "Gelb", farbe: "#f2c94c" },
-  { id: "rot", name: "Rot", farbe: "#e05252" },
-  { id: "schwarz", name: "Schwarz", farbe: "#2b2b2b" },
-  { id: "lila", name: "Lila", farbe: "#8e5bd6" },
-  { id: "grün", name: "Grün", farbe: "#3fa65a" },
-  { id: "blau", name: "Blau", farbe: "#3b7be0" },
-  { id: "orange", name: "Orange", farbe: "#f08a24" },
-]
+/** Für die Suche: klein, ohne Umlaute und Bindestriche */
+const suchNormal = (t: string) => t.trim().toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss").replace(/[-\s]+/g, " ")
 
-export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number, zeit?: TrainingsZeit) => void; ausschliessen: (id: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void }) {
+
+export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number, zeit?: TrainingsZeit) => void; ausschliessen: (id: string, neu?: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void }) {
   const { daten, einheit } = props
   const profil = daten.profil!
   // Reha: Schmerz je Satz statt Reserve, Schmerz vor dem Training
@@ -145,6 +138,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [pauseBis, setPauseBis] = useState<number | null>(null)
   const [jetzt, setJetzt] = useState(Date.now())
   const [tausch, setTausch] = useState<number | null>(null)
+  const [tauschSuche, setTauschSuche] = useState("")
   const [info, setInfo] = useState<Uebung | null>(null)
   const [kurveOffen, setKurveOffen] = useState<number | null>(null)
   const [wechsel, setWechsel] = useState<{ nach: number; grund: string } | null>(null)
@@ -413,6 +407,56 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setAngepasst([...angepasst, "supersatz", ...paarMarken])
     setToast("Im Wechsel ohne Pause dazwischen, die Pause kommt nach der zweiten Übung.")
   }
+  // Einseitige Übungen, die noch nicht begonnen sind, einmalig beidseitig: spart je Satz die Arbeit einer Seite
+  const gefragteSeiten = angepasst.filter((k) => k.startsWith("seiten:")).map((k) => Number(k.slice(7)))
+  const seiten = zuLang
+    ? beidseitigVorschlag(
+        plaetze,
+        saetze,
+        (id) => {
+          const u = uebungMit(id)
+          return u && erlaubt(profil, u) && passtAnOrt(u, ort) ? u : undefined
+        },
+        (g) => mitAlltag(ort.geraete).indexOf(g as (typeof ort.geraete)[number]) >= 0,
+        prog.gesamt - budget,
+        gefragteSeiten,
+      )
+    : { tausch: [], spart_min: 0 }
+  const seitenSpart = Math.max(1, Math.round(seiten.spart_min * faktor))
+  const seitenMarken = seiten.tausch.map((t) => "seiten:" + t.i)
+  const seitenText = (t: (typeof seiten.tausch)[number]) => {
+    const alt = plaetze[t.i]
+    const last = Math.max(0, ...saetze[t.i].map((x) => x.last ?? 0))
+    if (!t.ersatz) return alt.uebung.name + " mit beiden Seiten gleichzeitig" + (last ? " (" + lastText(last, lastGeraet(alt.uebung, ort)) + " je Seite)" : "")
+    const neu = runde(beidseitigLast(last || null, t.art), t.ersatz)
+    const g = lastGeraet(t.ersatz, ort)
+    return alt.uebung.name + " → " + t.ersatz.name + (neu ? " mit " + lastText(neu, g) + (t.art === "jeHand" && g !== "kurzhantel" ? " je Seite" : "") : "")
+  }
+  // auf vorhandene Gewichte abrunden (lieber etwas leichter), ohne Liste unverändert
+  function runde(last: number | null, u: Uebung): number | null {
+    if (last == null) return null
+    const l = lastenAn(u, ort)
+    return l.length ? (abrunden(last, l) ?? l[0]) : Math.round(last)
+  }
+  const beidseitigJa = () => {
+    const neuP = [...plaetze]
+    const neuS = [...saetze]
+    for (const t of seiten.tausch) {
+      const alt = plaetze[t.i]
+      const text = alt.plantext ? alt.plantext.replace(/\s*je Seite/g, "") : undefined
+      if (!t.ersatz) {
+        neuP[t.i] = { ...alt, gleichzeitig: true, plantext: text ? text + ", beide Seiten gleichzeitig" : undefined }
+        continue
+      }
+      const p = platzMit(profil, daten, einheit.datum, ort, alt, t.ersatz)
+      neuP[t.i] = { ...p, plantext: text, vorgabe: { ...p.vorgabe, saetze: alt.vorgabe.saetze } }
+      neuS[t.i] = saetze[t.i].map((x) => ({ ...x, last: t.art === "ohne" ? null : runde(beidseitigLast(x.last, t.art), t.ersatz!) }))
+    }
+    setPlaetze(neuP)
+    setSaetze(neuS)
+    setAngepasst([...angepasst, "seiten", ...seitenMarken])
+    setToast("Heute beidseitig, der Plan bleibt einseitig. Passt das Gewicht nicht, im ersten Satz anpassen.")
+  }
   const vorschlag = weglassenVorschlag(plaetze, saetze)
   const weglassenSpart = Math.round(
     (vorschlag.ganz.reduce((n, i) => n + saetze[i].filter((x) => !x.fertig).length * minJeSatz[i], 0) + vorschlag.einSatz.reduce((n, i) => n + minJeSatz[i], 0)) * faktor,
@@ -468,7 +512,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setAngepasst([...angepasst, "form"])
     setToast("Heute ohne Steigerung und mit einer Wiederholung mehr im Tank. Fühlt es sich gut an, darfst du trotzdem nach oben anpassen.")
   }
-  const frage: "form" | "pausen" | "supersatz" | "weglassen" | "zurueck" | "vollepausen" | null =
+  const frage: "form" | "pausen" | "seiten" | "supersatz" | "weglassen" | "zurueck" | "vollepausen" | null =
     beginn === null
       ? !gefragt("form") && form.punkte >= 2 && !saetze.some((ss) => ss.some((x) => x.fertig))
         ? "form"
@@ -476,7 +520,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       : zuLang
         ? !gefragt("pausen") && kuerzen.gekuerzt.length && kuerzenSpart >= 1
           ? "pausen"
-          : superVorschlag.paare.length
+          : seiten.tausch.length
+            ? "seiten"
+            : superVorschlag.paare.length
             ? "supersatz"
             : !gefragt("weglassen") && (vorschlag.ganz.length || vorschlag.einSatz.length)
               ? "weglassen"
@@ -488,9 +534,10 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             : null
   const frageAntwort = (ja: boolean) => {
     if (!frage) return
-    if (!ja) return setAngepasst([...angepasst, ...(frage === "supersatz" ? paarMarken : []), frage + "-nein"])
+    if (!ja) return setAngepasst([...angepasst, ...(frage === "supersatz" ? paarMarken : frage === "seiten" ? seitenMarken : []), frage + "-nein"])
     if (frage === "form") formAnpassen()
     else if (frage === "pausen") pausenKuerzenJa()
+    else if (frage === "seiten") beidseitigJa()
     else if (frage === "supersatz") alsSupersatz()
     else if (frage === "weglassen") weglassen()
     else if (frage === "zurueck") zurueckHolen()
@@ -661,8 +708,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     const p = platzMit(profil, daten, einheit.datum, ort, plaetze[i], u)
     setPlaetze(plaetze.map((x, k) => (k === i ? p : x)))
     setSaetze(saetze.map((x, k) => (k === i ? start(p) : x)))
-    if (nieWieder) props.ausschliessen(plaetze[i].uebung.id)
+    if (nieWieder) props.ausschliessen(plaetze[i].uebung.id, id)
     setTausch(null)
+    setTauschSuche("")
   }
 
   const vorgabeText = (p: Platz) => {
@@ -670,9 +718,10 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     const v = p.vorgabe
     if (p.plantext) return p.plantext
     if (p.rolle === "ausdauer") return v.saetze > 1 ? v.saetze + " Runden" : Math.round((v.last || 0) / 60) + " Minuten"
-    if (u.belastung === "zeit") return v.saetze + " × " + v.last + " s" + (u.einseitig ? " je Seite" : "")
+    const seite = u.einseitig ? (p.gleichzeitig ? " (beide Seiten gleichzeitig)" : " je Seite") : ""
+    if (u.belastung === "zeit") return v.saetze + " × " + v.last + " s" + seite
     if (u.belastung === "distanz") return v.saetze + " × " + v.last + " m"
-    return v.saetze + " × " + (v.wdh_von === v.wdh_bis ? v.wdh_von : v.wdh_von + " bis " + v.wdh_bis) + (u.einseitig ? " je Seite" : "")
+    return v.saetze + " × " + (v.wdh_von === v.wdh_bis ? v.wdh_von : v.wdh_von + " bis " + v.wdh_bis) + seite
   }
 
   const padAnzeige = (pd: Pad) => {
@@ -900,10 +949,28 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             ) : null}
             {geraet === "band" || daten.bandfarben?.[u.id] ? (
               <div className="bandwahl" role="group" aria-label="Bandfarbe">
-                <small>Band</small>
-                {BANDFARBEN.map((f) => (
-                  <button key={f.id} type="button" className={"bandfarbe" + (daten.bandfarben?.[u.id] === f.id ? " an" : "")} style={{ background: f.farbe }} aria-label={f.name} aria-pressed={daten.bandfarben?.[u.id] === f.id} onClick={() => props.bandfarbe?.(u.id, daten.bandfarben?.[u.id] === f.id ? null : f.id)} />
-                ))}
+                <small>Band{geraet === "band" && offenerSatz ? ": " + (bandVonStufe(offenerSatz.last)?.name ?? "wählen") : ""}</small>
+                {(geraet === "band" ? BANDFARBEN.filter((_f, k) => !lasten.length || lasten.indexOf(k + 1) >= 0) : BANDFARBEN).map((f) => {
+                  // Mit Band als Last ist die Farbe die Last der offenen Sätze, sonst nur ein Merker zur Übung
+                  const an = geraet === "band" ? bandVonStufe(offenerSatz?.last)?.id === f.id : daten.bandfarben?.[u.id] === f.id
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={"bandfarbe" + (an ? " an" : "")}
+                      style={{ background: f.farbe }}
+                      aria-label={f.name}
+                      aria-pressed={an}
+                      onClick={() => {
+                        if (geraet === "band") {
+                          const st = stufeVonBand(f.id)
+                          setSaetze(saetze.map((ss, x) => (x === i ? ss.map((y) => (y.fertig ? y : { ...y, last: st })) : ss)))
+                          props.bandfarbe?.(u.id, f.id)
+                        } else props.bandfarbe?.(u.id, an ? null : f.id)
+                      }}
+                    />
+                  )
+                })}
               </div>
             ) : null}
             {bandhilfeMoeglich(u) ? (
@@ -971,7 +1038,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             <div className="saetze">
               <div className="satzkopf">
                 <span className="nr">Satz</span>
-                {u.belastung === "gewicht" ? <span className="breit">Gewicht</span> : null}
+                {u.belastung === "gewicht" ? <span className="breit">{geraet === "band" ? "Band" : "Gewicht"}</span> : null}
                 {u.belastung === "zeit" ? <span>{p.rolle === "ausdauer" && v.saetze === 1 ? "Minuten" : "Sekunden"}</span> : null}
                 {u.belastung === "wiederholungen" && saetze[i].some((s) => s.hilfe_kg) ? <span>Hilfe</span> : null}
                 {u.belastung === "gewicht" || u.belastung === "wiederholungen" ? <span>Wdh</span> : null}
@@ -989,8 +1056,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                       {s.last === null ? <span className="leise">kg</span> : zahl(s.last) + " kg"}
                     </button>
                   ) : u.belastung === "gewicht" ? (
-                    <select aria-label="Gewicht" value={s.last ?? ""} onChange={(e) => setSatz(i, k, { last: e.target.value === "" ? null : Number(e.target.value) })}>
-                      <option value="">{lasten.length ? "Gewicht" : "frei"}</option>
+                    <select aria-label={geraet === "band" ? "Band" : "Gewicht"} className={geraet === "band" ? "bandauswahl" : undefined} style={geraet === "band" && bandVonStufe(s.last) ? { borderLeft: "10px solid " + bandVonStufe(s.last)!.farbe } : undefined} value={s.last ?? ""} onChange={(e) => setSatz(i, k, { last: e.target.value === "" ? null : Number(e.target.value) })}>
+                      <option value="">{geraet === "band" ? "Band" : lasten.length ? "Gewicht" : "frei"}</option>
                       {lasten.map((x) => (
                         <option key={x} value={x}>
                           {lastText(x, geraet)}
@@ -1143,6 +1210,10 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               Soll ich die Pausen bei {kuerzen.gekuerzt.join(", ")} kürzen (auf 60 bis 90 s)? Das spart etwa {kuerzenSpart} min. Die Hauptübungen behalten ihre volle Pause.
             </p>
           </>
+        ) : frage === "seiten" ? (
+          <p className="infokurz">
+            Soll ich heute einmalig beidseitig statt einseitig machen: {seiten.tausch.map(seitenText).join("; ")}? Beide Seiten in einem Satz spart etwa {seitenSpart} min. Das Gewicht ist umgerechnet (beidseitig schafft jede Seite etwas weniger als allein). Dein Plan bleibt einseitig.
+          </p>
         ) : frage === "supersatz" ? (
           <p className="infokurz">
             Soll ich {superVorschlag.paare.map(([a, b]) => plaetze[a].uebung.name + " und " + plaetze[b].uebung.name).join(" sowie ")} als Supersatz im Wechsel machen? Die Muskelgruppen sind verschieden, das spart etwa {superVorschlag.spart_min} min.
@@ -1168,12 +1239,20 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         </div>
       </Blatt>
 
-      <Blatt offen={tausch !== null} onClose={() => setTausch(null)} titel="Übung tauschen">
+      <Blatt offen={tausch !== null} onClose={() => { setTausch(null); setTauschSuche("") }} titel="Übung tauschen">
         {tausch !== null ? (
           <>
-            <p className="infokurz">„Heute“ tauscht nur für diese Einheit. „Immer“ schließt {plaetze[tausch].uebung.name} künftig aus.</p>
+            <label className="suchfeld">
+              <Icon name="suche" groesse={18} />
+              <input type="search" placeholder="Suchen, z. B. TRX oder Kabel" value={tauschSuche} onChange={(e) => setTauschSuche(e.target.value)} />
+            </label>
+            <p className="infokurz">„Heute“ tauscht nur für diese Einheit. „Immer“ nimmt künftig statt {plaetze[tausch].uebung.name} die neue Übung, auch in deinem eigenen Plan.</p>
             <Gruppe>
               {alternativen(profil, ort, plaetze[tausch].muster, plaetze[tausch].uebung.id)
+                .filter((a) => {
+                  const q = suchNormal(tauschSuche)
+                  return !q || [a.name, ...(a.auch || [])].some((t) => suchNormal(t).includes(q))
+                })
                 .sort((a, b) => (hatSport(profil, "golf") ? (b.golf || 0) - (a.golf || 0) : 0) || a.name.localeCompare(b.name, "de"))
                 .map((a) => (
                   <Zeile

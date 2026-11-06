@@ -20,6 +20,24 @@ export function idVon(pu: PlanUebung): string {
   return pu.id && !pu.id.startsWith(FREI) && uebung(pu.id) ? pu.id : FREI + pu.name.replace(/^[A-Z]\d+:\s*/, "").trim()
 }
 
+/**
+ * Planübung nach einem dauerhaften Tausch („Immer“): unter der neuen Übung, mit Sätzen, Wiederholungen und Reserve aus
+ * dem Plan. Prozent vom Maximum gelten für die alte Übung und entfallen, das Gewicht kommt dann aus dem Verlauf.
+ */
+export function mitErsatz(daten: Pick<Daten, "ersatz">, pu: PlanUebung): PlanUebung {
+  const alt = idVon(pu)
+  let id = alt
+  const gesehen = new Set<string>()
+  while (daten.ersatz?.[id] && !gesehen.has(id)) {
+    gesehen.add(id)
+    id = daten.ersatz[id]
+  }
+  const u = id !== alt ? uebung(id) : undefined
+  if (!u) return pu
+  const { prozent: _p, basis: _b, ...rest } = pu
+  return { ...rest, id, name: u.name }
+}
+
 /** Ist dieser erledigte Eintrag ein Tag des eigenen Plans? */
 export const planEintrag = (e: Erledigt) => typeof e.plan_nr === "number"
 
@@ -112,6 +130,11 @@ export function planText(pu: PlanUebung): string {
   return pu.saetze + " × " + wdh
 }
 
+/** Übung nur mit Band als Last: Lasten sind Stufen 1, 2, 3 … */
+function nurBand(u: Uebung, lasten: number[]): boolean {
+  return u.geraete.length > 0 && u.geraete.every((g) => g.indexOf("band") >= 0) && lasten.length > 0 && lasten.every((x, i) => x === i + 1)
+}
+
 /**
  * Vorgabe für eine Planübung: Prozent vom Maximum, sonst aus dem letzten Mal bei der Ziel-Reserve, sonst offen.
  * lasten: verfügbare Gewichte am Ort (leer: frei eintragen).
@@ -154,6 +177,12 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
   const verlauf = daten.protokoll.filter((p) => p.uebung === u.id && p.datum < datum).sort((a, b) => (a.datum < b.datum ? -1 : 1))
   const letzte = verlauf[verlauf.length - 1]
   const saetze = letzte ? letzte.saetze.filter((s) => s.last && s.wdh > 0) : []
+  // Band: die Last ist eine Stufe (Farbe), keine kg. Ein Maximum daraus wäre Unsinn: gleiches Band wie zuletzt
+  if (saetze.length && nurBand(u, lasten)) {
+    v.last = Math.max(...saetze.map((s) => s.last as number))
+    v.begruendung = "Gleiches Band wie beim letzten Mal. Schaffst du mehr als " + pu.wdh_bis + " Wiederholungen mit " + rir + " im Tank, nimm das nächststärkere."
+    return v
+  }
   if (saetze.length) {
     // belastbares Maximum (Ausreißer zählen nicht) und höchstens 7,5 % über dem zuletzt geschafften Gewicht
     const max = belastbaresE1rm(saetze)
@@ -177,7 +206,8 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
 
 /** Einheit für einen Plantag an einem Datum. lastenFuer: verfügbare Gewichte einer Übung am Ort. */
 export function einheitAusPlan(profil: Profil, daten: Daten, tag: PlanTag, datum: string, ortIndex: number, lastenFuer: (u: Uebung) => number[]): Einheit {
-  const plaetze: Platz[] = tag.uebungen.map((pu, i) => {
+  const plaetze: Platz[] = tag.uebungen.map((pu0, i) => {
+    const pu = mitErsatz(daten, pu0)
     const u = planUebung(idVon(pu)) as Uebung
     const rolle = rolleVon(pu, i)
     const vorgabe = planVorgabe(daten, pu, u, u.id.startsWith(FREI) ? [] : lastenFuer(u), datum, rolle)
