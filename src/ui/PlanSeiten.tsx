@@ -9,6 +9,7 @@ import type { Daten } from "../logik/typen"
 import { Gruppe, Schalter, Seite, Segment, Zeile } from "./ios"
 import { Feld } from "./teile"
 import { bruecke, koppeln, kopplung, kopplungSetzen, modus } from "./lebenswelt"
+import { BausteinListe } from "./Bausteine"
 
 type Zurueck = { text: string; onClick: () => void }
 
@@ -59,6 +60,7 @@ export function PlanSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void
           />
         </div>
       </Gruppe>
+      <BausteinListe daten={daten} aendern={props.aendern} />
       <Gruppe titel="Aufwärmsätze" fuss={profil.aufwaermen === "grosse_vier" ? "Nur bei Kniebeuge, Bankdrücken, Überkopfdrücken und Kreuzheben mit der Langhantel, jeweils bei der ersten ihrer Art am Tag. Danach sind die Muskeln warm." : "Bei der ersten Hauptübung des Tages, aufsteigend bis zum Arbeitsgewicht."}>
         <div className="segmentzeile">
           <Segment

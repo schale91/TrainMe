@@ -2,6 +2,7 @@
 
 import { hatSport } from "../logik/auswahl"
 import { useMemo, useState } from "react"
+import { BausteinWoche } from "./Bausteine"
 import { faktDesTages } from "../daten/fakten"
 import { BLOCK_WOCHEN, blockWoche, istEntlastung } from "../logik/progression"
 import { MOBIL_SCHWERPUNKTE, heute, mobilitaetsEinheit, montagVon, plusTage, schwachstellen, wochenplan, type MobilSchwerpunkt } from "../logik/plan"
@@ -328,6 +329,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         })}
       </Gruppe>
       </div>
+      <BausteinWoche daten={daten} montag={montag} aendern={props.aendern} />
 
       {wissen ? (
         <Gruppe titel={"Gut zu wissen: " + wissen.titel} fuss={wissen.quelle}>

@@ -68,6 +68,8 @@ function vervollstaendigen(p: Profil): Profil {
       : basis.orte
   const woche = Array.isArray(p.woche) && p.woche.length === 7 ? p.woche : basis.woche
   const neu: Profil = { ...basis, ...p, orte, woche, beschwerden: p.beschwerden || [], ausgeschlossen: p.ausgeschlossen || [], arten: p.arten && p.arten.length ? p.arten : ["kraft"] }
+  if (Array.isArray(p.bausteine)) neu.bausteine = p.bausteine.filter((b) => b && typeof b.id === "string" && typeof b.ab === "string" && Array.isArray(b.tage) && b.minuten > 0)
+  else delete neu.bausteine
   // Ältere Stände ohne Jahresplan bekommen den Vorschlag ab dem laufenden Block
   const j = p.jahresplan
   const gueltig = j && typeof j.start === "string" && Array.isArray(j.bloecke) && j.bloecke.length > 0 && j.bloecke.every((b) => b in PHASEN)

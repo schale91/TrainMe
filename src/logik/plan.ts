@@ -6,6 +6,7 @@ import { hatSport, positionen, sporte } from "./auswahl"
 import { bildInfo } from "../daten/reha"
 import { UEBUNGEN, uebung } from "../daten/uebungen/index"
 import { passendeGruppe, verfuegbar } from "./gewichte"
+import { bausteinWoche, rang, stattAm } from "./bausteine"
 import { BLOCK_WOCHEN, ausdauerVorgabe, blockWoche, istEntlastung, plateau, vorgabe } from "./progression"
 import { bewerte, testNach } from "../daten/tests"
 import { PHASEN, mitPhase, type PlanProfil } from "./jahresplan"
@@ -258,8 +259,18 @@ export function einheitFuer(profil: Profil, daten: Daten, datum: string): Einhei
   return plan.find((e) => e.datum === datum) || null
 }
 
-/** Alle Einheiten der Woche ab Montag. */
+/**
+ * Alle Einheiten der Woche ab Montag, mit den Bausteinen (z. B. morgens laufen). Am selben Tag in der Reihenfolge der
+ * Tageszeit: morgens vor dem Plan, abends danach.
+ */
 export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): Einheit[] {
+  const plan = wochenplanOhneBausteine(grundprofil, daten, montag)
+  if (!grundprofil.bausteine?.length) return plan
+  const extra = bausteinWoche(grundprofil, montag, plan, (datum, minuten, ort) => mobilitaetsEinheit(grundprofil, daten, datum, minuten, "ganz", ort))
+  return [...plan, ...extra].sort((a, b) => (a.datum < b.datum ? -1 : a.datum > b.datum ? 1 : rang(a) - rang(b)))
+}
+
+function wochenplanOhneBausteine(grundprofil: Profil, daten: Daten, montag: string): Einheit[] {
   // Eigener Plan statt der Planung von TrainMe
   if (grundprofil.planart === "eigen" && daten.eigenerPlan) {
     return planWoche(
@@ -272,7 +283,7 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
         const ort = grundprofil.orte[i] || grundprofil.orte[0]
         return ort ? lastenAn(u, ort) : []
       },
-      (nur) => wochenplan(nur, daten, montag),
+      (nur) => wochenplanOhneBausteine(nur, daten, montag),
     )
   }
   const benutzt = new Set<string>()
@@ -284,6 +295,8 @@ export function wochenplan(grundprofil: Profil, daten: Daten, montag: string): E
   // Blöcke beginnen montags: vorgemerkte Änderungen gelten für die ganze Woche
   for (const t of wochenaufteilung(profilAm(grundprofil, montag))) {
     const datum = plusTage(montag, t.tag)
+    // Ein Baustein ersetzt an diesem Tag das Training
+    if (stattAm(grundprofil, datum)) continue
     // Phase aus dem Jahresplan: steuert Wiederholungen, Reserve, Pausen und Sätze
     // Vorgemerkte Änderungen gelten ab dem nächsten Block auch schon in der Vorschau
     let profil = mitPhase(profilAm(grundprofil, datum), datum)

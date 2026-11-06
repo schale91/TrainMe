@@ -241,6 +241,28 @@ export interface Wochentag {
   quelle?: "plan" | "trainme"
 }
 
+export type BausteinArt = "laufen_locker" | "laufen_intervall" | "gehen" | "rad_locker" | "mobility"
+export type Tageszeit = "morgens" | "mittags" | "abends"
+/** zusätzlich zum Krafttag (Doppeltag), statt des Krafttags (Plan rückt nach hinten) oder diese Woche aus */
+export type BausteinModus = "zusatz" | "statt" | "aus"
+
+/** Feste Zusatzeinheit neben dem Plan, z. B. zweimal die Woche morgens locker laufen */
+export interface Baustein {
+  id: string
+  art: BausteinArt
+  /** Wochentage, 0 = Montag */
+  tage: number[]
+  tageszeit: Tageszeit
+  minuten: number
+  /** gilt ab (und bis) zu diesem Datum */
+  ab: string
+  bis?: string
+  /** Grundeinstellung; zusatz oder statt */
+  modus: Exclude<BausteinModus, "aus">
+  /** Abweichung je Woche, Schlüssel = Montag der Woche */
+  wochen?: Record<string, BausteinModus>
+}
+
 export interface Gewichte {
   /** Kurzhanteln je Hand in kg */
   kurzhanteln: number[]
@@ -320,6 +342,8 @@ export interface Profil {
   aufwaermen?: "plan" | "grosse_vier"
   /** Minuten Aufräumen nach dem letzten Satz, mit Countdown, der sich nicht wegklicken lässt (0 oder fehlt: aus) */
   aufraeumen_min?: number
+  /** Feste Zusatzeinheiten neben dem Plan (z. B. morgens laufen) */
+  bausteine?: Baustein[]
 }
 
 /** Eine Übung in einem eigenen Plan (zum Beispiel vom Coach oder aus einem Heft). */
@@ -454,6 +478,9 @@ export interface Einheit {
   hinweise: string[]
   /** Tag im eigenen Plan */
   plan_nr?: number
+  /** Einheit aus einem Baustein, mit Tageszeit */
+  baustein?: string
+  tageszeit?: Tageszeit
 }
 
 export interface Satz {

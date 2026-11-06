@@ -5,6 +5,7 @@
 
 import { FREI, uebung } from "../daten/uebungen/index"
 import { abrunden } from "./gewichte"
+import { stattAm } from "./bausteine"
 import { belastbaresE1rm, steigerungsGrenze } from "./progression"
 import type { Daten, EigenerPlan, Einheit, Erledigt, PlanTag, PlanUebung, Platz, Profil, Protokoll, Rolle, Uebung, Vorgabe } from "./typen"
 
@@ -259,8 +260,9 @@ export function planWoche(profil: Profil, daten: Daten, montag: string, heute: s
   const termine = (mo: string): string[] => {
     const t = trainingsTage(profil)
       .map((i) => plusTage(mo, i))
-      .filter((d) => d >= heute && !(d === heute && heuteErledigt))
-    return profil.folge === "fortlaufend" && !heuteErledigt && heute >= mo && heute < plusTage(mo, 7) && t[0] !== heute ? [heute, ...t] : t
+      // Tage, an denen ein Baustein den Krafttag ersetzt, fallen weg: der Plan rückt nach hinten
+      .filter((d) => d >= heute && !(d === heute && heuteErledigt) && !stattAm(profil, d))
+    return profil.folge === "fortlaufend" && !heuteErledigt && heute >= mo && heute < plusTage(mo, 7) && t[0] !== heute && !stattAm(profil, heute) ? [heute, ...t] : t
   }
   // Spätere Wochen machen dort weiter, wo die Wochen davor (ab heute) aufhören; nach dem letzten Plantag bleibt es leer
   let vorher = 0
