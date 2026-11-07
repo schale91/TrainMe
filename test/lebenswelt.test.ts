@@ -263,13 +263,18 @@ describe("Eigener Plan", () => {
     expect(maximum(d, "frei:Kurzhantel-Irgendwas")?.kg).toBeCloseTo(28, 0)
   })
 
-  test("Wochenplan: der nächste Plantag heute (fortlaufend), Überspringen und Planende", () => {
+  test("Wochenplan: der nächste Plantag am nächsten Trainingstag (fortlaufend, nicht an freien Tagen), Überspringen und Planende", () => {
     const d = mitPlan()
     const heute = new Date()
     const t = heute.getFullYear() + "-" + String(heute.getMonth() + 1).padStart(2, "0") + "-" + String(heute.getDate()).padStart(2, "0")
     const montag = new Date(Date.parse(t + "T12:00:00Z") - ((new Date(t + "T12:00:00Z").getUTCDay() + 6) % 7) * 86400000).toISOString().slice(0, 10)
-    const woche = wochenplan(d.profil!, d, montag)
-    expect(woche.find((e) => e.datum === t)?.plan_nr).toBe(4)
+    const naechsterMontag = new Date(Date.parse(montag + "T12:00:00Z") + 7 * 86400000).toISOString().slice(0, 10)
+    const alle = [...wochenplan(d.profil!, d, montag), ...wochenplan(d.profil!, d, naechsterMontag)]
+    const erste = alle.find((e) => e.plan_nr === 4)!
+    expect(erste.datum >= t).toBe(true)
+    // nie an einem freien Tag
+    const wt = (new Date(erste.datum + "T12:00:00Z").getUTCDay() + 6) % 7
+    expect(d.profil!.woche[wt].art).toBe("training")
     ueberspringen(d, d.eigenerPlan!.tage[3], t)
     expect(planZuEnde(d)).toBe(true)
   })
