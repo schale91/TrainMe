@@ -59,6 +59,11 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Hallo" : "Guten Abend"
   const termin = profil.woche[(new Date().getDay() + 6) % 7]
   const fokus = heutige && !istErledigt(daten, heutige) ? heutige : naechste
+  // Ruhetag ohne offene Einheit in dieser Woche: die nächste aus der kommenden Woche zum Vorziehen
+  const vorziehen = useMemo(
+    () => (aktuell && !fokus ? wochenplan(profil, daten, plusTage(montag, 7)).find((e) => !istErledigt(daten, e)) : undefined),
+    [aktuell, fokus, profil, daten, montag],
+  )
   const phase = phaseAm(profil, montag)
   const weg = aktuellerBlock(wegStand(daten, tag))
   const gesundheit = tageswerte(daten, tag)
@@ -251,7 +256,12 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
               <Sym name={heutige ? "haken" : termin.art === "sporttermin" ? (hatSport(profil, "golf") ? "golf" : "ziel") : "mond"} groesse={26} />
               {heutige ? "Heute erledigt" : termin.art === "sporttermin" ? TERMINE.find((x) => x.id === termin.termin)?.name || "Sporttermin" : "Ruhetag"}
             </span>
-            <span className="heutevorschau">Erholung gehört zum Training. Diese Woche ist alles geschafft.</span>
+            <span className="heutevorschau">Erholung gehört zum Training. {vorziehen ? "Weiter geht es am " + WT[(new Date(vorziehen.datum + "T12:00:00Z").getUTCDay() + 6) % 7] + " mit " + vorziehen.titel + "." : "Diese Woche ist alles geschafft."}</span>
+            {vorziehen ? (
+              <button type="button" className="textknopf" onClick={() => props.oeffnen(vorziehen)}>
+                Trotzdem heute trainieren: {vorziehen.titel} vorziehen
+              </button>
+            ) : null}
           </div>
         )
       ) : null}

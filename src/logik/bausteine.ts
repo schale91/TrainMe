@@ -135,12 +135,7 @@ export function planEnde(profil: Profil, daten: Pick<Daten, "eigenerPlan" | "erl
   const tage = profil.woche.map((t, i) => (t.art === "training" && t.quelle !== "trainme" ? i : -1)).filter((i) => i >= 0)
   if (!tage.length) return null
   const heuteErledigt = daten.erledigt.some((e) => typeof e.plan_nr === "number" && e.datum === heute && e.quelle !== "uebersprungen")
-  // Fortlaufend: auch heute, wenn heute kein Trainingstag ist und noch nichts erledigt wurde
   let d = heute
-  if (profil.folge === "fortlaufend" && !heuteErledigt && tage.indexOf(wt(heute)) < 0 && !(mitBausteinen && stattAm(profil, heute))) {
-    offen--
-    if (!offen) return heute
-  }
   for (let n = 0; n < 3 * 366; n++, d = plus(d, 1)) {
     if (tage.indexOf(wt(d)) < 0 || (d === heute && heuteErledigt) || (mitBausteinen && stattAm(profil, d))) continue
     if (--offen <= 0) return d

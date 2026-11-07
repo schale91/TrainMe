@@ -231,8 +231,8 @@ function trainingsTage(profil: Profil): number[] {
 
 /**
  * Einheiten einer Woche aus dem eigenen Plan. Erledigte Plantage stehen an ihrem Datum; die offenen Tage kommen der
- * Reihe nach auf die verbleibenden Trainingstage ab heute (fortlaufend: der nächste offene Tag auch heute, wenn heute
- * kein Trainingstag ist).
+ * Reihe nach auf die verbleibenden Trainingstage ab heute (fortlaufend: Verpasstes geht nicht verloren, der nächste offene
+ * Tag kommt am nächsten Trainingstag; an freien Tagen nur auf Wunsch vorgezogen).
  */
 export function planWoche(profil: Profil, daten: Daten, montag: string, heute: string, plusTage: (d: string, n: number) => string, lastenFuer: (u: Uebung, ort: number) => number[], zusatz?: (p: Profil) => Einheit[]): Einheit[] {
   const plan = daten.eigenerPlan
@@ -262,7 +262,8 @@ export function planWoche(profil: Profil, daten: Daten, montag: string, heute: s
       .map((i) => plusTage(mo, i))
       // Tage, an denen ein Baustein den Krafttag ersetzt, fallen weg: der Plan rückt nach hinten
       .filter((d) => d >= heute && !(d === heute && heuteErledigt) && !stattAm(profil, d))
-    return profil.folge === "fortlaufend" && !heuteErledigt && heute >= mo && heute < plusTage(mo, 7) && t[0] !== heute && !stattAm(profil, heute) ? [heute, ...t] : t
+    // An freien Tagen kommt keine Einheit: die nächste steht am nächsten Trainingstag und lässt sich vorziehen
+    return t
   }
   // Spätere Wochen machen dort weiter, wo die Wochen davor (ab heute) aufhören; nach dem letzten Plantag bleibt es leer
   let vorher = 0

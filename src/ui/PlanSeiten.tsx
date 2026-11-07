@@ -48,7 +48,7 @@ export function PlanSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void
           />
         </div>
       </Gruppe>
-      <Gruppe titel="Reihenfolge" fuss={profil.folge === "fortlaufend" ? "Es kommt immer die nächste offene Einheit, auch an einem freien Tag. Verpasstes holst du einfach nach." : "Einheiten stehen an festen Wochentagen. Vorziehen geht, Verpasstes bleibt verpasst."}>
+      <Gruppe titel="Reihenfolge" fuss={profil.folge === "fortlaufend" ? "Es kommt immer die nächste offene Einheit am nächsten Trainingstag. Verpasstes holst du einfach nach, an freien Tagen kannst du vorziehen." : "Einheiten stehen an festen Wochentagen. Vorziehen geht, Verpasstes bleibt verpasst."}>
         <div className="segmentzeile">
           <Segment
             werte={[
