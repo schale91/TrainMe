@@ -1,8 +1,8 @@
 // TrainMe in der Lebenswelt: Abgleich mit der Datenbank, Übernahme aus dem Kraftbuch, eigener Plan.
-import { abgleichen, neuerStand, pruefsumme, stabil, tagZusammen, teilen, zusammensetzen, type Anfrage, type TagEintrag } from "../src/logik/abgleich"
+import { abgleichen, feldSummen, neuerStand, pruefsumme, stabil, stammMischen, tagZusammen, teilen, zusammensetzen, type Anfrage, type TagEintrag } from "../src/logik/abgleich"
 import { einspielen, nameKey, prozent, uebernehmen, wiederholungen, zuordnen, type KbDok } from "../src/logik/kraftbuch"
 import { einheitAusPlan, idVon, maximum, naechsterPlanTag, offenePlanTage, planAusText, planWoche, planZuEnde, planZuText, ueberspringen } from "../src/logik/eigenerPlan"
-import { leer, neuesProfil } from "../src/logik/speicher"
+import { leer, neuesProfil, pruefen } from "../src/logik/speicher"
 import { plusTage, wochenplan } from "../src/logik/plan"
 import type { Daten, Protokoll } from "../src/logik/typen"
 
@@ -100,6 +100,58 @@ describe("Abgleich mit der Lebenswelt", () => {
     expect(r.neu).toBe(false)
     const vorher = Object.keys(s.db.tage).length
     expect(vorher).toBe(1)
+  })
+
+  test("Stamm auf beiden Seiten geändert: je Feld gemischt, keine Seite überschreibt die andere", async () => {
+    const s = server()
+    let handy = mitProfil()
+    let r = await abgleichen(s.anfrage, handy, neuerStand(), 1000)
+    let hStand = r.stand
+    // Woanders (z. B. direkt in der Datenbank) kommen feste Tausche und der Aufräum-Timer dazu
+    const dort = structuredClone(s.db.stamm!.daten) as Record<string, Record<string, unknown>>
+    dort.ersatz = { rudern_helms: "rudern_schlingentrainer" }
+    dort.profil.aufraeumen_min = 5
+    s.db.stamm = { zeit: 2000, daten: dort, geaendert: 99 }
+    // Auf dem Handy wurde inzwischen trainiert: Erfahrungspunkte und eine Bandfarbe haben sich geändert
+    handy = structuredClone(handy)
+    handy.spiel.xp = 56
+    handy.bandfarben = { band_pull_apart: "rot" }
+    handy.profil!.name = "Alex S."
+    r = await abgleichen(s.anfrage, handy, hStand, 3000)
+    hStand = r.stand
+    handy = r.daten
+    // Beides ist da, auf dem Handy und auf dem Server
+    expect(handy.ersatz).toEqual({ rudern_helms: "rudern_schlingentrainer" })
+    expect(handy.profil!.aufraeumen_min).toBe(5)
+    expect(handy.spiel.xp).toBe(56)
+    expect(handy.bandfarben).toEqual({ band_pull_apart: "rot" })
+    expect(handy.profil!.name).toBe("Alex S.")
+    const oben = s.db.stamm!.daten as Record<string, Record<string, unknown>>
+    expect(oben.ersatz).toEqual({ rudern_helms: "rudern_schlingentrainer" })
+    expect(oben.spiel.xp).toBe(56)
+    expect(oben.profil.aufraeumen_min).toBe(5)
+    expect(oben.profil.name).toBe("Alex S.")
+    // danach ist Ruhe
+    r = await abgleichen(s.anfrage, handy, hStand, 4000)
+    expect(r.neu).toBe(false)
+  })
+
+  test("Mischen: hier Geändertes bleibt, hier Gelöschtes bleibt gelöscht, alles andere kommt vom Server", () => {
+    const basis = { a: 1, b: 2, t: { x: 1, y: 2 } }
+    const lokal = { a: 1, b: 3, t: { x: 1 } } // b geändert, t.y gelöscht
+    const srv = { a: 9, b: 2, t: { x: 5, y: 2, z: 7 }, neu: true }
+    expect(stammMischen(lokal, srv, feldSummen(basis))).toEqual({ a: 9, b: 3, t: { x: 5, z: 7 }, neu: true })
+    // ohne Basis (alter Stand): Eigenes bleibt, was nur der Server hat, kommt dazu
+    expect(stammMischen(lokal, srv)).toEqual({ a: 1, b: 3, t: { x: 1, y: 2, z: 7 }, neu: true })
+  })
+
+  test("Felder, die diese Version nicht kennt, überleben Laden und Abgleich", () => {
+    const roh = { ...mitProfil(), ersatz: { a: "b" }, bandhilfe: { klimmzug: "grün" }, kommt_spaeter: { wert: 1 } }
+    const d = pruefen(JSON.parse(JSON.stringify(roh))) as unknown as Record<string, unknown>
+    expect(d.kommt_spaeter).toEqual({ wert: 1 })
+    expect(d.bandhilfe).toEqual({ klimmzug: "grün" })
+    const { stamm, tage } = teilen(d as unknown as Daten)
+    expect((zusammensetzen(stamm, tage) as unknown as Record<string, unknown>).kommt_spaeter).toEqual({ wert: 1 })
   })
 
   test("Am selben Tag auf beiden Geräten trainiert: beide Übungen bleiben", async () => {

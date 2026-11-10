@@ -578,6 +578,10 @@ export interface Daten {
   bandfarben?: Record<string, string>
   /** Dauerhaft getauschte Übungen („Immer“ beim Tauschen): alte ID → neue ID, gilt auch im eigenen Plan */
   ersatz?: Record<string, string>
+  /** Zusätzliche Sätze je Übung im eigenen Plan (aus dem Wochenrückblick übernommen), mit Datum der Übernahme */
+  satzplus?: Record<string, { n: number; seit: string }>
+  /** Wochenrückblick: abgelehnte Vorschläge (Schlüssel → Datum), sie kommen erst nach einigen Wochen wieder */
+  rueckblick?: { weg?: Record<string, string> }
   /** Band als Unterstützung je Körpergewichtsübung (Farbe) und eigene kg-Werte je Farbe */
   bandhilfe?: Record<string, string>
   bandhilfe_kg?: Record<string, number>

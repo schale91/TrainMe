@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { modusAm, planEnde, stattAm } from "../src/logik/bausteine"
 import { planAusText, planWoche } from "../src/logik/eigenerPlan"
 import { zuordnen } from "../src/logik/kraftbuch"
-import { plusTage, wochenplan } from "../src/logik/plan"
+import { heute, montagVon, plusTage, wochenplan } from "../src/logik/plan"
 import { leer, neuesProfil } from "../src/logik/speicher"
 import type { Baustein, Daten, Profil } from "../src/logik/typen"
 
@@ -30,15 +30,18 @@ describe("Bausteine", () => {
     expect(stattAm({ bausteine: [b] }, "2026-11-16")).toBe(true)
   })
 
+  // wochenplan rechnet mit dem heutigen Datum: die Tests nehmen deshalb die kommende Woche
+  const kommend = montagVon(plusTage(heute(), 7))
+
   it("zusätzlich: Doppeltag, morgens zuerst, der Plan bleibt", () => {
-    const { p, d } = aufbau([lauf])
-    const w = wochenplan(p, d, "2026-11-09")
-    const montag = w.filter((e) => e.datum === "2026-11-09")
+    const { p, d } = aufbau([{ ...lauf, ab: kommend }])
+    const w = wochenplan(p, d, kommend)
+    const montag = w.filter((e) => e.datum === kommend)
     expect(montag.map((e) => e.art)).toEqual(["ausdauer", "kraft"])
     expect(montag[0].titel).toBe("Laufen locker (morgens)")
     expect(montag[0].hinweise.join(" ")).toMatch(/Doppeltag/)
     // Donnerstag nur der Lauf
-    expect(w.filter((e) => e.datum === "2026-11-12").map((e) => e.art)).toEqual(["ausdauer"])
+    expect(w.filter((e) => e.datum === plusTage(kommend, 3)).map((e) => e.art)).toEqual(["ausdauer"])
     expect(w.filter((e) => e.art === "kraft").length).toBe(3)
   })
 
@@ -58,9 +61,9 @@ describe("Bausteine", () => {
   })
 
   it("Intervalle vor einem Beintag bekommen einen Hinweis", () => {
-    const { p, d } = aufbau([{ ...lauf, art: "laufen_intervall", tage: [1] }])
-    const w = wochenplan(p, d, "2026-11-09")
-    const dienstag = w.find((e) => e.datum === "2026-11-10")!
+    const { p, d } = aufbau([{ ...lauf, art: "laufen_intervall", tage: [1], ab: kommend }])
+    const w = wochenplan(p, d, kommend)
+    const dienstag = w.find((e) => e.datum === plusTage(kommend, 1))!
     expect(dienstag.titel).toBe("Laufintervalle (morgens)")
     expect(dienstag.hinweise.join(" ")).toMatch(/Beintag/)
   })
