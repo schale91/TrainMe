@@ -9,6 +9,7 @@
 
 import { uebung } from "../daten/uebungen/index"
 import { idVon, mitErsatz, offenePlanTage } from "./eigenerPlan"
+import { satzZahl } from "./dropsatz"
 import { belastbaresE1rm, plateau } from "./progression"
 import type { Daten, Muskel, Protokoll, Uebung } from "./typen"
 
@@ -73,7 +74,8 @@ const kraftUebung = (id: string): Uebung | undefined => {
   const u = uebung(id)
   return u && u.art === "kraft" ? u : undefined
 }
-const gueltig = (p: Protokoll) => p.saetze.filter((s) => s.wdh > 0 || (s.sekunden ?? 0) > 0).length
+/** Gültige Sätze; ein Dropsatz zählt je Stufe einen weiteren Satz (wie in den Studien verglichen) */
+const gueltig = (p: Protokoll) => p.saetze.filter((s) => s.wdh > 0 || (s.sekunden ?? 0) > 0).reduce((n, s) => n + satzZahl(s), 0)
 
 export interface WochenZahl {
   montag: string
