@@ -683,6 +683,8 @@ interface Eintrag {
   canvas: HTMLCanvasElement
   key: string
   sichtbar: boolean
+  /** Anteil im Bild: bewegt wird nur die Figur, die am meisten zu sehen ist */
+  anteil: number
   start: number
   still: boolean
   io?: IntersectionObserver
@@ -740,12 +742,12 @@ function schleife(ms: number) {
     laeuft = false
     return
   }
-  if (ms - zuletzt > 40) {
+  // 15 Bilder pro Sekunde und nur die Figur, die am meisten im Bild ist: schont Akku und Prozessor
+  if (ms - zuletzt > 1000 / 15 - 2) {
     zuletzt = ms
-    const t = ms / 1000
-    // nach Größe sortiert, damit der Renderer seine Fläche selten wechseln muss
-    const dran = eintraege.filter((e) => e.sichtbar && !e.still).sort((a, b) => a.canvas.width - b.canvas.width)
-    for (const e of dran) zeichne(e, t)
+    let beste: Eintrag | null = null
+    for (const e of eintraege) if (e.sichtbar && !e.still && (!beste || e.anteil > beste.anteil || (e.anteil === beste.anteil && e.canvas.width > beste.canvas.width))) beste = e
+    if (beste) zeichne(beste, ms / 1000)
   }
   requestAnimationFrame(schleife)
 }
@@ -759,13 +761,19 @@ export function zeige(canvas: HTMLCanvasElement, uebung: string, geraet = '', fa
   const key = [specKey, eq, farbe].join('|')
   const fenster = canvas.ownerDocument.defaultView ?? window
   const still = !!fenster.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  const e: Eintrag = { canvas, key, sichtbar: true, start: performance.now() / 1000 - Math.random() * 0.8, still }
+  const e: Eintrag = { canvas, key, sichtbar: true, anteil: 1, start: performance.now() / 1000 - Math.random() * 0.8, still }
   eintraege.push(e)
   zeichne(e, performance.now() / 1000)
   if ('IntersectionObserver' in fenster) {
-    e.io = new fenster.IntersectionObserver((es) => {
-      for (const x of es) e.sichtbar = x.isIntersecting
-    })
+    e.io = new fenster.IntersectionObserver(
+      (es) => {
+        for (const x of es) {
+          e.sichtbar = x.isIntersecting
+          e.anteil = x.isIntersecting ? x.intersectionRatio : 0
+        }
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] },
+    )
     e.io.observe(canvas)
   }
   if (!laeuft) {
@@ -785,7 +793,7 @@ export const _intern = {
   /** Standbild an Stelle u (0 = Start, 1 = Umkehrpunkt) */
   standbild(canvas: HTMLCanvasElement, uebung: string, u: number, geraet = '') {
     const [specKey, eq] = aufloesen(uebung, geraet)
-    const e: Eintrag = { canvas, key: [specKey, eq, '#2f6fe4'].join('|'), sichtbar: true, start: 0, still: true }
+    const e: Eintrag = { canvas, key: [specKey, eq, '#2f6fe4'].join('|'), sichtbar: true, anteil: 1, start: 0, still: true }
     const sz = szeneFuer(e.key)
     const r = studio()
     r.setSize(canvas.width, canvas.height, false)

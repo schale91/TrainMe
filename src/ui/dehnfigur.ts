@@ -941,7 +941,8 @@ class Buehne {
     const sonne = new THREE.DirectionalLight("#fff6ea", 2.1)
     sonne.position.set(2.2, 4.5, 3)
     sonne.castShadow = true
-    sonne.shadow.mapSize.set(2048, 2048)
+    // 1024 reicht für die kleine Figur und braucht ein Viertel des Speichers und der Rechenzeit
+    sonne.shadow.mapSize.set(1024, 1024)
     sonne.shadow.radius = 3
     const sc = sonne.shadow.camera
     sc.left = -2
@@ -1666,7 +1667,8 @@ function studio() {
   renderer.setPixelRatio(1)
   renderer.setClearColor(0x000000, 0)
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  // einfache Schattenfilterung: kaum sichtbarer Unterschied, deutlich weniger Rechenzeit auf dem Handy
+  renderer.shadowMap.type = THREE.PCFShadowMap
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.15
@@ -1678,6 +1680,8 @@ interface Eintrag {
   buehne: Buehne
   start: number
   sichtbar: boolean
+  /** Anteil der Figur im Bild (0 bis 1): bewegt wird nur die, die am meisten zu sehen ist */
+  anteil: number
   still: boolean
   melden?: (st: Stand) => void
   io?: IntersectionObserver
@@ -1685,6 +1689,8 @@ interface Eintrag {
   antippen?: () => void
 }
 const eintraege: Eintrag[] = []
+/** Abstand zwischen zwei Bildern der bewegten Figur (15 pro Sekunde) */
+const BILD_MS = 1000 / 15 - 2
 let laeuft = false
 let zuletzt = 0
 
@@ -1718,10 +1724,13 @@ function schleife(ms: number) {
     laeuft = false
     return
   }
-  // etwa 30 Bilder pro Sekunde reichen für ruhige Dehnungen
-  if (ms - zuletzt > 33) {
+  // 15 Bilder pro Sekunde reichen für ruhige Übungen und schonen Akku und Prozessor. Bewegt wird immer nur eine Figur:
+  // die, die am meisten im Bild ist (im Vollbild die große); die anderen bleiben als Standbild stehen.
+  if (ms - zuletzt > BILD_MS) {
     zuletzt = ms
-    for (const e of eintraege) if (e.sichtbar && !e.still) zeichne(e, ms / 1000)
+    let beste: Eintrag | null = null
+    for (const e of eintraege) if (e.sichtbar && !e.still && (!beste || e.anteil > beste.anteil || (e.anteil === beste.anteil && e.canvas.width * e.canvas.height > beste.canvas.width * beste.canvas.height))) beste = e
+    if (beste) zeichne(beste, ms / 1000)
   }
   requestAnimationFrame(schleife)
 }
@@ -1733,13 +1742,19 @@ function schleife(ms: number) {
 export function zeigeDehnung(canvas: HTMLCanvasElement, d: Dehnung, haltenS?: number, melden?: (st: Stand) => void, antippen?: () => void): () => void {
   const fenster = canvas.ownerDocument.defaultView ?? window
   const still = !!fenster.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-  const e: Eintrag = { canvas, buehne: new Buehne(d, haltenS), start: performance.now() / 1000, sichtbar: true, still, melden, antippen }
+  const e: Eintrag = { canvas, buehne: new Buehne(d, haltenS), start: performance.now() / 1000, sichtbar: true, anteil: 1, still, melden, antippen }
   eintraege.push(e)
   zeichne(e, performance.now() / 1000)
   if ("IntersectionObserver" in fenster) {
-    e.io = new fenster.IntersectionObserver((es) => {
-      for (const x of es) e.sichtbar = x.isIntersecting
-    })
+    e.io = new fenster.IntersectionObserver(
+      (es) => {
+        for (const x of es) {
+          e.sichtbar = x.isIntersecting
+          e.anteil = x.isIntersecting ? x.intersectionRatio : 0
+        }
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] },
+    )
     e.io.observe(canvas)
   }
   if (!laeuft) {
@@ -1864,7 +1879,7 @@ export function pruefansicht(a: { gelenke: boolean; raster: boolean; nackt: bool
 
 /** Standbild zu einer Zeit t (für Prüfungen und Vorschaubilder). */
 export function standbild(canvas: HTMLCanvasElement, d: Dehnung, t: number, haltenS?: number): Stand {
-  const e: Eintrag = { canvas, buehne: new Buehne(d, haltenS), start: 0, sichtbar: true, still: false }
+  const e: Eintrag = { canvas, buehne: new Buehne(d, haltenS), start: 0, sichtbar: true, anteil: 1, still: false }
   let st: Stand | null = null
   e.melden = (x) => (st = x)
   zeichne(e, t)

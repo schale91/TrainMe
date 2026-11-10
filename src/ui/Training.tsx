@@ -192,7 +192,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   useEffect(() => {
     if (pauseBis === null) return
     gepiept.current = false
-    const t = setInterval(() => setJetzt(Date.now()), 250)
+    // halbe Sekunde reicht für die Anzeige der Pause; jedes Neuzeichnen der Einheit kostet auf dem Handy Zeit
+    const t = setInterval(() => setJetzt(Date.now()), 500)
     return () => clearInterval(t)
   }, [pauseBis])
 
