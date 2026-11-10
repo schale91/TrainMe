@@ -1,7 +1,7 @@
 {
   "name": "trainme",
   "private": true,
-  "version": "0.30.1",
+  "version": "0.31.0",
   "type": "module",
   "description": "Trainingsplaner für Kraft, Mobilität und Ausdauer, komplett auf dem Handy",
   "scripts": {
@@ -18,8 +18,10 @@
     "@capacitor/filesystem": "8.1.4",
     "@capacitor/share": "8.0.3",
     "@capgo/capacitor-health": "8.11.4",
+    "@number-flow/react": "0.6.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "sonner": "2.0.8",
     "three": "0.180.0"
   },
   "devDependencies": {

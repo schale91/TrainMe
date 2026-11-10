@@ -1,6 +1,8 @@
 // Eine Einheit durchführen: Vorgaben sehen, Sätze abhaken, Pause läuft automatisch, am Ende gibt es XP.
 
 import { hatSport } from "../logik/auswahl"
+import { toast as meldung } from "sonner"
+import NumberFlow from "@number-flow/react"
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { alternativen, erlaubt, lastGeraet, lastenAn, mitAlltag, passtAnOrt, platzMit, verlauf } from "../logik/plan"
 import { abrunden, BANDFARBEN, bandVonStufe, hoeher, lastText, niedriger, stufeVonBand } from "../logik/gewichte"
@@ -183,10 +185,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schluessel, plaetze, saetze, kennung, warm, beginn, angepasst, budget, entfernt, aufraeumenAb])
 
+  // Kurzmeldung über Sonner (oben, wegwischbar); der Zustand dient nur als Auslöser
   useEffect(() => {
     if (!toast) return
-    const t = setTimeout(() => setToast(null), 4000)
-    return () => clearTimeout(t)
+    meldung(toast, { icon: <Sym name="pokal" groesse={18} farbe="var(--gold)" /> })
+    setToast(null)
   }, [toast])
 
   useEffect(() => {
@@ -1243,8 +1246,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           </div>
           <div className="pausentext">
             <small>{pauseGrund === "Aufwärmpause" ? pauseGrund : wechsel && !saetze[wechsel.nach]?.some((x) => x.fertig) ? "Wechsel zu " + plaetze[wechsel.nach].uebung.name : "Pause"}</small>
-            <b>
-              {Math.floor(rest / 60)}:{String(rest % 60).padStart(2, "0")}
+            {/* Ziffern rollen weich weiter statt zu springen */}
+            <b className="pausenzahl">
+              <NumberFlow value={Math.max(0, Math.floor(rest / 60))} />:<NumberFlow value={Math.max(0, rest % 60)} format={{ minimumIntegerDigits: 2 }} />
             </b>
             {pauseGrund && pauseGrund !== "Aufwärmpause" ? <small className="pausengrund">{pauseGrund}</small> : null}
           </div>
@@ -1262,7 +1266,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           <div className="aufraeumenkarte">
             <h2>Aufräumen</h2>
             <div className="aufraeumenuhr" role="timer">
-              {Math.floor(aufrRest / 60000)}:{String(Math.floor((aufrRest % 60000) / 1000)).padStart(2, "0")}
+              <NumberFlow value={Math.floor(aufrRest / 60000)} />:<NumberFlow value={Math.floor((aufrRest % 60000) / 1000)} format={{ minimumIntegerDigits: 2 }} />
             </div>
             <p>Scheiben abnehmen, Hanteln und Stange zurück, Bank und Griffe abwischen. Erst danach lässt sich das Training beenden.</p>
             <button type="button" className="knopf voll gross" disabled={aufrRest > 0} onClick={fertig}>
@@ -1379,12 +1383,6 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       </Blatt>
       <UebungInfoBlatt uebung={info} onClose={() => setInfo(null)} />
 
-      {toast ? (
-        <div className="toast" role="status" onClick={() => setToast(null)}>
-          <Sym name="pokal" groesse={20} farbe="var(--gold)" />
-          <span>{toast}</span>
-        </div>
-      ) : null}
       {pad ? <div className="zfplatz" aria-hidden="true" /> : null}
       {pad ? padAnzeige(pad) : null}
     </Seite>

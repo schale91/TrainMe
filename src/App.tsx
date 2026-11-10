@@ -1,5 +1,6 @@
 // Rahmen der App: Daten laden und speichern, Tabs, Einrichtung beim ersten Start, Belohnung nach dem Training.
 
+import { Toaster } from "sonner"
 import { useEffect, useRef, useState } from "react"
 import { uebung } from "./daten/uebungen/index"
 import { prozentMethode } from "./daten/fakten"
@@ -336,6 +337,8 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* Kurzmeldungen (Sonner): stapeln sich, lassen sich wegwischen und verschwinden von selbst */}
+      <Toaster position="top-center" theme="dark" offset={{ top: "calc(env(safe-area-inset-top) + 10px)" }} toastOptions={{ className: "meldung", duration: 4000 }} />
       <main>
         {haenger && !haengerZu ? (
           <div className="hinweistext haenger">
