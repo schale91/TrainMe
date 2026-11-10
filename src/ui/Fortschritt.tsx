@@ -14,6 +14,7 @@ import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym, SymKachel } from "./symbole"
 import Koerpergewicht from "./Koerper"
 import Dehnfigur from "./Dehnfigur"
+import { RueckblickBlatt, RueckblickKarte } from "./Rueckblick"
 import { TEST_DEHNUNGEN } from "../daten/dehnungen/tests"
 
 type Punkt = { datum: string; wert: number }
@@ -402,6 +403,7 @@ type Reiter = "kraft" | "beweglichkeit" | "prozent" | "koerper"
 
 export default function Fortschritt(props: { daten: Daten; aendern: (f: (d: Daten) => void) => void; start?: Reiter }) {
   const [reiter, setReiter] = useState<Reiter>(props.start || "kraft")
+  const [rueck, setRueck] = useState(false)
   return (
     <Seite titel="Fortschritt">
       <Segment
@@ -414,6 +416,12 @@ export default function Fortschritt(props: { daten: Daten; aendern: (f: (d: Date
         wert={reiter}
         onChange={setReiter}
       />
+      {reiter === "kraft" ? (
+        <>
+          <RueckblickKarte daten={props.daten} onClick={() => setRueck(true)} />
+          <RueckblickBlatt offen={rueck} onClose={() => setRueck(false)} daten={props.daten} aendern={props.aendern} />
+        </>
+      ) : null}
       {reiter === "kraft" ? <Kraft daten={props.daten} /> : reiter === "beweglichkeit" ? <Beweglichkeit daten={props.daten} aendern={props.aendern} /> : reiter === "koerper" ? <Koerpergewicht daten={props.daten} aendern={props.aendern} /> : <EinProzent daten={props.daten} />}
     </Seite>
   )
