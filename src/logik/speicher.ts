@@ -52,8 +52,15 @@ export function pruefen(x: unknown): Daten {
   if (o.uebernahmen && typeof o.uebernahmen === "object") d.uebernahmen = { ...o.uebernahmen }
   if (o.satzform && typeof o.satzform === "object") d.satzform = { ...o.satzform }
   if (Array.isArray(o.koerper)) d.koerper = o.koerper.filter((m) => m && typeof m.datum === "string" && typeof m.kg === "number" && m.kg > 0)
+  // Alles Übrige bleibt erhalten: Felder, die diese Version noch nicht kennt (aus einer neueren Version auf einem
+  // anderen Gerät oder vom Server), dürfen beim Laden und Zurückschreiben nicht verloren gehen.
+  const ziel = d as unknown as Record<string, unknown>
+  for (const [k, v] of Object.entries(o as Record<string, unknown>)) if (!GEPRUEFT.has(k) && v !== undefined && v !== null) ziel[k] = v
   return d
 }
+
+/** Felder, die pruefen() selbst prüft und übernimmt; alle anderen werden unverändert durchgereicht */
+const GEPRUEFT = new Set(["version", "profil", "protokoll", "erledigt", "spiel", "maxwerte", "einstufung", "gesundheit", "messungen", "eigenerPlan", "bandfarben", "ersatz", "archiv", "uebernahmen", "satzform", "koerper"])
 
 function vervollstaendigen(p: Profil): Profil {
   const basis = neuesProfil()

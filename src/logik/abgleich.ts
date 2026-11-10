@@ -2,7 +2,8 @@
 // der Datenbank der Lebenswelt (Route /api/lebenswelt/trainme). Aufgeteilt in den Stamm (alles außer Protokoll und
 // erledigten Einheiten) und je Trainingstag ein Eintrag. Das Gerät merkt sich, welchen Stand es zuletzt mit dem
 // Server geteilt hat (Prüfsumme), und schickt nur, was sich seitdem geändert hat. Gleiche Regeln wie auf dem
-// Server: beim Stamm gewinnt die neuere Zeit, Tage werden zusammengeführt.
+// Server: beim Stamm gewinnt die neuere Zeit, Tage werden zusammengeführt. Hat sich der Stamm auf beiden Seiten
+// geändert, wird er je Feld gemischt (siehe stammMischen), damit keine Seite die Änderungen der anderen überschreibt.
 
 import { pruefen } from "./speicher"
 import type { Daten, Erledigt, Protokoll } from "./typen"
@@ -17,8 +18,8 @@ export interface TagEintrag {
 export interface Abgleichstand {
   /** Wert "jetzt" der letzten Antwort (für ?seit=) */
   seit: string
-  /** zuletzt mit dem Server geteilter Stamm */
-  stamm: { pruef: string; zeit: number }
+  /** zuletzt mit dem Server geteilter Stamm; felder: Prüfsumme je Feld (für das Mischen, fehlt bei alten Ständen) */
+  stamm: { pruef: string; zeit: number; felder?: Record<string, string> }
   /** zuletzt geteilte Tage */
   tage: Record<string, string>
 }
@@ -50,6 +51,49 @@ export function pruefsumme(x: unknown): string {
   let h = 2166136261
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
   return (h >>> 0).toString(36) + ":" + s.length
+}
+
+const istObjekt = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x)
+
+/**
+ * Prüfsumme je Feld des Stamms: jedes Feld der obersten Ebene und, wo es ein Objekt ist (Profil, Tabellen je Übung),
+ * jedes Feld eine Ebene darunter („profil.aufraeumen_min“, „ersatz.rudern_helms“).
+ */
+export function feldSummen(stamm: Record<string, unknown>): Record<string, string> {
+  const aus: Record<string, string> = {}
+  for (const [k, v] of Object.entries(stamm)) {
+    if (v === undefined) continue
+    aus[k] = pruefsumme(v)
+    if (istObjekt(v)) for (const [j, w] of Object.entries(v)) if (w !== undefined) aus[k + "." + j] = pruefsumme(w)
+  }
+  return aus
+}
+
+/**
+ * Stamm je Feld mischen, wenn er sich auf beiden Seiten geändert hat. basis: Prüfsummen des zuletzt geteilten Stands.
+ * Was hier seitdem geändert wurde, bleibt; alles andere kommt vom Server. So überschreibt eine Änderung am Handy
+ * (etwa neue Erfahrungspunkte) nicht eine andere Einstellung, die inzwischen woanders geändert wurde, und umgekehrt.
+ * Ohne Basis (alter Stand): Eigenes bleibt, und was nur der Server hat, kommt dazu.
+ */
+export function stammMischen(lokal: Record<string, unknown>, server: Record<string, unknown>, basis?: Record<string, string>): Record<string, unknown> {
+  const leerSumme = pruefsumme(undefined)
+  const hierGeaendert = (wert: unknown, pfad: string) => (basis ? pruefsumme(wert) !== (basis[pfad] ?? leerSumme) : wert !== undefined)
+  const aus: Record<string, unknown> = {}
+  for (const k of Array.from(new Set([...Object.keys(lokal), ...Object.keys(server)]))) {
+    const l = lokal[k], s = server[k]
+    if (istObjekt(l) && istObjekt(s)) {
+      const o: Record<string, unknown> = {}
+      for (const j of Array.from(new Set([...Object.keys(l), ...Object.keys(s)]))) {
+        const w = hierGeaendert(l[j], k + "." + j) ? l[j] : s[j]
+        if (w !== undefined) o[j] = w
+      }
+      aus[k] = o
+    } else {
+      const w = hierGeaendert(l, k) ? l : s
+      if (w !== undefined) aus[k] = w
+    }
+  }
+  return aus
 }
 
 const ordneP = (a: Protokoll, b: Protokoll) => (a.uebung < b.uebung ? -1 : a.uebung > b.uebung ? 1 : 0)
@@ -126,11 +170,20 @@ export async function abgleichen(anfrage: Anfrage, lokal: Daten, stand: Abgleich
 
   // Stamm vom Server übernehmen, wenn er neuer ist und hier nichts Ungeteiltes wartet. Beim allerersten Abgleich
   // gewinnt der Server, damit ein neues Gerät nie einen vorhandenen Stand mit leeren Daten überschreibt.
-  const stammGeaendert = s.stamm.pruef !== "" && pruefsumme(stamm) !== s.stamm.pruef
-  if (a.stamm && a.stamm.zeit > s.stamm.zeit && !stammGeaendert) {
-    stamm = a.stamm.daten
-    s.stamm = { pruef: pruefsumme(stamm), zeit: a.stamm.zeit }
-    neu = true
+  const pLokal = pruefsumme(stamm)
+  const stammGeaendert = s.stamm.pruef !== "" && pLokal !== s.stamm.pruef
+  if (a.stamm && a.stamm.zeit > s.stamm.zeit) {
+    if (stammGeaendert) {
+      // Auf beiden Seiten geändert: je Feld mischen. Der Serverstand ist danach die Basis; was davon abweicht, geht
+      // unten wieder hoch.
+      const gemischt = stammMischen(stamm, a.stamm.daten, s.stamm.felder)
+      if (pruefsumme(gemischt) !== pLokal) neu = true
+      stamm = gemischt
+    } else {
+      stamm = a.stamm.daten
+      neu = true
+    }
+    s.stamm = { pruef: pruefsumme(a.stamm.daten), zeit: a.stamm.zeit, felder: feldSummen(a.stamm.daten) }
   }
   for (const t of a.tage || []) {
     if (t.geloescht) continue
@@ -156,10 +209,14 @@ export async function abgleichen(anfrage: Anfrage, lokal: Daten, stand: Abgleich
     // Hochladen ging nicht: Übernommenes bleibt, das Eigene gilt weiter als ungeteilt und geht beim nächsten Mal mit
     if (p.status === 0 || p.status >= 300) return { daten: neu ? zusammensetzen(stamm, tage, lokal.gesundheit) : lokal, stand: s, neu, kraftbuch: !!a.kraftbuch, offline: p.status === 0 }
     const z = ((p.daten || {}) as Antwort).zurueck || {}
-    if (koerper.stamm) s.stamm = { pruef: pStamm, zeit: koerper.stamm.zeit }
+    const basis = s.stamm.felder
+    if (koerper.stamm) s.stamm = { pruef: pStamm, zeit: koerper.stamm.zeit, felder: feldSummen(stamm) }
     if (z.stamm) {
-      stamm = z.stamm.daten
-      s.stamm = { pruef: pruefsumme(stamm), zeit: z.stamm.zeit }
+      // Der Server hatte inzwischen einen neueren Stamm und hat unseren abgelehnt: mit dem zuletzt geteilten Stand
+      // als Basis mischen, damit das Eigene nicht verloren geht; es geht beim nächsten Abgleich hoch.
+      const eigen = stamm
+      stamm = koerper.stamm ? stammMischen(eigen, z.stamm.daten, basis) : z.stamm.daten
+      s.stamm = { pruef: pruefsumme(z.stamm.daten), zeit: z.stamm.zeit, felder: feldSummen(z.stamm.daten) }
       neu = true
     }
     for (const t of koerper.tage || []) s.tage[t.tag] = pTag(t)
