@@ -154,12 +154,30 @@ export function Blatt(props: { offen: boolean; onClose: () => void; titel?: stri
     window.addEventListener("keydown", zu)
     return () => window.removeEventListener("keydown", zu)
   }, [props.offen, props.onClose])
+  // Wie ein Fenster auf dem Handy: am Griff oder Kopf nach unten ziehen schließt es; kurz gezogen springt es zurück
+  const [zug, setZug] = useState<{ start: number; y: number; zeit: number } | null>(null)
+  const runter = zug ? Math.max(0, zug.y - zug.start) : 0
+  const ziehen = {
+    onPointerDown: (e: React.PointerEvent) => {
+      if ((e.target as HTMLElement).closest("button")) return
+      ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+      setZug({ start: e.clientY, y: e.clientY, zeit: performance.now() })
+    },
+    onPointerMove: (e: React.PointerEvent) => zug && setZug({ ...zug, y: e.clientY }),
+    onPointerUp: () => {
+      if (!zug) return
+      const tempo = runter / Math.max(1, performance.now() - zug.zeit)
+      setZug(null)
+      if (runter > 110 || (runter > 30 && tempo > 0.6)) props.onClose()
+    },
+    onPointerCancel: () => setZug(null),
+  }
   if (!sichtbar) return null
   return (
-    <div className={"blatthintergrund" + (props.offen ? " offen" : "")} onClick={props.onClose}>
-      <div className={"blatt" + (props.hoch ? " hoch" : "")} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <div className="griff" />
-        <div className="blattkopf">
+    <div className={"blatthintergrund" + (props.offen ? " offen" : "")} onClick={props.onClose} style={runter ? { background: `rgba(0, 0, 0, ${Math.max(0.1, 0.5 - runter / 800)})` } : undefined}>
+      <div className={"blatt" + (props.hoch ? " hoch" : "") + (zug ? " zieht" : "")} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()} style={runter ? { transform: `translateY(${runter}px)` } : undefined}>
+        <div className="griff ziehbar" {...ziehen} />
+        <div className="blattkopf ziehbar" {...ziehen}>
           <b>{props.titel}</b>
           <button type="button" className="rundknopf" onClick={props.onClose} aria-label="Schließen">
             <Icon name="schliessen" groesse={16} dick={2.6} />

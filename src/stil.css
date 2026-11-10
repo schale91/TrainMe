@@ -3224,3 +3224,26 @@ select.ampel.rot {
 .dropstufen .textknopf { margin-left: auto; font-size: 13px; }
 .dropsteck { display: flex; flex-direction: column; gap: 2px; margin: 8px 0 2px; padding: 8px 10px; background: var(--flaeche2); border-radius: 10px; border-left: 3px solid var(--gold); }
 .dropsteck small { color: var(--leise); font-size: 12.5px; }
+
+/* Fenster von unten zum Wegziehen */
+.ziehbar { touch-action: none; cursor: grab; }
+.griff.ziehbar { position: relative; }
+.griff.ziehbar::before { content: ""; position: absolute; left: -40px; right: -40px; top: -10px; bottom: -10px; }
+.blatt.zieht { transition: none; cursor: grabbing; }
+
+/* Kurzmeldungen (Sonner) im Stil der App */
+[data-sonner-toaster] [data-sonner-toast].meldung {
+  background: var(--flaeche2);
+  border: 1px solid var(--linie);
+  color: var(--text);
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.35;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  padding: 12px 14px;
+}
+
+/* rollende Ziffern: gleich breite Zahlen, damit nichts springt */
+.pausenzahl, .aufraeumenuhr { font-variant-numeric: tabular-nums; }
+number-flow-react { --number-flow-char-height: 1em; }
