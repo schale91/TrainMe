@@ -109,6 +109,7 @@ export const GERAETE: { id: Geraet; name: string; gruppe: string; text?: string;
   { id: "matte", name: "Matte", gruppe: "klein" },
   { id: "faszienrolle", name: "Faszienrolle", gruppe: "klein" },
   { id: "gleitscheiben", name: "Gleitscheiben oder Handtuch", gruppe: "klein" },
+  { id: "drop_pins", name: "Drop-Pins für den Gewichtsstapel", gruppe: "klein", text: "Für Dropsätze am Kabel und an Maschinen" },
   { id: "stuhl", name: "Stabiler Stuhl mit Lehne", gruppe: "klein", text: "Gilt immer als vorhanden" },
   { id: "stufe", name: "Treppe oder Stufe mit Geländer", gruppe: "klein" },
   { id: "stab", name: "Stab", gruppe: "klein" },

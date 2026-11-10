@@ -5,6 +5,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } fr
 import { alternativen, erlaubt, lastGeraet, lastenAn, mitAlltag, passtAnOrt, platzMit, verlauf } from "../logik/plan"
 import { abrunden, BANDFARBEN, bandVonStufe, hoeher, lastText, niedriger, stufeVonBand } from "../logik/gewichte"
 import { pauseNachSatz, satzAnpassung, type Anpassung } from "../logik/progression"
+import { alsDropsatz, dropMoeglich, dropVorschlag, zweiZuEinem } from "../logik/dropsatz"
 import { aufwaermSaetze, backoffLast, backoffNachTopsatz, neuerBestwert, satzformVon, scheibenProSeite, stangeVon, unplausibel } from "../logik/satzhilfen"
 import { rehaAktiv, rehaAnpassung } from "../logik/reha"
 
@@ -80,6 +81,8 @@ function startSaetze(p: Platz, daten: Daten, form: Satzform = "gleich", lasten: 
     const band = bandhilfeMoeglich(p.uebung) ? daten.bandhilfe?.[p.uebung.id] : undefined
     return { last, wdh: mitte(v), rir: v.rir, fertig: false, ...(band ? { hilfe_band: band, hilfe_kg: hilfeKg(daten, band) } : {}) }
   })
+  // Dropsatz: der letzte Satz bekommt die Drop-Stufen
+  if (form === "drop") return saetze.map((s, k) => (k === saetze.length - 1 ? alsDropsatz(s, lasten) : s))
   if (form !== "topsatz" || last === null || saetze.length < 2) return saetze
   return saetze.map((s, k) => (k === 0 ? { ...s, art: "top" as const } : { ...s, last: backoffLast(last, lasten), art: "backoff" as const }))
 }
@@ -116,8 +119,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const kennung = ortKennung(ort)
   // Satzform je Übung: hier gewählt, sonst gespeichert, sonst aus der Vorgabe
   const [formWahl, setFormWahl] = useState<Record<string, Satzform>>({})
+  const dropGeht = (p: Platz) => !reha && dropMoeglich(p.uebung, lastGeraet(p.uebung, ort), ort, p.rolle)
   const formVon = (p: Platz, anzahl = p.vorgabe.saetze): Satzform =>
-    satzformVon({ ...p.vorgabe, saetze: anzahl }, formWahl[p.uebung.id] ?? daten.satzform?.[p.uebung.id], p.uebung.belastung === "gewicht" && !reha && (p.rolle === "haupt" || p.rolle === "neben") && lastGeraet(p.uebung, ort) !== "band")
+    satzformVon({ ...p.vorgabe, saetze: anzahl }, formWahl[p.uebung.id] ?? daten.satzform?.[p.uebung.id], p.uebung.belastung === "gewicht" && !reha && (p.rolle === "haupt" || p.rolle === "neben") && lastGeraet(p.uebung, ort) !== "band", dropGeht(p))
   const start = (p: Platz) => startSaetze(p, daten, formVon(p), lastenAn(p.uebung, ort))
   const gespeichert = useMemo(() => {
     const e = ladeEntwurf(schluessel)
@@ -333,7 +337,21 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     const erster = saetze[i][0]
     const topLast = erster?.last ?? p.vorgabe.last
     const backoff = erster?.fertig ? backoffNachTopsatz(erster, mitte(p.vorgabe), p.vorgabe.rir, lasten)?.last : topLast !== null && topLast !== undefined ? backoffLast(topLast, lasten) : undefined
-    const neu = saetze[i].map((s, k): Eingabe => {
+    if (f === "drop") {
+      // Offene Sätze gleich schwer, der letzte offene wird zum Dropsatz
+      const offen = saetze[i].map((s, k) => (s.fertig ? -1 : k)).filter((k) => k >= 0)
+      const letzter = offen[offen.length - 1]
+      const neuD = saetze[i].map((s, k): Eingabe => {
+        if (s.fertig) return s
+        const gleich: Eingabe = { ...s, art: undefined, drops: undefined, last: k === 0 ? s.last : (p.vorgabe.last ?? topLast ?? s.last) }
+        return k === letzter ? alsDropsatz(gleich, lasten) : gleich
+      })
+      setSaetze(saetze.map((ss, x) => (x === i ? neuD : ss)))
+      setAnpassungen({ ...anpassungen, [i]: undefined })
+      return
+    }
+    const neu = saetze[i].map((s0, k): Eingabe => {
+      const s = s0.fertig ? s0 : { ...s0, drops: undefined }
       if (f === "gleich") return { ...s, art: undefined, last: s.fertig || k === 0 ? s.last : (p.vorgabe.last ?? topLast ?? s.last) }
       if (k === 0) return { ...s, art: "top" }
       return { ...s, art: "backoff", last: s.fertig ? s.last : (backoff ?? s.last) }
@@ -423,6 +441,15 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
       )
     : { tausch: [], spart_min: 0 }
   const seitenSpart = Math.max(1, Math.round(seiten.spart_min * faktor))
+  // Mit Drop-Pins: die letzten zwei Sätze einer Ergänzungsübung am Stapel als ein Dropsatz (spart eine Pause)
+  const gefragteDrops = angepasst.filter((k) => k.startsWith("drop:")).map((k) => Number(k.slice(5)))
+  const drops = zuLang && !reha ? dropVorschlag(plaetze, saetze, plaetze.map((p) => lastGeraet(p.uebung, ort)), ort, prog.gesamt - budget, gefragteDrops) : { plaetze: [], spart_min: 0 }
+  const dropMarken = drops.plaetze.map((i) => "drop:" + i)
+  const dropsJa = () => {
+    setSaetze(saetze.map((ss, i) => (drops.plaetze.indexOf(i) >= 0 ? zweiZuEinem(ss, lastenAn(plaetze[i].uebung, ort)) : ss)))
+    setAngepasst([...angepasst, "drops", ...dropMarken])
+    setToast("Letzter Satz als Dropsatz: Drop-Pins stecken wie angezeigt, am Ende ohne Pause weiter.")
+  }
   const seitenMarken = seiten.tausch.map((t) => "seiten:" + t.i)
   const seitenText = (t: (typeof seiten.tausch)[number]) => {
     const alt = plaetze[t.i]
@@ -512,7 +539,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setAngepasst([...angepasst, "form"])
     setToast("Heute ohne Steigerung und mit einer Wiederholung mehr im Tank. Fühlt es sich gut an, darfst du trotzdem nach oben anpassen.")
   }
-  const frage: "form" | "pausen" | "seiten" | "supersatz" | "weglassen" | "zurueck" | "vollepausen" | null =
+  const frage: "form" | "pausen" | "seiten" | "drops" | "supersatz" | "weglassen" | "zurueck" | "vollepausen" | null =
     beginn === null
       ? !gefragt("form") && form.punkte >= 2 && !saetze.some((ss) => ss.some((x) => x.fertig))
         ? "form"
@@ -522,7 +549,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           ? "pausen"
           : seiten.tausch.length
             ? "seiten"
-            : superVorschlag.paare.length
+            : drops.plaetze.length && drops.spart_min >= 1
+              ? "drops"
+              : superVorschlag.paare.length
             ? "supersatz"
             : !gefragt("weglassen") && (vorschlag.ganz.length || vorschlag.einSatz.length)
               ? "weglassen"
@@ -534,10 +563,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             : null
   const frageAntwort = (ja: boolean) => {
     if (!frage) return
-    if (!ja) return setAngepasst([...angepasst, ...(frage === "supersatz" ? paarMarken : frage === "seiten" ? seitenMarken : []), frage + "-nein"])
+    if (!ja) return setAngepasst([...angepasst, ...(frage === "supersatz" ? paarMarken : frage === "seiten" ? seitenMarken : frage === "drops" ? dropMarken : []), frage + "-nein"])
     if (frage === "form") formAnpassen()
     else if (frage === "pausen") pausenKuerzenJa()
     else if (frage === "seiten") beidseitigJa()
+    else if (frage === "drops") dropsJa()
     else if (frage === "supersatz") alsSupersatz()
     else if (frage === "weglassen") weglassen()
     else if (frage === "zurueck") zurueckHolen()
@@ -846,6 +876,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         const zeigeSchmerz = reha && p.rolle !== "ausdauer"
         const form = formVon(p, saetze[i].length)
         const formWaehlbar = satzformVon({ ...v, saetze: saetze[i].length, topsatz: true }, undefined, u.belastung === "gewicht" && !reha && (p.rolle === "haupt" || p.rolle === "neben") && geraet !== "band") === "topsatz"
+        const dropWaehlbar = dropGeht(p) && saetze[i].some((x) => !x.fertig)
+        const dropOffen = saetze[i].find((x) => !x.fertig && x.drops?.length)
         const stange = stangeVon(geraet, ort.gewichte)
         const offenerSatz = saetze[i].find((x) => !x.fertig)
         const scheiben = stange && offenerSatz?.last ? scheibenProSeite(offenerSatz.last, stange, ort.gewichte.scheiben, ort.gewichte.scheiben_beliebig) : null
@@ -928,16 +960,38 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               {v.pause_s > 0 && p.rolle !== "ausdauer" ? <span className="vorgabe leise">Pause {v.pause_s >= 120 ? zahl(v.pause_s / 60) + " min" : v.pause_s + " s"}</span> : null}
             </div>
             <p className="begruendung">{v.begruendung}</p>
-            {formWaehlbar ? (
+            {formWaehlbar || dropWaehlbar ? (
               <div className="satzform" role="group" aria-label="Satzform">
                 <button type="button" className={form === "gleich" ? "an" : ""} aria-pressed={form === "gleich"} onClick={() => formWechseln(i, "gleich")}>
                   Gleiche Sätze
                 </button>
-                <button type="button" className={form === "topsatz" ? "an" : ""} aria-pressed={form === "topsatz"} onClick={() => formWechseln(i, "topsatz")}>
-                  Topsatz + Back-off
-                </button>
+                {formWaehlbar ? (
+                  <button type="button" className={form === "topsatz" ? "an" : ""} aria-pressed={form === "topsatz"} onClick={() => formWechseln(i, "topsatz")}>
+                    Topsatz + Back-off
+                  </button>
+                ) : null}
+                {dropWaehlbar ? (
+                  <button type="button" className={form === "drop" ? "an" : ""} aria-pressed={form === "drop"} onClick={() => formWechseln(i, "drop")}>
+                    Dropsatz am Ende
+                  </button>
+                ) : null}
               </div>
             ) : null}
+            {dropOffen && dropOffen.last ? (
+              <div className="dropsteck">
+                <small>Drop-Pins stecken{saetze[i].filter((x) => !x.fertig).length > 1 ? " (letzter Satz)" : ""}</small>
+                <span>
+                  Stift <b>{zahl(dropOffen.last)} kg</b>
+                  {dropOffen.drops!.map((d, n) => (
+                    <Fragment key={n}>
+                      {" · "}Pin {n + 1} <b>{zahl(d.last)} kg</b>
+                    </Fragment>
+                  ))}
+                </span>
+                <small className="leise">Am Satzende an der Schnur ziehen und ohne Pause weiter, jede Stufe bis kurz vor dem Muskelversagen.</small>
+              </div>
+            ) : null}
+            {form === "drop" ? <p className="leise klein satzformtext">Ein Dropsatz bringt etwa so viel Muskelaufbau wie mehrere normale Sätze, in deutlich weniger Zeit (Sødal et al. 2023). Im Wochenrückblick zählt jede Stufe als Satz.</p> : null}
             {form === "topsatz" ? <p className="leise klein satzformtext">Satz 1 schwer, danach etwa 10 % leichter. So bleiben die Wiederholungen in allen Sätzen stabil, statt nach dem ersten Satz einzubrechen (Helms et al. 2016).</p> : null}
             {scheiben && scheiben.length ? (
               <div className="scheibenzeile">
@@ -1105,6 +1159,29 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                   <button type="button" className={"haken" + (s.fertig ? " an" : "")} onClick={() => abhaken(i, k)} aria-label={"Satz " + (k + 1) + " erledigt"}>
                     <Icon name="haken" groesse={20} dick={3} />
                   </button>
+                  {s.drops?.length ? (
+                    <div className="dropstufen">
+                      {s.drops.map((d, n) => (
+                        <span key={n} className="dropstufe">
+                          <span className="leise">↓ Pin {n + 1}</span>
+                          <b>{zahl(d.last)} kg</b>
+                          <span className="leise">×</span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={60}
+                            aria-label={"Wiederholungen Drop " + (n + 1) + " Satz " + (k + 1)}
+                            value={d.wdh}
+                            onChange={(e) => setSatz(i, k, { drops: s.drops!.map((x, m) => (m === n ? { ...x, wdh: Math.max(0, Math.min(60, Number(e.target.value) || 0)) } : x)) })}
+                          />
+                        </span>
+                      ))}
+                      <button type="button" className="textknopf klein" aria-label={"Drops entfernen Satz " + (k + 1)} onClick={() => setSatz(i, k, { drops: undefined })}>
+                        ohne Drops
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ))}
               {saetze[i].map((s, k) =>
@@ -1213,6 +1290,10 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         ) : frage === "seiten" ? (
           <p className="infokurz">
             Soll ich heute einmalig beidseitig statt einseitig machen: {seiten.tausch.map(seitenText).join("; ")}? Beide Seiten in einem Satz spart etwa {seitenSpart} min. Das Gewicht ist umgerechnet (beidseitig schafft jede Seite etwas weniger als allein). Dein Plan bleibt einseitig.
+          </p>
+        ) : frage === "drops" ? (
+          <p className="infokurz">
+            Soll ich bei {drops.plaetze.map((i) => plaetze[i].uebung.name).join(" und ")} die letzten zwei Sätze als einen Dropsatz mit den Drop-Pins machen? Das spart etwa {Math.max(1, Math.round(drops.spart_min * faktor))} min und bringt laut Studien etwa gleich viel (Sødal et al. 2023).
           </p>
         ) : frage === "supersatz" ? (
           <p className="infokurz">
