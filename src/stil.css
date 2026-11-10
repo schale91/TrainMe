@@ -3215,3 +3215,12 @@ select.ampel.rot {
 .volumenzeile.legende { margin-top: -2px; }
 .volumenzeile.legende b { color: var(--leise); font-weight: 500; font-size: 12px; }
 .rundknopf:disabled { opacity: 0.3; }
+
+/* Dropsatz mit Drop-Pins */
+.satz:has(.dropstufen) { flex-wrap: wrap; }
+.satz > .dropstufen { flex: 1 0 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 4px 4px 2px 32px; font-size: 14px; }
+.dropstufe { display: inline-flex; align-items: center; gap: 6px; }
+.dropstufe input { width: 48px; padding: 4px 6px; border: 0; border-radius: 8px; background: var(--flaeche3); color: var(--text); font: inherit; text-align: center; }
+.dropstufen .textknopf { margin-left: auto; font-size: 13px; }
+.dropsteck { display: flex; flex-direction: column; gap: 2px; margin: 8px 0 2px; padding: 8px 10px; background: var(--flaeche2); border-radius: 10px; border-left: 3px solid var(--gold); }
+.dropsteck small { color: var(--leise); font-size: 12.5px; }

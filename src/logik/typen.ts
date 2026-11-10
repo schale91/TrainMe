@@ -106,6 +106,7 @@ export const GERAETE_IDS = [
   "golfschlaeger",
   "faszienrolle",
   "gleitscheiben",
+  "drop_pins",
   // Alltag und Reha (ein Stuhl gilt überall als vorhanden)
   "stuhl",
   "stufe",
@@ -499,6 +500,8 @@ export interface Satz {
   hilfe_band?: string
   /** Zeitpunkt, an dem der Satz abgehakt wurde (Millisekunden seit 1970) */
   um?: number
+  /** Dropsatz mit Drop-Pins: weitere Stufen ohne Pause, je mit Gewicht und Wiederholungen (zählen nicht fürs Maximum) */
+  drops?: { last: number; wdh: number }[]
 }
 
 export interface Protokoll {
@@ -595,7 +598,7 @@ export interface Daten {
   koerper?: Messpunkt[]
 }
 
-export type Satzform = "topsatz" | "gleich"
+export type Satzform = "topsatz" | "gleich" | "drop"
 
 export interface Messpunkt {
   datum: string
