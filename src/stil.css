@@ -1,23 +1,29 @@
-/* TrainMe: Bedienung wie iOS (große Titel, gruppierte Listen, Blätter von unten), Farbwelt dunkel mit Lila. */
+/* TrainMe: Bedienung wie iOS (große Titel, gruppierte Listen, Blätter von unten), Farbwelt Graphit mit Orange. */
 
 :root {
-  --bg: #121027;
-  --flaeche: #1e1b3a;
-  --flaeche2: #29254d;
-  --flaeche3: #39346b;
-  --linie: #343060;
-  --trenner: rgba(235, 232, 255, 0.09);
-  --text: #f3f1ff;
-  --leise: #a7a2d6;
-  --sehrleise: #77729f;
-  --akzent: #8b7bff;
-  --akzent-dunkel: #6a58f5;
-  --akzent2: #5ee6c4;
-  --gold: #ffbe55;
+  /* Graphit und Orange: neutrales Dunkelgrau, eine Signalfarbe. Keine Farbverläufe. */
+  --bg: #0f1012;
+  --flaeche: #191b1e;
+  --flaeche2: #24272b;
+  --flaeche3: #353a40;
+  --linie: #2e3237;
+  --trenner: rgba(255, 255, 255, 0.08);
+  --text: #f3f2ee;
+  --leise: #a3a7ac;
+  --sehrleise: #70757b;
+  --akzent: #ff7a1a;
+  --akzent-dunkel: #ff7a1a;
+  /* Schrift und Zeichen auf der Signalfarbe: dunkel, das liest sich auf Orange besser als Weiß */
+  --auf-akzent: #170d03;
+  --akzent-zart: rgba(255, 122, 26, 0.14);
+  --akzent2: #f3f2ee;
+  --gold: #ffb347;
   --rot: #ff6b81;
   --gruen: #43d39e;
-  --radius: 14px;
-  --gross: 20px;
+  --radius: 10px;
+  --gross: 14px;
+  /* Titel, Knöpfe und Zahlen: schmale Sportschrift, liegt der App bei */
+  --titelschrift: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
   color-scheme: dark;
 }
 
@@ -111,7 +117,7 @@ select:focus {
   justify-content: space-between;
   margin: 0 -16px;
   padding: calc(env(safe-area-inset-top) + 6px) 8px 6px;
-  background: rgba(18, 16, 39, 0.97);
+  background: rgba(15, 16, 18, 0.97);
   flex-wrap: wrap;
 }
 .navunten {
@@ -268,8 +274,8 @@ h4 {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: linear-gradient(135deg, var(--akzent), var(--akzent-dunkel));
-  color: white;
+  background: var(--akzent);
+  color: var(--auf-akzent);
   border: 0;
   border-radius: 12px;
   padding: 12px 18px;
@@ -305,10 +311,10 @@ h4 {
   margin: 14px 0 8px;
 }
 .knopf.gruen {
-  background: linear-gradient(135deg, #43d39e, #22a77a);
+  background: #43d39e;
 }
 .knopf.gold {
-  background: linear-gradient(135deg, #ffcf6b, #ff9d42);
+  background: #ffb347;
   color: #3b2400;
 }
 .textknopf,
@@ -401,8 +407,9 @@ h4 {
 .pbalken div {
   height: 100%;
   border-radius: 99px;
-  background: linear-gradient(90deg, var(--akzent2), var(--akzent));
+  background: var(--akzent);
   transition: width 0.4s;
+  color: var(--auf-akzent);
 }
 .pbalken.dick {
   height: 6px;
@@ -421,6 +428,7 @@ h4 {
   background: var(--akzent-dunkel);
   border-radius: 6px;
   padding: 3px 8px;
+  color: var(--auf-akzent);
 }
 
 .hinweistext {
@@ -456,7 +464,7 @@ h4 {
   z-index: 20;
   display: flex;
   justify-content: space-around;
-  background: rgba(22, 20, 46, 0.98);
+  background: rgba(15, 16, 18, 0.98);
   border-top: 0.5px solid var(--trenner);
   padding: 6px 4px calc(env(safe-area-inset-bottom) + 4px);
 }
@@ -536,10 +544,8 @@ h4 {
   padding: 16px;
   border: 0;
   border-radius: var(--gross);
-  background:
-    radial-gradient(120% 100% at 100% 0%, #6a58f555, transparent 60%),
-    linear-gradient(160deg, #2e2768, #1e1b3a);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  background: var(--flaeche);
+  border-left: 4px solid var(--akzent);
   text-align: left;
   cursor: pointer;
 }
@@ -576,8 +582,9 @@ h4 {
   margin-top: 6px;
   padding: 12px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--akzent), var(--akzent-dunkel));
+  background: var(--akzent);
   font-weight: 700;
+  color: var(--auf-akzent);
 }
 .marke {
   display: inline-block;
@@ -588,6 +595,7 @@ h4 {
   background: var(--akzent-dunkel);
   border-radius: 6px;
   padding: 3px 7px;
+  color: var(--auf-akzent);
 }
 .marke.neben {
   background: #4f68f0;
@@ -666,7 +674,7 @@ h4 {
   color: var(--akzent2);
 }
 .vorgabe.tank {
-  color: #c9c1ff;
+  color: var(--text);
   cursor: pointer;
   min-height: 32px;
   text-decoration: underline dotted;
@@ -800,9 +808,9 @@ h4 {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 18px;
-  background: rgb(46, 39, 104);
+  background: var(--flaeche3);
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
-  border: 1px solid #8b7bff55;
+  border: 1px solid rgba(255, 122, 26, 0.35);
 }
 .pausenring {
   width: 40px;
@@ -812,6 +820,7 @@ h4 {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--auf-akzent);
 }
 .pausentext {
   flex: 1;
@@ -839,14 +848,14 @@ h4 {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(5, 4, 15, 0);
+  background: rgba(4, 4, 6, 0);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   transition: background 0.22s;
 }
 .blatthintergrund.offen {
-  background: rgba(5, 4, 15, 0.55);
+  background: rgba(4, 4, 6, 0.55);
 }
 .blatt {
   width: 100%;
@@ -928,6 +937,7 @@ h4 {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--auf-akzent);
 }
 .punkte {
   margin: 0;
@@ -1036,6 +1046,7 @@ h4 {
 .filterchip.an {
   background: var(--akzent-dunkel);
   font-weight: 650;
+  color: var(--auf-akzent);
 }
 .filterchip.golf.an {
   background: #1f7a5a;
@@ -1080,7 +1091,8 @@ h4 {
   width: 100%;
   min-height: 3px;
   border-radius: 6px 6px 2px 2px;
-  background: linear-gradient(180deg, var(--akzent2), var(--akzent));
+  background: var(--akzent);
+  color: var(--auf-akzent);
 }
 .saeule small,
 .saeulenwert {
@@ -1162,7 +1174,7 @@ h4 {
 }
 .stufenknopf.an {
   border-color: var(--akzent);
-  background: #2e2768;
+  background: var(--flaeche3);
 }
 .quelle {
   font-size: 12px;
@@ -1173,7 +1185,8 @@ h4 {
   margin: 14px 0;
   padding: 18px 16px 12px;
   border-radius: var(--gross);
-  background: linear-gradient(160deg, #3a2c10, #1e1b3a 70%);
+  background: var(--flaeche);
+  box-shadow: inset 0 0 0 1px #ffb34744;
   border: 1px solid #ffbe5533;
 }
 .prozentkarte small {
@@ -1202,7 +1215,7 @@ h4 {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(6, 5, 18, 0.82);
+  background: rgba(5, 5, 7, 0.82);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1215,7 +1228,7 @@ h4 {
   max-width: 420px;
   max-height: 92vh;
   overflow-y: auto;
-  background: linear-gradient(170deg, #2e2768, #121027);
+  background: var(--flaeche);
   border: 1px solid #ffbe5555;
   border-radius: 26px;
   padding: 24px 18px 14px;
@@ -1269,6 +1282,7 @@ h4 {
 }
 .konfetti i:nth-child(3n + 1) {
   background: var(--akzent);
+  color: var(--auf-akzent);
 }
 @keyframes fall {
   to {
@@ -1305,6 +1319,7 @@ h4 {
 }
 .fortschrittspunkte span.an {
   background: var(--akzent);
+  color: var(--auf-akzent);
 }
 .fuss {
   position: fixed;
@@ -1314,7 +1329,7 @@ h4 {
   display: flex;
   gap: 10px;
   padding: 10px 16px calc(env(safe-area-inset-bottom) + 10px);
-  background: rgba(18, 16, 39, 0.98);
+  background: rgba(15, 16, 18, 0.98);
   border-top: 0.5px solid var(--trenner);
 }
 .fuss .knopf {
@@ -1329,7 +1344,8 @@ h4 {
   padding: 14px;
   border-radius: var(--gross);
   border: 1px solid #43d39e55;
-  background: linear-gradient(140deg, #1f4d3d, #1e1b3a);
+  background: var(--flaeche);
+  box-shadow: inset 0 0 0 1px #43d39e55;
   cursor: pointer;
 }
 .schnellstart > span:last-child {
@@ -1387,6 +1403,7 @@ h4 {
   background: var(--akzent-dunkel);
   border-color: var(--akzent-dunkel);
   font-weight: 650;
+  color: var(--auf-akzent);
 }
 .karten {
   display: grid;
@@ -1410,7 +1427,7 @@ h4 {
 }
 .auswahl.an {
   border-color: var(--akzent);
-  background: #2e2768;
+  background: var(--flaeche3);
 }
 .karte {
   background: var(--flaeche);
@@ -1707,6 +1724,7 @@ a.knopf.aus {
 .geraetzeile.an .kasten {
   background: var(--akzent-dunkel);
   border-color: var(--akzent-dunkel);
+  color: var(--auf-akzent);
 }
 .geraettext {
   display: flex;
@@ -1924,8 +1942,8 @@ a.knopf.aus {
   margin: 8px 0 14px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(124, 92, 255, 0.28), rgba(124, 92, 255, 0.12));
-  border: 1px solid rgba(124, 92, 255, 0.5);
+  background: var(--akzent-zart);
+  border: 1px solid rgba(255, 122, 26, 0.5);
 }
 .updatebanner > span {
   flex: 1;
@@ -1959,7 +1977,7 @@ a.knopf.aus {
   padding: 14px 16px;
   border-radius: var(--gross);
   background: var(--flaeche);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--phase) 22%, var(--flaeche)), var(--flaeche));
+  background: color-mix(in srgb, var(--phase) 12%, var(--flaeche));
   border: 1px solid var(--phase);
   border: 1px solid color-mix(in srgb, var(--phase) 55%, transparent);
   text-align: left;
@@ -2114,6 +2132,7 @@ a.knopf.aus {
 .zeitleiste li.vorbei .knoten {
   background: var(--akzent-dunkel);
   border-color: var(--akzent-dunkel);
+  color: var(--auf-akzent);
 }
 .zeitleiste li.vorbei .knoten.phase {
   background: var(--phase);
@@ -2488,7 +2507,7 @@ select.ampel.rot {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: radial-gradient(ellipse at 50% 35%, #34305e, #15132b 75%);
+  background: #131417;
   color: #fff;
   overscroll-behavior: contain;
 }
@@ -2633,7 +2652,7 @@ select.ampel.rot {
 }
 .uebungskarte.dran {
   border: 1px solid var(--akzent);
-  box-shadow: 0 0 0 3px rgba(139, 123, 255, 0.18);
+  box-shadow: none;
 }
 .dranmarke {
   display: inline-block;
@@ -2641,7 +2660,7 @@ select.ampel.rot {
   padding: 3px 10px;
   border-radius: 99px;
   background: var(--akzent);
-  color: #fff;
+  color: var(--auf-akzent);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -2654,7 +2673,7 @@ select.ampel.rot {
   margin: 0 0 10px;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(139, 123, 255, 0.12);
+  background: var(--akzent-zart);
   color: var(--leise);
   font-size: 14px;
 }
@@ -2799,6 +2818,7 @@ select.ampel.rot {
 .feldknopf.an {
   border-color: var(--akzent);
   background: var(--akzent-dunkel);
+  color: var(--auf-akzent);
 }
 .satz.bearbeitet {
   box-shadow: 0 0 0 2px var(--akzent);
@@ -2860,7 +2880,7 @@ select.ampel.rot {
   max-width: 680px;
   margin: 0 auto;
   padding: 10px 12px calc(env(safe-area-inset-bottom) + 12px);
-  background: rgb(30, 27, 58);
+  background: var(--flaeche);
   border-top: 1px solid var(--linie);
   border-radius: 18px 18px 0 0;
   box-shadow: 0 -14px 34px rgba(0, 0, 0, 0.5);
@@ -2917,7 +2937,7 @@ select.ampel.rot {
 .zftasten .op,
 .zftasten .fn {
   font-size: 15px;
-  color: #c9c1ff;
+  color: var(--text);
   background: var(--flaeche3);
 }
 .zftasten .go {
@@ -3125,7 +3145,7 @@ select.ampel.rot {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(10, 8, 24, 0.94);
+  background: rgba(8, 8, 10, 0.94);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3319,7 +3339,7 @@ number-flow-react { --number-flow-char-height: 1em; }
 }
 .wochentag.gewaehlt b {
   background: var(--akzent-dunkel);
-  color: #fff;
+  color: var(--auf-akzent);
 }
 .tagmarke {
   display: flex;
@@ -3403,4 +3423,158 @@ number-flow-react { --number-flow-char-height: 1em; }
 .uebungskarte.zu.supermitte-oben {
   margin-top: 0;
   margin-bottom: 0;
+}
+
+/* ---------- Gestaltung Graphit und Orange ---------- */
+
+/* Titel und Knöpfe in der schmalen Sportschrift */
+.grosstitel h1,
+h1,
+h2,
+.uebungsname,
+.heutetitel,
+.blattkopf b {
+  font-family: var(--titelschrift);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.grosstitel h1 {
+  font-size: 38px;
+  letter-spacing: 0.01em;
+}
+.blattkopf b {
+  font-size: 22px;
+}
+.uebungsname {
+  font-size: 27px;
+  line-height: 1.1;
+}
+.heutetitel {
+  font-size: 28px;
+}
+.knopf,
+.losknopf {
+  font-family: var(--titelschrift);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+}
+.knopf.klein {
+  font-size: 16px;
+}
+.losknopf {
+  color: var(--auf-akzent);
+  font-size: 20px;
+}
+.knopf.leise {
+  background: var(--flaeche2);
+  color: var(--text);
+}
+.knopf.gruen,
+.knopf.gold {
+  color: #10140e;
+}
+
+/* Zahlen: gleiche Schrift, damit Gewichte und Wiederholungen wie auf einer Anzeigetafel stehen */
+.feldknopf,
+.satz .nr,
+.vorgabe,
+.statusmarke b,
+.wochentag b,
+.zeilenstand,
+.pausenzahl,
+.zeituhr,
+.trainingskurvetext b,
+.aufwaermsatz > span:first-child {
+  font-family: var(--titelschrift);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.feldknopf {
+  font-size: 19px;
+}
+.vorgabe {
+  font-size: 17px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--linie);
+  border-radius: 6px;
+}
+.statusmarke b,
+.wochentag b {
+  font-size: 17px;
+}
+.statusmarke {
+  border-radius: var(--radius);
+}
+
+/* Etiketten: Umriss in der Farbe der Rolle statt gefüllter Fläche */
+.marke {
+  --rolle: var(--akzent);
+  background: transparent;
+  color: var(--rolle);
+  box-shadow: inset 0 0 0 1.5px var(--rolle);
+  padding: 3px 8px;
+}
+.marke.neben {
+  --rolle: #c9ccd1;
+  background: transparent;
+}
+.marke.isolation {
+  --rolle: #8f949b;
+  background: transparent;
+}
+.marke.praevention {
+  --rolle: #43d39e;
+  background: transparent;
+}
+.marke.schnellkraft {
+  --rolle: #ffb347;
+  background: transparent;
+}
+.marke.mobil {
+  --rolle: #6fc3e0;
+  background: transparent;
+}
+.marke.ausdauer {
+  --rolle: #ff6b81;
+  background: transparent;
+}
+.marke.golf {
+  --rolle: #43d39e;
+  background: transparent;
+}
+.heutekarte .marke {
+  background: var(--akzent);
+  color: var(--auf-akzent);
+  box-shadow: none;
+}
+
+/* Sätze als Zeilen mit feiner Linie statt Kasten im Kasten */
+.satz {
+  background: transparent;
+  border-radius: 0;
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--trenner);
+}
+.satz:last-of-type {
+  border-bottom: 0;
+}
+.satz.fertig {
+  background: transparent;
+}
+.satz.fertig .feldknopf:not(.an) {
+  background: #1f3d33;
+}
+.zeitkarte {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--linie);
+}
+.trainingskurve {
+  background: transparent;
+}
+.uebungskarte.dran {
+  border-color: var(--akzent);
 }

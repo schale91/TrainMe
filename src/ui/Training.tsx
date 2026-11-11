@@ -37,7 +37,7 @@ import { useWachHalten } from "./wachHalten"
 type Eingabe = Satz & { fertig: boolean }
 /** ort: Kennung des Orts (Name, Geräte, Gewichte), für den die Vorgaben gerechnet wurden */
 /** Farben der Supersatz-Gruppen (A, B, C, …), gut unterscheidbar in hell und dunkel */
-const SUPER_FARBEN = ["#7c5cff", "#ff8a3d", "#18a999", "#e2479b", "#3d8bff"]
+const SUPER_FARBEN = ["#f2c94c", "#ff8a3d", "#18a999", "#e2479b", "#3d8bff"]
 
 type Entwurf = { schluessel: string; plaetze: Platz[]; saetze: Eingabe[][]; ort?: string; warm?: string[]; beginn?: number; geschaetzt?: number; angepasst?: string[]; budget?: number; entfernt?: Record<number, number>; aufraeumenAb?: number }
 /** gemessene Zeit einer Einheit (Millisekunden) mit Zeitbudget und Schätzung in Minuten */

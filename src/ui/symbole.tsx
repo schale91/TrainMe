@@ -84,12 +84,12 @@ export function Sym(props: { name: string; groesse?: number; farbe?: string; akz
   )
 }
 
-/** Symbol in einem farbigen, abgerundeten Quadrat, wie in den iOS-Einstellungen. */
-export function SymKachel(props: { name: string; farbe: string; groesse?: number; text?: string }) {
+/** Zeichen in einer kleinen Kachel. Ohne Farbe neutral (Graphit); eine Farbe nur dort, wo sie etwas bedeutet. */
+export function SymKachel(props: { name: string; farbe?: string; groesse?: number; text?: string }) {
   const g = props.groesse || 30
   return (
-    <span className="symkachel" style={{ background: props.farbe, width: g, height: g }}>
-      <Sym name={props.name} groesse={Math.round(g * 0.66)} farbe="#fff" text={props.text} />
+    <span className="symkachel" style={{ background: props.farbe ?? "var(--flaeche3)", width: g, height: g }}>
+      <Sym name={props.name} groesse={Math.round(g * 0.66)} farbe={props.farbe ? "#fff" : "var(--text)"} text={props.text} />
     </span>
   )
 }

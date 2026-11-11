@@ -1,6 +1,10 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import App from "./App"
+// Schmale Sportschrift für Titel, Knöpfe und Zahlen; liegt der App bei (kein Abruf aus dem Netz)
+import "@fontsource/barlow-condensed/latin-500.css"
+import "@fontsource/barlow-condensed/latin-600.css"
+import "@fontsource/barlow-condensed/latin-700.css"
 import "./stil.css"
 
 // Fehler außerhalb von React sichtbar machen statt still abzubrechen

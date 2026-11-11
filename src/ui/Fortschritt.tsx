@@ -387,7 +387,7 @@ function EinProzent(props: { daten: Daten }) {
       <Gruppe titel="Abzeichen">
         {ABZEICHEN.map((a) => {
           const am = daten.spiel.abzeichen[a.id]
-          return <Zeile key={a.id} symbol={<SymKachel name={am ? a.symbol : "schloss"} farbe={am ? "#c98a1e" : "#3a3570"} groesse={34} />} titel={a.name} untertitel={am ? "erreicht am " + datumText(am) : a.text} />
+          return <Zeile key={a.id} symbol={<SymKachel name={am ? a.symbol : "schloss"} farbe={am ? "#c98a1e" : "var(--flaeche3)"} groesse={34} />} titel={a.name} untertitel={am ? "erreicht am " + datumText(am) : a.text} />
         })}
       </Gruppe>
       <Gruppe titel="Alle Fakten">
