@@ -618,34 +618,6 @@ h4 {
   font-weight: 600;
   font-size: 15px;
 }
-.tagkreis {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: var(--flaeche2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.05;
-}
-.tagkreis b {
-  font-size: 13px;
-}
-.tagkreis small {
-  font-size: 11px;
-  color: var(--leise);
-}
-.tagkreis.heute {
-  background: var(--akzent-dunkel);
-}
-.tagkreis.heute small {
-  color: #e6e2ff;
-}
-.tagkreis.fertig {
-  background: #1d4a43;
-}
-
 /* ---------- Training ---------- */
 
 .satzzaehler {
@@ -3247,3 +3219,188 @@ select.ampel.rot {
 /* rollende Ziffern: gleich breite Zahlen, damit nichts springt */
 .pausenzahl, .aufraeumenuhr { font-variant-numeric: tabular-nums; }
 number-flow-react { --number-flow-char-height: 1em; }
+
+/* Übungsliste: Marke am Ende des gezeichneten Stücks, beim Erreichen kommt das nächste dazu */
+.listenende {
+  height: 1px;
+}
+
+/* Heute: Status als schmale Zeile statt drei Kacheln */
+.statuszeile {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.statusmarke {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 11px;
+  background: var(--flaeche);
+  border-radius: 999px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.statusmarke b {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.statusmarke small {
+  color: var(--leise);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.statusmarke.stufe {
+  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 6px;
+  padding: 6px 12px 7px;
+  border-radius: var(--radius);
+}
+.statusmarke.stufe b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.statusmarke.stufe > :last-child {
+  grid-column: 1 / -1;
+}
+
+/* Heute: die Woche als Leiste mit sieben Tagen, darunter nur der gewählte Tag */
+.wochenleiste {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin: 18px 0 -8px;
+}
+.wochentag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 0 5px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  min-height: 66px;
+}
+.wochentag small {
+  font-size: 11.5px;
+  color: var(--leise);
+}
+.wochentag b {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  background: var(--flaeche2);
+}
+.wochentag.frei b {
+  background: transparent;
+  color: var(--leise);
+  font-weight: 500;
+}
+.wochentag.fertig b {
+  background: #1d4a43;
+}
+.wochentag.heute b {
+  box-shadow: 0 0 0 2px var(--akzent);
+}
+.wochentag.gewaehlt {
+  background: var(--flaeche);
+}
+.wochentag.gewaehlt b {
+  background: var(--akzent-dunkel);
+  color: #fff;
+}
+.tagmarke {
+  display: flex;
+  gap: 1px;
+  height: 14px;
+  align-items: center;
+}
+
+/* Training, Fokusansicht: Übungen, die nicht dran sind, stehen als eine Zeile da */
+.uebungskarte.zu {
+  padding: 0;
+  margin: 8px 0;
+}
+.uebungskarte.zu.geschafft {
+  border-color: transparent;
+}
+.uebungszeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+.uebungszeile > svg {
+  flex: none;
+  color: var(--leise);
+}
+.zeilenstand {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--flaeche2);
+  color: var(--leise);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.zeilenstand.begonnen {
+  color: var(--text);
+  box-shadow: 0 0 0 2px var(--akzent);
+}
+.zeilenstand.fertig {
+  background: #1d4a43;
+}
+.zeilentext {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.zeilentext b {
+  font-size: 15.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zeilentext small {
+  color: var(--leise);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.uebungskarte.zu.geschafft .zeilentext b {
+  color: var(--leise);
+}
+.uebungskarte.zu.supermitte-unten,
+.uebungskarte.zu.supermitte-oben {
+  margin-top: 0;
+  margin-bottom: 0;
+}

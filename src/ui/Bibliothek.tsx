@@ -1,7 +1,7 @@
 // Übungsbibliothek: suchen, nach Bereich filtern, nur machbare zeigen, Golf-Fokus. Antippen öffnet die Info.
 
 import { hatSport } from "../logik/auswahl"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { UEBUNGEN } from "../daten/uebungen/index"
 import { erlaubt, golfUebung, passtAnOrt } from "../logik/plan"
 import { ohneGolf } from "./golf"
@@ -10,6 +10,9 @@ import { Gruppe, Icon, Seite, Zeile } from "./ios"
 import { BEREICHE, MUSTER_NAME } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
+
+/** So viele Übungen zeichnet die Liste zuerst und holt beim Scrollen jeweils nach, statt alle auf einmal */
+const STUECK = 40
 
 function normal(t: string): string {
   return t.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
@@ -55,6 +58,40 @@ export default function Bibliothek(props: { profil: Profil }) {
     return Array.from(g.entries())
   }, [liste, golf])
 
+  // Nur ein Stück der Liste zeichnen; kurz vor dem Ende kommt das nächste dazu. Neue Suche oder Filter: wieder von vorn.
+  const [gezeigt, setGezeigt] = useState(STUECK)
+  useEffect(() => {
+    setGezeigt(STUECK)
+  }, [liste])
+  const ende = useRef<HTMLDivElement | null>(null)
+  const mehr = gezeigt < liste.length
+  useEffect(() => {
+    const e = ende.current
+    if (!mehr || !e) return
+    if (typeof IntersectionObserver === "undefined") {
+      setGezeigt(liste.length)
+      return
+    }
+    const io = new IntersectionObserver(
+      (x) => {
+        if (x.some((y) => y.isIntersecting)) setGezeigt((n) => n + STUECK * 2)
+      },
+      { rootMargin: "800px" },
+    )
+    io.observe(e)
+    return () => io.disconnect()
+  }, [mehr, gezeigt, liste.length])
+  const sichtbar = useMemo(() => {
+    const aus: [string, Uebung[], number][] = []
+    let rest = gezeigt
+    for (const [titel, us] of gruppen) {
+      if (rest <= 0) break
+      aus.push([titel, us.slice(0, rest), us.length])
+      rest -= us.length
+    }
+    return aus
+  }, [gruppen, gezeigt])
+
   return (
     <Seite titel="Übungen" untertitel={UEBUNGEN.length + " Übungen, " + machbar.size + " mit deiner Ausrüstung machbar"}>
       <label className="suchfeld">
@@ -79,8 +116,8 @@ export default function Bibliothek(props: { profil: Profil }) {
         ) : null}
       </div>
       {gruppen.length === 0 ? <p className="leerhinweis">Keine Übung gefunden. Filter lockern?</p> : null}
-      {gruppen.map(([titel, us]) => (
-        <Gruppe key={titel} titel={titel + " · " + us.length}>
+      {sichtbar.map(([titel, us, alle]) => (
+        <Gruppe key={titel} titel={titel + " · " + alle}>
           {us.map((u) => (
             <Zeile
               key={u.id}
@@ -92,6 +129,7 @@ export default function Bibliothek(props: { profil: Profil }) {
           ))}
         </Gruppe>
       ))}
+      {mehr ? <div ref={ende} className="listenende" aria-hidden="true" /> : null}
       <UebungInfoBlatt uebung={offen} onClose={() => setOffen(null)} />
     </Seite>
   )

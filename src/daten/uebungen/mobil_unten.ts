@@ -1,6 +1,6 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
-export const MOBIL_UNTEN: Uebung[] = [
+export const MOBIL_UNTEN: UebungVoll[] = [
   // ---------- Hüftbeuger ----------
   {
     id: "hueftbeuger_dehnen",

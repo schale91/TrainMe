@@ -1,9 +1,9 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Golfspezifische Übungen: Haltung, Rotation, Schnellkraft, Schwunggeschwindigkeit, Mobilität und Prävention für Golfer.
 // Richtungsangaben gelten für Rechtshänder (vorderes Bein links), Linkshänder spiegeln.
 
-export const GOLF: Uebung[] = [
+export const GOLF: UebungVoll[] = [
   // ---------- Medizinball-Würfe in Golfhaltung ----------
   {
     id: "golf_mb_ausfallschritt_wurf",

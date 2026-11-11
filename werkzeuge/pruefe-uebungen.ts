@@ -1,5 +1,5 @@
 // Regeln für Einträge der Übungsdatenbank. Wird von den Tests genutzt.
-import { GERAETE_IDS, LASTGERAETE, MUSKELN, MUSTER, type Uebung } from "../src/logik/typen"
+import { GERAETE_IDS, LASTGERAETE, MUSKELN, MUSTER, type UebungVoll as Uebung } from "../src/logik/typen"
 
 const LAST: readonly string[] = LASTGERAETE
 const GELENKE = ["knie", "schulter", "ruecken", "huefte", "handgelenk", "ellbogen", "sprunggelenk", "nacken"]

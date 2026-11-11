@@ -1,7 +1,7 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Hüftstreckung, Beinbeuger, Adduktoren, Abduktoren und Waden.
-export const BEINE_HUEFTE: Uebung[] = [
+export const BEINE_HUEFTE: UebungVoll[] = [
   // ---------- Hüftstreckung: Kreuzheben und Hüftbeugen ----------
   {
     id: "kreuzheben_lh",

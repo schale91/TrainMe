@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs"
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
+import uebungsTexte from "./werkzeuge/uebungstexte"
 
 const paket = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version: string }
 
@@ -10,7 +11,7 @@ const paket = JSON.parse(readFileSync(new URL("./package.json", import.meta.url)
 // das App-Paket der Lebenswelt (das Add-on in Home Assistant kopiert nur einzelne Dateien in einen Ordner).
 export default defineConfig(({ mode }) => ({
   base: "./",
-  plugins: [react()],
+  plugins: [react(), uebungsTexte(new URL(".", import.meta.url).pathname)],
   // Die APK-Builds setzen Version, Build-Nummer und Kanal, damit die App nach Updates suchen kann
   define: {
     __VERSION__: JSON.stringify(process.env.TRAINME_VERSION || paket.version),

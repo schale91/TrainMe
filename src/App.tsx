@@ -2,7 +2,7 @@
 
 import { Toaster } from "sonner"
 import { useEffect, useRef, useState } from "react"
-import { uebung } from "./daten/uebungen/index"
+import { texteLaden, uebung } from "./daten/uebungen/index"
 import { prozentMethode } from "./daten/fakten"
 import { heute } from "./logik/plan"
 import { hatSport } from "./logik/auswahl"
@@ -73,6 +73,12 @@ export default function App() {
       return null
     }
   })
+  // Die ausführlichen Anleitungen kurz nach dem Start holen, damit das Info-Fenster später sofort gefüllt ist
+  useEffect(() => {
+    const t = setTimeout(() => void texteLaden().catch(() => undefined), 2500)
+    return () => clearTimeout(t)
+  }, [])
+
   useEffect(() => {
     try {
       offenMerken(localStorage, offen)

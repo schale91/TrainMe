@@ -150,6 +150,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [wechsel, setWechsel] = useState<{ nach: number; grund: string } | null>(null)
   const [rirHilfe, setRirHilfe] = useState(false)
   const [warumOffen, setWarumOffen] = useState<number | null>(null)
+  // Fokusansicht: offen ist die Übung, die dran ist. Andere sind eine Zeile und lassen sich von Hand auf- und zuklappen.
+  const [klappe, setKlappe] = useState<Record<number, boolean | undefined>>({})
   const [anpassungen, setAnpassungen] = useState<Record<number, (Anpassung & { satz: number }) | undefined>>({})
   const gepiept = useRef(false)
   // Trainingszeit: läuft ab „Training starten“; vorher lassen sich keine Sätze abhaken
@@ -224,6 +226,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
    * Wechselpause starten, die zur nächsten Übung passt.
    */
   const uebungFertig = (i: number) => {
+    // von Hand aufgeklappt und jetzt fertig: wieder zur Zeile
+    setKlappe((k) => ({ ...k, [i]: undefined }))
     const offen = (x: number) => x !== i && saetze[x].some((s) => !s.fertig) && !(plaetze[i].gruppe && plaetze[x].gruppe === plaetze[i].gruppe)
     const kandidaten = plaetze.map((_, x) => x).filter(offen)
     const nach = kandidaten.find((x) => x > i) ?? kandidaten[0]
@@ -893,9 +897,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         const nachbarVorn = imSuper && grPos > 0 && gr[grPos - 1] === i - 1
         const nachbarHinten = imSuper && grPos < gr.length - 1 && gr[grPos + 1] === i + 1
         const farbe = imSuper ? SUPER_FARBEN[(p.gruppe as string).charCodeAt(0) % SUPER_FARBEN.length] : undefined
-        return (
-          <Fragment key={i + u.id}>
-          {imSuper && grPos === 0 ? (
+        const superkopf = imSuper && grPos === 0 ? (
             <div className="superkopf" style={{ "--superfarbe": farbe } as CSSProperties}>
               <b>
                 Supersatz {p.gruppe}
@@ -909,8 +911,43 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 {gr.map((k) => plaetze[k].uebung.name).join(" ↔ ")}: im Wechsel, ohne Pause dazwischen. Pause erst nach {plaetze[gr[gr.length - 1]].uebung.name}, dann wieder {u.name}.
               </span>
             </div>
-          ) : null}
-          <section id={"uebung-" + i} style={imSuper ? ({ "--superfarbe": farbe } as CSSProperties) : undefined} className={"uebungskarte" + (alle ? " geschafft" : "") + (i === aktiveUebung && erledigt > 0 ? " dran" : "") + (imSuper ? " imsuper" + (nachbarVorn ? " supermitte-oben" : "") + (nachbarHinten ? " supermitte-unten" : "") : "")}>
+          ) : null
+        const kartenKlasse = "uebungskarte" + (alle ? " geschafft" : "") + (i === aktiveUebung && erledigt > 0 ? " dran" : "") + (imSuper ? " imsuper" + (nachbarVorn ? " supermitte-oben" : "") + (nachbarHinten ? " supermitte-unten" : "") : "")
+        const superband = nachbarHinten ? (
+          <div className="superband" style={{ "--superfarbe": farbe } as CSSProperties} aria-hidden="true">
+            ↓ ohne Pause weiter
+          </div>
+        ) : null
+        // Fokusansicht: nur die Übung, die dran ist (im Supersatz die ganze Gruppe), ist ausführlich zu sehen
+        const dran = i === aktiveUebung || (imSuper && aktiveUebung >= 0 && plaetze[aktiveUebung]?.gruppe === p.gruppe)
+        const aufgeklappt = klappe[i] ?? dran
+        if (!aufgeklappt) {
+          const fertige = saetze[i].filter((x) => x.fertig).length
+          return (
+            <Fragment key={i + u.id}>
+              {superkopf}
+              <section id={"uebung-" + i} style={imSuper ? ({ "--superfarbe": farbe } as CSSProperties) : undefined} className={kartenKlasse + " zu"}>
+                <button type="button" className="uebungszeile" aria-expanded={false} aria-label={u.name + ", " + (alle ? "geschafft" : fertige + " von " + saetze[i].length + " Sätzen") + ". Aufklappen"} onClick={() => setKlappe({ ...klappe, [i]: true })}>
+                  <span className={"zeilenstand" + (alle ? " fertig" : fertige ? " begonnen" : "")}>{alle ? <Sym name="haken" groesse={18} farbe="var(--gruen)" /> : fertige ? fertige + "/" + saetze[i].length : i + 1}</span>
+                  <span className="zeilentext">
+                    <b>{u.name}</b>
+                    <small>
+                      {form === "topsatz" && !p.plantext ? "1 Topsatz + " + (saetze[i].length - 1) + " Back-off" : vorgabeText(p)}
+                      {v.last !== null && u.belastung === "gewicht" ? " · " + lastText(v.last, geraet) : ""}
+                      {alle ? " · geschafft" : ""}
+                    </small>
+                  </span>
+                  <Icon name="unten" groesse={16} />
+                </button>
+              </section>
+              {superband}
+            </Fragment>
+          )
+        }
+        return (
+          <Fragment key={i + u.id}>
+          {superkopf}
+          <section id={"uebung-" + i} style={imSuper ? ({ "--superfarbe": farbe } as CSSProperties) : undefined} className={kartenKlasse}>
             {i === aktiveUebung && erledigt > 0 ? <span className="dranmarke">Jetzt dran</span> : null}
             {wechsel && wechsel.nach === i && !saetze[i].some((x) => x.fertig) ? (
               <p className="wechselgrund">
@@ -925,6 +962,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 </span>
               ) : null}
               <span className="flex" />
+              {!dran ? (
+                <button type="button" className="rundknopf" aria-label="Übung zuklappen" aria-expanded={true} onClick={() => setKlappe({ ...klappe, [i]: false })}>
+                  <Icon name="oben" groesse={17} />
+                </button>
+              ) : null}
               {p.rolle !== "ausdauer" ? (
                 <button type="button" className="rundknopf" aria-label="Übung tauschen" onClick={() => setTausch(i)}>
                   <Icon name="tauschen" groesse={17} />
@@ -1225,11 +1267,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               </div>
             </div>
           </section>
-          {nachbarHinten ? (
-            <div className="superband" style={{ "--superfarbe": farbe } as CSSProperties} aria-hidden="true">
-              ↓ ohne Pause weiter
-            </div>
-          ) : null}
+          {superband}
           </Fragment>
         )
       })}

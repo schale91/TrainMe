@@ -1,6 +1,6 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
-export const SCHULTER: Uebung[] = [
+export const SCHULTER: UebungVoll[] = [
   // ---------- Drücken vertikal ----------
   {
     id: "schulterdruecken_lh",

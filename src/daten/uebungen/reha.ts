@@ -1,8 +1,8 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Reha und Gelenke: einfache Übungen für zu Hause bei Hüft- oder Kniearthrose, nach Hüft- oder Knie-TEP, bei seitlichem
 // Hüftschmerz und Kreuzschmerz. Meist mit Stuhl, Stufe oder Band, angelehnt an neuromuskuläre Programme (NEMEX, GLA:D).
-export const REHA: Uebung[] = [
+export const REHA: UebungVoll[] = [
   // ---------- Hüftstreckung ----------
   {
     id: "reha_gesaess_anspannen",

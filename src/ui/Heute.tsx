@@ -24,7 +24,7 @@ import { aktuellerBlock, jahresAnteil, wegStand } from "../logik/weg"
 import { Sym } from "./symbole"
 import { Blatt, Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { Chips, WertWahl } from "./teile"
-import { ROLLE, TERMINE, WT, datumText } from "./texte"
+import { ROLLE, TERMINE, WT, WT_LANG, datumText } from "./texte"
 
 export function istErledigt(daten: Daten, e: Einheit): boolean {
   if (e.plan_nr !== undefined) return daten.erledigt.some((x) => x.plan_nr === e.plan_nr)
@@ -40,11 +40,14 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const [montag, setMontag] = useState(montagVon(tag))
   const [mobil, setMobil] = useState(false)
   const [rueck, setRueck] = useState(false)
+  // In der Wochenleiste angetippter Tag; ohne Wahl heute, in anderen Wochen der erste Tag mit einer Einheit
+  const [gewaehlt, setGewaehlt] = useState<string | null>(null)
   const plan = useMemo(() => wochenplan(profil, daten, montag), [profil, daten, montag])
   const w = blockWoche(profil, montag)
   const s = stufe(daten.spiel.xp)
   const ser = serie(profil, daten.erledigt, tag)
   const aktuell = montag === montagVon(tag)
+  const wahl = gewaehlt && gewaehlt >= montag && gewaehlt <= plusTage(montag, 6) ? gewaehlt : aktuell ? tag : (plan[0]?.datum ?? montag)
   // Zwei Einheiten an einem Tag: zuerst die noch offene
   const heutige = aktuell ? (plan.find((e) => e.datum === tag && !istErledigt(daten, e)) ?? plan.find((e) => e.datum === tag)) : undefined
   // Fortlaufend: auch Verpasstes aus dieser Woche nachholen, sonst nur ab heute
@@ -79,26 +82,24 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
 
   return (
     <Seite titel={gruss + (profil.name ? ", " + profil.name : "")} untertitel={planUntertitel ?? (phase ? phaseInfo(phase, profil.sport).name + " · " : "") + (istEntlastung(w) ? "Entlastungswoche: locker bleiben" : "Block-Woche " + (w + 1) + " von " + (BLOCK_WOCHEN - 1))}>
-      <div className="statusreihe">
+      <div className="statuszeile">
         {props.lebenswelt ? null : (
-          <div className="statuskachel">
+          <span className="statusmarke stufe">
             <small>Stufe {s.stufe}</small>
             <b>{stufenName(s.stufe)}</b>
-            <Fortschrittsbalken wert={s.imLevel} max={s.noetig} farbe="var(--gold)" hoehe={6} />
-          </div>
+            <Fortschrittsbalken wert={s.imLevel} max={s.noetig} farbe="var(--gold)" hoehe={4} />
+          </span>
         )}
-        <div className="statuskachel">
-          <small>Wochen-Serie</small>
-          <b className="mitsym">
-            <Sym name="flamme" groesse={18} farbe="var(--orange)" /> {ser}
-          </b>
-        </div>
-        <div className="statuskachel">
-          <small>Einheiten</small>
-          <b className="mitsym">
-            <Sym name="haken" groesse={18} farbe="var(--gruen)" /> {daten.erledigt.length}
-          </b>
-        </div>
+        <span className="statusmarke" title="Wochen-Serie: so viele Wochen in Folge hast du deine Einheiten geschafft">
+          <Sym name="flamme" groesse={16} farbe="var(--orange)" />
+          <b>{ser}</b>
+          <small>{ser === 1 ? "Woche" : "Wochen"}</small>
+        </span>
+        <span className="statusmarke" title="Einheiten">
+          <Sym name="haken" groesse={16} farbe="var(--gruen)" />
+          <b>{daten.erledigt.length}</b>
+          <small>{daten.erledigt.length === 1 ? "Einheit" : "Einheiten"}</small>
+        </span>
       </div>
 
       {gesundheit ? (
@@ -304,44 +305,70 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         </button>
       </div>
       <div className="wochenwisch" {...wischen(() => setMontag(plusTage(montag, 7)), () => setMontag(plusTage(montag, -7)))}>
-      <Gruppe fuss="Nach links oder rechts wischen für die nächste oder vorige Woche.">
-        {profil.woche.flatMap((t, i) => {
-          const datum = plusTage(montag, i)
-          // Jede Einheit des Tages bekommt eine eigene Zeile (zwei an einem Tag zum Nachholen); ohne Einheit eine Zeile
-          const am = plan.filter((x) => x.datum === datum)
-          return (am.length ? am : [undefined]).map((e, n) => {
-          const fertig = e && istErledigt(daten, e)
-          const rollen = e ? Array.from(new Set(e.plaetze.map((p) => p.etikett || ROLLE[p.rolle]))).slice(0, 3).join(", ") : ""
-          return (
-            <Zeile
-              key={i + "-" + n}
-              symbol={
-                <span className={"tagkreis" + (datum === tag ? " heute" : "") + (fertig ? " fertig" : "")}>
-                  <b>{WT[i]}</b>
-                  <small>{datum.slice(8)}</small>
+        <div className="wochenleiste" role="tablist" aria-label="Tage der Woche">
+          {profil.woche.map((t, i) => {
+            const datum = plusTage(montag, i)
+            const am = plan.filter((x) => x.datum === datum)
+            const fertig = am.length > 0 && am.every((e) => istErledigt(daten, e))
+            const was = am.length ? am.map((e) => e.titel).join(" und ") : t.art === "sporttermin" ? TERMINE.find((x) => x.id === t.termin)?.name || "Termin" : "frei"
+            return (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={datum === wahl}
+                aria-label={WT[i] + " " + datumText(datum) + ": " + was + (fertig ? ", erledigt" : "")}
+                className={"wochentag" + (datum === wahl ? " gewaehlt" : "") + (datum === tag ? " heute" : "") + (fertig ? " fertig" : "") + (am.length ? "" : " frei")}
+                onClick={() => setGewaehlt(datum)}
+              >
+                <small>{WT[i]}</small>
+                <b>{Number(datum.slice(8))}</b>
+                <span className="tagmarke">
+                  {fertig ? (
+                    <Sym name="haken" groesse={14} farbe="var(--gruen)" />
+                  ) : am.length ? (
+                    am.slice(0, 2).map((e, n) => <Sym key={n} name={ART_SYMBOL[e.art]} groesse={14} farbe="var(--akzent)" />)
+                  ) : t.art === "sporttermin" ? (
+                    <Sym name={hatSport(profil, "golf") ? "golf" : "ziel"} groesse={14} farbe="var(--gold)" />
+                  ) : null}
                 </span>
-              }
-              titel={
-                e ? (
-                  <span className="mitsym">
-                    <Sym name={ART_SYMBOL[e.art]} groesse={18} farbe="var(--akzent)" /> {e.titel}
-                  </span>
-                ) : t.art === "sporttermin" ? (
-                  <span className="mitsym">
-                    <Sym name={hatSport(profil, "golf") ? "golf" : "ziel"} groesse={18} farbe="var(--gold)" /> {TERMINE.find((x) => x.id === t.termin)?.name || "Termin"}
-                  </span>
-                ) : (
-                  <span className="leise">frei</span>
-                )
-              }
-              untertitel={e ? e.minuten + " min · " + rollen : undefined}
-              rechts={fertig ? <Sym name="haken" groesse={20} farbe="var(--gruen)" /> : undefined}
-              onClick={e ? () => props.oeffnen(e) : undefined}
-            />
-          )
-          })
-        })}
-      </Gruppe>
+              </button>
+            )
+          })}
+        </div>
+        <Gruppe>
+          {(() => {
+            const i = Math.max(0, Math.min(6, Math.round((Date.parse(wahl + "T12:00:00Z") - Date.parse(montag + "T12:00:00Z")) / 86400000)))
+            const t = profil.woche[i]
+            // Jede Einheit des Tages bekommt eine eigene Zeile (zwei an einem Tag zum Nachholen); ohne Einheit eine Zeile
+            const am = plan.filter((x) => x.datum === wahl)
+            return (am.length ? am : [undefined]).map((e, n) => {
+              const fertig = e && istErledigt(daten, e)
+              const rollen = e ? Array.from(new Set(e.plaetze.map((p) => p.etikett || ROLLE[p.rolle]))).slice(0, 3).join(", ") : ""
+              return (
+                <Zeile
+                  key={wahl + "-" + n}
+                  titel={
+                    e ? (
+                      <span className="mitsym">
+                        <Sym name={ART_SYMBOL[e.art]} groesse={18} farbe="var(--akzent)" /> {e.titel}
+                      </span>
+                    ) : t.art === "sporttermin" ? (
+                      <span className="mitsym">
+                        <Sym name={hatSport(profil, "golf") ? "golf" : "ziel"} groesse={18} farbe="var(--gold)" /> {TERMINE.find((x) => x.id === t.termin)?.name || "Termin"}
+                      </span>
+                    ) : (
+                      <span className="leise">{WT_LANG[i]}: frei</span>
+                    )
+                  }
+                  untertitel={e ? WT_LANG[i] + " · " + e.minuten + " min · " + rollen : undefined}
+                  rechts={fertig ? <Sym name="haken" groesse={20} farbe="var(--gruen)" /> : undefined}
+                  onClick={e ? () => props.oeffnen(e) : undefined}
+                />
+              )
+            })
+          })()}
+        </Gruppe>
       </div>
       <BausteinWoche daten={daten} montag={montag} aendern={props.aendern} />
 

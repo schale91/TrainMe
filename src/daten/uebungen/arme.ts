@@ -1,7 +1,7 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Arme: Bizeps, Trizeps, Griffkraft und Unterarm.
-export const ARME: Uebung[] = [
+export const ARME: UebungVoll[] = [
   // ---------- Bizeps ----------
   {
     id: "bizeps_kh",
