@@ -204,7 +204,7 @@ export function Fortschrittsbalken(props: { wert: number; max: number; farbe?: s
 
 export function Plakette(props: { children: ReactNode; farbe?: string }) {
   return (
-    <span className="plakette" style={props.farbe ? { background: props.farbe } : undefined}>
+    <span className="plakette" style={props.farbe ? { background: props.farbe, color: "var(--text)" } : undefined}>
       {props.children}
     </span>
   )
