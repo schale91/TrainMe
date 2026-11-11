@@ -1,11 +1,10 @@
-// Übungsdatenbank: alle Dateien dieses Ordners, je Bereich eine Liste.
-import type { Muster, Uebung } from "../../logik/typen"
+// Übungsdatenbank: alle Dateien dieses Ordners, je Bereich eine Liste. Der Baustein werkzeuge/uebungstexte.ts teilt sie
+// in zwei Pakete: Stammdaten mit Kurztext (sofort da) und die ausführlichen Anleitungen (werden nachgeladen).
+import type { Muster, Uebung, UebungInfo } from "../../logik/typen"
 
-const module = import.meta.glob<Record<string, unknown>>(["./*.ts", "!./index.ts"], { eager: true })
+import kern from "virtual:uebungen-kern"
 
-export const UEBUNGEN: Uebung[] = Object.keys(module)
-  .sort()
-  .flatMap((pfad) => Object.values(module[pfad]).filter(Array.isArray).flat() as Uebung[])
+export const UEBUNGEN: Uebung[] = kern
 
 // Schlingentrainer heißt im Studio meist TRX: unter beiden Namen findbar
 for (const u of UEBUNGEN)
@@ -56,4 +55,27 @@ function freieUebung(id: string): Uebung {
 
 export function uebung(id: string): Uebung | undefined {
   return NACH_ID.get(id) ?? (id.startsWith(FREI) && id.length > FREI.length ? freieUebung(id) : undefined)
+}
+
+let texte: Promise<Record<string, UebungInfo>> | null = null
+
+/** Lädt das Paket mit den ausführlichen Anleitungen (einmal). Die App stößt das kurz nach dem Start an. */
+export function texteLaden(): Promise<Record<string, UebungInfo>> {
+  texte ??= import("virtual:uebungen-texte").then(
+    (m) => m.default,
+    (fehler) => {
+      // Beim nächsten Versuch neu laden (z. B. nach einem Verbindungsabbruch in der Lebenswelt)
+      texte = null
+      throw fehler
+    },
+  )
+  return texte
+}
+
+const LEER: Omit<UebungInfo, "kurz"> = { ausfuehrung: [], atmung: "", fehler: [], vorteile: [], tipps: [] }
+
+/** Vollständige Anleitung einer Übung. Freie Übungen aus dem eigenen Plan haben nur ihren Kurztext. */
+export async function infoVon(u: Uebung): Promise<UebungInfo> {
+  if (u.id.startsWith(FREI)) return { ...LEER, ...u.info }
+  return (await texteLaden())[u.id] ?? { ...LEER, ...u.info }
 }

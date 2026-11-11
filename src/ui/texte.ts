@@ -228,6 +228,7 @@ export const ROLLE: Record<Rolle, string> = {
 
 export const WOCHENTAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
 export const WT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+export const WT_LANG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
 
 export function datumText(d: string): string {
   const [j, m, t] = d.split("-")

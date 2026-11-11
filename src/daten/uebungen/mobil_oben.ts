@@ -1,6 +1,6 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
-export const MOBIL_OBEN: Uebung[] = [
+export const MOBIL_OBEN: UebungVoll[] = [
   // ---------- Brustwirbelsäule ----------
   {
     id: "open_book",

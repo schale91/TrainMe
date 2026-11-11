@@ -1,8 +1,8 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Kniedominantes und einbeiniges Beintraining: Kniebeugen, Beinpresse, Beinstrecker,
 // Split-Kniebeugen, Ausfallschritte, Step-ups und einbeinige Kniebeugen.
-export const BEINE_KNIE: Uebung[] = [
+export const BEINE_KNIE: UebungVoll[] = [
   // ---------- Kniebeuge mit Langhantel ----------
   {
     id: "kniebeuge_lh",

@@ -1,7 +1,7 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Brust: horizontales Drücken (Langhantel, Kurzhantel, Maschine, Kabel, Liegestütz, Dips) und Brust-Isolation (Flys, Crossover).
-export const BRUST: Uebung[] = [
+export const BRUST: UebungVoll[] = [
   // ---------- Langhantel ----------
   {
     id: "bankdruecken_lh",

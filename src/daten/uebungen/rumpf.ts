@@ -1,7 +1,7 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Rumpf: Anti-Extension, Anti-Lateralflexion, Anti-Rotation, Flexion und Rotation (allgemeine Varianten).
-export const RUMPF: Uebung[] = [
+export const RUMPF: UebungVoll[] = [
   // ---------- Stütz-Varianten (Anti-Extension) ----------
   {
     id: "unterarmstuetz",

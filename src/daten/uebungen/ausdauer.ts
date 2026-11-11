@@ -1,10 +1,10 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Ausdauer: ruhige Grundlageneinheiten (ausdauer_ruhig) und Intervalle (ausdauer_intervall).
 // Intensität überall dreifach beschrieben: Sprechtest, grobe Prozentwerte der maximalen Herzfrequenz (HFmax)
 // und gefühlte Anstrengung (RPE, Skala 1 bis 10). Die Prozentwerte sind nur Richtwerte.
 
-export const AUSDAUER: Uebung[] = [
+export const AUSDAUER: UebungVoll[] = [
   // ---------- Ruhig: Laufen und Gehen ----------
   {
     id: "lauf_locker",

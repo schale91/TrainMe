@@ -1,6 +1,6 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
-export const RUECKEN: Uebung[] = [
+export const RUECKEN: UebungVoll[] = [
   // ---------- Ziehen vertikal: Klimmzüge ----------
   {
     id: "klimmzug",

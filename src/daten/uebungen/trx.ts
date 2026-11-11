@@ -1,10 +1,10 @@
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
 // Schlingentrainer (TRX): Übungen, die es sonst nur mit anderem Gerät gibt. Befestigung an Tür, Wand, Decke oder
 // Stange; die Schwierigkeit kommt über den Körperwinkel (je flacher bzw. weiter vom Ankerpunkt, desto schwerer).
 const ANKER = "Befestige den Schlingentrainer sicher an Tür, Wandhaken, Decke oder Stange und prüfe die Befestigung vor dem ersten Satz."
 
-export const TRX: Uebung[] = [
+export const TRX: UebungVoll[] = [
   {
     id: "trx_brustpresse",
     name: "Brustpresse am Schlingentrainer (TRX)",

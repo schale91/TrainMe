@@ -1,11 +1,22 @@
-import { UEBUNGEN } from "../src/daten/uebungen/index"
+import { UEBUNGEN, infoVon, texteLaden } from "../src/daten/uebungen/index"
 import { pruefeUebungen } from "../werkzeuge/pruefe-uebungen"
 import { MUSTER } from "../src/logik/typen"
 
 describe("Übungsdatenbank", () => {
-  it("alle Einträge sind gültig", () => {
-    const f = pruefeUebungen(UEBUNGEN)
+  it("alle Einträge sind gültig", async () => {
+    // Stammdaten und nachgeladene Anleitungen zusammen, so wie sie in den Dateien stehen
+    const texte = await texteLaden()
+    expect(UEBUNGEN.filter((u) => !texte[u.id]).map((u) => u.id)).toEqual([])
+    const f = pruefeUebungen(UEBUNGEN.map((u) => ({ ...u, info: texte[u.id] })))
     expect(f.slice(0, 20)).toEqual([])
+  })
+
+  it("im Hauptpaket steht nur der Kurztext, die Anleitung kommt nach", async () => {
+    const u = UEBUNGEN.find((x) => x.id === "bankdruecken_lh")!
+    expect(Object.keys(u.info)).toEqual(["kurz"])
+    const voll = await infoVon(u)
+    expect(voll.kurz).toBe(u.info.kurz)
+    expect(voll.ausfuehrung.length).toBeGreaterThan(2)
   })
 
   it("ids sind eindeutig und Verweise existieren", () => {

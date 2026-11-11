@@ -25,6 +25,8 @@ const PFADE: Record<string, string> = {
   info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 11v6M12 7.5v.5",
   zurueck: "M15 5l-7 7 7 7",
   weiter: "M9 5l7 7-7 7",
+  unten: "M5 9l7 7 7-7",
+  oben: "M5 15l7-7 7 7",
   schliessen: "M6 6l12 12M18 6 6 18",
   suche: "M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM16 16l5 5",
   tauschen: "M4 8h13l-3-3M20 16H7l3 3",

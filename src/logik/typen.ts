@@ -207,6 +207,15 @@ export interface Uebung {
   schwerer?: string
   /** Kurzer Hinweis direkt in der Einheit */
   hinweis?: string
+  /**
+   * In der App steht hier nur der Kurztext: Die ausführliche Anleitung liegt in einem eigenen Paket und wird nachgeladen
+   * (infoVon in daten/uebungen). Die Dateien der Übungsdatenbank schreiben mit UebungVoll alles vollständig hin.
+   */
+  info: Pick<UebungInfo, "kurz"> & Partial<UebungInfo>
+}
+
+/** Übung mit vollständiger Anleitung, so wie sie in der Übungsdatenbank steht */
+export interface UebungVoll extends Uebung {
   info: UebungInfo
 }
 

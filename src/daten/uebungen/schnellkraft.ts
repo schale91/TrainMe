@@ -1,7 +1,7 @@
 // Schnellkraft: Sprünge, Medizinballwürfe, Sprint- und Lauftechnik, Gleichgewicht.
-import type { Uebung } from "../../logik/typen"
+import type { UebungVoll } from "../../logik/typen"
 
-export const SCHNELLKRAFT: Uebung[] = [
+export const SCHNELLKRAFT: UebungVoll[] = [
   // ===== Sprünge: vertikal =====
   {
     id: "strecksprung",
