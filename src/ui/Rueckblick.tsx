@@ -76,10 +76,20 @@ function VorschlagKarte(props: { v: Vorschlag; daten: Daten; aendern: Aendern; f
   let knopf = "Übernehmen"
   let los = () => ja("Übernommen.")
   if (v.art === "saetze") {
-    titel = v.gruppenName + ": ein Satz mehr bei " + v.name
-    text = "Im Schnitt " + zahl(v.schnitt) + " Sätze je Woche, für den Muskelaufbau sind mindestens " + SAETZE_MIN + " günstig. " + v.name + " kommt in deinen nächsten zehn Plantagen " + (v.vorkommen === 1 ? "einmal" : v.vorkommen + "\u2011mal") + " vor."
-    knopf = "Einen Satz mehr"
-    los = () => ja("Ab dem nächsten Mal ein Satz mehr bei " + v.name + ".")
+    const summe = v.teile.reduce((n, t) => n + t.plus, 0)
+    const saetze = (n: number) => (n === 1 ? "ein Satz" : n + " Sätze")
+    const mal = (n: number) => (n === 1 ? "einmal" : n + "\u2011mal")
+    titel = v.gruppenName + ": " + (v.teile.length === 1 ? saetze(summe) + " mehr bei " + v.teile[0].name : "mehr Sätze bei " + v.teile.length + " Übungen")
+    text =
+      "Im Schnitt " + zahl(v.schnitt) + " Sätze je Woche, für den Muskelaufbau sind mindestens " + SAETZE_MIN + " günstig. " +
+      (v.teile.length === 1
+        ? v.teile[0].name + " kommt in deinen nächsten zehn Plantagen " + mal(v.teile[0].vorkommen) + " vor. "
+        : "Vorschlag: " + v.teile.map((t) => saetze(t.plus) + " mehr bei " + t.name + " (kommt " + mal(t.vorkommen) + " in den nächsten zehn Plantagen)").join(", ") + ". ") +
+      "Das bringt etwa " + zahl(v.mehr) + " Sätze je Woche, also rund " + zahl(v.danach) + " statt " + zahl(v.schnitt) + "." +
+      (v.tage > 1 ? " Die Sätze verteilen sich auf " + v.tage + " Trainingstage, damit kein Tag überladen wird: Bei gleichem Wochenumfang wächst der Muskel gleich gut, die einzelnen Sätze bleiben so aber stärker (Schoenfeld et al. 2019)." : "") +
+      (v.rest === "plan" ? " Mehr geht mit den Übungen deines Plans nicht: Für die volle Zahl bräuchte der Plan eine weitere Übung für diese Muskelgruppe oder sie müsste öfter vorkommen." : v.rest === "schritt" ? " Der Rest folgt in einem zweiten Schritt in drei Wochen, damit der Umfang nicht auf einmal springt." : "")
+    knopf = summe === 1 ? "Einen Satz mehr" : summe + " Sätze mehr"
+    los = () => ja("Ab dem nächsten Mal: " + v.teile.map((t) => saetze(t.plus) + " mehr bei " + t.name).join(", ") + ".")
   } else if (v.art === "maximum") {
     titel = "Neues Maximum bei " + v.name
     text = "Aus deinen Sätzen geschätzt: " + zahl(v.neu) + " kg statt der eingetragenen " + zahl(v.alt) + " kg. Prozentvorgaben rechnen dann mit dem neuen Wert."
