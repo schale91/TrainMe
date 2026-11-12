@@ -49,14 +49,61 @@ export function hilfeText(kg: number): string {
   return "−" + String(Math.round(kg * 10) / 10).replace(".", ",") + " kg"
 }
 
+/** Übungen, bei denen (fast) das ganze Körpergewicht bewegt wird: Dort lässt sich die nötige Hilfe ausrechnen */
+const GANZES_GEWICHT = /^(klimmzug|dips_)/
+
 /**
- * Vorschlag nach einem Satz mit Band: deutlich mehr Wiederholungen als vorgegeben oder mehr als zwei über der
- * Reserve übrig → nächstes Mal das nächstschwächere Band; weit unter der Vorgabe → das nächststärkere.
+ * Vorschlag nach einem Satz mit Band.
+ * - Zu leicht (mehr Wiederholungen als vorgegeben oder mindestens zwei mehr im Tank als geplant): das nächstschwächere Band.
+ * - Zu schwer (weniger Wiederholungen als vorgegeben und nicht mehr im Tank als geplant): ein stärkeres Band. Die
+ *   Reserve muss dafür nicht 0 sein: Wer bei „6 bis 8 mit 1 im Tank“ nach 2 Wiederholungen aufhört, braucht mehr Hilfe.
+ * Wie viel stärker: Ist das Körpergewicht bekannt und wird es bei der Übung ganz bewegt (Klimmzug, Dips), rechnet die
+ * Schätzformel (Epley mit Reserve) aus, wie viel Hilfe für die untere Grenze der Vorgabe nötig wäre; gewählt wird das
+ * schwächste Band, das so viel abnimmt. Sonst das nächststärkere.
  */
-export function hilfeVorschlag(farbe: string, s: Pick<Satz, "wdh" | "rir">, wdh_von: number, wdh_bis: number, rir: number): { farbe: string; richtung: "weniger" | "mehr" } | null {
+export function hilfeVorschlag(
+  farbe: string,
+  s: Pick<Satz, "wdh" | "rir">,
+  wdh_von: number,
+  wdh_bis: number,
+  rir: number,
+  rechnen?: { uebung: string; koerper_kg?: number; kg: (farbe: string) => number },
+): { farbe: string; richtung: "weniger" | "mehr" } | null {
   const i = HILFE_FARBEN.indexOf(farbe as (typeof HILFE_FARBEN)[number])
   if (i < 0) return null
   if ((s.wdh > wdh_bis || s.rir >= rir + 2) && i > 0) return { farbe: HILFE_FARBEN[i - 1], richtung: "weniger" }
-  if (s.wdh < wdh_von && s.rir <= 0 && i < HILFE_FARBEN.length - 1) return { farbe: HILFE_FARBEN[i + 1], richtung: "mehr" }
+  if (s.wdh < wdh_von && s.rir <= rir && i < HILFE_FARBEN.length - 1) {
+    let ziel = i + 1
+    const koerper = rechnen?.koerper_kg
+    if (rechnen && koerper && koerper > 0 && GANZES_GEWICHT.test(rechnen.uebung)) {
+      const bewegt = koerper - rechnen.kg(farbe)
+      if (bewegt > 0) {
+        const max = bewegt * (1 + (s.wdh + s.rir) / 30)
+        const noetig = koerper - max / (1 + (wdh_von + rir) / 30)
+        // 2 kg Spielraum: Die kg je Band sind ohnehin nur geschätzt
+        while (ziel < HILFE_FARBEN.length - 1 && rechnen.kg(HILFE_FARBEN[ziel]) < noetig - 2) ziel++
+      }
+    }
+    return { farbe: HILFE_FARBEN[ziel], richtung: "mehr" }
+  }
   return null
+}
+
+/**
+ * Vorschlag schon vor dem ersten Satz, aus dem letzten Mal: Gemessen wird am besten Satz mit dem Band, das gerade
+ * gewählt ist. So steht das passendere Band da, bevor der erste Satz wieder zu schwer oder zu leicht ist.
+ */
+export function hilfeAusLetztemMal(
+  letzte: Pick<Satz, "wdh" | "rir" | "hilfe_band">[],
+  farbe: string,
+  wdh_von: number,
+  wdh_bis: number,
+  rir: number,
+  rechnen?: { uebung: string; koerper_kg?: number; kg: (farbe: string) => number },
+): { farbe: string; richtung: "weniger" | "mehr"; wdh: number } | null {
+  const mit = letzte.filter((x) => x.hilfe_band === farbe && x.wdh > 0)
+  if (!mit.length) return null
+  const bester = mit.reduce((a, b) => (b.wdh > a.wdh ? b : a))
+  const h = hilfeVorschlag(farbe, bester, wdh_von, wdh_bis, rir, rechnen)
+  return h ? { ...h, wdh: bester.wdh } : null
 }

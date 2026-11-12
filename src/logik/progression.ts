@@ -317,6 +317,8 @@ export interface Anpassung {
   text: string
   last?: number | null
   wdh?: number
+  /** Unterstützung mit Band: Farbe des Bandes, das für die nächsten Sätze besser passt (im Training antippbar) */
+  band?: string
 }
 
 /**
@@ -347,7 +349,7 @@ export function satzAnpassung(satz: Satz, v: Vorgabe, belastung: Uebung["belastu
   }
   if (belastung === "wiederholungen") {
     if (zuLeicht) return { richtung: "hoch", text: "Noch viel im Tank: nächster Satz " + (satz.wdh + 2) + " Wiederholungen oder langsamer absenken.", wdh: satz.wdh + 2 }
-    if (zuSchwer) return { richtung: "runter", text: "Sehr knapp: nächster Satz " + Math.max(1, satz.wdh - 2) + " Wiederholungen, dafür sauber.", wdh: Math.max(1, satz.wdh - 2) }
+    if (zuSchwer) return { richtung: "runter", text: "Sehr knapp: nächster Satz " + Math.max(1, satz.wdh - 2) + (Math.max(1, satz.wdh - 2) === 1 ? " Wiederholung" : " Wiederholungen") + ", dafür sauber.", wdh: Math.max(1, satz.wdh - 2) }
     return { richtung: "gleich", text: "Passt: so weitermachen." }
   }
   return null
