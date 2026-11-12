@@ -406,6 +406,9 @@ export default function Fortschritt(props: { daten: Daten; aendern: (f: (d: Date
   const [rueck, setRueck] = useState(false)
   return (
     <Seite titel="Fortschritt">
+      {/* Wochenrückblick ganz oben, in jedem Reiter: Die Marke an „Fortschritt“ in der Leiste unten führt hierher */}
+      <RueckblickKarte daten={props.daten} onClick={() => setRueck(true)} />
+      <RueckblickBlatt offen={rueck} onClose={() => setRueck(false)} daten={props.daten} aendern={props.aendern} />
       <Segment
         werte={[
           { id: "kraft", name: "Kraft" },
@@ -416,12 +419,6 @@ export default function Fortschritt(props: { daten: Daten; aendern: (f: (d: Date
         wert={reiter}
         onChange={setReiter}
       />
-      {reiter === "kraft" ? (
-        <>
-          <RueckblickKarte daten={props.daten} onClick={() => setRueck(true)} />
-          <RueckblickBlatt offen={rueck} onClose={() => setRueck(false)} daten={props.daten} aendern={props.aendern} />
-        </>
-      ) : null}
       {reiter === "kraft" ? <Kraft daten={props.daten} /> : reiter === "beweglichkeit" ? <Beweglichkeit daten={props.daten} aendern={props.aendern} /> : reiter === "koerper" ? <Koerpergewicht daten={props.daten} aendern={props.aendern} /> : <EinProzent daten={props.daten} />}
     </Seite>
   )

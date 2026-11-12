@@ -1,7 +1,7 @@
 // Rahmen der App: Daten laden und speichern, Tabs, Einrichtung beim ersten Start, Belohnung nach dem Training.
 
 import { Toaster } from "sonner"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { texteLaden, uebung } from "./daten/uebungen/index"
 import { prozentMethode } from "./daten/fakten"
 import { heute } from "./logik/plan"
@@ -18,6 +18,7 @@ import { rehaAktiv, rehaSperre } from "./logik/reha"
 import { vorgemerktAnwenden } from "./logik/umstellen"
 import Einrichtung from "./ui/Einrichtung"
 import Fortschritt from "./ui/Fortschritt"
+import { offeneVorschlaege } from "./ui/Rueckblick"
 import Heute from "./ui/Heute"
 import { Icon, useEbene } from "./ui/ios"
 import { Sym, SymKachel } from "./ui/symbole"
@@ -65,6 +66,8 @@ export default function App() {
   const [daten, setDatenRoh] = useState<Daten>(() => laden(typeof localStorage !== "undefined" ? localStorage : null, schluessel))
   const aktuell = useRef(daten)
   const [tab, setTab] = useState<Tab>("heute")
+  // Offene Vorschläge aus dem Wochenrückblick: als Marke am Reiter „Fortschritt“
+  const vorschlaege = useMemo(() => offeneVorschlaege(daten, heute()), [daten])
   // Nach einem Neustart im Hintergrund (Android) zurück ins laufende Training, wenn dort schon Sätze abgehakt sind
   const [offen, setOffen] = useState<Einheit | null>(() => {
     try {
@@ -466,6 +469,11 @@ export default function App() {
             }}>
               <Icon name={t.icon} groesse={25} />
               <small>{t.name}</small>
+              {t.id === "fortschritt" && vorschlaege > 0 ? (
+                <i className="badge" aria-label={vorschlaege === 1 ? "1 Vorschlag im Wochenrückblick" : vorschlaege + " Vorschläge im Wochenrückblick"}>
+                  {vorschlaege}
+                </i>
+              ) : null}
             </button>
           ))}
         </nav>
