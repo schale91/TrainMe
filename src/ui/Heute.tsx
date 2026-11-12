@@ -3,7 +3,6 @@
 import { hatSport } from "../logik/auswahl"
 import { useMemo, useState } from "react"
 import { BausteinWoche } from "./Bausteine"
-import { RueckblickBlatt, RueckblickKarte } from "./Rueckblick"
 import { faktDesTages } from "../daten/fakten"
 import { BLOCK_WOCHEN, blockWoche, istEntlastung } from "../logik/progression"
 import { MOBIL_SCHWERPUNKTE, heute, mobilitaetsEinheit, montagVon, plusTage, schwachstellen, wochenplan, type MobilSchwerpunkt } from "../logik/plan"
@@ -39,7 +38,6 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const tag = heute()
   const [montag, setMontag] = useState(montagVon(tag))
   const [mobil, setMobil] = useState(false)
-  const [rueck, setRueck] = useState(false)
   // In der Wochenleiste angetippter Tag; ohne Wahl heute, in anderen Wochen der erste Tag mit einer Einheit
   const [gewaehlt, setGewaehlt] = useState<string | null>(null)
   const plan = useMemo(() => wochenplan(profil, daten, montag), [profil, daten, montag])
@@ -277,8 +275,6 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         </span>
         <Icon name="weiter" groesse={16} />
       </button>
-      <RueckblickKarte daten={daten} onClick={() => setRueck(true)} />
-      <RueckblickBlatt offen={rueck} onClose={() => setRueck(false)} daten={daten} aendern={props.aendern} />
       <MobilBlatt offen={mobil} schliessen={() => setMobil(false)} daten={daten} datum={tag} ortVorschlag={termin.ort || 0} starten={(e) => { setMobil(false); props.oeffnen(e) }} />
 
       {weg ? (

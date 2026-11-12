@@ -21,6 +21,13 @@ function startWoche(daten: Daten, tag: string): string {
 }
 
 /** Karte auf „Heute“: öffnet den Rückblick. Erst sichtbar, wenn es eine Woche mit Training gibt. */
+/** Offene Vorschläge aus dem Wochenrückblick: Zahl für die Marke am Reiter „Fortschritt“ (0 in der Reha und ohne Training) */
+export function offeneVorschlaege(daten: Daten, tag: string): number {
+  if (!daten.profil || rehaAktiv(daten.profil)) return 0
+  const r = rueckblick(daten, startWoche(daten, tag), tag)
+  return r.woche.einheiten ? r.vorschlaege.length : 0
+}
+
 export function RueckblickKarte(props: { daten: Daten; onClick: () => void }) {
   const tag = heute()
   const r = useMemo(() => rueckblick(props.daten, startWoche(props.daten, tag), tag), [props.daten, tag])
