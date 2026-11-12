@@ -5,6 +5,7 @@ import { hatSport } from "../logik/auswahl"
 import { phaseInfo } from "../logik/jahresplan"
 import { heute, wochenplan, montagVon } from "../logik/plan"
 import { aktuellerBlock, jahresAnteil, planWeg, wegStand, type Schritt } from "../logik/weg"
+import { ART_NAME, ausblick, planWochen, wochenText } from "../logik/planphasen"
 import type { Daten, Einheit } from "../logik/typen"
 import { istErledigt } from "./Heute"
 import { Fortschrittsbalken, Icon, Seite } from "./ios"
@@ -71,6 +72,15 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
     const abschnitte = planWeg(daten)
     const gesamt = abschnitte.reduce((n, x) => n + x.tage, 0)
     const fertig = abschnitte.reduce((n, x) => n + x.erledigt, 0)
+    // Phasen im Plan: Wochen mit ihrer Art (schwer, Aufbau, Test), die laufende hervorgehoben, dazu was als Nächstes kommt
+    const wochen = planWochen(daten)
+    const aktuelle = wochen.find((w) => w.status === "jetzt")
+    const kommt = ausblick(daten, 3)
+    const naechsterTest = ausblick(daten, 1, true)[0]
+    const abstand = (n: number) => (n === 0 ? "beim nächsten Training" : n === 1 ? "in 1 Trainingstag" : "in " + n + " Trainingstagen")
+    // Die Testwoche des Plans (mindestens die Hälfte der Tage sind Tests), auch wenn sie noch weit weg ist
+    const testIndex = wochen.findIndex((w) => w.art === "test" && w.status !== "vorbei")
+    const testwoche = testIndex >= 0 ? { ...wochen[testIndex], davor: wochen.slice(0, testIndex).reduce((n, w) => n + w.tage - w.erledigt, 0) } : null
     return (
       <Seite titel="Dein Weg" untertitel={daten.eigenerPlan!.name + " · " + fertig + " von " + gesamt + " Tagen"}>
         {naechste ? (
@@ -78,20 +88,87 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
             Nächster Schritt: {naechste.titel} {naechste.datum === tag ? "heute" : datumText(naechste.datum)}
           </button>
         ) : null}
+        {aktuelle ? (
+          <div className="planwoche">
+            <small>Gerade</small>
+            <b>
+              {aktuelle.abschnitt} · Woche {aktuelle.woche}
+            </b>
+            <span className={"phasenart " + aktuelle.art}>{wochenText(aktuelle)}</span>
+            <small>
+              {aktuelle.erledigt} von {aktuelle.tage} Tagen dieser Woche geschafft
+            </small>
+          </div>
+        ) : null}
+        {kommt.length ? (
+          <div className="ausblick">
+            <h4>Das kommt</h4>
+            <ul>
+              {kommt.map((x) => (
+                <li key={x.nr} className={x.text.startsWith("Test") ? "test" : "schwer"}>
+                  <Sym name={x.text.startsWith("Test") ? "pokal" : "hantel"} groesse={18} farbe={x.text.startsWith("Test") ? "var(--gold)" : "var(--akzent)"} />
+                  <span>
+                    <b>{x.text}</b>
+                    <small>
+                      {x.titel}
+                      {aktuelle && x.abschnitt !== aktuelle.abschnitt ? " · " + x.abschnitt : ""}
+                      {x.woche ? " · Woche " + x.woche : ""} · {abstand(x.davor)}
+                    </small>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {testwoche && testwoche.status !== "jetzt" ? (
+              <p className="hinweistext klein">
+                Testwoche: {testwoche.abschnitt}, Woche {testwoche.woche} ({testwoche.tage} {testwoche.tage === 1 ? "Tag" : "Tage"}, {abstand(testwoche.davor)}).
+              </p>
+            ) : naechsterTest && !kommt.some((x) => x.nr === naechsterTest.nr) ? (
+              <p className="hinweistext klein">
+                Nächster Test: {naechsterTest.abschnitt}, Woche {naechsterTest.woche} ({abstand(naechsterTest.davor)}).
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <ol className="zeitleiste">
-          {abschnitte.map((x, i) => (
-            <li key={i} className={x.status}>
-              <span className="knoten">{knoten(x.status)}</span>
-              <div>
-                <b>{x.name}</b>
-                <small>
-                  {x.erledigt} von {x.tage} Tagen
-                </small>
-                <Fortschrittsbalken wert={x.erledigt} max={x.tage} hoehe={6} />
-              </div>
-            </li>
-          ))}
+          {abschnitte.map((x, i) => {
+            const ws = wochen.filter((w) => w.abschnitt === x.name)
+            return (
+              <li key={i} className={x.status}>
+                <span className="knoten">{knoten(x.status)}</span>
+                <div>
+                  <b>{x.name}</b>
+                  <small>
+                    {x.erledigt} von {x.tage} Tagen
+                  </small>
+                  <Fortschrittsbalken wert={x.erledigt} max={x.tage} hoehe={6} />
+                  {ws.length > 1 ? (
+                    <div className="wochenkette" role="list" aria-label={"Wochen in " + x.name}>
+                      {ws.map((w) => (
+                        <span key={w.woche} role="listitem" className={"wochenglied " + w.art + " " + w.status} aria-label={"Woche " + w.woche + ": " + wochenText(w) + (w.status === "vorbei" ? ", geschafft" : w.status === "jetzt" ? ", läuft" : "")}>
+                          <small>{w.woche}</small>
+                          {w.art === "test" ? <Sym name="pokal" groesse={13} farbe="currentColor" /> : <i />}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </li>
+            )
+          })}
         </ol>
+        {wochen.length > 1 ? (
+          <p className="wochenlegende">
+            <span>
+              <span className="wochenglied aufbau"><i /></span> {ART_NAME.aufbau}
+            </span>
+            <span>
+              <span className="wochenglied schwer"><i /></span> {ART_NAME.schwer}: ab 90 % mit 1 bis 3 Wiederholungen
+            </span>
+            <span>
+              <span className="wochenglied test"><Sym name="pokal" groesse={13} farbe="currentColor" /></span> {ART_NAME.test}
+            </span>
+          </p>
+        ) : null}
         <p className="hinweistext klein">Eigener Plan: TrainMe rechnet die Gewichte, die Tage und Übungen gibt der Plan vor. Unter Profil, Plan kannst du zurück zur Planung von TrainMe wechseln.</p>
       </Seite>
     )
