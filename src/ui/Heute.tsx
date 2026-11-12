@@ -24,6 +24,7 @@ import { Sym } from "./symbole"
 import { Blatt, Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { Chips, WertWahl } from "./teile"
 import { ROLLE, TERMINE, WT, WT_LANG, datumText } from "./texte"
+import { tagMerkmal } from "../logik/planphasen"
 
 export function istErledigt(daten: Daten, e: Einheit): boolean {
   if (e.plan_nr !== undefined) return daten.erledigt.some((x) => x.plan_nr === e.plan_nr)
@@ -76,6 +77,11 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
       .filter(([d]) => d < tag)
       .map(([, w]) => w),
   )
+  // Besondere Plantage (Test, schwer) sichtbar machen: in der Karte, in der Wochenleiste und in der Zeile des Tages
+  const merkmal = (e: Einheit | undefined) => {
+    const t = e && e.plan_nr !== undefined ? daten.eigenerPlan?.tage.find((x) => x.nr === e.plan_nr) : undefined
+    return t ? tagMerkmal(t) : null
+  }
   const planUntertitel = eigen ? daten.eigenerPlan!.name + (planTag ? " · Tag " + planTag.nr + (planTag.abschnitt ? ", " + planTag.abschnitt : "") + (planTag.woche ? ", Woche " + planTag.woche : "") : " · geschafft") : null
 
   return (
@@ -229,6 +235,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           <button type="button" className="heutekarte" onClick={() => props.oeffnen(fokus)}>
             <span className="heutekopf">
               <span className="marke">{fokus.datum === tag ? "Heute" : WT[(new Date(fokus.datum + "T12:00:00Z").getUTCDay() + 6) % 7] + " · vorziehen"}</span>
+              {merkmal(fokus)?.art === "test" ? <span className="marke tagart test">Test</span> : merkmal(fokus)?.art === "schwer" ? <span className="marke tagart schwer">Schwer</span> : null}
               <span className="dauer">
                 <Icon name="timer" groesse={15} /> {fokus.minuten} min
               </span>
@@ -243,6 +250,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                 .join(" · ")}
               {fokus.plaetze.length > 5 ? " · +" + (fokus.plaetze.length - 5) : ""}
             </span>
+            {merkmal(fokus)?.text ? <span className="heutemerkmal">{merkmal(fokus)!.text}</span> : null}
             <span className="losknopf">Zum Training</span>
           </button>
           {fokus.plan_nr !== undefined && planTag && fokus.plan_nr === planTag.nr ? (
@@ -313,7 +321,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                 type="button"
                 role="tab"
                 aria-selected={datum === wahl}
-                aria-label={WT[i] + " " + datumText(datum) + ": " + was + (fertig ? ", erledigt" : "")}
+                aria-label={WT[i] + " " + datumText(datum) + ": " + was + (am.some((e) => merkmal(e)?.art === "test") ? ", Testtag" : "") + (fertig ? ", erledigt" : "")}
                 className={"wochentag" + (datum === wahl ? " gewaehlt" : "") + (datum === tag ? " heute" : "") + (fertig ? " fertig" : "") + (am.length ? "" : " frei")}
                 onClick={() => setGewaehlt(datum)}
               >
@@ -323,7 +331,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                   {fertig ? (
                     <Sym name="haken" groesse={14} farbe="var(--gruen)" />
                   ) : am.length ? (
-                    am.slice(0, 2).map((e, n) => <Sym key={n} name={ART_SYMBOL[e.art]} groesse={14} farbe="var(--akzent)" />)
+                    am.slice(0, 2).map((e, n) => (merkmal(e)?.art === "test" ? <Sym key={n} name="pokal" groesse={14} farbe="var(--gold)" /> : <Sym key={n} name={ART_SYMBOL[e.art]} groesse={14} farbe="var(--akzent)" />))
                   ) : t.art === "sporttermin" ? (
                     <Sym name={hatSport(profil, "golf") ? "golf" : "ziel"} groesse={14} farbe="var(--gold)" />
                   ) : null}
@@ -357,7 +365,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                       <span className="leise">{WT_LANG[i]}: frei</span>
                     )
                   }
-                  untertitel={e ? WT_LANG[i] + " · " + e.minuten + " min · " + rollen : undefined}
+                  untertitel={e ? WT_LANG[i] + " · " + e.minuten + " min · " + (merkmal(e)?.text ?? rollen) : undefined}
                   rechts={fertig ? <Sym name="haken" groesse={20} farbe="var(--gruen)" /> : undefined}
                   onClick={e ? () => props.oeffnen(e) : undefined}
                 />
