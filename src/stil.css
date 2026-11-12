@@ -3578,3 +3578,20 @@ h2,
 .uebungskarte.dran {
   border-color: var(--akzent);
 }
+
+/* Vorschlag für ein anderes Band, direkt zum Antippen */
+.bandvorschlag {
+  display: flex;
+  margin: 8px 0 2px;
+  gap: 8px;
+}
+.bandpunkt {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.35);
+  flex: none;
+}
+.bandgewaehlt {
+  font-weight: 600;
+}

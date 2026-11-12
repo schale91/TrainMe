@@ -27,7 +27,7 @@ import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
 import { beidseitigLast, beidseitigVorschlag, freieGruppe, gelerntAus, grosseVier, hauptPausenZuKurz, heuteFaktor, messen, pausenKuerzen, restDauer, satzMinuten, schaetzung, supersatzVorschlag, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
 import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
-import { bandhilfeMoeglich, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
+import { bandhilfeMoeglich, hilfeAusLetztemMal, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
 import { bestwert } from "../logik/spiel"
 import { Scheiben } from "./Scheiben"
@@ -282,10 +282,19 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         // Back-off-Sätze sind absichtlich leichter: nur leichter machen, nie schwerer
         if (form === "topsatz" && a?.richtung === "hoch" && s.last) a = { richtung: "gleich", text: "Back-off-Sätze bleiben bewusst leichter: " + zahl(s.last) + " kg beibehalten.", last: s.last }
       }
-      // Mit Band als Unterstützung: zu leicht oder zu schwer? Dann ein anderes Band vorschlagen
+      // Mit Band als Unterstützung: zu leicht oder zu schwer? Dann ein anderes Band vorschlagen, zum Antippen.
+      // Der Vorschlag ersetzt den Rat zu den Wiederholungen: Die Vorgabe bleibt, das Band ändert sich.
       if (s.hilfe_band) {
-        const h = hilfeVorschlag(s.hilfe_band, s, v.wdh_von, v.wdh_bis, v.rir)
-        if (h) setToast((h.richtung === "weniger" ? "Mit diesem Band zu leicht. Nimm das nächstschwächere Band: " : "Noch zu schwer. Nimm das nächststärkere Band: ") + (BANDFARBEN.find((x) => x.id === h.farbe)?.name ?? h.farbe) + " (" + hilfeText(hilfeKg(daten, h.farbe)) + ").")
+        const h = hilfeVorschlag(s.hilfe_band, s, v.wdh_von, v.wdh_bis, v.rir, { uebung: u.id, koerper_kg: profil.koerpergewicht_kg, kg: (f) => hilfeKg(daten, f) })
+        if (h) {
+          const name = (BANDFARBEN.find((x) => x.id === h.farbe)?.name ?? h.farbe) + " (" + hilfeText(hilfeKg(daten, h.farbe)) + ")"
+          const ziel = v.wdh_von + (v.wdh_bis > v.wdh_von ? " bis " + v.wdh_bis : "") + " Wiederholungen"
+          a = {
+            richtung: h.richtung === "mehr" ? "runter" : "hoch",
+            text: h.richtung === "mehr" ? "Für " + ziel + " reicht die Hilfe noch nicht. Nimm ein stärkeres Band: " + name + "." : "Mit diesem Band zu leicht. Nimm ein schwächeres Band: " + name + ".",
+            band: h.farbe,
+          }
+        }
       }
       // Neuer Bestwert schon während der Einheit
       const heute = [...saetze[i].filter((t, y) => t.fertig && y !== k), s].map(({ fertig: _f, ...x }) => x)
@@ -1090,6 +1099,29 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 ) : null}
               </div>
             ) : null}
+            {(() => {
+              // Vor dem ersten Satz: Hat das gewählte Band letztes Mal nicht gepasst, steht das passendere gleich da
+              const band = daten.bandhilfe?.[u.id]
+              if (!bandhilfeMoeglich(u) || !band || saetze[i].some((x) => x.fertig)) return null
+              const letzte = verlauf(daten, u.id, einheit.datum).slice(-1)[0]
+              const h = letzte ? hilfeAusLetztemMal(letzte.saetze, band, v.wdh_von, v.wdh_bis, v.rir, { uebung: u.id, koerper_kg: profil.koerpergewicht_kg, kg: (f) => hilfeKg(daten, f) }) : null
+              if (!h) return null
+              const farbe = BANDFARBEN.find((x) => x.id === h.farbe)
+              const jetzt = BANDFARBEN.find((x) => x.id === band)?.name ?? band
+              const ziel = v.wdh_von + (v.wdh_bis > v.wdh_von ? " bis " + v.wdh_bis : "")
+              return (
+                <p className={"anpassung " + (h.richtung === "mehr" ? "runter" : "hoch")}>
+                  <Sym name={h.richtung === "mehr" ? "pflaster" : "kurve"} groesse={18} />
+                  <span>
+                    <b>Letztes Mal:</b> mit {jetzt} höchstens {h.wdh} {h.wdh === 1 ? "Wiederholung" : "Wiederholungen"}, Ziel sind {ziel}. {h.richtung === "mehr" ? "Nimm heute ein stärkeres Band" : "Nimm heute ein schwächeres Band"}: {farbe?.name ?? h.farbe} ({hilfeText(hilfeKg(daten, h.farbe))}).
+                    <button type="button" className="knopf klein bandvorschlag" onClick={() => hilfeWaehlen(i, h.farbe)}>
+                      <i className="bandpunkt" style={{ background: farbe?.farbe }} aria-hidden="true" />
+                      Band {farbe?.name ?? h.farbe} nehmen
+                    </button>
+                  </span>
+                </p>
+              )
+            })()}
             {p.warum?.length ? (
               <>
                 <button type="button" className="textknopf warumknopf" aria-expanded={warumOffen === i} onClick={() => setWarumOffen(warumOffen === i ? null : i)}>
@@ -1252,6 +1284,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                   <Sym name={anpassungen[i]!.richtung === "hoch" ? "kurve" : anpassungen[i]!.richtung === "runter" ? "pflaster" : "haken"} groesse={18} />
                   <span>
                     <b>Nach Satz {anpassungen[i]!.satz}:</b> {anpassungen[i]!.text}
+                    {anpassungen[i]!.band && saetze[i].some((x) => !x.fertig) && daten.bandhilfe?.[u.id] !== anpassungen[i]!.band ? (
+                      <button type="button" className="knopf klein bandvorschlag" onClick={() => hilfeWaehlen(i, anpassungen[i]!.band!)}>
+                        <i className="bandpunkt" style={{ background: BANDFARBEN.find((x) => x.id === anpassungen[i]!.band)?.farbe }} aria-hidden="true" />
+                        Band {BANDFARBEN.find((x) => x.id === anpassungen[i]!.band)?.name ?? anpassungen[i]!.band} für die nächsten Sätze
+                      </button>
+                    ) : null}
+                    {anpassungen[i]!.band && daten.bandhilfe?.[u.id] === anpassungen[i]!.band ? <small className="bandgewaehlt"> Gewählt.</small> : null}
                   </span>
                 </p>
               ) : null}
