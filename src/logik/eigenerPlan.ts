@@ -209,7 +209,7 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
 export function einheitAusPlan(profil: Profil, daten: Daten, tag: PlanTag, datum: string, ortIndex: number, lastenFuer: (u: Uebung) => number[]): Einheit {
   const plaetze: Platz[] = tag.uebungen.map((pu0, i) => {
     let pu = mitErsatz(daten, pu0)
-    // Aus dem Wochenrückblick übernommen: ein Satz mehr (höchstens sechs je Übung)
+    // Aus dem Wochenrückblick übernommen: mehr Sätze (höchstens sechs je Übung)
     // Nicht bei Vorgaben in Prozent vom Maximum oder auf Zeit: die legt der Plan fest.
     const mehr = pu.prozent || pu.zeit ? 0 : (daten.satzplus?.[idVon(pu)]?.n ?? 0)
     if (mehr > 0) pu = { ...pu, saetze: Math.min(6, pu.saetze + mehr) }
@@ -223,8 +223,8 @@ export function einheitAusPlan(profil: Profil, daten: Daten, tag: PlanTag, datum
   const hinweise: string[] = []
   if (tag.abschnitt || tag.woche) hinweise.push([daten.eigenerPlan?.name, tag.abschnitt, tag.woche ? "Woche " + tag.woche : ""].filter(Boolean).join(" · "))
   for (const pu of tag.uebungen) if (pu.hinweis) hinweise.push(pu.name + ": " + pu.hinweis)
-  const mehr = Array.from(new Set(plaetze.filter((p, i) => (daten.satzplus?.[p.uebung.id]?.n ?? 0) > 0 && !tag.uebungen[i].prozent && !tag.uebungen[i].zeit).map((p) => p.uebung.name)))
-  if (mehr.length) hinweise.push("Ein Satz mehr als im Plan bei " + mehr.join(", ") + " (aus deinem Wochenrückblick übernommen).")
+  const mehr = Array.from(new Set(plaetze.filter((p, i) => (daten.satzplus?.[p.uebung.id]?.n ?? 0) > 0 && !tag.uebungen[i].prozent && !tag.uebungen[i].zeit).map((p) => p.uebung.name + " (+" + daten.satzplus![p.uebung.id].n + ")")))
+  if (mehr.length) hinweise.push("Mehr Sätze als im Plan bei " + mehr.join(", ") + " (aus deinem Wochenrückblick übernommen).")
   if (profil.beschwerden.length) hinweise.push("Du hast Beschwerden eingetragen. Der eigene Plan wird dafür nicht angepasst: Übungen, die wehtun, tauschen oder auslassen.")
   const minuten = Math.round(8 + plaetze.reduce((s, p) => s + (p.vorgabe.saetze * (40 + (p.gruppe ? p.vorgabe.pause_s / 2 : p.vorgabe.pause_s))) / 60, 0))
   return { datum, titel: tag.titel, art: "kraft", ort: ortIndex, minuten, plaetze, hinweise, plan_nr: tag.nr }

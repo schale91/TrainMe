@@ -34,8 +34,21 @@ export const SAETZE_MIN = 10
 export const SAETZE_BIS = 20
 /** Abgelehnte Vorschläge kommen frühestens nach so vielen Tagen wieder */
 export const RUHE_TAGE = 28
-/** Nach „ein Satz mehr“ für eine Muskelgruppe kommt für sie so lange kein weiterer Vorschlag */
+/** Nach „mehr Sätze“ für eine Muskelgruppe kommt für sie so lange kein weiterer Vorschlag */
 const WIRKT_TAGE = 21
+/** Mehr als so viele Sätze je Übung bringen wenig: Dann lieber eine weitere Übung als noch ein Satz */
+const SAETZE_JE_UEBUNG = 5
+/** Höchstens so viele Sätze mehr je Übung in einem Schritt */
+const PLUS_JE_SCHRITT = 2
+/** Höchstens so viele Sätze je Woche mehr in einem Schritt: Große Sprünge im Umfang lieber verteilen */
+const SCHRITT_JE_WOCHE = 4
+/**
+ * Höchstens so viele Sätze für eine Muskelgruppe an einem Trainingstag. Bei gleichem Wochenumfang ist es für den
+ * Muskelaufbau gleich, auf wie viele Tage er sich verteilt (Meta-Analyse Schoenfeld, Grgic & Krieger 2019, J Sports
+ * Sci 37: 1286–1295). Die Verteilung ist deshalb ein Mittel, die einzelnen Sätze gut zu halten: Viele Sätze für
+ * denselben Muskel an einem Tag werden gegen Ende schwächer. Die Zahl selbst ist eine Faustregel, keine Messgröße.
+ */
+const SAETZE_JE_TAG = 10
 
 const TAG = 86400000
 const plus = (d: string, n: number) => new Date(Date.parse(d + "T12:00:00Z") + n * TAG).toISOString().slice(0, 10)
@@ -157,14 +170,27 @@ export function trends(daten: Pick<Daten, "protokoll" | "eigenerPlan">, montag: 
 }
 
 export type Vorschlag =
-  /** Muskelgruppe unter dem Zielvolumen: ein Satz mehr bei einer Übung des eigenen Plans */
-  | { art: "saetze"; schluessel: string; gruppe: string; gruppenName: string; uebung: string; name: string; schnitt: number; vorkommen: number }
+  /**
+   * Muskelgruppe unter dem Zielvolumen: mehr Sätze bei Übungen des eigenen Plans, so viele, dass die Lücke möglichst
+   * schließt. teile: je Übung plus Sätze und wie oft sie in den nächsten zehn Plantagen vorkommt; mehr: was das je
+   * Woche bringt; danach: Schnitt mit dem Vorschlag; tage: auf so viele der nächsten zehn Plantage verteilt sich das
+   * Mehr; rest: warum es nicht bis zum Ziel reicht („schritt“: bewusst begrenzt, der nächste Schritt kommt später;
+   * „plan“: der Plan hat nicht genug passende Übungen).
+   */
+  | { art: "saetze"; schluessel: string; gruppe: string; gruppenName: string; teile: SatzTeil[]; schnitt: number; mehr: number; danach: number; tage: number; rest: null | "schritt" | "plan" }
   /** Seit drei Einheiten kein neuer Bestwert: Variante wechseln */
   | { art: "tauschen"; schluessel: string; uebung: string; name: string }
   /** Eingetragenes Maximum überholt */
   | { art: "maximum"; schluessel: string; uebung: string; name: string; alt: number; neu: number }
   /** Einheiten dauern regelmäßig länger als das Zeitbudget */
   | { art: "zeit"; schluessel: string; ueber_min: number; budget: number; minuten_neu: number }
+
+export interface SatzTeil {
+  uebung: string
+  name: string
+  plus: number
+  vorkommen: number
+}
 
 export interface Rueckblick {
   montag: string
@@ -223,32 +249,69 @@ export function rueckblick(daten: Daten, montag: string, heute: string): Rueckbl
   if (profil && profil.ziel === "muskelaufbau" && profil.planart === "eigen" && daten.eigenerPlan && wochen.length >= 2) {
     const kommend = offenePlanTage(daten, 10).slice(0, 10)
     const satzplus = daten.satzplus || {}
+    const tageJeWoche = profil.woche.filter((t) => t.art === "training" && t.quelle !== "trainme").length
     // große Muskelgruppen zuerst: dort bringt mehr Volumen am meisten
     const wenig = [...MUSKELGRUPPEN].sort((a, b) => VORRANG.indexOf(a.id) - VORRANG.indexOf(b.id)).filter((g) => schnitt[g.id] < SAETZE_MIN)
     let n = 0
     for (const g of wenig) {
       const k = "saetze:" + g.id
       if (ruht(k) || n >= 3) continue
-      // schon ein Satz mehr für diese Gruppe unterwegs: erst wirken lassen
+      // schon mehr Sätze für diese Gruppe unterwegs: erst wirken lassen
       const unterwegs = Object.entries(satzplus).some(([id, x]) => x.n > 0 && tageZwischen(x.seit, heute) < WIRKT_TAGE && !!uebung(id) && anteil(uebung(id)!, g) === 1)
       if (unterwegs) continue
-      const zahl = new Map<string, { n: number; saetze: number }>()
-      for (const t of kommend)
+      // Übungen der nächsten zehn Plantage, die die Gruppe direkt trainieren, und wie voll jeder Tag für sie schon ist
+      const zahl = new Map<string, { n: number; saetze: number; tage: number[] }>()
+      const tagSaetze = kommend.map(() => 0)
+      kommend.forEach((t, ti) => {
         for (const pu0 of t.uebungen) {
           const pu = mitErsatz(daten, pu0)
           const id = idVon(pu)
           const u = kraftUebung(id)
-          // Prozent vom Maximum gibt der Plan fest vor; mehr als fünf Sätze je Übung bringen wenig
-          if (!u || pu.prozent || pu.zeit || nurBand(u) || anteil(u, g) !== 1 || pu.saetze + (satzplus[id]?.n ?? 0) >= 5) continue
-          const z = zahl.get(id) || { n: 0, saetze: pu.saetze }
+          if (!u) continue
+          const jetzt = pu.saetze + (pu.prozent || pu.zeit ? 0 : (satzplus[id]?.n ?? 0))
+          tagSaetze[ti] += jetzt * anteil(u, g)
+          // Prozent vom Maximum gibt der Plan fest vor
+          if (pu.prozent || pu.zeit || nurBand(u) || anteil(u, g) !== 1) continue
+          const z = zahl.get(id) || { n: 0, saetze: jetzt, tage: [] }
           z.n++
+          z.tage.push(ti)
           zahl.set(id, z)
         }
-      // lieber eine Übung mit Gewicht (lässt sich steigern), dann die häufigste, dann die mit den wenigsten Sätzen
+      })
+      // Ein Satz mehr bei einer Übung, die n-mal in den nächsten zehn Plantagen vorkommt, bringt je Woche n × Trainingstage / 10
+      const jeWoche = (n: number) => (n * Math.max(1, tageJeWoche)) / Math.max(1, kommend.length)
       const mitLast = (id: string) => Number(uebung(id)!.belastung === "gewicht")
-      const wahl = Array.from(zahl.entries()).sort((a, b) => mitLast(b[0]) - mitLast(a[0]) || b[1].n - a[1].n || a[1].saetze - b[1].saetze)[0]
-      if (!wahl) continue
-      vorschlaege.push({ art: "saetze", schluessel: k, gruppe: g.id, gruppenName: g.name, uebung: wahl[0], name: uebung(wahl[0])!.name, schnitt: schnitt[g.id], vorkommen: wahl[1].n })
+      const luecke = SAETZE_MIN - schnitt[g.id]
+      const ziel = Math.min(luecke, SCHRITT_JE_WOCHE)
+      const plus = new Map<string, number>()
+      let mehr = 0
+      /** vollster Tag einer Übung für diese Gruppe, wenn sie einen Satz mehr bekäme */
+      const vollsterTag = (z: { tage: number[] }) => Math.max(...z.tage.map((ti) => tagSaetze[ti])) + 1
+      const moeglich = ([id, z]: [string, { n: number; saetze: number; tage: number[] }]) =>
+        z.saetze + (plus.get(id) ?? 0) < SAETZE_JE_UEBUNG && (plus.get(id) ?? 0) < PLUS_JE_SCHRITT && vollsterTag(z) <= SAETZE_JE_TAG
+      // Satz für Satz dorthin, wo der Trainingstag für diese Gruppe am leersten ist: So verteilt sich der Umfang über die
+      // Woche, statt sich an einem Tag zu stapeln. Bei Gleichstand lieber eine Übung mit Gewicht (lässt sich steigern),
+      // dann die mit den wenigsten Sätzen. Ein Satz kommt nur dazu, wenn er höchstens zur Hälfte über das Ziel schießt.
+      for (;;) {
+        const wahl = Array.from(zahl.entries())
+          .filter((e) => moeglich(e) && ziel - mehr >= jeWoche(e[1].n) / 2)
+          .sort((a, b) => vollsterTag(a[1]) - vollsterTag(b[1]) || (plus.get(a[0]) ?? 0) - (plus.get(b[0]) ?? 0) || mitLast(b[0]) - mitLast(a[0]) || a[1].saetze - b[1].saetze || a[0].localeCompare(b[0]))[0]
+        if (!wahl) break
+        plus.set(wahl[0], (plus.get(wahl[0]) ?? 0) + 1)
+        for (const ti of wahl[1].tage) tagSaetze[ti] += 1
+        mehr += jeWoche(wahl[1].n)
+      }
+      if (!plus.size) continue
+      const teile = Array.from(zahl.entries())
+        .filter(([id]) => plus.has(id))
+        .sort((a, b) => a[1].tage[0] - b[1].tage[0])
+        .map(([id, z]) => ({ uebung: id, name: uebung(id)!.name, plus: plus.get(id)!, vorkommen: z.n }))
+      const danach = rund1(schnitt[g.id] + mehr)
+      // Reicht es nicht bis zum Ziel: Liegt es am Plan (jede passende Übung ist bei fünf Sätzen oder ihr Tag ist voll)
+      // oder nur daran, dass ein Schritt begrenzt ist?
+      const ausgereizt = Array.from(zahl.entries()).every(([id, z]) => z.saetze + (plus.get(id) ?? 0) >= SAETZE_JE_UEBUNG || vollsterTag(z) > SAETZE_JE_TAG)
+      const trainingstage = new Set(Array.from(zahl.entries()).filter(([id]) => plus.has(id)).flatMap(([, z]) => z.tage)).size
+      vorschlaege.push({ art: "saetze", schluessel: k, gruppe: g.id, gruppenName: g.name, teile, schnitt: schnitt[g.id], mehr: rund1(mehr), danach, tage: trainingstage, rest: danach >= SAETZE_MIN - 0.5 ? null : ausgereizt ? "plan" : "schritt" })
       n++
     }
   }
@@ -276,8 +339,9 @@ export function rueckblick(daten: Daten, montag: string, heute: string): Rueckbl
 /** Vorschlag übernehmen. wahl: bei „tauschen“ die neue Übung. */
 export function uebernehmen(d: Daten, v: Vorschlag, heute: string, wahl?: string): void {
   if (v.art === "saetze") {
-    const alt = d.satzplus?.[v.uebung]?.n ?? 0
-    d.satzplus = { ...(d.satzplus || {}), [v.uebung]: { n: alt + 1, seit: heute } }
+    const neu = { ...(d.satzplus || {}) }
+    for (const t of v.teile) neu[t.uebung] = { n: (neu[t.uebung]?.n ?? 0) + t.plus, seit: heute }
+    d.satzplus = neu
   } else if (v.art === "maximum") {
     d.maxwerte = { ...(d.maxwerte || {}), [v.uebung]: { kg: v.neu, datum: heute } }
   } else if (v.art === "tauschen") {
