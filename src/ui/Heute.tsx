@@ -25,6 +25,7 @@ import { Blatt, Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { Chips, WertWahl } from "./teile"
 import { ROLLE, TERMINE, WT, WT_LANG, datumText } from "./texte"
 import { planWochen, tagMerkmal, wochenText } from "../logik/planphasen"
+import { tagAngepasst } from "../logik/eigenerPlan"
 
 export function istErledigt(daten: Daten, e: Einheit): boolean {
   if (e.plan_nr !== undefined) return daten.erledigt.some((x) => x.plan_nr === e.plan_nr)
@@ -347,7 +348,11 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                 aria-selected={datum === wahl}
                 aria-label={WT[i] + " " + datumText(datum) + ": " + was + (am.some((e) => merkmal(e)?.art === "test") ? ", Testtag" : am.some((e) => merkmal(e)?.art === "schwer") ? ", schwerer Tag" : "") + (fertig ? ", erledigt" : "")}
                 className={"wochentag" + (datum === wahl ? " gewaehlt" : "") + (datum === tag ? " heute" : "") + (fertig ? " fertig" : "") + (am.length ? "" : " frei")}
-                onClick={() => setGewaehlt(datum)}
+                onClick={() => {
+                  // zweites Antippen des gewählten Tages öffnet ihn: ansehen und anpassen, ohne zu starten
+                  if (datum === wahl && am.length === 1) props.oeffnen(am[0])
+                  else setGewaehlt(datum)
+                }}
               >
                 <small>{WT[i]}</small>
                 <b>{Number(datum.slice(8))}</b>
@@ -397,7 +402,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                       <span className="leise">{WT_LANG[i]}: frei</span>
                     )
                   }
-                  untertitel={e ? WT_LANG[i] + " · " + e.minuten + " min · " + (merkmal(e)?.text ?? rollen) : undefined}
+                  untertitel={e ? WT_LANG[i] + " · " + e.minuten + " min · " + (merkmal(e)?.text ?? rollen) + (tagAngepasst(daten, e.plan_nr) ? " · von dir angepasst" : "") : undefined}
                   rechts={fertig ? <Sym name="haken" groesse={20} farbe="var(--gruen)" /> : undefined}
                   onClick={e ? () => props.oeffnen(e) : undefined}
                 />

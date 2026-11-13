@@ -207,12 +207,22 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
 
 /** Einheit für einen Plantag an einem Datum. lastenFuer: verfügbare Gewichte einer Übung am Ort. */
 export function einheitAusPlan(profil: Profil, daten: Daten, tag: PlanTag, datum: string, ortIndex: number, lastenFuer: (u: Uebung) => number[]): Einheit {
+  const eigens = daten.tagplan?.[String(tag.nr)]
   const plaetze: Platz[] = tag.uebungen.map((pu0, i) => {
     let pu = mitErsatz(daten, pu0)
+    // Nur für diesen Tag getauscht (Tag vorab angesehen und angepasst): geht vor dem dauerhaften Ersatz
+    const tausch = eigens?.tausch?.[String(i)]
+    if (tausch && uebung(tausch)) {
+      const { prozent: _p, basis: _b, ...rest } = pu0
+      pu = { ...rest, id: tausch, name: uebung(tausch)!.name }
+    }
     // Aus dem Wochenrückblick übernommen: mehr Sätze (höchstens sechs je Übung)
     // Nicht bei Vorgaben in Prozent vom Maximum oder auf Zeit: die legt der Plan fest.
     const mehr = pu.prozent || pu.zeit ? 0 : (daten.satzplus?.[idVon(pu)]?.n ?? 0)
     if (mehr > 0) pu = { ...pu, saetze: Math.min(6, pu.saetze + mehr) }
+    // Satzzahl nur für diesen Tag geändert: gilt so, wie sie eingestellt wurde
+    const eigeneSaetze = eigens?.saetze?.[String(i)]
+    if (typeof eigeneSaetze === "number" && eigeneSaetze >= 1) pu = { ...pu, saetze: Math.min(10, Math.round(eigeneSaetze)) }
     const u = planUebung(idVon(pu)) as Uebung
     const rolle = rolleVon(pu, i)
     const vorgabe = planVorgabe(daten, pu, u, u.id.startsWith(FREI) ? [] : lastenFuer(u), datum, rolle)
@@ -371,4 +381,34 @@ export function planZuText(plan: EigenerPlan): string {
       return ["Tag " + t.nr + ": " + t.titel, ...zeilen].join("\n")
     })
     .join("\n\n")
+}
+
+/** Anpassung an einem Plantag merken (Übung tauschen oder Satzzahl ändern), ohne den Plan selbst zu verändern. */
+export function tagAnpassen(d: Daten, nr: number, a: { stelle: number; tausch?: string; saetze?: number }): void {
+  const alle = { ...(d.tagplan || {}) }
+  const t = { ...(alle[String(nr)] || {}) }
+  if (a.tausch) {
+    t.tausch = { ...(t.tausch || {}), [String(a.stelle)]: a.tausch }
+    // neue Übung, neue Satzzahl: die alte Einstellung gehört zur alten Übung
+    if (t.saetze) {
+      const { [String(a.stelle)]: _weg, ...rest } = t.saetze
+      t.saetze = rest
+    }
+  }
+  if (typeof a.saetze === "number") t.saetze = { ...(t.saetze || {}), [String(a.stelle)]: a.saetze }
+  alle[String(nr)] = t
+  d.tagplan = alle
+}
+
+/** Anpassungen eines Plantags zurücknehmen: Der Tag ist wieder so, wie der Plan ihn vorgibt. */
+export function tagZuruecksetzen(d: Daten, nr: number): void {
+  if (!d.tagplan?.[String(nr)]) return
+  const { [String(nr)]: _weg, ...rest } = d.tagplan
+  d.tagplan = rest
+}
+
+/** Hat dieser Plantag eigene Anpassungen? */
+export const tagAngepasst = (d: Pick<Daten, "tagplan">, nr: number | undefined) => {
+  const t = nr === undefined ? undefined : d.tagplan?.[String(nr)]
+  return !!t && (Object.keys(t.tausch || {}).length > 0 || Object.keys(t.saetze || {}).length > 0)
 }
