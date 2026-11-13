@@ -24,7 +24,7 @@ import { Sym } from "./symbole"
 import { Blatt, Fortschrittsbalken, Gruppe, Icon, Seite, Zeile } from "./ios"
 import { Chips, WertWahl } from "./teile"
 import { ROLLE, TERMINE, WT, WT_LANG, datumText } from "./texte"
-import { tagMerkmal } from "../logik/planphasen"
+import { planWochen, tagMerkmal, wochenText } from "../logik/planphasen"
 
 export function istErledigt(daten: Daten, e: Einheit): boolean {
   if (e.plan_nr !== undefined) return daten.erledigt.some((x) => x.plan_nr === e.plan_nr)
@@ -82,6 +82,22 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
     const t = e && e.plan_nr !== undefined ? daten.eigenerPlan?.tage.find((x) => x.nr === e.plan_nr) : undefined
     return t ? tagMerkmal(t) : null
   }
+  // Welche Planwochen liegen in der gezeigten Kalenderwoche, und was sind sie (schwer, Aufbau, Test)?
+  const wochenphase = useMemo(() => {
+    const aus: { abschnitte: string[]; wochen: string[] } = { abschnitte: [], wochen: [] }
+    if (!daten.eigenerPlan) return aus
+    const alle = planWochen(daten)
+    for (const e of plan) {
+      const t = e.plan_nr !== undefined ? daten.eigenerPlan.tage.find((x) => x.nr === e.plan_nr) : undefined
+      if (!t || t.woche === undefined) continue
+      const w = alle.find((x) => x.abschnitt === (t.abschnitt || daten.eigenerPlan!.name) && x.woche === String(t.woche))
+      if (!w) continue
+      const text = "Woche " + w.woche + ": " + wochenText(w)
+      if (aus.abschnitte.indexOf(w.abschnitt) < 0) aus.abschnitte.push(w.abschnitt)
+      if (aus.wochen.indexOf(text) < 0) aus.wochen.push(text)
+    }
+    return aus
+  }, [daten, plan])
   const planUntertitel = eigen ? daten.eigenerPlan!.name + (planTag ? " · Tag " + planTag.nr + (planTag.abschnitt ? ", " + planTag.abschnitt : "") + (planTag.woche ? ", Woche " + planTag.woche : "") : " · geschafft") : null
 
   return (
@@ -308,6 +324,14 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           <Icon name="weiter" groesse={18} dick={2.4} />
         </button>
       </div>
+      {wochenphase.wochen.length ? (
+        <p className="wochenphase">
+          <small>{wochenphase.abschnitte.join(" und ")}</small>
+          {wochenphase.wochen.map((x) => (
+            <span key={x}>{x}</span>
+          ))}
+        </p>
+      ) : null}
       <div className="wochenwisch" {...wischen(() => setMontag(plusTage(montag, 7)), () => setMontag(plusTage(montag, -7)))}>
         <div className="wochenleiste" role="tablist" aria-label="Tage der Woche">
           {profil.woche.map((t, i) => {
@@ -321,7 +345,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                 type="button"
                 role="tab"
                 aria-selected={datum === wahl}
-                aria-label={WT[i] + " " + datumText(datum) + ": " + was + (am.some((e) => merkmal(e)?.art === "test") ? ", Testtag" : "") + (fertig ? ", erledigt" : "")}
+                aria-label={WT[i] + " " + datumText(datum) + ": " + was + (am.some((e) => merkmal(e)?.art === "test") ? ", Testtag" : am.some((e) => merkmal(e)?.art === "schwer") ? ", schwerer Tag" : "") + (fertig ? ", erledigt" : "")}
                 className={"wochentag" + (datum === wahl ? " gewaehlt" : "") + (datum === tag ? " heute" : "") + (fertig ? " fertig" : "") + (am.length ? "" : " frei")}
                 onClick={() => setGewaehlt(datum)}
               >
@@ -331,7 +355,15 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                   {fertig ? (
                     <Sym name="haken" groesse={14} farbe="var(--gruen)" />
                   ) : am.length ? (
-                    am.slice(0, 2).map((e, n) => (merkmal(e)?.art === "test" ? <Sym key={n} name="pokal" groesse={14} farbe="var(--gold)" /> : <Sym key={n} name={ART_SYMBOL[e.art]} groesse={14} farbe="var(--akzent)" />))
+                    am.slice(0, 2).map((e, n) =>
+                      merkmal(e)?.art === "test" ? (
+                        <Sym key={n} name="pokal" groesse={14} farbe="var(--gold)" />
+                      ) : merkmal(e)?.art === "schwer" ? (
+                        <Sym key={n} name="blitz" groesse={14} farbe="var(--akzent)" />
+                      ) : (
+                        <Sym key={n} name={ART_SYMBOL[e.art]} groesse={14} farbe="var(--leise)" />
+                      ),
+                    )
                   ) : t.art === "sporttermin" ? (
                     <Sym name={hatSport(profil, "golf") ? "golf" : "ziel"} groesse={14} farbe="var(--gold)" />
                   ) : null}
