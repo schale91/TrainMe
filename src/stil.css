@@ -3774,3 +3774,13 @@ h2,
   font-size: 12.5px;
   color: var(--leise);
 }
+
+/* Training, Vorschau eines Tages, der noch nicht dran ist */
+.vorschaukopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.vorschaukopf b {
+  font-size: 17px;
+}

@@ -392,6 +392,13 @@ export interface PlanTag {
   uebungen: PlanUebung[]
 }
 
+export interface TagAnpassung {
+  /** Stelle im Tag (ab 0) → Übung, die an diesem Tag stattdessen gemacht wird */
+  tausch?: Record<string, string>
+  /** Stelle im Tag (ab 0) → Zahl der Sätze an diesem Tag */
+  saetze?: Record<string, number>
+}
+
 export interface EigenerPlan {
   name: string
   /** Woher der Plan kam, z. B. "kraftbuch" */
@@ -592,6 +599,12 @@ export interface Daten {
   ersatz?: Record<string, string>
   /** Zusätzliche Sätze je Übung im eigenen Plan (aus dem Wochenrückblick übernommen), mit Datum der Übernahme */
   satzplus?: Record<string, { n: number; seit: string }>
+  /**
+   * Anpassungen an einzelnen Tagen des eigenen Plans, vor dem Training gemacht (Tag ansehen, ohne ihn zu starten):
+   * je Plantag (nr) getauschte Übungen und geänderte Satzzahlen, jeweils nach der Stelle im Tag. Gilt nur für
+   * diesen einen Tag und geht beim Abgleich mit auf die anderen Geräte.
+   */
+  tagplan?: Record<string, TagAnpassung>
   /** Wochenrückblick: abgelehnte Vorschläge (Schlüssel → Datum), sie kommen erst nach einigen Wochen wieder */
   rueckblick?: { weg?: Record<string, string> }
   /** Band als Unterstützung je Körpergewichtsübung (Farbe) und eigene kg-Werte je Farbe */

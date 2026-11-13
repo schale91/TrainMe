@@ -4,7 +4,7 @@ import { hatSport } from "../logik/auswahl"
 import { toast as meldung } from "sonner"
 import NumberFlow from "@number-flow/react"
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
-import { alternativen, erlaubt, lastGeraet, lastenAn, mitAlltag, passtAnOrt, platzMit, verlauf } from "../logik/plan"
+import { alternativen, erlaubt, heute, lastGeraet, lastenAn, mitAlltag, passtAnOrt, platzMit, verlauf } from "../logik/plan"
 import { abrunden, BANDFARBEN, bandVonStufe, hoeher, lastText, niedriger, stufeVonBand } from "../logik/gewichte"
 import { pauseNachSatz, satzAnpassung, type Anpassung } from "../logik/progression"
 import { alsDropsatz, dropMoeglich, dropVorschlag, zweiZuEinem } from "../logik/dropsatz"
@@ -19,14 +19,14 @@ import { pauseStarten, pauseStoppen } from "./pausenTimer"
 import { alleTage, formSchwach, tageswerte } from "../logik/gesundheit"
 import { ebeneOeffnen } from "./navigation"
 import { bruecke } from "./lebenswelt"
-import { ROLLE, datumText, grundText, zahl } from "./texte"
+import { ROLLE, WT_LANG, datumText, grundText, zahl } from "./texte"
 import { UebungInfoBlatt } from "./UebungInfo"
 import { Sym } from "./symbole"
 import { FREI, uebung as uebungMit } from "../daten/uebungen/index"
 import Figur from "./Figur"
 import { wechselPause } from "../logik/wechsel"
 import { beidseitigLast, beidseitigVorschlag, freieGruppe, gelerntAus, grosseVier, hauptPausenZuKurz, heuteFaktor, messen, pausenKuerzen, restDauer, satzMinuten, schaetzung, supersatzVorschlag, umbauMin, weglassenVorschlag, zeitBudget } from "../logik/zeitplan"
-import { entwurfLesen, entwurfLoeschen, entwurfSchreiben } from "../logik/entwurf"
+import { entwurfLesen, entwurfLoeschen, entwurfSchreiben, hatFortschritt } from "../logik/entwurf"
 import { bandhilfeMoeglich, hilfeAusLetztemMal, hilfeKg, hilfeText, hilfeVorschlag } from "../logik/bandhilfe"
 import { Kurve, kurvenPunkte } from "./Fortschritt"
 import { bestwert } from "../logik/spiel"
@@ -110,7 +110,7 @@ function piep() {
 const suchNormal = (t: string) => t.trim().toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss").replace(/[-\s]+/g, " ")
 
 
-export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number, zeit?: TrainingsZeit) => void; ausschliessen: (id: string, neu?: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void }) {
+export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number, zeit?: TrainingsZeit) => void; ausschliessen: (id: string, neu?: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void; tagplan?: (nr: number, a: { stelle: number; tausch?: string; saetze?: number } | null) => void }) {
   const { daten, einheit } = props
   const profil = daten.profil!
   // Reha: Schmerz je Satz statt Reserve, Schmerz vor dem Training
@@ -126,7 +126,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     satzformVon({ ...p.vorgabe, saetze: anzahl }, formWahl[p.uebung.id] ?? daten.satzform?.[p.uebung.id], p.uebung.belastung === "gewicht" && !reha && (p.rolle === "haupt" || p.rolle === "neben") && lastGeraet(p.uebung, ort) !== "band", dropGeht(p))
   const start = (p: Platz) => startSaetze(p, daten, formVon(p), lastenAn(p.uebung, ort))
   const gespeichert = useMemo(() => {
-    const e = ladeEntwurf(schluessel)
+    let e = ladeEntwurf(schluessel)
+    // Plantag ohne begonnenes Training: Weicht der Entwurf vom Plan ab (z. B. weil der Tag auf einem anderen Gerät
+    // angepasst wurde), gilt der Plan. Abgehakte Sätze gehen dabei nie verloren.
+    if (e && einheit.plan_nr !== undefined && !hatFortschritt(e)) {
+      const gleich = e.plaetze.length === einheit.plaetze.length && e.plaetze.every((p, i) => p.uebung.id === einheit.plaetze[i].uebung.id && (e as Entwurf).saetze[i]?.length === einheit.plaetze[i].vorgabe.saetze)
+      if (!gleich) e = null
+    }
     // Ort oder Ausstattung seitdem geändert: Vorschläge neu rechnen, Abgehaktes behalten
     return e && e.ort !== kennung ? { ...e, ...entwurfAnpassen(e, einheit.plaetze, start) } : e
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -176,6 +182,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     return () => clearInterval(t)
   }, [beginn])
   const gesperrt = beginn === null
+  // Vorschau: ein Tag, der noch nicht dran ist. Ansehen und anpassen, ohne zu starten.
+  const vorschau = beginn === null && einheit.datum > heute()
+  // Vor dem Start an einem Tag des eigenen Plans: Tauschen und Satzzahl gelten für diesen Tag und bleiben gespeichert
+  const planNr = einheit.plan_nr
+  const planbar = beginn === null && planNr !== undefined && plaetze.length === einheit.plaetze.length
   const erstStarten = () => setToast("Erst oben „Training starten“ drücken, dann zählt die Zeit und die Sätze lassen sich abhaken.")
 
   useEffect(() => {
@@ -756,6 +767,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setPlaetze(plaetze.map((x, k) => (k === i ? p : x)))
     setSaetze(saetze.map((x, k) => (k === i ? start(p) : x)))
     if (nieWieder) props.ausschliessen(plaetze[i].uebung.id, id)
+    else if (planbar) props.tagplan?.(planNr!, { stelle: i, tausch: id })
     setTausch(null)
     setTauschSuche("")
   }
@@ -818,7 +830,36 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         </div>
       }>
       <div className={"zeitkarte" + (beginn !== null && zuLang ? " knapp" : "")}>
-        {beginn === null ? (
+        {vorschau ? (
+          <>
+            <div className="vorschaukopf">
+              <span className="marke">Vorschau</span>
+              <b>
+                {WT_LANG[(new Date(einheit.datum + "T12:00:00Z").getUTCDay() + 6) % 7]}, {datumText(einheit.datum)}
+              </b>
+            </div>
+            <p className="hinweistext klein">
+              Dieser Tag ist noch nicht dran. Du kannst ihn ansehen und anpassen, ohne ihn zu starten: Übungen tauschen und Sätze hinzufügen oder wegnehmen.
+              {planNr !== undefined ? " Die Änderungen bleiben für diesen Tag gespeichert, auch auf deinen anderen Geräten." : " Bei Plänen von TrainMe bleiben die Änderungen nur auf diesem Gerät."}
+            </p>
+            {planNr !== undefined && daten.tagplan?.[String(planNr)] ? (
+              <button
+                type="button"
+                className="textknopf"
+                onClick={() => {
+                  props.tagplan?.(planNr, null)
+                  entwurfLoeschen(localStorage, schluessel)
+                  props.zurueck()
+                }}
+              >
+                Änderungen für diesen Tag zurücknehmen
+              </button>
+            ) : null}
+            <button type="button" className="knopf voll leise" onClick={starten}>
+              Schon heute trainieren
+            </button>
+          </>
+        ) : beginn === null ? (
           <>
             <div className="zeitwahl" role="group" aria-label="Zeit für heute">
               <span>Zeit für heute</span>
@@ -929,7 +970,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
         ) : null
         // Fokusansicht: nur die Übung, die dran ist (im Supersatz die ganze Gruppe), ist ausführlich zu sehen
         const dran = i === aktiveUebung || (imSuper && aktiveUebung >= 0 && plaetze[aktiveUebung]?.gruppe === p.gruppe)
-        const aufgeklappt = klappe[i] ?? dran
+        // In der Vorschau ist alles zugeklappt: der ganze Tag als Liste, Antippen öffnet eine Übung zum Anpassen
+        const aufgeklappt = klappe[i] ?? (vorschau ? false : dran)
         if (!aufgeklappt) {
           const fertige = saetze[i].filter((x) => x.fertig).length
           return (
@@ -1295,11 +1337,25 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                 </p>
               ) : null}
               <div className="satzknoepfe">
-                <button type="button" className="textknopf" onClick={() => setSaetze(saetze.map((ss, a) => (a === i ? [...ss, { ...ss[ss.length - 1], fertig: false }] : ss)))}>
+                <button
+                  type="button"
+                  className="textknopf"
+                  onClick={() => {
+                    setSaetze(saetze.map((ss, a) => (a === i ? [...ss, { ...ss[ss.length - 1], fertig: false }] : ss)))
+                    if (planbar) props.tagplan?.(planNr!, { stelle: i, saetze: saetze[i].length + 1 })
+                  }}
+                >
                   + Satz
                 </button>
                 {saetze[i].length > 1 ? (
-                  <button type="button" className="textknopf" onClick={() => setSaetze(saetze.map((ss, a) => (a === i ? ss.slice(0, -1) : ss)))}>
+                  <button
+                    type="button"
+                    className="textknopf"
+                    onClick={() => {
+                      setSaetze(saetze.map((ss, a) => (a === i ? ss.slice(0, -1) : ss)))
+                      if (planbar) props.tagplan?.(planNr!, { stelle: i, saetze: saetze[i].length - 1 })
+                    }}
+                  >
                     − Satz
                   </button>
                 ) : null}
@@ -1409,7 +1465,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               <Icon name="suche" groesse={18} />
               <input type="search" placeholder="Suchen, z. B. TRX oder Kabel" value={tauschSuche} onChange={(e) => setTauschSuche(e.target.value)} />
             </label>
-            <p className="infokurz">„Heute“ tauscht nur für diese Einheit. „Immer“ nimmt künftig statt {plaetze[tausch].uebung.name} die neue Übung, auch in deinem eigenen Plan.</p>
+            <p className="infokurz">
+              {vorschau ? "„Dieser Tag“ tauscht nur für diesen einen Tag und bleibt gespeichert, bis du ihn trainiert hast." : "„Heute“ tauscht nur für diese Einheit."} „Immer“ nimmt künftig statt {plaetze[tausch].uebung.name} die neue Übung, auch in deinem eigenen Plan.
+            </p>
             <Gruppe>
               {alternativen(profil, ort, plaetze[tausch].muster, plaetze[tausch].uebung.id)
                 .filter((a) => {
@@ -1425,7 +1483,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                     rechts={
                       <span className="tauschknoepfe">
                         <button type="button" className="knopf klein" onClick={() => tauschen(tausch, a.id, false)}>
-                          Heute
+                          {vorschau ? "Dieser Tag" : "Heute"}
                         </button>
                         <button type="button" className="knopf klein leise" onClick={() => tauschen(tausch, a.id, true)}>
                           Immer

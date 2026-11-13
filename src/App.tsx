@@ -3,6 +3,7 @@
 import { Toaster } from "sonner"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { texteLaden, uebung } from "./daten/uebungen/index"
+import { tagAnpassen, tagZuruecksetzen } from "./logik/eigenerPlan"
 import { prozentMethode } from "./daten/fakten"
 import { heute } from "./logik/plan"
 import { hatSport } from "./logik/auswahl"
@@ -314,6 +315,8 @@ export default function App() {
         profil.planart !== "eigen" && istEntlastung(w),
         w,
       )
+      // Der Tag ist gemacht: Anpassungen nur für diesen Tag werden nicht mehr gebraucht
+      if (e.plan_nr !== undefined) tagZuruecksetzen(d, e.plan_nr)
       if (e.datum !== tag) d.erledigt[d.erledigt.length - 1].geplant = e.datum
       if (schmerzVor !== undefined) d.erledigt[d.erledigt.length - 1].schmerz_vor = schmerzVor
       // gemessene Zeit von „Training starten“ bis „Training beenden“
@@ -413,7 +416,7 @@ export default function App() {
         {einstufen ? (
           <Einstufung daten={daten} aendern={aendern} fertig={() => setEinstufen(false)} zurueck={() => setEinstufen(false)} />
         ) : offen ? (
-          <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} ausschliessen={(id, neu) => aendern((d) => {
+          <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} tagplan={(nr, a) => aendern((d) => (a ? tagAnpassen(d, nr, a) : tagZuruecksetzen(d, nr)))} ausschliessen={(id, neu) => aendern((d) => {
             d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen.filter((x) => x !== id && x !== neu), id]
             // dauerhafter Tausch, auch im eigenen Plan; ein früherer Tausch zur neuen Übung zurück wird aufgehoben
             const e = { ...(d.ersatz || {}) }
