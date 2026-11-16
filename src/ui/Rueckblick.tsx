@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { uebung } from "../daten/uebungen/index"
 import { alternativen, heute, plusTage } from "../logik/plan"
 import { rehaAktiv } from "../logik/reha"
-import { MUSKELGRUPPEN, SAETZE_BIS, SAETZE_MIN, ablehnen, anteil, montagVon, rueckblick, satzplusWeg, uebernehmen, wochenZahlen, type Rueckblick, type Vorschlag } from "../logik/rueckblick"
+import { MUSKELGRUPPEN, PLAN_ZU_LANG_MIN, SAETZE_BIS, SAETZE_MIN, ablehnen, anteil, montagVon, rueckblick, satzplusWeg, uebernehmen, wochenZahlen, type Rueckblick, type Vorschlag } from "../logik/rueckblick"
 import type { Daten, Uebung } from "../logik/typen"
 import { Kurve } from "./Fortschritt"
 import { Blatt, Gruppe, Icon, Zeile } from "./ios"
@@ -107,6 +107,15 @@ function VorschlagKarte(props: { v: Vorschlag; daten: Daten; aendern: Aendern; f
     text = "Deine letzten Einheiten dauerten im Mittel " + v.ueber_min + " min länger als die geplanten " + v.budget + " min. Mit " + v.minuten_neu + " min fragt die App seltener, ob sie kürzen soll."
     knopf = "Auf " + v.minuten_neu + " min stellen"
     los = () => ja("Trainingstage stehen jetzt auf " + v.minuten_neu + " min.")
+  } else if (v.art === "zurueck") {
+    const summe = v.teile.reduce((n, t) => n + t.plus, 0)
+    titel = "Zusätzliche Sätze zurücknehmen"
+    text =
+      "Dein Plan braucht im Mittel " + v.ueber_min + " min mehr als die " + v.budget + " min, die du dir nimmst. Darum fallen regelmäßig Sätze weg, oft ganze Übungen am Ende. " +
+      "Früher übernommene Zusatzsätze (" + summe + " bei " + v.teile.length + (v.teile.length === 1 ? " Übung" : " Übungen") + ": " + v.teile.map((t) => t.name + " +" + t.plus).join(", ") + ") machen das noch länger. " +
+      "Für den Muskel zählen nur Sätze, die du wirklich machst: Ohne die Zusatzsätze passt mehr vom eigentlichen Plan in deine Zeit."
+    knopf = summe === 1 ? "Zusatzsatz zurücknehmen" : summe + " Zusatzsätze zurücknehmen"
+    los = () => ja("Zusatzsätze zurückgenommen. Der Plan gilt wieder wie im Kraftbuch.")
   } else {
     titel = v.name + ": Variante wechseln"
     text = "Seit drei Einheiten kein neuer Bestwert. Erst Schlaf, Essen und Technik prüfen; hilft das nicht, bringt eine andere Variante derselben Bewegung oft neuen Fortschritt."
@@ -222,6 +231,11 @@ export function RueckblickBlatt(props: { offen: boolean; onClose: () => void; da
         </div>
       </div>
       {meldung ? <p className="hinweistext">{meldung}</p> : null}
+      {r.planZeit && r.planZeit.ueber_min >= PLAN_ZU_LANG_MIN ? (
+        <p className="hinweistext klein">
+          Nach Plan bräuchtest du im Mittel {r.planZeit.budget + r.planZeit.ueber_min} min, du nimmst dir {r.planZeit.budget} min. Solange das so ist, schlägt die App keine weiteren Sätze vor: Sie würden nur wieder gestrichen.
+        </p>
+      ) : null}
 
       {r.vorschlaege.length && props.aendern ? (
         <>

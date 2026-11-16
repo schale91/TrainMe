@@ -194,6 +194,34 @@ describe("Vorschläge", () => {
     expect(rueckblick(d, "2026-11-02", "2026-11-09").vorschlaege.some((x) => x.art === "zeit")).toBe(false)
   })
 
+  it("Plan passt nicht in die Zeit: keine weiteren Sätze, sondern frühere Zusatzsätze zurücknehmen", () => {
+    const d = mitWochen()
+    // pünktlich fertig (die App hat gekürzt), aber nach Plan 15 min zu lang
+    const einheit = (t: string, geschaetzt: number) => ({ datum: t, titel: t, minuten: 50, saetze: 12, xp: 0, rekorde: [], dauer_min: 48, budget_min: 50, geschaetzt_min: geschaetzt })
+    d.erledigt = [einheit("2026-10-27", 58), einheit("2026-10-28", 65), einheit("2026-10-29", 66), einheit("2026-10-30", 77)]
+    d.satzplus = { latzug: { n: 2, seit: "2026-10-20" }, seitheben: { n: 1, seit: "2026-10-20" } }
+    const r = rueckblick(d, "2026-10-26", "2026-11-02")
+    expect(r.planZeit).toEqual({ einheiten: 4, ueber_min: 16, budget: 50 })
+    // gemessene Dauer im Budget: kein Zeitvorschlag, und trotz Lücke bei Rücken und Schultern keine Sätze
+    expect(r.vorschlaege.some((x) => x.art === "zeit" || x.art === "saetze")).toBe(false)
+    const z = r.vorschlaege.find((x) => x.art === "zurueck")!
+    expect(z.art === "zurueck" && z.teile.map((t) => t.uebung + "+" + t.plus)).toEqual(["latzug+2", "seitheben+1"])
+    uebernehmen(d, z, "2026-11-02")
+    expect(d.satzplus).toEqual({})
+    expect(rueckblick(d, "2026-10-26", "2026-11-02").vorschlaege.some((x) => x.art === "zurueck")).toBe(false)
+  })
+
+  it("Plan passt in die Zeit (oder zu wenig Messungen): Sätze wie bisher", () => {
+    const d = mitWochen()
+    const einheit = (t: string, geschaetzt: number) => ({ datum: t, titel: t, minuten: 50, saetze: 12, xp: 0, rekorde: [], dauer_min: 48, budget_min: 50, geschaetzt_min: geschaetzt })
+    d.erledigt = [einheit("2026-10-27", 52), einheit("2026-10-28", 48), einheit("2026-10-29", 54)]
+    expect(rueckblick(d, "2026-10-26", "2026-11-02").vorschlaege.some((x) => x.art === "saetze")).toBe(true)
+    d.erledigt = [einheit("2026-10-27", 80), einheit("2026-10-28", 80)]
+    const r = rueckblick(d, "2026-10-26", "2026-11-02")
+    expect(r.planZeit).toBeNull()
+    expect(r.vorschlaege.some((x) => x.art === "saetze")).toBe(true)
+  })
+
   it("Laufende Woche: der Schnitt kommt aus den abgeschlossenen Wochen", () => {
     const d = mitWochen()
     d.protokoll.push(p("2026-11-02", "latzug", [s(60, 10)]))

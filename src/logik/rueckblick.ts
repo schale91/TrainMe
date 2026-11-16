@@ -49,6 +49,8 @@ const SCHRITT_JE_WOCHE = 4
  * denselben Muskel an einem Tag werden gegen Ende schwächer. Die Zahl selbst ist eine Faustregel, keine Messgröße.
  */
 const SAETZE_JE_TAG = 10
+/** Ab so vielen Minuten, die der Plan im Mittel länger braucht als die Zeit, die du dir nimmst, kommen keine Sätze dazu */
+export const PLAN_ZU_LANG_MIN = 5
 
 const TAG = 86400000
 const plus = (d: string, n: number) => new Date(Date.parse(d + "T12:00:00Z") + n * TAG).toISOString().slice(0, 10)
@@ -184,6 +186,11 @@ export type Vorschlag =
   | { art: "maximum"; schluessel: string; uebung: string; name: string; alt: number; neu: number }
   /** Einheiten dauern regelmäßig länger als das Zeitbudget */
   | { art: "zeit"; schluessel: string; ueber_min: number; budget: number; minuten_neu: number }
+  /**
+   * Der Plan passt nicht mehr in die Zeit, die du dir nimmst, und früher übernommene Zusatzsätze machen ihn noch
+   * länger: sie zurücknehmen. ueber_min: so viel braucht der Plan im Mittel mehr als budget.
+   */
+  | { art: "zurueck"; schluessel: string; teile: { uebung: string; name: string; plus: number }[]; ueber_min: number; budget: number }
 
 export interface SatzTeil {
   uebung: string
@@ -203,6 +210,11 @@ export interface Rueckblick {
   trends: Trend[]
   /** Einheiten mit gemessener Zeit in der Woche: wie viele, und im Mittel wie viele Minuten über (+) oder unter (−) dem Budget */
   zeit: { einheiten: number; ueber_min: number } | null
+  /**
+   * Was der Plan laut Schätzung beim Start im Mittel mehr braucht als die Zeit, die du dir genommen hast (letzte bis zu
+   * vier Einheiten bis Wochenende, ab drei). Ab PLAN_ZU_LANG_MIN kürzt die App regelmäßig, dann keine weiteren Sätze.
+   */
+  planZeit: { einheiten: number; ueber_min: number; budget: number } | null
   vorschlaege: Vorschlag[]
 }
 
@@ -222,6 +234,15 @@ export function rueckblick(daten: Daten, montag: string, heute: string): Rueckbl
   const ende = plus(montag, 7)
   const gemessen = daten.erledigt.filter((e) => e.datum >= montag && e.datum < ende && e.dauer_min && e.budget_min)
   const zeit = gemessen.length ? { einheiten: gemessen.length, ueber_min: Math.round(gemessen.reduce((s, e) => s + (e.dauer_min as number) - (e.budget_min as number), 0) / gemessen.length) } : null
+
+  // Passt der Plan überhaupt in die Zeit? Die gemessene Dauer allein verrät das nicht: Wer pünktlich aufhört, weil
+  // die App Sätze streicht, ist im Budget, trainiert aber weniger als geplant. Darum die Schätzung beim Start.
+  const geplant = daten.erledigt.filter((e) => e.datum < ende && e.geschaetzt_min && e.budget_min).slice(-4)
+  const planZeit =
+    geplant.length >= 3
+      ? { einheiten: geplant.length, ueber_min: Math.round(median(geplant.map((e) => (e.geschaetzt_min as number) - (e.budget_min as number)))), budget: Math.round(median(geplant.map((e) => e.budget_min as number))) }
+      : null
+  const zuLang = !!planZeit && planZeit.ueber_min >= PLAN_ZU_LANG_MIN
 
   const profil = daten.profil
   const weg = daten.rueckblick?.weg || {}
@@ -246,7 +267,9 @@ export function rueckblick(daten: Daten, montag: string, heute: string): Rueckbl
   }
 
   // 2. Muskelgruppen unter dem Zielvolumen (nur Ziel Muskelaufbau, eigener Plan, genug Wochen zum Urteilen)
-  if (profil && profil.ziel === "muskelaufbau" && profil.planart === "eigen" && daten.eigenerPlan && wochen.length >= 2) {
+  // Passt der Plan schon jetzt nicht in die Zeit, würden weitere Sätze nur wieder gestrichen (und der Schnitt sänke
+  // weiter, weil nur gemachte Sätze zählen): dann keine.
+  if (profil && profil.ziel === "muskelaufbau" && profil.planart === "eigen" && daten.eigenerPlan && wochen.length >= 2 && !zuLang) {
     const kommend = offenePlanTage(daten, 10).slice(0, 10)
     const satzplus = daten.satzplus || {}
     const tageJeWoche = profil.woche.filter((t) => t.art === "training" && t.quelle !== "trainme").length
@@ -333,7 +356,15 @@ export function rueckblick(daten: Daten, montag: string, heute: string): Rueckbl
       if (ueber >= 5 && neu > jetzt && !ruht("zeit")) vorschlaege.push({ art: "zeit", schluessel: "zeit", ueber_min: Math.round(ueber), budget: Math.round(budget), minuten_neu: neu })
     }
   }
-  return { montag, laufend, woche, schnitt, wochenImSchnitt: wochen.length, trends: tr, zeit, vorschlaege }
+  // 5. Plan zu lang und Zusatzsätze im Plan: zurücknehmen, damit die Einheit wieder in die Zeit passt
+  if (zuLang && planZeit && !ruht("zurueck")) {
+    const teile = Object.entries(daten.satzplus || {})
+      .filter(([id, x]) => x.n > 0 && !!uebung(id))
+      .map(([id, x]) => ({ uebung: id, name: uebung(id)!.name, plus: x.n }))
+      .sort((a, b) => a.name.localeCompare(b.name, "de"))
+    if (teile.length) vorschlaege.push({ art: "zurueck", schluessel: "zurueck", teile, ueber_min: planZeit.ueber_min, budget: planZeit.budget })
+  }
+  return { montag, laufend, woche, schnitt, wochenImSchnitt: wochen.length, trends: tr, zeit, planZeit, vorschlaege }
 }
 
 /** Vorschlag übernehmen. wahl: bei „tauschen“ die neue Übung. */
@@ -350,6 +381,8 @@ export function uebernehmen(d: Daten, v: Vorschlag, heute: string, wahl?: string
     if (e[wahl] === v.uebung) delete e[wahl]
     d.ersatz = e
     if (d.profil) d.profil.ausgeschlossen = [...d.profil.ausgeschlossen.filter((x) => x !== v.uebung && x !== wahl), v.uebung]
+  } else if (v.art === "zurueck") {
+    for (const t of v.teile) satzplusWeg(d, t.uebung)
   } else if (v.art === "zeit" && d.profil) {
     d.profil.woche = d.profil.woche.map((t) => (t.art === "training" && (t.minuten || 0) < v.minuten_neu ? { ...t, minuten: v.minuten_neu } : t))
   }
