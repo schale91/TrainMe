@@ -12,6 +12,7 @@ import { aufwaermSaetze, backoffLast, backoffNachTopsatz, neuerBestwert, satzfor
 import { rehaAktiv, rehaAnpassung } from "../logik/reha"
 import { rirNeuZielen, rirText, rirZiele } from "../logik/rirverlauf"
 import { prozentVomMaximum } from "../logik/prozentring"
+import { tagMuskelnText } from "../logik/tagmuskeln"
 import { ProzentRing } from "./ProzentRing"
 
 /** Farbe der Schmerz-Ampel: 0 bis 2 grün, 3 bis 5 gelb, darüber rot. */
@@ -799,6 +800,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setSaetze(saetze.map((ss, k) => (k === i ? rirNeuZielen(ss, zAlt, zNeu).map((s) => (s.fertig || s.wdh !== mitteAlt ? s : { ...s, wdh: mitteNeu })) : ss)))
   }
 
+  // Welche Muskeln der Tag trainiert (nur Krafttage)
+  const tagMuskeln = tagMuskelnText(plaetze, 4)
+
   const vorgabeText = (p: Platz) => {
     const u = p.uebung
     const v = p.vorgabe
@@ -856,6 +860,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           <div style={{ width: (gesamt ? (erledigt / gesamt) * 100 : 0) + "%" }} />
         </div>
       }>
+      {tagMuskeln ? (
+        <p className="tagmuskeln">
+          <small>Trainiert</small> {tagMuskeln}
+        </p>
+      ) : null}
       <div className={"zeitkarte" + (beginn !== null && zuLang ? " knapp" : "")}>
         {vorschau ? (
           <>
