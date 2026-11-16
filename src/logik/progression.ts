@@ -4,6 +4,7 @@
 // Grundlagen (siehe docs/KONZEPT.md): RIR-Skala nach Zourdos et al. 2016, geschätztes Maximum nach Epley,
 // Wochenvolumen nach Schoenfeld et al. 2017, Nähe zum Versagen eher für Muskelaufbau als für Kraft.
 
+import { rirZiele } from "./rirverlauf"
 import { hatZiel } from "./auswahl"
 import { abrunden, hoeher, niedriger } from "./gewichte"
 import type { PlanProfil } from "./jahresplan"
@@ -209,10 +210,13 @@ export function vorgabe(profil: PlanProfil, rolle: Rolle, u: Uebung, saetze: num
 
   const alleOben = saetzeLetzte.every((s) => s.wdh >= hi)
   const alleUnten = saetzeLetzte.every((s) => s.wdh >= lo)
-  const minRir = Math.min(...saetzeLetzte.map((s) => s.rir))
+  // Jeder Satz zählt gegen sein eigenes Ziel: Bei Isolationsübungen ist der letzte Satz absichtlich eins näher am Limit
+  const zieleFuer = (n: number) => rirZiele(u, { modell, rir }, n)
+  const rirOk = saetzeLetzte.every((s, k) => s.rir >= zieleFuer(saetzeLetzte.length)[k])
   const zuSchwer = (p: Protokoll | null) => {
     const s = gezaehlt(p)
-    return s.length > 0 && (s.some((x) => x.wdh < lo) || Math.min(...s.map((x) => x.rir)) < rir - 1)
+    const z = zieleFuer(s.length)
+    return s.length > 0 && (s.some((x) => x.wdh < lo) || s.some((x, k) => x.rir < z[k] - 1))
   }
   const altLast = saetzeLetzte[0].last
 
@@ -223,7 +227,7 @@ export function vorgabe(profil: PlanProfil, rolle: Rolle, u: Uebung, saetze: num
     v.begruendung = alleOben && u.schwerer ? "Ganz oben im Bereich: Zeit für die schwerere Variante." : alleOben ? "Alle Sätze am oberen Ende, ein Satz mehr wäre der nächste Schritt." : "Letztes Mal bis " + bestWdh + " Wiederholungen, heute eine mehr."
   } else if (modell === "linear") {
     v.wdh_von = v.wdh_bis = lo
-    if (alleUnten && minRir >= rir) {
+    if (alleUnten && rirOk) {
       v.last = hoeher(altLast, lasten)
       v.begruendung = "Alle Sätze geschafft: eine Stufe mehr (" + kg(v.last) + ")."
     } else if (zuSchwer(letzte) && zuSchwer(vorletzte)) {
@@ -234,7 +238,7 @@ export function vorgabe(profil: PlanProfil, rolle: Rolle, u: Uebung, saetze: num
       v.begruendung = "Gleiches Gewicht, Ziel: alle Sätze mit " + lo + " Wiederholungen."
     }
   } else if (modell === "doppelt") {
-    if (alleOben && minRir >= rir) {
+    if (alleOben && rirOk) {
       v.last = hoeher(altLast, lasten)
       v.begruendung = v.last > altLast ? "Alle Sätze bei " + hi + " Wiederholungen: nächste Stufe, wieder ab " + lo + "." : "Oben angekommen, aber es gibt kein schwereres Gewicht: ein Satz mehr oder langsamer absenken."
     } else if (zuSchwer(letzte) && zuSchwer(vorletzte)) {

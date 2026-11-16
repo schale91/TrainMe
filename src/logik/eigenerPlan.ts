@@ -154,7 +154,7 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
   if (amrap) pu = { ...pu, wdh_von: amrap.von, wdh_bis: amrap.bis }
   const mitte = Math.round((pu.wdh_von + pu.wdh_bis) / 2)
   const pause = pu.pause_s ?? (rolle === "haupt" ? 180 : pu.gruppe ? 90 : 120)
-  const v: Vorgabe = { saetze: pu.saetze, wdh_von: pu.wdh_von, wdh_bis: pu.wdh_bis, rir, last: null, modell: "rir", pause_s: pause, begruendung: "" }
+  const v: Vorgabe = { saetze: pu.saetze, wdh_von: pu.wdh_von, wdh_bis: pu.wdh_bis, rir, last: null, modell: "rir", pause_s: pause, begruendung: "", ...(pu.rir !== undefined ? { rir_fest: true } : {}) }
   if (pu.zeit) {
     v.modell = "zeit"
     v.last = mitte

@@ -3784,3 +3784,11 @@ h2,
 .vorschaukopf b {
   font-size: 17px;
 }
+
+/* Prozentring neben dem Gewicht im Training */
+.prozentring { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: 0 0 34px; vertical-align: middle; }
+.prozentring svg { position: absolute; inset: 0; }
+.prozentring .spur { fill: none; stroke: var(--flaeche3); stroke-width: 3.5; }
+.prozentring .fuellung { fill: none; stroke: var(--akzent); stroke-width: 3.5; stroke-linecap: round; transition: stroke-dashoffset .25s ease; }
+.prozentring.schwer .fuellung { stroke: var(--gold); }
+.prozentring b { position: relative; font-size: 11px; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
