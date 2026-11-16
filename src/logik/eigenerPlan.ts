@@ -98,6 +98,13 @@ export function maximum(daten: Daten, id: string, vor = "9999-12-31"): { kg: num
   return ausVerlauf || ausMax
 }
 
+/**
+ * Varianten, die der Plan zwar in Prozent der Grundübung angibt, die man aber deutlich anders stark hebt: Ihre
+ * Prozente rechnen mit dem eigenen Maximum, sobald es eins gibt. Pausen- oder Blockvarianten gehören nicht dazu, dort
+ * meint der Plan ausdrücklich die Grundübung.
+ */
+export const EIGENES_MAXIMUM = new Set(["kreuzheben_gegenstand"])
+
 /** „AMRAP“, „max.“ oder „so viele wie möglich“: Wiederholungen bis kurz vor Schluss statt einer festen Zahl. */
 export const istAmrap = (pu: PlanUebung) => /\bamrap\b|so viele wie m(ö|oe)glich|^max\.?(\s*wdh\.?)?$/i.test(pu.wdh_text || "")
 
@@ -162,8 +169,11 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
   }
   if (pu.prozent) {
     v.modell = "prozent"
-    const basis = pu.basis || idVon(pu)
-    const max = maximum(daten, basis, datum)
+    // Im anderen Stand ist man anders stark: dann zählt das eigene Maximum, sobald es eins gibt (eingetragen oder
+    // aus den eigenen Sätzen), und erst ohne eigenes das der Grundübung
+    const eigenes = EIGENES_MAXIMUM.has(idVon(pu)) ? maximum(daten, idVon(pu), datum) : null
+    const basis = eigenes ? idVon(pu) : pu.basis || idVon(pu)
+    const max = eigenes || maximum(daten, basis, datum)
     const [lo, hi] = pu.prozent
     const anteil = (lo + hi) / 2
     const pzt = (x: number) => String(Math.round(x * 1000) / 10).replace(".", ",")
@@ -171,6 +181,7 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
     if (max) {
       v.last = runde(max.kg * anteil, lasten)
       v.begruendung = pz + " von " + kg(max.kg) + " kg (" + (max.quelle === "max" ? "dein Maximum vom " + max.datum.split("-").reverse().join(".") : "geschätzt aus deinen letzten Einheiten") + (basis !== idVon(pu) ? ", " + (planUebung(basis)?.name || basis) : "") + ")."
+      if (!eigenes && EIGENES_MAXIMUM.has(idVon(pu))) v.begruendung += " Für diese Variante gibt es noch keinen eigenen Wert. Ab dem ersten Mal rechnet TrainMe mit deinen eigenen Sätzen, weil man sie anders stark hebt."
     } else v.begruendung = pz + " von deinem Maximum. Unter Profil, „Kraftwerte neu einstufen“ kannst du es eintragen, dann rechnet TrainMe das Gewicht aus."
     if (amrap) v.begruendung += " AMRAP: so viele saubere Wiederholungen wie möglich, " + rir + " im Tank lassen; erwartet " + (amrap.von === amrap.bis ? "etwa " + amrap.von : "etwa " + amrap.von + " bis " + amrap.bis) + ". Trag ein, was du geschafft hast."
     return v
