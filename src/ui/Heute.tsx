@@ -9,6 +9,7 @@ import { MOBIL_SCHWERPUNKTE, heute, mobilitaetsEinheit, montagVon, plusTage, sch
 import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { tagesform } from "./gesundheit"
+import { tagMuskelnText } from "../logik/tagmuskeln"
 import { alleTage, tageswerte } from "../logik/gesundheit"
 import { letzterPlanTag, naechsterPlanTag, planZuEnde, ueberspringen } from "../logik/eigenerPlan"
 import { jahresplanVorschlag } from "../logik/jahresplan"
@@ -385,7 +386,8 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
             const am = plan.filter((x) => x.datum === wahl)
             return (am.length ? am : [undefined]).map((e, n) => {
               const fertig = e && istErledigt(daten, e)
-              const rollen = e ? Array.from(new Set(e.plaetze.map((p) => p.etikett || ROLLE[p.rolle]))).slice(0, 3).join(", ") : ""
+              // Krafttage: welche Muskeln der Tag trainiert; sonst (Mobilität, Ausdauer) die Rollen der Übungen
+              const rollen = e ? tagMuskelnText(e.plaetze, 3) || Array.from(new Set(e.plaetze.map((p) => p.etikett || ROLLE[p.rolle]))).slice(0, 3).join(", ") : ""
               return (
                 <Zeile
                   key={wahl + "-" + n}
@@ -402,7 +404,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                       <span className="leise">{WT_LANG[i]}: frei</span>
                     )
                   }
-                  untertitel={e ? WT_LANG[i] + " · " + e.minuten + " min · " + (merkmal(e)?.text ?? rollen) + (tagAngepasst(daten, e.plan_nr) ? " · von dir angepasst" : "") : undefined}
+                  untertitel={e ? WT_LANG[i] + " · " + e.minuten + " min · " + (merkmal(e)?.text ? merkmal(e)!.text + " · " : "") + rollen + (tagAngepasst(daten, e.plan_nr) ? " · von dir angepasst" : "") : undefined}
                   rechts={fertig ? <Sym name="haken" groesse={20} farbe="var(--gruen)" /> : undefined}
                   onClick={e ? () => props.oeffnen(e) : undefined}
                 />
