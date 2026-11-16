@@ -444,6 +444,8 @@ export interface Vorgabe {
   begruendung: string
   /** Erster Satz als Topsatz, danach Back-off-Sätze mit etwa 10 % weniger */
   topsatz?: boolean
+  /** Der Plan gibt das RIR selbst vor (Kraftbuch): dann bleibt es für alle Sätze gleich */
+  rir_fest?: boolean
 }
 
 export type Progressionsmodell = "linear" | "doppelt" | "rir" | "prozent" | "qualitaet" | "zeit"

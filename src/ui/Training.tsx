@@ -10,6 +10,9 @@ import { pauseNachSatz, satzAnpassung, type Anpassung } from "../logik/progressi
 import { alsDropsatz, dropMoeglich, dropVorschlag, zweiZuEinem } from "../logik/dropsatz"
 import { aufwaermSaetze, backoffLast, backoffNachTopsatz, neuerBestwert, satzformVon, scheibenProSeite, stangeVon, unplausibel } from "../logik/satzhilfen"
 import { rehaAktiv, rehaAnpassung } from "../logik/reha"
+import { rirNeuZielen, rirText, rirZiele } from "../logik/rirverlauf"
+import { prozentVomMaximum } from "../logik/prozentring"
+import { ProzentRing } from "./ProzentRing"
 
 /** Farbe der Schmerz-Ampel: 0 bis 2 grün, 3 bis 5 gelb, darüber rot. */
 const ampel = (n: number) => (n > 5 ? "ampel rot" : n >= 3 ? "ampel gelb" : "ampel gruen")
@@ -76,12 +79,14 @@ function startSaetze(p: Platz, daten: Daten, form: Satzform = "gleich", lasten: 
   const v = p.vorgabe
   const letzte = verlauf(daten, p.uebung.id).slice(-1)[0]
   const last = v.last !== null && p.uebung.belastung === "gewicht" ? v.last : letzte && letzte.saetze[0] && p.uebung.belastung === "gewicht" ? letzte.saetze[0].last : null
-  const saetze: Eingabe[] = Array.from({ length: v.saetze }, () => {
+  // RIR-Ziel je Satz: bei Isolation und Maschinen der letzte Satz eins näher am Limit (siehe logik/rirverlauf.ts)
+  const rirJeSatz = rirZiele(p.uebung, v, v.saetze, !!daten.profil && rehaAktiv(daten.profil))
+  const saetze: Eingabe[] = Array.from({ length: v.saetze }, (_, k) => {
     if (p.uebung.belastung === "zeit") return { last: null, wdh: 1, rir: v.rir, sekunden: v.last || 30, fertig: false }
     if (p.uebung.belastung === "distanz") return { last: null, wdh: 1, rir: 4, fertig: false }
     // Vorbelegt mit der Mitte des Bereichs: Wer nur abhakt, trägt keine zu optimistischen Werte ein
     const band = bandhilfeMoeglich(p.uebung) ? daten.bandhilfe?.[p.uebung.id] : undefined
-    return { last, wdh: mitte(v), rir: v.rir, fertig: false, ...(band ? { hilfe_band: band, hilfe_kg: hilfeKg(daten, band) } : {}) }
+    return { last, wdh: mitte(v), rir: rirJeSatz[k] ?? v.rir, fertig: false, ...(band ? { hilfe_band: band, hilfe_kg: hilfeKg(daten, band) } : {}) }
   })
   // Dropsatz: der letzte Satz bekommt die Drop-Stufen
   if (form === "drop") return saetze.map((s, k) => (k === saetze.length - 1 ? alsDropsatz(s, lasten) : s))
@@ -155,6 +160,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [kurveOffen, setKurveOffen] = useState<number | null>(null)
   const [wechsel, setWechsel] = useState<{ nach: number; grund: string } | null>(null)
   const [rirHilfe, setRirHilfe] = useState(false)
+  const [zielOffen, setZielOffen] = useState<number | null>(null)
   const [warumOffen, setWarumOffen] = useState<number | null>(null)
   // Fokusansicht: offen ist die Übung, die dran ist. Andere sind eine Zeile und lassen sich von Hand auf- und zuklappen.
   const [klappe, setKlappe] = useState<Record<number, boolean | undefined>>({})
@@ -772,6 +778,27 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
     setTauschSuche("")
   }
 
+  /**
+   * Ziele einer Übung für heute ändern (Wiederholungsbereich, RIR). Noch nicht abgehakte Sätze, die noch den alten
+   * Vorgabewerten entsprechen, ziehen mit; was von Hand verstellt wurde, bleibt. Ein von Hand gesetztes RIR gilt dann für
+   * alle Sätze (kein tieferes Ziel im letzten).
+   */
+  const zielAendern = (i: number, neu: { wdh_von?: number; wdh_bis?: number; rir?: number }) => {
+    const p = plaetze[i]
+    const alt = p.vorgabe
+    const von = Math.max(1, Math.min(40, neu.wdh_von ?? alt.wdh_von))
+    const bis = Math.max(von, Math.min(40, neu.wdh_bis ?? alt.wdh_bis))
+    const vorgabe: Vorgabe = { ...alt, wdh_von: von, wdh_bis: bis, rir: neu.rir === undefined ? alt.rir : Math.max(0, Math.min(4, neu.rir)), ...(neu.rir !== undefined ? { rir_fest: true } : {}) }
+    const n = saetze[i].length
+    const zAlt = rirZiele(p.uebung, alt, n, reha)
+    const zNeu = rirZiele(p.uebung, vorgabe, n, reha)
+    const mitteAlt = mitte(alt)
+    const mitteNeu = mitte(vorgabe)
+    const bereichNeu = von !== alt.wdh_von || bis !== alt.wdh_bis
+    setPlaetze(plaetze.map((x, k) => (k === i ? { ...x, vorgabe, ...(bereichNeu ? { plantext: undefined } : {}) } : x)))
+    setSaetze(saetze.map((ss, k) => (k === i ? rirNeuZielen(ss, zAlt, zNeu).map((s) => (s.fertig || s.wdh !== mitteAlt ? s : { ...s, wdh: mitteNeu })) : ss)))
+  }
+
   const vorgabeText = (p: Platz) => {
     const u = p.uebung
     const v = p.vorgabe
@@ -1048,10 +1075,21 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             <div className="vorgabezeile">
               <span className="vorgabe">{form === "topsatz" && !p.plantext ? "1 Topsatz + " + (saetze[i].length - 1) + " Back-off × " + mitte(v) : vorgabeText(p)}</span>
               {v.last !== null && u.belastung === "gewicht" ? <span className="vorgabe gewicht">{(form === "topsatz" ? "Top " : "") + lastText(v.last, geraet)}</span> : null}
+              {(() => {
+                // Anteil vom Maximum für das Gewicht des nächsten offenen Satzes (folgt deiner Wahl)
+                const offen = saetze[i].find((x) => !x.fertig) ?? saetze[i][saetze[i].length - 1]
+                const pm = prozentVomMaximum(daten, u, offen?.last ?? v.last, v.wdh_bis)
+                return pm ? <ProzentRing wert={pm} /> : null
+              })()}
               {form === "topsatz" && v.last !== null ? <span className="vorgabe gewicht leise">Back-off {lastText(backoffLast(v.last, lasten), geraet)}</span> : null}
               {zeigeRir ? (
                 <button type="button" className="vorgabe tank" onClick={() => setRirHilfe(true)}>
-                  {v.rir} im Tank
+                  {rirText(rirZiele(u, v, saetze[i].length, reha))}
+                </button>
+              ) : null}
+              {zeigeRir ? (
+                <button type="button" className="vorgabe tank" aria-label={"Ziele für " + u.name + " ändern"} onClick={() => setZielOffen(i)}>
+                  Ziele ändern
                 </button>
               ) : null}
               {v.pause_s > 0 && p.rolle !== "ausdauer" ? <span className="vorgabe leise">Pause {v.pause_s >= 120 ? zahl(v.pause_s / 60) + " min" : v.pause_s + " s"}</span> : null}
@@ -1341,7 +1379,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                   type="button"
                   className="textknopf"
                   onClick={() => {
-                    setSaetze(saetze.map((ss, a) => (a === i ? [...ss, { ...ss[ss.length - 1], fertig: false }] : ss)))
+                    setSaetze(saetze.map((ss, a) => (a === i ? rirNeuZielen([...ss, { ...ss[ss.length - 1], fertig: false }], rirZiele(u, v, ss.length, reha), rirZiele(u, v, ss.length + 1, reha)) : ss)))
                     if (planbar) props.tagplan?.(planNr!, { stelle: i, saetze: saetze[i].length + 1 })
                   }}
                 >
@@ -1352,7 +1390,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                     type="button"
                     className="textknopf"
                     onClick={() => {
-                      setSaetze(saetze.map((ss, a) => (a === i ? ss.slice(0, -1) : ss)))
+                      setSaetze(saetze.map((ss, a) => (a === i ? rirNeuZielen(ss.slice(0, -1), rirZiele(u, v, ss.length, reha), rirZiele(u, v, ss.length - 1, reha)) : ss)))
                       if (planbar) props.tagplan?.(planNr!, { stelle: i, saetze: saetze[i].length - 1 })
                     }}
                   >
@@ -1493,6 +1531,33 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                   />
                 ))}
             </Gruppe>
+          </>
+        ) : null}
+      </Blatt>
+
+      <Blatt offen={zielOffen !== null} onClose={() => setZielOffen(null)} titel={zielOffen !== null ? "Ziele: " + plaetze[zielOffen].uebung.name : ""}>
+        {zielOffen !== null ? (
+          <>
+            <p className="infokurz">Gilt für heute. Die Sätze, die du noch nicht verändert hast, ziehen mit.</p>
+            {(
+              [
+                { feld: "wdh_von", name: "Wiederholungen ab", wert: plaetze[zielOffen].vorgabe.wdh_von, min: 1, max: 40 },
+                { feld: "wdh_bis", name: "Wiederholungen bis", wert: plaetze[zielOffen].vorgabe.wdh_bis, min: 1, max: 40 },
+                { feld: "rir", name: "Im Tank", wert: plaetze[zielOffen].vorgabe.rir, min: 0, max: 4 },
+              ] as const
+            ).map((z) => (
+              <div key={z.feld} className="zeitwahl" role="group" aria-label={z.name}>
+                <span>{z.name}</span>
+                <button type="button" className="textknopf" aria-label={z.name + " weniger"} disabled={z.wert <= z.min} onClick={() => zielAendern(zielOffen, { [z.feld]: z.wert - 1 })}>
+                  −
+                </button>
+                <b>{z.wert}</b>
+                <button type="button" className="textknopf" aria-label={z.name + " mehr"} disabled={z.wert >= z.max} onClick={() => zielAendern(zielOffen, { [z.feld]: z.wert + 1 })}>
+                  +
+                </button>
+              </div>
+            ))}
+            <p className="gruppenfuss">Weniger Reserve heißt näher ans Muskelversagen: mehr Reiz, aber auch mehr Ermüdung. Bei schweren Grundübungen lieber 1 bis 2 im Tank lassen.</p>
           </>
         ) : null}
       </Blatt>
