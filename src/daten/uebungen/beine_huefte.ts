@@ -237,8 +237,8 @@ export const BEINE_HUEFTE: UebungVoll[] = [
   },
   {
     id: "kreuzheben_gegenstand",
-    name: "Kreuzheben im Gegenstand",
-    auch: ["Opposite Stance Deadlift", "Off-Stance Deadlift"],
+    name: "Kreuzheben im anderen Stand",
+    auch: ["Opposite Stance Deadlift", "Off-Stance Deadlift", "Kreuzheben im Gegenstand"],
     muster: "hueftstreckung",
     art: "kraft",
     muskeln: ["gesaess", "beinbeuger", "ruecken_unten"],
