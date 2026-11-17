@@ -87,6 +87,9 @@ export function PlanSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void
           />
         </div>
       </Gruppe>
+      <Gruppe titel="Wochenjournal" fuss={profil.wochenjournal ? "Am letzten Trainingstag der Woche kommen im Aufräumen vier kurze Fragen: Erholung, Lust, Stress und Beschwerden. Ohne Ausfüllen lässt sich das Training nicht beenden. Wer nicht möchte, überspringt die Woche (einmal je Woche)." : "Aus. Kurze Fragen am Ende der Trainingswoche, die der Wochenrückblick später auswerten kann."}>
+        <Zeile titel="Wochenjournal am Wochenende" untertitel="Pflicht im Aufräumen, mit Überspringen" rechts={<Schalter an={!!profil.wochenjournal} onChange={(an) => props.aendern((d) => void (d.profil!.wochenjournal = an ? heute() : undefined))} />} />
+      </Gruppe>
       <Gruppe titel="Eigener Plan" fuss="Je Zeile eine Übung, z. B. „Brücke 3 x 12“, „Wandsitzen 3 x 30 s“, „Kniebeuge 4 x 5 75 %“, „Curl 3 x 10-12, 2 im Tank“. „Tag 1: Name“ beginnt einen Tag, „A1:“ und „A2:“ bilden einen Supersatz.">
         <Zeile titel="Nach dem letzten Tag von vorn" untertitel="Für Pläne, die sich wiederholen, z. B. von der Physiotherapie" rechts={<Schalter an={!!daten.eigenerPlan?.wiederholen} onChange={(an) => props.aendern((d) => void (d.eigenerPlan && (d.eigenerPlan.wiederholen = an)))} />} />
       </Gruppe>

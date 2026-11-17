@@ -3147,11 +3147,13 @@ select.ampel.rot {
   z-index: 60;
   background: rgba(8, 8, 10, 0.94);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
   padding: 16px;
 }
 .aufraeumenkarte {
+  margin: auto;
   background: var(--flaeche);
   border-radius: var(--gross);
   padding: 24px 18px;
@@ -3796,3 +3798,21 @@ h2,
 /* Muskelzeile am Trainingstag */
 .tagmuskeln { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--text); }
 .tagmuskeln small { font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--leise); }
+
+/* Wochenjournal */
+.journal { display: flex; flex-direction: column; gap: 14px; padding: 16px; text-align: left; background: var(--flaeche2, var(--flaeche3)); border-radius: var(--gross); border: 1px solid var(--akzent); }
+.journal.fertig { text-align: center; border-color: var(--gruen, var(--akzent)); }
+.journal h3 { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 20px; }
+.journal h3 small { font-size: 13px; font-weight: 500; color: var(--leise); }
+.aufraeumenkarte .journal p, .journal p { margin: 0; }
+.journalbekannt { font-size: 14px; color: var(--text); }
+.journalbekannt small { display: block; font-size: 11px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--leise); }
+.journal .skala { display: flex; flex-direction: column; gap: 6px; }
+.journal .frage { font-weight: 600; font-size: 15px; }
+.journal .frage small { font-weight: 400; color: var(--leise); }
+.journal .stufen { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.journal .stufe { height: 44px; border-radius: 12px; border: 1px solid var(--flaeche3); background: var(--flaeche); color: var(--text); font-size: 17px; font-weight: 700; }
+.journal .stufe.an { background: var(--akzent); border-color: var(--akzent); color: var(--auf-akzent); }
+.journal .enden { display: flex; justify-content: space-between; color: var(--leise); }
+.journal .enden small { font-size: 12px; }
+.journal input[type="text"] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--flaeche3); background: var(--flaeche); color: var(--text); font-size: 16px; }

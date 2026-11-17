@@ -15,6 +15,7 @@ import { Sym, SymKachel } from "./symbole"
 import Koerpergewicht from "./Koerper"
 import Dehnfigur from "./Dehnfigur"
 import { RueckblickBlatt, RueckblickKarte } from "./Rueckblick"
+import { JournalVerlauf } from "./JournalVerlauf"
 import { TEST_DEHNUNGEN } from "../daten/dehnungen/tests"
 
 type Punkt = { datum: string; wert: number }
@@ -409,6 +410,7 @@ export default function Fortschritt(props: { daten: Daten; aendern: (f: (d: Date
       {/* Wochenrückblick ganz oben, in jedem Reiter: Die Marke an „Fortschritt“ in der Leiste unten führt hierher */}
       <RueckblickKarte daten={props.daten} onClick={() => setRueck(true)} />
       <RueckblickBlatt offen={rueck} onClose={() => setRueck(false)} daten={props.daten} aendern={props.aendern} />
+      <JournalVerlauf daten={props.daten} />
       <Segment
         werte={[
           { id: "kraft", name: "Kraft" },

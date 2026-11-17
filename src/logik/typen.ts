@@ -352,6 +352,11 @@ export interface Profil {
   aufwaermen?: "plan" | "grosse_vier"
   /** Minuten Aufräumen nach dem letzten Satz, mit Countdown, der sich nicht wegklicken lässt (0 oder fehlt: aus) */
   aufraeumen_min?: number
+  /**
+   * Wochenjournal an: Datum (JJJJ-MM-TT), ab dem es gilt. Am letzten Trainingstag der Woche muss es im Aufräumen
+   * ausgefüllt oder für diese Woche übersprungen werden. Fehlt: aus.
+   */
+  wochenjournal?: string
   /** Feste Zusatzeinheiten neben dem Plan (z. B. morgens laufen) */
   bausteine?: Baustein[]
 }
@@ -607,6 +612,8 @@ export interface Daten {
    * diesen einen Tag und geht beim Abgleich mit auf die anderen Geräte.
    */
   tagplan?: Record<string, TagAnpassung>
+  /** Wochenjournal je Woche (Montag der Woche → Eintrag), siehe logik/wochenjournal.ts */
+  wochenjournal?: Record<string, Wochenjournal>
   /** Wochenrückblick: abgelehnte Vorschläge (Schlüssel → Datum), sie kommen erst nach einigen Wochen wieder */
   rueckblick?: { weg?: Record<string, string> }
   /** Band als Unterstützung je Körpergewichtsübung (Farbe) und eigene kg-Werte je Farbe */
@@ -635,4 +642,21 @@ export interface Tageswerte {
   schlaf_min?: number
   ruhepuls?: number
   hrv?: number
+}
+
+/** Eintrag im Wochenjournal: Selbsteinschätzung am Ende der Trainingswoche, 1 (schlecht) bis 5 (sehr gut) */
+export interface Wochenjournal {
+  /** Montag der Woche, auf die sich der Eintrag bezieht */
+  woche: string
+  /** Tag, an dem er gemacht wurde */
+  datum: string
+  erholung?: number
+  lust?: number
+  /** 5 = kaum Stress */
+  stress?: number
+  /** Körperstellen mit Beschwerden; leer: keine */
+  stellen?: Gelenk[]
+  notiz?: string
+  /** diese Woche übersprungen (die Frage kommt für diese Woche nicht wieder) */
+  uebersprungen?: boolean
 }
