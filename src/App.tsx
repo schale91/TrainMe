@@ -416,7 +416,7 @@ export default function App() {
         {einstufen ? (
           <Einstufung daten={daten} aendern={aendern} fertig={() => setEinstufen(false)} zurueck={() => setEinstufen(false)} />
         ) : offen ? (
-          <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} tagplan={(nr, a) => aendern((d) => (a ? tagAnpassen(d, nr, a) : tagZuruecksetzen(d, nr)))} ausschliessen={(id, neu) => aendern((d) => {
+          <Training daten={daten} einheit={offen} zurueck={() => setOffen(null)} abschliessen={fertig} tagplan={(nr, a) => aendern((d) => (a ? tagAnpassen(d, nr, a) : tagZuruecksetzen(d, nr)))} journal={(e) => aendern((d) => void (d.wochenjournal = { ...(d.wochenjournal || {}), [e.woche]: e }))} ausschliessen={(id, neu) => aendern((d) => {
             d.profil!.ausgeschlossen = [...d.profil!.ausgeschlossen.filter((x) => x !== id && x !== neu), id]
             // dauerhafter Tausch, auch im eigenen Plan; ein früherer Tausch zur neuen Übung zurück wird aufgehoben
             const e = { ...(d.ersatz || {}) }

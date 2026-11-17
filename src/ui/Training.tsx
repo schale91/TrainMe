@@ -4,7 +4,7 @@ import { hatSport } from "../logik/auswahl"
 import { toast as meldung } from "sonner"
 import NumberFlow from "@number-flow/react"
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
-import { alternativen, erlaubt, heute, lastGeraet, lastenAn, mitAlltag, passtAnOrt, platzMit, verlauf } from "../logik/plan"
+import { alternativen, erlaubt, heute, plusTage, lastGeraet, lastenAn, mitAlltag, passtAnOrt, platzMit, verlauf } from "../logik/plan"
 import { abrunden, BANDFARBEN, bandVonStufe, hoeher, lastText, niedriger, stufeVonBand } from "../logik/gewichte"
 import { pauseNachSatz, satzAnpassung, type Anpassung } from "../logik/progression"
 import { alsDropsatz, dropMoeglich, dropVorschlag, zweiZuEinem } from "../logik/dropsatz"
@@ -13,14 +13,17 @@ import { rehaAktiv, rehaAnpassung } from "../logik/reha"
 import { rirNeuZielen, rirText, rirZiele } from "../logik/rirverlauf"
 import { prozentVomMaximum } from "../logik/prozentring"
 import { tagMuskelnText } from "../logik/tagmuskeln"
+import { journalFaellig } from "../logik/wochenjournal"
+import { wochenZahlen } from "../logik/rueckblick"
+import { alleTage, formSchwach, tageswerte } from "../logik/gesundheit"
+import { WochenjournalKarte } from "./WochenjournalKarte"
 import { ProzentRing } from "./ProzentRing"
 
 /** Farbe der Schmerz-Ampel: 0 bis 2 grün, 3 bis 5 gelb, darüber rot. */
 const ampel = (n: number) => (n > 5 ? "ampel rot" : n >= 3 ? "ampel gelb" : "ampel gruen")
-import type { Daten, Einheit, Platz, Protokoll, Satz, Satzform, Uebung, Vorgabe } from "../logik/typen"
+import type { Daten, Einheit, Platz, Protokoll, Satz, Satzform, Uebung, Vorgabe, Wochenjournal } from "../logik/typen"
 import { Blatt, Gruppe, Icon, Seite, useEbene, Zeile } from "./ios"
 import { pauseStarten, pauseStoppen } from "./pausenTimer"
-import { alleTage, formSchwach, tageswerte } from "../logik/gesundheit"
 import { ebeneOeffnen } from "./navigation"
 import { bruecke } from "./lebenswelt"
 import { ROLLE, WT_LANG, datumText, grundText, zahl } from "./texte"
@@ -116,7 +119,7 @@ function piep() {
 const suchNormal = (t: string) => t.trim().toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss").replace(/[-\s]+/g, " ")
 
 
-export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number, zeit?: TrainingsZeit) => void; ausschliessen: (id: string, neu?: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void; tagplan?: (nr: number, a: { stelle: number; tausch?: string; saetze?: number } | null) => void }) {
+export default function Training(props: { daten: Daten; einheit: Einheit; zurueck: () => void; abschliessen: (e: Einheit, p: Protokoll[], vollstaendig: boolean, schmerzVor?: number, zeit?: TrainingsZeit) => void; ausschliessen: (id: string, neu?: string) => void; bandfarbe?: (id: string, farbe: string | null) => void; satzform?: (id: string, form: Satzform) => void; bandhilfe?: (id: string, farbe: string | null) => void; bandhilfeKg?: (farbe: string, kg: number) => void; tagplan?: (nr: number, a: { stelle: number; tausch?: string; saetze?: number } | null) => void; journal?: (e: Wochenjournal) => void }) {
   const { daten, einheit } = props
   const profil = daten.profil!
   // Reha: Schmerz je Satz statt Reserve, Schmerz vor dem Training
@@ -162,6 +165,11 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const [wechsel, setWechsel] = useState<{ nach: number; grund: string } | null>(null)
   const [rirHilfe, setRirHilfe] = useState(false)
   const [zielOffen, setZielOffen] = useState<number | null>(null)
+  // Wochenjournal: am letzten Trainingstag der Woche Pflicht im Aufräumen (oder vor dem Beenden), siehe logik/wochenjournal.ts
+  const [journalFaelligkeit] = useState(() => journalFaellig(daten, einheit.datum))
+  const [journalFertig, setJournalFertig] = useState(false)
+  const [journalBlatt, setJournalBlatt] = useState(false)
+  const journalOffen = !!journalFaelligkeit && !journalFertig
   const [warumOffen, setWarumOffen] = useState<number | null>(null)
   // Fokusansicht: offen ist die Übung, die dran ist. Andere sind eine Zeile und lassen sich von Hand auf- und zuklappen.
   const [klappe, setKlappe] = useState<Record<number, boolean | undefined>>({})
@@ -704,6 +712,41 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   // Aufräumen: nach dem letzten Satz (oder mit „Training beenden“) beginnt ein Countdown; erst danach lässt sich das
   // Training beenden. Zurück geht nur, um doch noch weiterzutrainieren.
   const alleFertig = erledigt > 0 && saetze.every((ss) => ss.every((s) => s.fertig))
+  // Was die App für das Journal schon weiß: Einheiten und Sätze der Woche (mit der heutigen) und die Werte der Uhr
+  const journalBekannt = (woche: string): string[] => {
+    const ende = plusTage(woche, 6)
+    const z = wochenZahlen(daten, woche)
+    const heuteDabei = einheit.datum >= woche && einheit.datum <= ende && erledigt > 0
+    const einheiten = z.einheiten + (heuteDabei && !daten.protokoll.some((p) => p.datum === einheit.datum) ? 1 : 0)
+    const aus = [einheiten + (einheiten === 1 ? " Einheit, " : " Einheiten, ") + (z.saetze + (heuteDabei ? erledigt : 0)) + " Sätze"]
+    const tage = Object.entries(alleTage(daten)).filter(([d]) => d >= woche && d <= ende).map(([, t]) => t)
+    const mittel = (f: "schlaf_min" | "ruhepuls") => {
+      const w = tage.map((t) => t[f]).filter((x): x is number => typeof x === "number" && x > 0)
+      return w.length ? Math.round(w.reduce((a, b) => a + b, 0) / w.length) : null
+    }
+    const schlaf = mittel("schlaf_min")
+    if (schlaf !== null) aus.push("Schlaf im Schnitt " + Math.floor(schlaf / 60) + " h " + (schlaf % 60) + " min")
+    const puls = mittel("ruhepuls")
+    if (puls !== null) aus.push("Ruhepuls " + puls)
+    return aus
+  }
+  const journalKarte = journalFaelligkeit ? (
+    <WochenjournalKarte
+      woche={journalFaelligkeit.woche}
+      nachtrag={journalFaelligkeit.nachtrag}
+      datum={einheit.datum}
+      bekannt={journalBekannt(journalFaelligkeit.woche)}
+      fertig={journalFertig}
+      onSpeichern={(e) => {
+        props.journal?.(e)
+        setJournalFertig(true)
+      }}
+      onUeberspringen={(e) => {
+        props.journal?.(e)
+        setJournalFertig(true)
+      }}
+    />
+  ) : null
   const aufrRest = aufraeumenAb !== null ? Math.max(0, aufraeumenAb + aufrMin * 60000 - jetzt) : 0
   const aufraeumenStarten = () => {
     const t = Date.now()
@@ -747,10 +790,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   }, [aufraeumenAb, sperrNr])
   const beendenDruecken = () => {
     if (beginn !== null && aufrMin > 0 && aufraeumenAb === null) return aufraeumenStarten()
+    // Ohne Aufräumen kommt das Wochenjournal als Blatt vor dem Beenden
+    if (journalOffen) return setJournalBlatt(true)
     fertig()
   }
   const fertig = () => {
     if (aufrMin > 0 && aufraeumenAb !== null && aufrRest > 0) return
+    if (journalOffen) return
     const protokolle: Protokoll[] = plaetze
       .map((p, i) => ({ datum: einheit.datum, uebung: p.uebung.id, saetze: saetze[i].filter((s) => s.fertig).map(({ fertig: _f, ...s }) => s), ...(p.uebung.id.startsWith(FREI) ? { name: p.uebung.name } : {}) }))
       .filter((p) => p.saetze.length > 0)
@@ -1449,8 +1495,9 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
               <NumberFlow value={Math.floor(aufrRest / 60000)} />:<NumberFlow value={Math.floor((aufrRest % 60000) / 1000)} format={{ minimumIntegerDigits: 2 }} />
             </div>
             <p>Scheiben abnehmen, Hanteln und Stange zurück, Bank und Griffe abwischen. Erst danach lässt sich das Training beenden.</p>
-            <button type="button" className="knopf voll gross" disabled={aufrRest > 0} onClick={fertig}>
-              {aufrRest > 0 ? "Training beenden geht nach dem Aufräumen" : "Training beenden"}
+            {journalKarte}
+            <button type="button" className="knopf voll gross" disabled={aufrRest > 0 || journalOffen} onClick={fertig}>
+              {aufrRest > 0 ? "Training beenden geht nach dem Aufräumen" : journalOffen ? "Erst das Wochenjournal ausfüllen" : "Training beenden"}
             </button>
             <button type="button" className="textknopf" onClick={zurueckZumTraining}>
               Doch noch nicht fertig: zurück zum Training
@@ -1542,6 +1589,13 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             </Gruppe>
           </>
         ) : null}
+      </Blatt>
+
+      <Blatt offen={journalBlatt && aufraeumenAb === null} onClose={() => setJournalBlatt(false)} titel="Vor dem Beenden">
+        {journalKarte}
+        <button type="button" className="knopf voll gross" disabled={journalOffen} onClick={fertig}>
+          Training beenden
+        </button>
       </Blatt>
 
       <Blatt offen={zielOffen !== null} onClose={() => setZielOffen(null)} titel={zielOffen !== null ? "Ziele: " + plaetze[zielOffen].uebung.name : ""}>
