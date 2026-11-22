@@ -9,7 +9,8 @@
 
 import { abrunden } from "./gewichte"
 import { rehaAktiv } from "./reha"
-import type { Daten, Einheit, Krankheit, Platz, Schonung, Uebung } from "./typen"
+import { formSchwach } from "./gesundheit"
+import type { Daten, Einheit, Krankheit, Platz, Schonung, Tageswerte, Uebung } from "./typen"
 
 export const SYMPTOME = [
   { id: "fieber", text: "Fieber (ab 38 °C)" },
@@ -52,15 +53,17 @@ export function aktiveKrankheit(daten: Pick<Daten, "profil" | "krankheiten">, da
  * Krank melden oder die Symptome der laufenden Krankheit ändern. Ein Ja bei einem der Allgemeinsymptome macht daraus
  * „allgemein“ (Pause); das bleibt, auch wenn es später besser wird, weil es die Rückkehr bestimmt.
  */
-export function krankMelden(d: Daten, datum: string, symptome: string[]): void {
+export function krankMelden(d: Daten, datum: string, symptome: string[], seit = datum): void {
   const allgemein = symptome.length > 0
   const fieber = symptome.indexOf("fieber") >= 0
+  // nachträglich eintragen: seit liegt in der Vergangenheit, aber nie in der Zukunft
+  const ab = seit > datum ? datum : seit
   const k = aktiveKrankheit(d, datum)
   const liste = [...(d.krankheiten || [])]
   if (k) {
-    liste[liste.length - 1] = { ...k, art: k.art === "allgemein" || allgemein ? "allgemein" : "hals", ...(k.fieber || fieber ? { fieber: true } : {}) }
+    liste[liste.length - 1] = { ...k, seit: ab < k.seit ? ab : k.seit, art: k.art === "allgemein" || allgemein ? "allgemein" : "hals", ...(k.fieber || fieber ? { fieber: true } : {}) }
   } else {
-    liste.push({ seit: datum, art: allgemein ? "allgemein" : "hals", ...(fieber ? { fieber: true } : {}) })
+    liste.push({ seit: ab, art: allgemein ? "allgemein" : "hals", ...(fieber ? { fieber: true } : {}) })
   }
   d.krankheiten = liste
 }
@@ -187,4 +190,34 @@ export function wocheMitKrankheit(daten: Pick<Daten, "krankheiten">, montag: str
 export function schonTage(daten: Pick<Daten, "krankheiten" | "erledigt">, heute: string): (datum: string) => boolean {
   const schon = new Set(daten.erledigt.filter((e) => e.schon).map((e) => e.datum))
   return (d) => schon.has(d) || warKrank(daten, d, heute)
+}
+
+/**
+ * Längere Pause ohne eingetragene Krankheit: Seit dem letzten Training fehlen mindestens zwei geplante Trainingstage (bis
+ * gestern). Dann fragt die App beim Öffnen, ob es eine Krankheit war, damit sie sich nachtragen lässt.
+ * seit: erster ausgefallener Trainingstag; letzte: letztes Training.
+ */
+export function pauseOhneKrankheit(daten: Pick<Daten, "profil" | "krankheiten" | "erledigt">, heute: string): { seit: string; letzte: string; tage: number } | null {
+  if (!krankheitAn(daten)) return null
+  const fertig = daten.erledigt.filter((e) => e.quelle !== "uebersprungen" && e.datum < heute).map((e) => e.datum)
+  if (!fertig.length) return null
+  const letzte = fertig.reduce((a, b) => (a > b ? a : b))
+  // schon eingetragen: eine Krankheit nach dem letzten Training
+  if ((daten.krankheiten || []).some((k) => (k.fit_ab ?? plus(heute, 1)) > letzte)) return null
+  const training = daten.profil!.woche.map((t) => t.art === "training")
+  const fehlt: string[] = []
+  for (let d = plus(letzte, 1); d < heute; d = plus(d, 1)) if (training[(new Date(d + "T12:00:00Z").getUTCDay() + 6) % 7]) fehlt.push(d)
+  return fehlt.length >= 2 ? { seit: fehlt[0], letzte, tage: fehlt.length } : null
+}
+
+/** Tage mit deutlich auffälligen Uhrwerten zwischen von und bis (je einschließlich), gemessen an den Tagen davor */
+export function auffaelligeTage(tage: Record<string, Tageswerte>, von: string, bis: string): { datum: string; gruende: string[] }[] {
+  const reihe = Object.keys(tage).sort()
+  const aus: { datum: string; gruende: string[] }[] = []
+  for (const d of reihe) {
+    if (d < von || d > bis) continue
+    const f = formSchwach(tage[d], reihe.filter((x) => x < d).map((x) => tage[x]))
+    if (f.punkte >= 2) aus.push({ datum: d, gruende: f.gruende })
+  }
+  return aus
 }

@@ -2,9 +2,10 @@
 import { describe, expect, it } from "vitest"
 import { planAusText, planWoche } from "../src/logik/eigenerPlan"
 import { zuordnen } from "../src/logik/kraftbuch"
-import { aktiveKrankheit, krankMelden, krankZuruecknehmen, nachKrankheit, rueckkehrStufen, schonTage, verlaufMelden, wiederFit, wocheMitKrankheit } from "../src/logik/krankheit"
+import { aktiveKrankheit, auffaelligeTage, krankMelden, pauseOhneKrankheit, krankZuruecknehmen, nachKrankheit, rueckkehrStufen, schonTage, verlaufMelden, wiederFit, wocheMitKrankheit } from "../src/logik/krankheit"
 import { beispielReha, leer, neuesProfil } from "../src/logik/speicher"
 import { rueckblick } from "../src/logik/rueckblick"
+import { serie } from "../src/logik/spiel"
 import { journalFaellig } from "../src/logik/wochenjournal"
 import type { Daten, Einheit } from "../src/logik/typen"
 
@@ -145,5 +146,54 @@ describe("Krankheit in Rückblick und Journal", () => {
     expect(journalFaellig(d, "2026-11-27")).toEqual({ woche: MO, nachtrag: false })
     d.krankheiten = [{ seit: "2026-11-24", art: "hals", fit_ab: "2026-11-26" }]
     expect(journalFaellig(d, "2026-11-27")).toBeNull()
+  })
+})
+
+describe("Nachtragen beim Öffnen", () => {
+  it("nachträglich eintragen: seit in der Vergangenheit, wieder fit ab heute, die Rückkehr beginnt heute", () => {
+    const d = daten()
+    const heute = MO
+    krankMelden(d, heute, ["fieber"], plus(heute, -4))
+    wiederFit(d, heute)
+    expect(d.krankheiten![0]).toMatchObject({ seit: plus(heute, -4), fit_ab: heute, art: "allgemein", fieber: true })
+    // vier Tage krank mit Fieber: zwei Stufen, heute die erste
+    expect(kurz(woche(d, heute))[0]).toBe("23 Rückkehr 1 · FULL BODY 1 #1")
+    // seit in der Zukunft wird auf heute begrenzt
+    const z = daten()
+    krankMelden(z, heute, [], plus(heute, 3))
+    expect(z.krankheiten![0].seit).toBe(heute)
+  })
+
+  it("längere Pause ohne Krankheit wird erkannt, eingetragen nicht mehr", () => {
+    const d = daten()
+    // letztes Training Mittwoch 18.11., heute Montag 23.11.: Do und Fr fehlen
+    d.erledigt.push({ datum: "2026-11-18", titel: "FULL BODY 3", minuten: 50, saetze: 12, xp: 10, rekorde: [], art: "kraft", plan_nr: 3 })
+    expect(pauseOhneKrankheit(d, MO)).toEqual({ seit: "2026-11-19", letzte: "2026-11-18", tage: 2 })
+    // nur ein fehlender Tag: keine Nachfrage
+    expect(pauseOhneKrankheit(d, "2026-11-20")).toBeNull()
+    krankMelden(d, MO, [], "2026-11-19")
+    wiederFit(d, MO)
+    expect(pauseOhneKrankheit(d, MO)).toBeNull()
+  })
+
+  it("auffällige Uhrtage in der Pause", () => {
+    const tage: Record<string, { ruhepuls: number; hrv: number; schlaf_min: number }> = {}
+    for (let k = 10; k >= 1; k--) tage[plus("2026-11-19", -k)] = { ruhepuls: 49, hrv: 55, schlaf_min: 420 }
+    tage["2026-11-19"] = { ruhepuls: 50, hrv: 54, schlaf_min: 410 }
+    tage["2026-11-20"] = { ruhepuls: 57, hrv: 36, schlaf_min: 223 }
+    const a = auffaelligeTage(tage, "2026-11-19", "2026-11-22")
+    expect(a.map((x) => x.datum)).toEqual(["2026-11-20"])
+    expect(a[0].gruende.join(" ")).toContain("Ruhepuls 57")
+  })
+
+  it("eine Woche mit Krankheit bricht die Wochenserie nicht", () => {
+    const d = daten()
+    const woche3 = (mo: string) => [0, 1, 2, 3].forEach((k) => d.erledigt.push({ datum: plus(mo, k), titel: "T" + k, minuten: 50, saetze: 12, xp: 10, rekorde: [], art: "kraft" }))
+    woche3("2026-11-02")
+    woche3("2026-11-16")
+    // Woche ab 9.11. ohne Training
+    expect(serie(d.profil!, d.erledigt, "2026-11-23")).toBe(1)
+    d.krankheiten = [{ seit: "2026-11-09", art: "allgemein", fit_ab: "2026-11-15" }]
+    expect(serie(d.profil!, d.erledigt, "2026-11-23", (m) => wocheMitKrankheit(d, m, "2026-11-23"))).toBe(2)
   })
 })
