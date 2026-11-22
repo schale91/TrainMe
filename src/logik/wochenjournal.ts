@@ -8,6 +8,7 @@
 
 import { rehaAktiv } from "./reha"
 import { montagVon } from "./rueckblick"
+import { wocheMitKrankheit } from "./krankheit"
 import type { Daten, Gelenk, Wochenjournal } from "./typen"
 
 export const SKALEN = [
@@ -30,15 +31,16 @@ const wochentag = (d: string) => (new Date(d + "T12:00:00Z").getUTCDay() + 6) % 
  * - Vorwoche mit Krafttraining, aber ohne Eintrag: Nachtrag (so holt sich eine ausgefallene Woche von selbst nach).
  * - Sonst die laufende Woche, wenn dies der letzte Trainingstag laut Wochenplan ist oder später (Nachholen).
  */
-export function journalFaellig(daten: Pick<Daten, "profil" | "wochenjournal" | "erledigt">, datum: string): { woche: string; nachtrag: boolean } | null {
+export function journalFaellig(daten: Pick<Daten, "profil" | "wochenjournal" | "erledigt" | "krankheiten">, datum: string): { woche: string; nachtrag: boolean } | null {
   const p = daten.profil
   if (!p || !p.wochenjournal || rehaAktiv(p)) return null
   const ab = montagVon(p.wochenjournal)
   const j = daten.wochenjournal || {}
   const diese = montagVon(datum)
   const vorige = plus(diese, -7)
-  if (vorige >= ab && !j[vorige] && daten.erledigt.some((e) => e.datum >= vorige && e.datum < diese && (e.art === undefined || e.art === "kraft"))) return { woche: vorige, nachtrag: true }
-  if (diese < ab || j[diese]) return null
+  // Wochen mit Krankheit fragt das Journal nicht ab: Die Antwort wäre ohnehin „krank“
+  if (vorige >= ab && !j[vorige] && !wocheMitKrankheit(daten, vorige, datum) && daten.erledigt.some((e) => e.datum >= vorige && e.datum < diese && (e.art === undefined || e.art === "kraft"))) return { woche: vorige, nachtrag: true }
+  if (diese < ab || j[diese] || wocheMitKrankheit(daten, diese, datum)) return null
   const tage = p.woche.map((t, i) => (t.art === "training" ? i : -1)).filter((i) => i >= 0)
   if (!tage.length) return null
   return wochentag(datum) >= Math.max(...tage) ? { woche: diese, nachtrag: false } : null

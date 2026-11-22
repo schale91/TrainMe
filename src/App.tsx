@@ -319,6 +319,8 @@ export default function App() {
       if (e.plan_nr !== undefined) tagZuruecksetzen(d, e.plan_nr)
       if (e.datum !== tag) d.erledigt[d.erledigt.length - 1].geplant = e.datum
       if (schmerzVor !== undefined) d.erledigt[d.erledigt.length - 1].schmerz_vor = schmerzVor
+      // Schon-Einheit bei oder nach Krankheit: merken (Rückkehr-Stufen zählen, Auswertungen lassen sie aus)
+      if (e.schon) d.erledigt[d.erledigt.length - 1].schon = e.schon
       // gemessene Zeit von „Training starten“ bis „Training beenden“
       if (zeit) Object.assign(d.erledigt[d.erledigt.length - 1], { beginn: new Date(zeit.beginn).toISOString(), ende: new Date(zeit.ende).toISOString(), dauer_min: Math.round((zeit.ende - zeit.beginn) / 6000) / 10, budget_min: zeit.budget, geschaetzt_min: zeit.geschaetzt, ...zeit.messung })
       einheiten = d.erledigt.length

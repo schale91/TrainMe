@@ -10,6 +10,7 @@
 import { uebung } from "../daten/uebungen/index"
 import { idVon, mitErsatz, offenePlanTage } from "./eigenerPlan"
 import { satzZahl } from "./dropsatz"
+import { schonTage, wocheMitKrankheit } from "./krankheit"
 import { belastbaresE1rm, plateau } from "./progression"
 import type { Daten, Muskel, Protokoll, Uebung } from "./typen"
 
@@ -226,10 +227,14 @@ export function rueckblick(daten: Daten, montag: string, heute: string): Rueckbl
   const woche = wochenZahlen(daten, montag)
   // Durchschnitt: abgeschlossene Wochen (die laufende würde den Schnitt nach unten ziehen), nur Wochen mit Training
   const letzte = laufend ? plus(montag, -7) : montag
-  const wochen = [0, 1, 2, 3].map((k) => wochenZahlen(daten, plus(letzte, -7 * k))).filter((w) => w.einheiten > 0)
+  // Wochen mit Krankheit zählen nicht in den Schnitt (sonst schlüge der Rückblick nach einer Erkältung mehr Sätze vor)
+  const wochen = [0, 1, 2, 3].map((k) => wochenZahlen(daten, plus(letzte, -7 * k))).filter((w) => w.einheiten > 0 && !wocheMitKrankheit(daten, w.montag, heute))
   const schnitt: Record<string, number> = {}
   for (const g of MUSKELGRUPPEN) schnitt[g.id] = wochen.length ? rund1(wochen.reduce((s, w) => s + w.gruppen[g.id], 0) / wochen.length) : 0
-  const tr = trends(daten, montag)
+  // Trend und neues Maximum ohne Schon-Einheiten und kranke Tage (absichtlich leichter, sähe sonst wie ein Plateau aus)
+  const schon = schonTage(daten, heute)
+  const sauber: Daten = { ...daten, protokoll: daten.protokoll.filter((p) => !schon(p.datum)) }
+  const tr = trends(sauber, montag)
 
   const ende = plus(montag, 7)
   const gemessen = daten.erledigt.filter((e) => e.datum >= montag && e.datum < ende && e.dauer_min && e.budget_min)
@@ -252,7 +257,7 @@ export function rueckblick(daten: Daten, montag: string, heute: string): Rueckbl
   // 1. Neues Maximum
   const eingetragen = daten.maxwerte || {}
   const beste = new Map<string, number>()
-  for (const p of daten.protokoll) {
+  for (const p of sauber.protokoll) {
     if (p.datum < montag || p.datum >= ende || !eingetragen[p.uebung]) continue
     const u = kraftUebung(p.uebung)
     if (!u || !mitMaximum(u)) continue

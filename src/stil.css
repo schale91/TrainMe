@@ -3816,3 +3816,12 @@ h2,
 .journal .enden { display: flex; justify-content: space-between; color: var(--leise); }
 .journal .enden small { font-size: 12px; }
 .journal input[type="text"] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--flaeche3); background: var(--flaeche); color: var(--text); font-size: 16px; }
+
+/* Krankheit */
+.marke.krank { background: var(--rot); color: #fff; }
+.krankkarte, .krankvorschlag { display: flex; flex-direction: column; gap: 10px; }
+.krankfrage { font-weight: 600; font-size: 15px; }
+.krankverlauf { display: flex; flex-wrap: wrap; gap: 8px; }
+.krankwarnung { color: var(--leise); font-size: 12px; line-height: 1.4; }
+.krankcheck { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 16px; }
+.krankcheck .chip { text-align: left; justify-content: flex-start; padding: 12px 14px; border-radius: 12px; }
