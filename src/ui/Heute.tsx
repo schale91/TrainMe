@@ -10,7 +10,9 @@ import { serie, stufe, stufenName } from "../logik/spiel"
 import type { Daten, Einheit } from "../logik/typen"
 import { tagesform } from "./gesundheit"
 import { tagMuskelnText } from "../logik/tagmuskeln"
-import { alleTage, tageswerte } from "../logik/gesundheit"
+import { alleTage, formSchwach, tageswerte } from "../logik/gesundheit"
+import { aktiveKrankheit, auffaelligeTage, krankheitAn, pauseOhneKrankheit, wocheMitKrankheit } from "../logik/krankheit"
+import { KrankCheck, KrankKarte, KrankNachfrage, KrankVorschlag } from "./Krank"
 import { letzterPlanTag, naechsterPlanTag, planZuEnde, ueberspringen } from "../logik/eigenerPlan"
 import { jahresplanVorschlag } from "../logik/jahresplan"
 import { offeneReaktion, rehaAktiv, rehaSperre } from "../logik/reha"
@@ -46,7 +48,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
   const plan = useMemo(() => wochenplan(profil, daten, montag), [profil, daten, montag])
   const w = blockWoche(profil, montag)
   const s = stufe(daten.spiel.xp)
-  const ser = serie(profil, daten.erledigt, tag)
+  const ser = serie(profil, daten.erledigt, tag, (m) => wocheMitKrankheit(daten, m, tag))
   const aktuell = montag === montagVon(tag)
   const wahl = gewaehlt && gewaehlt >= montag && gewaehlt <= plusTage(montag, 6) ? gewaehlt : aktuell ? tag : (plan[0]?.datum ?? montag)
   // Zwei Einheiten an einem Tag: zuerst die noch offene
@@ -79,6 +81,55 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
       .filter(([d]) => d < tag)
       .map(([, w]) => w),
   )
+  // Krankheit (nur mit eingeschalteter Funktion, nicht in der Reha): Karte statt Training, außer der leichten Einheit
+  const krankAn = krankheitAn(daten)
+  const krank = aktiveKrankheit(daten, tag)
+  const [krankCheck, setKrankCheck] = useState(false)
+  const fokusLeicht = !!fokus && fokus.datum === tag && fokus.schon?.art === "leicht"
+  // Vorschlag aus den Uhrwerten: zwei deutliche Auffälligkeiten (z. B. Ruhepuls hoch und HRV niedrig); einmal am Tag
+  const [vorschlagWeg, setVorschlagWeg] = useState(() => {
+    try {
+      return localStorage.getItem("trainme.krankfrage") === tag
+    } catch {
+      return false
+    }
+  })
+  // nicht kurz nach einer Krankheit: Die Werte brauchen ein paar Tage, bis sie wieder normal sind
+  const kuerzlichKrank = (daten.krankheiten || []).some((k) => (k.fit_ab ?? tag) >= plusTage(tag, -3))
+  const uhr = krankAn && !krank && !kuerzlichKrank && aktuell && !vorschlagWeg
+    ? formSchwach(gesundheit, Object.entries(alleTage(daten)).filter(([d]) => d < tag).sort(([a], [b]) => (a < b ? -1 : 1)).map(([, w]) => w))
+    : null
+  // Nach einer längeren Pause ohne eingetragene Krankheit nachfragen, einmal je Pause (Schlüssel: letztes Training)
+  const pause = krankAn && !krank && aktuell ? pauseOhneKrankheit(daten, tag) : null
+  const [pauseWeg, setPauseWeg] = useState(() => {
+    try {
+      return localStorage.getItem("trainme.pausefrage") || ""
+    } catch {
+      return ""
+    }
+  })
+  const pauseZeigen = !!pause && pauseWeg !== pause.letzte
+  const pauseAuffaellig = pause ? auffaelligeTage(alleTage(daten), plusTage(pause.letzte, 1), plusTage(tag, -1)) : []
+  const pauseWeglegen = () => {
+    try {
+      localStorage.setItem("trainme.pausefrage", pause!.letzte)
+    } catch {
+      /* egal */
+    }
+    setPauseWeg(pause!.letzte)
+  }
+  const [checkVorschlag, setCheckVorschlag] = useState<{ seit: string; fit: boolean } | null>(null)
+  const vorschlagZeigen = !!uhr && uhr.punkte >= 3 && !pauseZeigen
+  // Karten vor dem Training (Reha-Sperre, Einstufung, Plan geschafft) haben Vorrang vor Training und Krankheit
+  const ersteKarte = !!sperre || !daten.einstufung?.kraft || !daten.einstufung?.mobil || (eigen && planZuEnde(daten) && aktuell)
+  const vorschlagWeglegen = () => {
+    try {
+      localStorage.setItem("trainme.krankfrage", tag)
+    } catch {
+      /* egal */
+    }
+    setVorschlagWeg(true)
+  }
   // Besondere Plantage (Test, schwer) sichtbar machen: in der Karte, in der Wochenleiste und in der Zeile des Tages
   const merkmal = (e: Einheit | undefined) => {
     const t = e && e.plan_nr !== undefined ? daten.eigenerPlan?.tage.find((x) => x.nr === e.plan_nr) : undefined
@@ -152,7 +203,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           ) : null}
         </div>
       ) : null}
-      {form ? <p className="hinweistext">{form}</p> : null}
+      {form && !krank ? <p className="hinweistext">{form}</p> : null}
       {profil.vorgemerkt ? (
         <p className="hinweistext">
           Ab {datumText(profil.vorgemerkt.ab)} gilt dein geänderter Plan ({aenderungsText(profil, { ...profil, ...profil.vorgemerkt.aenderung })}). Bis dahin läuft der Block wie gehabt.
@@ -247,9 +298,27 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
             </button>
           </span>
         </div>
+      ) : null}
+      {/* Krankheit: Vorschlag aus den Uhrwerten und „Ich bin krank“, auch an Ruhetagen */}
+      {!ersteKarte && pauseZeigen ? (
+        <KrankNachfrage
+          letzte={pause!.letzte}
+          tage={pause!.tage}
+          auffaellig={pauseAuffaellig}
+          ja={() => {
+            setCheckVorschlag({ seit: pauseAuffaellig[0]?.datum ?? pause!.seit, fit: true })
+            setKrankCheck(true)
+          }}
+          nein={pauseWeglegen}
+        />
+      ) : null}
+      {!ersteKarte && vorschlagZeigen ? <KrankVorschlag gruende={uhr!.gruende} ja={() => setKrankCheck(true)} nein={vorschlagWeglegen} /> : null}
+      {ersteKarte ? null : aktuell && krank && !fokusLeicht ? (
+        <KrankKarte krankheit={krank} tag={tag} aendern={props.aendern} symptome={() => setKrankCheck(true)} />
       ) : aktuell ? (
         fokus ? (
           <>
+          {krank ? <KrankKarte krankheit={krank} tag={tag} aendern={props.aendern} symptome={() => setKrankCheck(true)} /> : null}
           <button type="button" className="heutekarte" onClick={() => props.oeffnen(fokus)}>
             <span className="heutekopf">
               <span className="marke">{fokus.datum === tag ? "Heute" : WT[(new Date(fokus.datum + "T12:00:00Z").getUTCDay() + 6) % 7] + " · vorziehen"}</span>
@@ -268,7 +337,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
                 .join(" · ")}
               {fokus.plaetze.length > 5 ? " · +" + (fokus.plaetze.length - 5) : ""}
             </span>
-            {merkmal(fokus)?.text ? <span className="heutemerkmal">{merkmal(fokus)!.text}</span> : null}
+            {fokus.schon ? <span className="heutemerkmal">{fokus.hinweise[0]}</span> : merkmal(fokus)?.text ? <span className="heutemerkmal">{merkmal(fokus)!.text}</span> : null}
             <span className="losknopf">Zum Training</span>
           </button>
           {fokus.plan_nr !== undefined && planTag && fokus.plan_nr === planTag.nr ? (
@@ -292,6 +361,11 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           </div>
         )
       ) : null}
+      {!ersteKarte && aktuell && krankAn && !krank ? (
+        <button type="button" className="textknopf" onClick={() => setKrankCheck(true)}>
+          Ich bin krank
+        </button>
+      ) : null}
 
       <button type="button" className="mobilkarte" onClick={() => setMobil(true)}>
         <Sym name="dehnen" groesse={22} />
@@ -301,6 +375,21 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
         </span>
         <Icon name="weiter" groesse={16} />
       </button>
+      {krankAn ? (
+        <KrankCheck
+          key={(checkVorschlag?.seit ?? "") + (krankCheck ? "1" : "0")}
+          offen={krankCheck}
+          schliessen={() => {
+            setKrankCheck(false)
+            setCheckVorschlag(null)
+          }}
+          tag={tag}
+          laeuft={!!krank}
+          aendern={props.aendern}
+          seitVorschlag={checkVorschlag?.seit}
+          fitVorschlag={checkVorschlag?.fit}
+        />
+      ) : null}
       <MobilBlatt offen={mobil} schliessen={() => setMobil(false)} daten={daten} datum={tag} ortVorschlag={termin.ort || 0} starten={(e) => { setMobil(false); props.oeffnen(e) }} />
 
       {weg ? (

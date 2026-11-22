@@ -3,6 +3,7 @@
 
 import { e1rm, BLOCK_WOCHEN } from "./progression"
 import { montagVon, plusTage } from "./plan"
+import { wocheMitKrankheit } from "./krankheit"
 import type { Daten, Einheit, Erledigt, Profil, Protokoll } from "./typen"
 
 /** XP, die man für eine Stufe braucht (von Stufe n auf n+1). */
@@ -64,7 +65,7 @@ export function geplantProWoche(profil: Profil): number {
 }
 
 /** Wochenserie: wie viele Wochen hintereinander das Wochenziel erreicht wurde. Eine Einheit darf fehlen. */
-export function serie(profil: Profil, erledigt: Erledigt[], heute: string): number {
+export function serie(profil: Profil, erledigt: Erledigt[], heute: string, krankeWoche: (montag: string) => boolean = () => false): number {
   const ziel = Math.max(1, geplantProWoche(profil) - 1)
   const zaehle = (montag: string) => {
     const ende = plusTage(montag, 7)
@@ -76,8 +77,9 @@ export function serie(profil: Profil, erledigt: Erledigt[], heute: string): numb
   if (zaehle(montag) >= ziel) n++
   montag = plusTage(montag, -7)
   for (let i = 0; i < 520; i++) {
-    if (zaehle(montag) < ziel) break
-    n++
+    // Eine Woche mit Krankheit bricht die Serie nicht: Sie zählt nicht und wird übersprungen
+    if (zaehle(montag) < ziel && !krankeWoche(montag)) break
+    if (zaehle(montag) >= ziel) n++
     montag = plusTage(montag, -7)
   }
   return n
@@ -129,7 +131,7 @@ export function abschliessen(daten: Daten, einheit: Einheit, protokolle: Protoko
   }
   const n = daten.erledigt.length
   const alleRekorde = daten.erledigt.reduce((s, e) => s + e.rekorde.length, 0)
-  const s = serie(profil, daten.erledigt, einheit.datum)
+  const s = serie(profil, daten.erledigt, einheit.datum, (m) => wocheMitKrankheit(daten, m, einheit.datum))
   const mobil = daten.erledigt.filter((e) => e.art === "mobilitaet" || e.art === "regeneration").length
   const montag = montagVon(einheit.datum)
   const dieseWoche = daten.erledigt.filter((e) => e.datum >= montag && e.datum < plusTage(montag, 7))

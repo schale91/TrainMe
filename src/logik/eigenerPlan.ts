@@ -7,6 +7,7 @@ import { FREI, uebung } from "../daten/uebungen/index"
 import { abrunden } from "./gewichte"
 import { stattAm } from "./bausteine"
 import { belastbaresE1rm, steigerungsGrenze } from "./progression"
+import { BRUECKE, LEICHT, aktiveKrankheit, nachKrankheit, rueckkehrStufen, schonEinheit, type Stufe } from "./krankheit"
 import type { Daten, EigenerPlan, Einheit, Erledigt, PlanTag, PlanUebung, Platz, Profil, Protokoll, Rolle, Uebung, Vorgabe } from "./typen"
 
 export { FREI }
@@ -266,13 +267,15 @@ export function planWoche(profil: Profil, daten: Daten, montag: string, heute: s
   if (!plan) return []
   const ende = plusTage(montag, 7)
   const aus: Einheit[] = []
-  // Erledigtes aus dieser Woche
+  // Erledigtes aus dieser Woche (auch Schon-Einheiten ohne Plantag, wieder aus ihrem Plantag gebaut)
   for (const e of daten.erledigt) {
-    if (!planEintrag(e) || e.datum < montag || e.datum >= ende || e.quelle === "uebersprungen") continue
-    const tag = tagMitNr(plan, e.plan_nr as number)
+    const schonOhneTag = !planEintrag(e) && e.schon?.nr !== undefined
+    if ((!planEintrag(e) && !schonOhneTag) || e.datum < montag || e.datum >= ende || e.quelle === "uebersprungen") continue
+    const tag = tagMitNr(plan, (planEintrag(e) ? e.plan_nr : e.schon!.nr) as number)
     if (!tag) continue
     const ort = profil.woche[(new Date(e.datum + "T12:00:00Z").getUTCDay() + 6) % 7]?.ort ?? 0
-    aus.push(einheitAusPlan(profil, daten, tag, e.datum, ort, (u) => lastenFuer(u, ort)))
+    const einheit = einheitAusPlan(profil, daten, tag, e.datum, ort, (u) => lastenFuer(u, ort))
+    aus.push(e.schon ? schonEinheit(einheit, { ...e.schon, anteil: 1, faktor: 1, rirPlus: 0 }, (u) => lastenFuer(u, ort)) : einheit)
   }
   // Tage, an denen TrainMe zusätzlich plant (z. B. leichte Einheiten neben einem Physio-Plan). In der Reha erst nach
   // der Freigabe durch Arzt oder Physiotherapie.
@@ -282,7 +285,7 @@ export function planWoche(profil: Profil, daten: Daten, montag: string, heute: s
     aus.push(...zusatz(nur))
   }
   if (heute >= ende) return aus.sort((a, b) => (a.datum < b.datum ? -1 : 1))
-  const heuteErledigt = daten.erledigt.some((e) => planEintrag(e) && e.datum === heute && e.quelle !== "uebersprungen")
+  const heuteErledigt = daten.erledigt.some((e) => (planEintrag(e) || !!e.schon) && e.datum === heute && e.quelle !== "uebersprungen")
   // offene Trainingstage einer Woche ab heute
   const termine = (mo: string): string[] => {
     const t = trainingsTage(profil)
@@ -292,19 +295,51 @@ export function planWoche(profil: Profil, daten: Daten, montag: string, heute: s
     // An freien Tagen kommt keine Einheit: die nächste steht am nächsten Trainingstag und lässt sich vorziehen
     return t
   }
-  // Spätere Wochen machen dort weiter, wo die Wochen davor (ab heute) aufhören; nach dem letzten Plantag bleibt es leer
-  let vorher = 0
-  for (let w = plusTage(montag, -7); plusTage(w, 7) > heute; w = plusTage(w, -7)) vorher += termine(w).length
-  const tage = termine(montag)
-  const offen = offenePlanTage(daten, vorher + tage.length + 1).slice(vorher)
-  tage.forEach((datum, k) => {
-    const tag = offen[k]
-    if (!tag) return
-    const ort = profil.woche[(new Date(datum + "T12:00:00Z").getUTCDay() + 6) % 7]?.ort ?? 0
-    aus.push(einheitAusPlan(profil, daten, tag, datum, Math.min(Math.max(0, ort), Math.max(0, profil.orte.length - 1)), (u) => lastenFuer(u, ort)))
-  })
+  // Alle offenen Trainingstage ab heute bis zum Ende dieser Woche, der Reihe nach: Spätere Wochen machen dort weiter,
+  // wo die Wochen davor aufhören; nach dem letzten Plantag bleibt es leer
+  const montagHeute = plusTage(heute, -((new Date(heute + "T12:00:00Z").getUTCDay() + 6) % 7))
+  const alle: string[] = []
+  for (let w = montagHeute; w <= montag; w = plusTage(w, 7)) alle.push(...termine(w))
+  const offen = offenePlanTage(daten, alle.length + 2)
+  // Krankheit (nur mit eingeschalteter Funktion): heute Pause oder leicht, danach Rückkehr-Stufen und höchstens eine
+  // Brücke statt Testtag in der ersten Woche (siehe logik/krankheit.ts). Läuft die Krankheit noch, rechnet die Vorschau
+  // so, als wäre sie morgen vorbei.
+  const krank = aktiveKrankheit(daten, heute)
+  const nach = krank ? null : nachKrankheit(daten, heute)
+  const rest: Stufe[] = krank ? rueckkehrStufen(krank, heute) : nach ? [...nach.offen] : []
+  const testAb = krank ? plusTage(heute, 8) : nach ? nach.testAb : null
+  let brueckeFrei = krank ? true : nach ? nach.brueckeFrei : false
+  let i = 0
+  for (const datum of alle) {
+    const tag = offen[i]
+    if (!tag) break
+    const ortRoh = profil.woche[(new Date(datum + "T12:00:00Z").getUTCDay() + 6) % 7]?.ort ?? 0
+    const ort = Math.min(Math.max(0, ortRoh), Math.max(0, profil.orte.length - 1))
+    const lasten = (u: Uebung) => lastenFuer(u, ortRoh)
+    const basis = () => einheitAusPlan(profil, daten, tag, datum, ort, lasten)
+    let e: Einheit | null
+    if (krank && datum === heute) {
+      // heute krank: bei reiner Erkältung eine leichte Einheit zur Wahl, sonst Pause; der Plantag bleibt
+      e = krank.art === "hals" ? schonEinheit(basis(), LEICHT, lasten) : null
+    } else if (testAb && datum < testAb && brueckeFrei && testTag(tag)) {
+      // Testtag kurz nach der Krankheit: einmal Aufbau statt Test, der Test kommt danach
+      const stufe = rest.shift()
+      e = schonEinheit(basis(), { ...BRUECKE, stufe: stufe?.stufe ?? 1 }, lasten)
+      brueckeFrei = false
+    } else if (rest.length) {
+      e = schonEinheit(basis(), rest.shift()!, lasten)
+      i++
+    } else {
+      e = basis()
+      i++
+    }
+    if (e && datum >= montag && datum < ende) aus.push(e)
+  }
   return aus.sort((a, b) => (a.datum < b.datum ? -1 : 1))
 }
+
+/** Testtag: Titel mit „Test“ oder ein AMRAP mit Prozentvorgabe (wie tagMerkmal in planphasen) */
+const testTag = (t: PlanTag) => /\btest/i.test(t.titel) || t.uebungen.some((u) => !!u.prozent && !u.zeit && istAmrap(u))
 
 /** Einen Plantag bewusst auslassen (zählt nicht als Training, der Plan geht mit dem nächsten Tag weiter). */
 export function ueberspringen(daten: Daten, tag: PlanTag, datum: string): void {

@@ -357,6 +357,8 @@ export interface Profil {
    * ausgefüllt oder für diese Woche übersprungen werden. Fehlt: aus.
    */
   wochenjournal?: string
+  /** Krankheit berücksichtigen: Krank melden mit Hals-Check, Schon- und Rückkehr-Einheiten (siehe logik/krankheit.ts) */
+  krankheit?: boolean
   /** Feste Zusatzeinheiten neben dem Plan (z. B. morgens laufen) */
   bausteine?: Baustein[]
 }
@@ -502,6 +504,8 @@ export interface Einheit {
   hinweise: string[]
   /** Tag im eigenen Plan */
   plan_nr?: number
+  /** Schon-Einheit bei oder nach Krankheit: verbraucht keinen Plantag (siehe logik/krankheit.ts) */
+  schon?: Schonung
   /** Einheit aus einem Baustein, mit Tageszeit */
   baustein?: string
   tageszeit?: Tageszeit
@@ -556,6 +560,8 @@ export interface Erledigt {
   /** Tag im eigenen Plan */
   plan_nr?: number
   quelle?: string
+  /** Schon-Einheit bei oder nach Krankheit (zählt nicht als Plantag) */
+  schon?: Schonung
   /** Gemessene Trainingszeit: „Training starten“ bis „Training beenden“ (ISO), Dauer, Zeitbudget und Schätzung in Minuten */
   beginn?: string
   ende?: string
@@ -612,6 +618,8 @@ export interface Daten {
    * diesen einen Tag und geht beim Abgleich mit auf die anderen Geräte.
    */
   tagplan?: Record<string, TagAnpassung>
+  /** Gemeldete Krankheiten, älteste zuerst; die letzte ohne fit_ab läuft noch (siehe logik/krankheit.ts) */
+  krankheiten?: Krankheit[]
   /** Wochenjournal je Woche (Montag der Woche → Eintrag), siehe logik/wochenjournal.ts */
   wochenjournal?: Record<string, Wochenjournal>
   /** Wochenrückblick: abgelehnte Vorschläge (Schlüssel → Datum), sie kommen erst nach einigen Wochen wieder */
@@ -659,4 +667,27 @@ export interface Wochenjournal {
   notiz?: string
   /** diese Woche übersprungen (die Frage kommt für diese Woche nicht wieder) */
   uebersprungen?: boolean
+}
+
+/** Gemeldete Krankheit */
+export interface Krankheit {
+  /** erster kranker Tag */
+  seit: string
+  /** nur oberhalb des Halses (Schnupfen, Halskratzen) oder mit Allgemeinsymptomen (Fieber, Glieder, Brust, Magen-Darm) */
+  art: "hals" | "allgemein"
+  /** irgendwann Fieber gehabt */
+  fieber?: boolean
+  /** erster Tag wieder fit; fehlt: noch krank */
+  fit_ab?: string
+  /** Tagesmeldungen */
+  verlauf?: Record<string, "schlechter" | "gleich" | "besser">
+}
+
+/** Art einer Schon-Einheit: leicht trotz Erkältung, Rückkehr nach der Krankheit, Brücke statt Testtag */
+export interface Schonung {
+  art: "leicht" | "rueckkehr" | "bruecke"
+  /** Rückkehr: Stufe 1, 2 … */
+  stufe: number
+  /** Plantag, aus dem sie gebaut ist */
+  nr?: number
 }
