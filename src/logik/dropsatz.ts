@@ -1,5 +1,7 @@
 // Dropsatz mit Drop-Pins am Gewichtsstapel: Am Ende des Satzes an der Schnur ziehen, das Gewicht fällt um eine Stufe,
-// ohne Pause weiter. Zwei Pins geben zwei Stufen.
+// ohne Pause weiter. Zwei Pins geben zwei Stufen. Mit Kurzhanteln geht es genauso, wenn ein Ständer mit festen Paaren
+// da ist (Wunsch von Alex, 23.11.2026): Hanteln ablegen, sofort das leichtere Paar nehmen, weiter. Nicht bei Übungen
+// auf der Bank, denn dort müsste man zum Wechseln aufstehen und sich neu einrichten.
 //
 // Studienlage: Dropsätze bauen etwa gleich viel Muskel und Kraft auf wie normale Sätze, brauchen aber deutlich weniger
 // Zeit (Meta-Analysen Sødal et al. 2023, Sports Medicine – Open 9: 66; Coleman et al. 2022, Int J Strength Cond 2(1)).
@@ -8,19 +10,34 @@
 // Grundübungen leidet die Technik, wenn ohne Pause bis zur Erschöpfung weitergemacht wird.
 
 import { abrunden } from "./gewichte"
-import { MASCHINEN, type Geraet, type Ort, type Rolle, type Satz, type Uebung } from "./typen"
+import { MASCHINEN, type Geraet, type Gewichte, type Ort, type Rolle, type Satz, type Uebung } from "./typen"
 
 /** Gewicht je Stufe: etwa 20 % leichter als die vorige (übliche Spanne 20 bis 30 %) */
 export const DROP_ANTEIL = 0.8
 /** Stufen mit zwei Drop-Pins */
 export const DROP_STUFEN = 2
 
+/** So viele feste Kurzhantelpaare braucht ein Kurzhantel-Dropsatz mindestens (ein Ständer, keine Schraubhanteln) */
+export const KH_PAARE_MIN = 6
+
+type DropUebung = Pick<Uebung, "belastung"> & { geraete?: Geraet[][] }
+type DropOrt = Pick<Ort, "geraete"> & { gewichte?: Pick<Gewichte, "kurzhanteln"> }
+
+/** Kurzhantel-Dropsatz: Ständer mit genug Paaren, Übung nicht auf der Bank */
+export function khDrop(u: DropUebung, geraet: Geraet | null, ort: DropOrt): boolean {
+  if (geraet !== "kurzhantel") return false
+  const paare = new Set(ort.gewichte?.kurzhanteln || []).size
+  const bank = (u.geraete || []).some((g) => g.indexOf("kurzhantel") >= 0 && g.indexOf("bank") >= 0)
+  return paare >= KH_PAARE_MIN && !bank
+}
+
 /**
- * Geht ein Dropsatz bei dieser Übung? Gewicht vom Stapel (Kabel, Latzug, Maschine), Drop-Pins am Ort, keine
- * Hauptübung.
+ * Geht ein Dropsatz bei dieser Übung? Gewicht vom Stapel (Kabel, Latzug, Maschine) mit Drop-Pins am Ort oder
+ * Kurzhanteln aus einem Ständer (khDrop), keine Hauptübung.
  */
-export function dropMoeglich(u: Pick<Uebung, "belastung">, geraet: Geraet | null, ort: Pick<Ort, "geraete">, rolle: Rolle): boolean {
-  return u.belastung === "gewicht" && !!geraet && MASCHINEN.indexOf(geraet) >= 0 && ort.geraete.indexOf("drop_pins") >= 0 && rolle !== "haupt"
+export function dropMoeglich(u: DropUebung, geraet: Geraet | null, ort: DropOrt, rolle: Rolle): boolean {
+  if (u.belastung !== "gewicht" || !geraet || rolle === "haupt") return false
+  return (MASCHINEN.indexOf(geraet) >= 0 && ort.geraete.indexOf("drop_pins") >= 0) || khDrop(u, geraet, ort)
 }
 
 /**
@@ -62,10 +79,10 @@ export const satzZahl = (s: Pick<Satz, "drops">) => 1 + (s.drops?.length ?? 0)
  * Übung etwa eine Pause (zwei Sätze mit Pause werden ein Satz mit zwei kurzen Drops). ausgenommen: schon gefragt.
  */
 export function dropVorschlag(
-  plaetze: { uebung: Pick<Uebung, "belastung" | "name">; rolle: Rolle; gruppe?: string; vorgabe: { pause_s: number } }[],
+  plaetze: { uebung: DropUebung & Pick<Uebung, "name">; rolle: Rolle; gruppe?: string; vorgabe: { pause_s: number } }[],
   saetze: (Satz & { fertig: boolean })[][],
   geraet: (Geraet | null)[],
-  ort: Pick<Ort, "geraete">,
+  ort: DropOrt,
   fehlt_min: number,
   ausgenommen: number[] = [],
 ): { plaetze: number[]; spart_min: number } {

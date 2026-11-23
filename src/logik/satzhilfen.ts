@@ -19,7 +19,7 @@ export function lastAbrunden(x: number, lasten: number[]): number {
 
 /**
  * Satzform einer Übung: gewählt, sonst aus der Vorgabe. Topsatz nur für Gewichtsübungen mit mindestens drei Sätzen
- * (gewicht), Dropsatz nur, wo Drop-Pins gehen (drop), ab einem Satz.
+ * (gewicht), Dropsatz nur, wo er geht (Drop-Pins oder Kurzhantelständer, drop), ab einem Satz.
  */
 export function satzformVon(v: Vorgabe, gewaehlt: Satzform | undefined, gewicht: boolean, drop = false): Satzform {
   if (gewaehlt === "drop") return drop ? "drop" : "gleich"
