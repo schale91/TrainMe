@@ -3864,23 +3864,82 @@ h2,
   font-size: 14px;
 }
 .fitstufe {
+  --hellblau: #7fd3ff;
   font-size: 12px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
   white-space: nowrap;
 }
-.fitstufe.gut {
+.fitstufe.gruen {
   color: #0d2a1f;
   background: var(--gruen);
 }
-.fitstufe.mittel {
+.fitstufe.gelb {
   color: #2e1d00;
   background: var(--gold);
 }
-.fitstufe.ausbaufaehig {
+.fitstufe.rot {
   color: #2f0910;
   background: var(--rot);
+}
+.fitstufe.blau {
+  color: #062433;
+  background: var(--hellblau);
+}
+.fitskala {
+  margin: 8px 0 2px;
+  --hellblau: #7fd3ff;
+}
+.fitbalken {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+}
+.fitmarke {
+  position: absolute;
+  top: -5px;
+  width: 6px;
+  height: 20px;
+  margin-left: -3px;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.fitmarken {
+  position: relative;
+  height: 16px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--leise);
+  font-variant-numeric: tabular-nums;
+}
+.fitmarken span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.fitpunkt {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-radius: 50%;
+  vertical-align: 1px;
+}
+.fitpunkt.rot {
+  background: var(--rot);
+}
+.fitpunkt.gelb {
+  background: var(--gold);
+}
+.fitpunkt.gruen {
+  background: var(--gruen);
+}
+.fitpunkt.blau {
+  background: #7fd3ff;
 }
 .fiteingabe {
   padding: 4px 0 0;
