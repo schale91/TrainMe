@@ -238,7 +238,7 @@ export default function Heute(props: { daten: Daten; oeffnen: (e: Einheit) => vo
           <span className="heutetitel">
             <Sym name="pflaster" groesse={26} /> Erst absprechen
           </span>
-          <span className="heutevorschau">Die Operation ist weniger als 12 Wochen her. Bitte den Plan mit Arzt oder Physiotherapie besprechen und dann unter Profil, Training und Sport „Mit Arzt oder Physiotherapie abgesprochen“ einschalten.</span>
+          <span className="heutevorschau">Die Operation ist weniger als 12 Wochen her. Bitte den Plan mit Arzt oder Physiotherapie besprechen und dann unter Profil, Ziel und Sport „Mit Arzt oder Physiotherapie abgesprochen“ einschalten.</span>
         </div>
       ) : !daten.einstufung?.kraft || !daten.einstufung?.mobil ? (
         reha ? (

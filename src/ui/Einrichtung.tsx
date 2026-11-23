@@ -8,7 +8,7 @@ import { AusnahmenEditor, Grunddaten, KoerperEditor, OrteEditor, SportWahl, Woch
 
 const SCHRITTE = [
   { titel: "Hallo!", text: "Ein paar Fragen, dann baut TrainMe deinen Plan. Alles bleibt auf deinem Handy." },
-  { titel: "Training und Sport", text: "Was willst du trainieren, und für welchen Sport?" },
+  { titel: "Ziel und Sport", text: "Was willst du trainieren, und für welchen Sport?" },
   { titel: "Wo trainierst du?", text: "Geräte, Gewichte und Deckenhöhe je Ort. TrainMe schlägt nur vor, was es dort wirklich gibt." },
   { titel: "Deine Woche", text: "An welchen Tagen, wie lange, und wann sind feste Termine?" },
   { titel: "Körper", text: "Gibt es Gelenke, auf die TrainMe Rücksicht nehmen soll?" },
