@@ -1,6 +1,14 @@
 // Gemeinsame Typen von TrainMe. Alles läuft auf dem Gerät, es gibt keinen Server.
 
-export type Gelenk = "knie" | "schulter" | "ruecken" | "huefte" | "handgelenk" | "ellbogen" | "sprunggelenk" | "nacken"
+export type Gelenk =
+  | "knie"
+  | "schulter"
+  | "ruecken"
+  | "huefte"
+  | "handgelenk"
+  | "ellbogen"
+  | "sprunggelenk"
+  | "nacken";
 
 /** Bewegungsmuster: daraus baut die Planung ihre Einheiten. */
 export const MUSTER = [
@@ -40,8 +48,8 @@ export const MUSTER = [
   "mobilitaet_ganzkoerper",
   "ausdauer_ruhig",
   "ausdauer_intervall",
-] as const
-export type Muster = (typeof MUSTER)[number]
+] as const;
+export type Muster = (typeof MUSTER)[number];
 
 export const GERAETE_IDS = [
   // freie Gewichte
@@ -115,19 +123,59 @@ export const GERAETE_IDS = [
   "fahrrad",
   "rudergeraet",
   "draussen",
-] as const
-export type Geraet = (typeof GERAETE_IDS)[number]
+] as const;
+export type Geraet = (typeof GERAETE_IDS)[number];
 
 /** Geräte, deren Gewichtsstufen die Last bestimmen. */
-export const MASCHINEN: readonly Geraet[] = ["kabelzug", "kabelturm", "latzug", "kabelrudern", "beinpresse", "hackenschmidt", "pendelkniebeuge", "beltsquat", "beinstrecker", "beinbeuger_liegend", "beinbeuger_sitzend", "beinbeuger_stehend", "ab_adduktoren", "gesaessmaschine", "wadenmaschine_stehend", "wadenmaschine_sitzend", "brustpresse", "butterfly", "schulterpresse", "seitheben_maschine", "rudermaschine", "t_bar_rudern", "iso_lateral", "ueberzugmaschine", "bizepsmaschine", "trizepsmaschine", "bauchmaschine", "nackenmaschine", "dip_assistent"]
-export const FREIE_LASTEN: readonly Geraet[] = ["kurzhantel", "langhantel", "sz_stange", "trap_bar", "kettlebell", "hantelscheibe", "multipresse", "medizinball", "band"]
+export const MASCHINEN: readonly Geraet[] = [
+  "kabelzug",
+  "kabelturm",
+  "latzug",
+  "kabelrudern",
+  "beinpresse",
+  "hackenschmidt",
+  "pendelkniebeuge",
+  "beltsquat",
+  "beinstrecker",
+  "beinbeuger_liegend",
+  "beinbeuger_sitzend",
+  "beinbeuger_stehend",
+  "ab_adduktoren",
+  "gesaessmaschine",
+  "wadenmaschine_stehend",
+  "wadenmaschine_sitzend",
+  "brustpresse",
+  "butterfly",
+  "schulterpresse",
+  "seitheben_maschine",
+  "rudermaschine",
+  "t_bar_rudern",
+  "iso_lateral",
+  "ueberzugmaschine",
+  "bizepsmaschine",
+  "trizepsmaschine",
+  "bauchmaschine",
+  "nackenmaschine",
+  "dip_assistent",
+];
+export const FREIE_LASTEN: readonly Geraet[] = [
+  "kurzhantel",
+  "langhantel",
+  "sz_stange",
+  "trap_bar",
+  "kettlebell",
+  "hantelscheibe",
+  "multipresse",
+  "medizinball",
+  "band",
+];
 /** Geräte, deren Gewichtsstufen die Last bestimmen. */
-export const LASTGERAETE: readonly Geraet[] = [...FREIE_LASTEN, ...MASCHINEN]
+export const LASTGERAETE: readonly Geraet[] = [...FREIE_LASTEN, ...MASCHINEN];
 
 /** Wie eine Übung gesteigert wird. */
-export type Belastungsart = "gewicht" | "wiederholungen" | "zeit" | "distanz"
+export type Belastungsart = "gewicht" | "wiederholungen" | "zeit" | "distanz";
 
-export type Trainingsart = "kraft" | "mobilitaet" | "ausdauer"
+export type Trainingsart = "kraft" | "mobilitaet" | "ausdauer";
 
 export const MUSKELN = [
   "brust",
@@ -155,323 +203,362 @@ export const MUSKELN = [
   "nacken",
   "ganzkoerper",
   "herz_kreislauf",
-] as const
-export type Muskel = (typeof MUSKELN)[number]
+] as const;
+export type Muskel = (typeof MUSKELN)[number];
 
 /** Ausführliche Anleitung für das Info-Fenster. */
 export interface UebungInfo {
   /** Ein Satz: was die Übung ist und wofür */
-  kurz: string
+  kurz: string;
   /** Schritte von der Ausgangsposition bis zum Ende, je ein ganzer Satz */
-  ausfuehrung: string[]
-  atmung: string
+  ausfuehrung: string[];
+  atmung: string;
   /** Typische Fehler und wie man sie vermeidet */
-  fehler: string[]
+  fehler: string[];
   /** Wirkung und Nutzen */
-  vorteile: string[]
-  tipps: string[]
+  vorteile: string[];
+  tipps: string[];
   /** Leichter oder schwerer machen */
-  varianten?: string
+  varianten?: string;
   /** Wer vorsichtig sein sollte */
-  sicherheit?: string
+  sicherheit?: string;
   /** Nutzen für Golfer, wenn golf >= 2 */
-  golf?: string
+  golf?: string;
 }
 
 export interface Uebung {
-  id: string
-  name: string
+  id: string;
+  name: string;
   /** Weitere Namen zum Suchen (englische Bezeichnung, Studio-Jargon) */
-  auch?: string[]
-  muster: Muster
-  art: Trainingsart
+  auch?: string[];
+  muster: Muster;
+  art: Trainingsart;
   /** Hauptsächlich beanspruchte Muskeln */
-  muskeln: Muskel[]
-  sekundaer?: Muskel[]
+  muskeln: Muskel[];
+  sekundaer?: Muskel[];
   /** Eine der Gruppen muss vollständig vorhanden sein (leere Gruppe: ohne Gerät). */
-  geraete: Geraet[][]
-  belastung: Belastungsart
+  geraete: Geraet[][];
+  belastung: Belastungsart;
   /** Nötige Raumhöhe in cm (Arme über Kopf, Sprünge, Klimmzug) */
-  hoehe_cm: number
+  hoehe_cm: number;
   /** Belastung je Gelenk: 1 mäßig, 2 hoch. Fehlt ein Gelenk, ist es kaum belastet. */
-  gelenke: Partial<Record<Gelenk, 1 | 2>>
+  gelenke: Partial<Record<Gelenk, 1 | 2>>;
   /** Schwierigkeit 1 (einfach) bis 3 (technisch anspruchsvoll) */
-  stufe: 1 | 2 | 3
+  stufe: 1 | 2 | 3;
   /** Sportarten, für die die Übung besonders passt */
-  sport?: string[]
+  sport?: string[];
   /** Bedeutung für Golf: 1 hilfreich, 2 wichtig, 3 golfspezifisch */
-  golf?: 1 | 2 | 3
+  golf?: 1 | 2 | 3;
   /** Einseitig ausgeführt (Zeiten und Wiederholungen je Seite) */
-  einseitig?: boolean
+  einseitig?: boolean;
   /** Für Übungen mit Körpergewicht: nächste schwerere Variante */
-  schwerer?: string
+  schwerer?: string;
   /** Kurzer Hinweis direkt in der Einheit */
-  hinweis?: string
+  hinweis?: string;
   /**
    * In der App steht hier nur der Kurztext: Die ausführliche Anleitung liegt in einem eigenen Paket und wird nachgeladen
    * (infoVon in daten/uebungen). Die Dateien der Übungsdatenbank schreiben mit UebungVoll alles vollständig hin.
    */
-  info: Pick<UebungInfo, "kurz"> & Partial<UebungInfo>
+  info: Pick<UebungInfo, "kurz"> & Partial<UebungInfo>;
 }
 
 /** Übung mit vollständiger Anleitung, so wie sie in der Übungsdatenbank steht */
 export interface UebungVoll extends Uebung {
-  info: UebungInfo
+  info: UebungInfo;
 }
 
-export type Ziel = "muskelaufbau" | "kraft" | "fitness" | "abnehmen" | "sport"
-export type Erfahrung = "einsteiger" | "fortgeschritten" | "erfahren"
-export type Saison = "vorbereitung" | "wettkampf" | "pause"
+export type Ziel = "muskelaufbau" | "kraft" | "fitness" | "abnehmen" | "sport";
+export type Erfahrung = "einsteiger" | "fortgeschritten" | "erfahren";
+export type Saison = "vorbereitung" | "wettkampf" | "pause";
 
 /** Trainingsphase eines Blocks im Jahresplan. Die Phasen bauen aufeinander auf: Grundlage, Kraft, Schnellkraft, Erhalt, Übergang. */
-export type Phase = "grundlage" | "kraft" | "schnellkraft" | "erhalt" | "uebergang"
+export type Phase =
+  | "grundlage"
+  | "kraft"
+  | "schnellkraft"
+  | "erhalt"
+  | "uebergang";
 
 export interface Jahresplan {
   /** Montag, an dem der erste Block des Plans beginnt */
-  start: string
+  start: string;
   /** Phase je Block (ein Block = 5 Wochen) */
-  bloecke: Phase[]
+  bloecke: Phase[];
   /** Wettkampf- oder Spielsaison als Monate 1 bis 12, null ohne feste Saison */
-  saison: { von: number; bis: number } | null
+  saison: { von: number; bis: number } | null;
 }
 
 /** Was an einem Wochentag ansteht. */
-export type Tagesart = "frei" | "training" | "sporttermin"
-export type Schwerpunkt = "automatisch" | "kraft" | "mobilitaet" | "ausdauer"
-export type Termin = "mannschaftstraining" | "spiel" | "turnier" | "runde" | "lauf"
+export type Tagesart = "frei" | "training" | "sporttermin";
+export type Schwerpunkt = "automatisch" | "kraft" | "mobilitaet" | "ausdauer";
+export type Termin =
+  | "mannschaftstraining"
+  | "spiel"
+  | "turnier"
+  | "runde"
+  | "lauf";
 
 export interface Wochentag {
-  art: Tagesart
+  art: Tagesart;
   /** Index in profil.orte */
-  ort?: number
-  minuten?: number
-  schwerpunkt?: Schwerpunkt
-  termin?: Termin
+  ort?: number;
+  minuten?: number;
+  schwerpunkt?: Schwerpunkt;
+  termin?: Termin;
   /** Mit eigenem Plan: an diesem Tag plant TrainMe zusätzlich (sonst kommt der nächste Plantag) */
-  quelle?: "plan" | "trainme"
+  quelle?: "plan" | "trainme";
 }
 
-export type BausteinArt = "laufen_locker" | "laufen_intervall" | "gehen" | "rad_locker" | "mobility"
-export type Tageszeit = "morgens" | "mittags" | "abends"
+export type BausteinArt =
+  | "laufen_locker"
+  | "laufen_intervall"
+  | "gehen"
+  | "rad_locker"
+  | "mobility";
+export type Tageszeit = "morgens" | "mittags" | "abends";
 /** zusätzlich zum Krafttag (Doppeltag), statt des Krafttags (Plan rückt nach hinten) oder diese Woche aus */
-export type BausteinModus = "zusatz" | "statt" | "aus"
+export type BausteinModus = "zusatz" | "statt" | "aus";
 
 /** Feste Zusatzeinheit neben dem Plan, z. B. zweimal die Woche morgens locker laufen */
 export interface Baustein {
-  id: string
-  art: BausteinArt
+  id: string;
+  art: BausteinArt;
   /** Wochentage, 0 = Montag */
-  tage: number[]
-  tageszeit: Tageszeit
-  minuten: number
+  tage: number[];
+  tageszeit: Tageszeit;
+  minuten: number;
   /** gilt ab (und bis) zu diesem Datum */
-  ab: string
-  bis?: string
+  ab: string;
+  bis?: string;
   /** Grundeinstellung; zusatz oder statt */
-  modus: Exclude<BausteinModus, "aus">
+  modus: Exclude<BausteinModus, "aus">;
   /** Abweichung je Woche, Schlüssel = Montag der Woche */
-  wochen?: Record<string, BausteinModus>
+  wochen?: Record<string, BausteinModus>;
 }
 
 export interface Gewichte {
   /** Kurzhanteln je Hand in kg */
-  kurzhanteln: number[]
+  kurzhanteln: number[];
   /** Langhantelstange in kg (0: keine) */
-  stange: number
+  stange: number;
   /** SZ-Stange in kg (0: keine), nutzt dieselben Scheiben */
-  sz_stange: number
+  sz_stange: number;
   /** Trap Bar (Sechseckstange) in kg (0: keine) */
-  trap_bar: number
+  trap_bar: number;
   /** Stange der Multipresse in kg (0: keine) */
-  multipresse_stange: number
+  multipresse_stange: number;
   /** Hantelscheiben, die paarweise vorhanden sind (kg je Scheibe) */
-  scheiben: number[]
+  scheiben: number[];
   /** Von jeder Scheibensorte genug (Studio): scheiben listet dann nur die Sorten */
-  scheiben_beliebig?: boolean
-  kettlebells: number[]
-  medizinbaelle: number[]
+  scheiben_beliebig?: boolean;
+  kettlebells: number[];
+  medizinbaelle: number[];
   /** Schrittweite an Maschinen und am Kabelzug */
-  maschine_schritt: number
-  maschine_max: number
+  maschine_schritt: number;
+  maschine_max: number;
   /** Widerstandsbänder, leicht bis schwer (Stufen) */
-  baender: number
+  baender: number;
 }
 
 export interface Ort {
-  name: string
-  geraete: Geraet[]
-  gewichte: Gewichte
-  deckenhoehe_cm: number
+  name: string;
+  geraete: Geraet[];
+  gewichte: Gewichte;
+  deckenhoehe_cm: number;
 }
 
 export interface Beschwerde {
-  gelenk: Gelenk
+  gelenk: Gelenk;
   /** schonen: keine hoch belastenden Übungen; meiden: gar keine Belastung */
-  grad: "schonen" | "meiden"
+  grad: "schonen" | "meiden";
 }
 
 export interface Profil {
-  name: string
-  ziel: Ziel
-  erfahrung: Erfahrung
-  sport: string
-  saison: Saison
-  arten: Trainingsart[]
-  woche: Wochentag[] // 0 = Montag … 6 = Sonntag
-  orte: Ort[]
-  beschwerden: Beschwerde[]
-  ausgeschlossen: string[]
-  koerpergewicht_kg?: number
+  name: string;
+  ziel: Ziel;
+  erfahrung: Erfahrung;
+  sport: string;
+  saison: Saison;
+  arten: Trainingsart[];
+  woche: Wochentag[]; // 0 = Montag … 6 = Sonntag
+  orte: Ort[];
+  beschwerden: Beschwerde[];
+  ausgeschlossen: string[];
+  koerpergewicht_kg?: number;
   /** Mehrere Sportarten; sport ist die wichtigste davon */
-  sporte?: string[]
+  sporte?: string[];
   /** Mehrere Ziele; ziel ist das erste davon */
-  ziele?: Ziel[]
+  ziele?: Ziel[];
   /** Position im Football (qb, rb, wr, te, ol, dl, lb, db, k) */
-  position?: string
+  position?: string;
   /** Mehrere Positionen (z. B. in beide Richtungen spielen) */
-  positionen?: string[]
+  positionen?: string[];
   /** Änderungen, die erst mit dem nächsten Block gelten */
-  vorgemerkt?: { ab: string; aenderung: Partial<Profil> }
+  vorgemerkt?: { ab: string; aenderung: Partial<Profil> };
   /** Reha: Beschwerdebilder und Sicherheitsangaben */
-  reha?: RehaProfil
+  reha?: RehaProfil;
   /** Startdatum des aktuellen Blocks (JJJJ-MM-TT) */
-  block_start: string
+  block_start: string;
   /** Grober Plan für das Jahr, Phase je Block */
-  jahresplan?: Jahresplan
+  jahresplan?: Jahresplan;
   /** Woher die Einheiten kommen: TrainMe plant selbst (Standard) oder ein eigener Plan (daten.eigenerPlan) */
-  planart?: "trainme" | "eigen"
+  planart?: "trainme" | "eigen";
   /**
    * Wochentage: Einheiten stehen an festen Tagen, Verpasstes bleibt verpasst (Standard). Fortlaufend: immer die
    * nächste offene Einheit, egal an welchem Tag.
    */
-  folge?: "wochentage" | "fortlaufend"
+  folge?: "wochentage" | "fortlaufend";
   /**
    * Aufwärmsätze: wie vorgesehen bei der ersten Hauptübung (Standard) oder nur bei den vier großen
    * Langhantelübungen (Kniebeuge, Bankdrücken, Überkopfdrücken, Kreuzheben), jeweils bei der ersten ihrer Art am Tag.
    */
-  aufwaermen?: "plan" | "grosse_vier"
+  aufwaermen?: "plan" | "grosse_vier";
   /** Minuten Aufräumen nach dem letzten Satz, mit Countdown, der sich nicht wegklicken lässt (0 oder fehlt: aus) */
-  aufraeumen_min?: number
+  aufraeumen_min?: number;
   /**
    * Wochenjournal an: Datum (JJJJ-MM-TT), ab dem es gilt. Am letzten Trainingstag der Woche muss es im Aufräumen
    * ausgefüllt oder für diese Woche übersprungen werden. Fehlt: aus.
    */
-  wochenjournal?: string
+  wochenjournal?: string;
   /** Krankheit berücksichtigen: Krank melden mit Hals-Check, Schon- und Rückkehr-Einheiten (siehe logik/krankheit.ts) */
-  krankheit?: boolean
+  krankheit?: boolean;
   /** Feste Zusatzeinheiten neben dem Plan (z. B. morgens laufen) */
-  bausteine?: Baustein[]
+  bausteine?: Baustein[];
 }
 
 /** Eine Übung in einem eigenen Plan (zum Beispiel vom Coach oder aus einem Heft). */
 export interface PlanUebung {
   /** Name wie im Plan */
-  name: string
+  name: string;
   /** Zugeordnete TrainMe-Übung; ohne Zuordnung eine freie Übung mit Protokoll unter "frei:<name>" */
-  id?: string
-  saetze: number
-  wdh_von: number
-  wdh_bis: number
+  id?: string;
+  saetze: number;
+  wdh_von: number;
+  wdh_bis: number;
   /** Vorgabe im Wortlaut, wenn sie nicht in eine Spanne passt (z. B. „10 (+3+3+3)“ oder „7 / 7 / 7“) */
-  wdh_text?: string
+  wdh_text?: string;
   /** Sekunden statt Wiederholungen (z. B. „10 bis 20 Sek.“) */
-  zeit?: boolean
+  zeit?: boolean;
   /** Anteil am Maximum (0 bis 1), als Spanne; bezieht sich auf basis oder die Übung selbst */
-  prozent?: [number, number]
+  prozent?: [number, number];
   /** Übung, deren Maximum die Prozentangabe meint (z. B. Kniebeuge für Pin Squat) */
-  basis?: string
+  basis?: string;
   /** Wiederholungen im Tank laut Plan (aus RPE: 10 − RPE) */
-  rir?: number
-  pause_s?: number
+  rir?: number;
+  pause_s?: number;
   /** Supersatz: gleiche Gruppe = abwechselnd, Pause erst nach der letzten Übung der Gruppe */
-  gruppe?: string
-  hinweis?: string
-  aufwaermsaetze?: string
+  gruppe?: string;
+  hinweis?: string;
+  aufwaermsaetze?: string;
 }
 
 export interface PlanTag {
   /** Fortlaufende Nummer im Plan, ab 1 */
-  nr: number
-  titel: string
+  nr: number;
+  titel: string;
   /** Woche im Plan und Abschnitt (z. B. Phase 2), nur zur Anzeige */
-  woche?: number
-  abschnitt?: string
-  uebungen: PlanUebung[]
+  woche?: number;
+  abschnitt?: string;
+  uebungen: PlanUebung[];
 }
 
 export interface TagAnpassung {
   /** Stelle im Tag (ab 0) → Übung, die an diesem Tag stattdessen gemacht wird */
-  tausch?: Record<string, string>
+  tausch?: Record<string, string>;
   /** Stelle im Tag (ab 0) → Zahl der Sätze an diesem Tag */
-  saetze?: Record<string, number>
+  saetze?: Record<string, number>;
 }
 
 export interface EigenerPlan {
-  name: string
+  name: string;
   /** Woher der Plan kam, z. B. "kraftbuch" */
-  quelle?: string
-  tage: PlanTag[]
+  quelle?: string;
+  tage: PlanTag[];
   /** Ab diesem Datum gilt der Plan */
-  start: string
+  start: string;
   /** Nach dem letzten Tag wieder von vorn (z. B. ein Physio-Plan) */
-  wiederholen?: boolean
+  wiederholen?: boolean;
 }
 
-export type RehaBild = "huefte_arthrose" | "huefte_tep" | "huefte_seitlich" | "huefte_leiste" | "knie_arthrose" | "knie_tep" | "ruecken"
+export type RehaBild =
+  | "huefte_arthrose"
+  | "huefte_tep"
+  | "huefte_seitlich"
+  | "huefte_leiste"
+  | "knie_arthrose"
+  | "knie_tep"
+  | "ruecken";
 
 export interface RehaProfil {
-  bilder: { id: RehaBild; seite?: "links" | "rechts" | "beide"; op_datum?: string }[]
+  bilder: {
+    id: RehaBild;
+    seite?: "links" | "rechts" | "beide";
+    op_datum?: string;
+  }[];
   /** kommt sicher auf den Boden und wieder hoch */
-  boden: boolean
+  boden: boolean;
   /** braucht beim Gleichgewicht Halt (Gehhilfe, Unsicherheit, Sturz im letzten Jahr) */
-  halt: boolean
+  halt: boolean;
   /** Training mit Arzt oder Physiotherapie abgesprochen */
-  freigabe: boolean
+  freigabe: boolean;
   /** Bewegungsgrenzen nach Hüft-OP vom Operateur (tiefe Beugung, Bein über die Mitte, Innendrehung) */
-  tep_grenzen: boolean
+  tep_grenzen: boolean;
   /** Datum, an dem die Warnzeichen zuletzt verneint wurden */
-  warnzeichen?: string
-  geburtsjahr?: number
-  geschlecht?: "m" | "w"
+  warnzeichen?: string;
+  geburtsjahr?: number;
+  geschlecht?: "m" | "w";
 }
 
 /** Ein Platz in einer Einheit, bevor eine Übung gewählt ist. */
-export type Rolle = "haupt" | "neben" | "isolation" | "praevention" | "schnellkraft" | "mobil" | "ausdauer"
+export type Rolle =
+  | "haupt"
+  | "neben"
+  | "isolation"
+  | "praevention"
+  | "schnellkraft"
+  | "mobil"
+  | "ausdauer";
 
 export interface Vorgabe {
-  saetze: number
-  wdh_von: number
-  wdh_bis: number
+  saetze: number;
+  wdh_von: number;
+  wdh_bis: number;
   /** Ziel-Wiederholungen im Tank */
-  rir: number
+  rir: number;
   /** kg, Sekunden oder Meter, je nach Belastungsart; null = Körpergewicht oder frei */
-  last: number | null
-  modell: Progressionsmodell
-  pause_s: number
-  begruendung: string
+  last: number | null;
+  modell: Progressionsmodell;
+  pause_s: number;
+  begruendung: string;
   /** Erster Satz als Topsatz, danach Back-off-Sätze mit etwa 10 % weniger */
-  topsatz?: boolean
+  topsatz?: boolean;
   /** Der Plan gibt das RIR selbst vor (Kraftbuch): dann bleibt es für alle Sätze gleich */
-  rir_fest?: boolean
+  rir_fest?: boolean;
 }
 
-export type Progressionsmodell = "linear" | "doppelt" | "rir" | "prozent" | "qualitaet" | "zeit"
+export type Progressionsmodell =
+  | "linear"
+  | "doppelt"
+  | "rir"
+  | "prozent"
+  | "qualitaet"
+  | "zeit";
 
 export interface Platz {
-  rolle: Rolle
-  muster: Muster
-  uebung: Uebung
-  vorgabe: Vorgabe
+  rolle: Rolle;
+  muster: Muster;
+  uebung: Uebung;
+  vorgabe: Vorgabe;
   /** Warum genau diese Übung auf diesem Platz steht */
-  warum?: Grund[]
+  warum?: Grund[];
   /** Eigene Beschriftung statt der Rolle (z. B. Reha-Kreis „Gleichgewicht“) */
-  etikett?: string
+  etikett?: string;
   /** Supersatz-Gruppe aus einem eigenen Plan (A, B, …) */
-  gruppe?: string
+  gruppe?: string;
   /** Vorgabe im Wortlaut aus dem eigenen Plan */
-  plantext?: string
+  plantext?: string;
   /** Einseitige Übung heute mit beiden Seiten gleichzeitig (Zeit sparen) */
-  gleichzeitig?: boolean
+  gleichzeitig?: boolean;
 }
 
 /** Ein Grund für die Auswahl einer Übung, als Text aufbereitet in der Oberfläche. */
@@ -491,203 +578,232 @@ export type Grund =
   | { art: "phase"; phase: Phase }
   | { art: "getauscht" }
   | { art: "position"; position: string }
-  | { art: "reha"; familie: string; stufe: number; stufen: number; bild: string }
-  | { art: "reha_schmerz"; text: string }
+  | {
+      art: "reha";
+      familie: string;
+      stufe: number;
+      stufen: number;
+      bild: string;
+    }
+  | { art: "reha_schmerz"; text: string };
 
 export interface Einheit {
-  datum: string
-  titel: string
-  art: Trainingsart | "regeneration"
-  ort: number
-  minuten: number
-  plaetze: Platz[]
-  hinweise: string[]
+  datum: string;
+  titel: string;
+  art: Trainingsart | "regeneration";
+  ort: number;
+  minuten: number;
+  plaetze: Platz[];
+  hinweise: string[];
   /** Tag im eigenen Plan */
-  plan_nr?: number
+  plan_nr?: number;
   /** Schon-Einheit bei oder nach Krankheit: verbraucht keinen Plantag (siehe logik/krankheit.ts) */
-  schon?: Schonung
+  schon?: Schonung;
   /** Einheit aus einem Baustein, mit Tageszeit */
-  baustein?: string
-  tageszeit?: Tageszeit
+  baustein?: string;
+  tageszeit?: Tageszeit;
 }
 
 export interface Satz {
-  last: number | null
-  wdh: number
-  rir: number
-  sekunden?: number
+  last: number | null;
+  wdh: number;
+  rir: number;
+  sekunden?: number;
   /** Reha: Schmerz während des Satzes, 0 bis 10 */
-  schmerz?: number
+  schmerz?: number;
   /** Topsatz (schwerster Satz) oder Back-off-Satz danach; ohne Angabe: gleiche Sätze */
-  art?: "top" | "backoff"
+  art?: "top" | "backoff";
   /** Deutlich über allem Bisherigen und nicht bestätigt (vermutlich vertippt): zählt nicht für Maximum und Steigerung */
-  unplausibel?: boolean
+  unplausibel?: boolean;
   /** Körpergewichtsübung mit Band als Unterstützung: so viele kg nimmt das Band ab („minus kg“), und seine Farbe */
-  hilfe_kg?: number
-  hilfe_band?: string
+  hilfe_kg?: number;
+  hilfe_band?: string;
   /** Zeitpunkt, an dem der Satz abgehakt wurde (Millisekunden seit 1970) */
-  um?: number
+  um?: number;
   /** Dropsatz mit Drop-Pins: weitere Stufen ohne Pause, je mit Gewicht und Wiederholungen (zählen nicht fürs Maximum) */
-  drops?: { last: number; wdh: number }[]
+  drops?: { last: number; wdh: number }[];
 }
 
 export interface Protokoll {
-  datum: string
-  uebung: string
-  saetze: Satz[]
+  datum: string;
+  uebung: string;
+  saetze: Satz[];
   /** Name einer freien Übung (ohne Eintrag in der Übungsdatenbank) */
-  name?: string
+  name?: string;
   /** Übernommen, z. B. aus dem Kraftbuch; geschaetzt: Datum oder Wiederholungen nicht genau bekannt */
-  quelle?: string
-  geschaetzt?: boolean
+  quelle?: string;
+  geschaetzt?: boolean;
 }
 
 export interface Erledigt {
-  datum: string
-  titel: string
-  minuten: number
-  saetze: number
-  xp: number
-  rekorde: string[]
-  art?: Trainingsart | "regeneration"
+  datum: string;
+  titel: string;
+  minuten: number;
+  saetze: number;
+  xp: number;
+  rekorde: string[];
+  art?: Trainingsart | "regeneration";
   /** geplanter Tag, falls vor- oder nachgeholt */
-  geplant?: string
-  entlastung?: boolean
+  geplant?: string;
+  entlastung?: boolean;
   /** Reha: Schmerz vor dem Training, 0 bis 10 */
-  schmerz_vor?: number
+  schmerz_vor?: number;
   /** Reha: wie es am Morgen danach war, verglichen mit vor dem Training */
-  reaktion?: "besser" | "gleich" | "schlechter"
+  reaktion?: "besser" | "gleich" | "schlechter";
   /** Tag im eigenen Plan */
-  plan_nr?: number
-  quelle?: string
+  plan_nr?: number;
+  quelle?: string;
   /** Schon-Einheit bei oder nach Krankheit (zählt nicht als Plantag) */
-  schon?: Schonung
+  schon?: Schonung;
   /** Gemessene Trainingszeit: „Training starten“ bis „Training beenden“ (ISO), Dauer, Zeitbudget und Schätzung in Minuten */
-  beginn?: string
-  ende?: string
-  dauer_min?: number
-  budget_min?: number
-  geschaetzt_min?: number
+  beginn?: string;
+  ende?: string;
+  dauer_min?: number;
+  budget_min?: number;
+  geschaetzt_min?: number;
   /** Gemessenes Tempo von Satz zu Satz gegen die geplante Pause (1 = wie geplant) */
-  tempo?: number
+  tempo?: number;
   /** Gemessene Wechsel zwischen den Übungen (samt Aufwärmen und Umbau) gegen die Schätzung */
-  wechsel?: number
+  wechsel?: number;
   /** Minuten vom letzten Satz bis „Training beenden“ */
-  abschluss_min?: number
+  abschluss_min?: number;
 }
 
 export interface Spielstand {
-  xp: number
-  abzeichen: Record<string, string> // id → Datum
+  xp: number;
+  abzeichen: Record<string, string>; // id → Datum
 }
-
 
 /** Ergebnis eines Beweglichkeitstests */
 export interface Messung {
-  test: string
-  datum: string
+  test: string;
+  datum: string;
   /** Messwert je Seite oder ein Wert (links, rechts) */
-  wert: number
-  rechts?: number
+  wert: number;
+  rechts?: number;
 }
 
 export interface Daten {
-  version: 1
-  profil: Profil | null
-  protokoll: Protokoll[]
-  erledigt: Erledigt[]
-  spiel: Spielstand
-  messungen: Messung[]
+  version: 1;
+  profil: Profil | null;
+  protokoll: Protokoll[];
+  erledigt: Erledigt[];
+  spiel: Spielstand;
+  messungen: Messung[];
   /** Werte aus Health Connect, je Tag; garmin: Werte der Uhr aus der Lebenswelt (stand: letzte Synchronisierung) */
-  gesundheit?: { verbunden: boolean; tage: Record<string, Tageswerte>; garmin?: { stand: string; tage: Record<string, Tageswerte> } }
+  gesundheit?: {
+    verbunden: boolean;
+    tage: Record<string, Tageswerte>;
+    garmin?: { stand: string; tage: Record<string, Tageswerte> };
+  };
   /** Geschätztes oder gemessenes Maximum (1 Wiederholung) je Übung aus der Einstufung */
-  maxwerte?: Record<string, { kg: number; datum: string }>
+  maxwerte?: Record<string, { kg: number; datum: string }>;
   /** Wann die Einstufung erledigt wurde */
-  einstufung?: { kraft?: string; mobil?: string }
+  einstufung?: { kraft?: string; mobil?: string };
   /** Eigener Plan, wenn profil.planart = "eigen" */
-  eigenerPlan?: EigenerPlan
+  eigenerPlan?: EigenerPlan;
   /** Gewählte Bandfarbe je Übung */
-  bandfarben?: Record<string, string>
+  bandfarben?: Record<string, string>;
   /** Dauerhaft getauschte Übungen („Immer“ beim Tauschen): alte ID → neue ID, gilt auch im eigenen Plan */
-  ersatz?: Record<string, string>
+  ersatz?: Record<string, string>;
   /** Zusätzliche Sätze je Übung im eigenen Plan (aus dem Wochenrückblick übernommen), mit Datum der Übernahme */
-  satzplus?: Record<string, { n: number; seit: string }>
+  satzplus?: Record<string, { n: number; seit: string }>;
   /**
    * Anpassungen an einzelnen Tagen des eigenen Plans, vor dem Training gemacht (Tag ansehen, ohne ihn zu starten):
    * je Plantag (nr) getauschte Übungen und geänderte Satzzahlen, jeweils nach der Stelle im Tag. Gilt nur für
    * diesen einen Tag und geht beim Abgleich mit auf die anderen Geräte.
    */
-  tagplan?: Record<string, TagAnpassung>
+  tagplan?: Record<string, TagAnpassung>;
+  /** Fitness-Check: Angaben zur Person und selbst gemessene Werte mit Verlauf (siehe logik/fitness.ts) */
+  fitness?: Fitness;
   /** Gemeldete Krankheiten, älteste zuerst; die letzte ohne fit_ab läuft noch (siehe logik/krankheit.ts) */
-  krankheiten?: Krankheit[]
+  krankheiten?: Krankheit[];
   /** Wochenjournal je Woche (Montag der Woche → Eintrag), siehe logik/wochenjournal.ts */
-  wochenjournal?: Record<string, Wochenjournal>
+  wochenjournal?: Record<string, Wochenjournal>;
   /** Wochenrückblick: abgelehnte Vorschläge (Schlüssel → Datum), sie kommen erst nach einigen Wochen wieder */
-  rueckblick?: { weg?: Record<string, string> }
+  rueckblick?: { weg?: Record<string, string> };
   /** Band als Unterstützung je Körpergewichtsübung (Farbe) und eigene kg-Werte je Farbe */
-  bandhilfe?: Record<string, string>
-  bandhilfe_kg?: Record<string, number>
+  bandhilfe?: Record<string, string>;
+  bandhilfe_kg?: Record<string, number>;
   /** Übernommene ältere 1RM-Werte je Übung (z. B. Phase 1 des Kraftbuchs), nur für die Kurven */
-  archiv?: Record<string, { datum: string; kg: number; text?: string }[]>
+  archiv?: Record<string, { datum: string; kg: number; text?: string }[]>;
   /** Einmal erledigte Übernahmen, z. B. kraftbuch → Datum */
-  uebernahmen?: Record<string, string>
+  uebernahmen?: Record<string, string>;
   /** Gewählte Satzform je Übung: Topsatz mit Back-off-Sätzen oder gleiche Sätze */
-  satzform?: Record<string, Satzform>
+  satzform?: Record<string, Satzform>;
   /** Körpergewicht je Tag (eingetragen oder aus der Lebenswelt) */
-  koerper?: Messpunkt[]
+  koerper?: Messpunkt[];
 }
 
-export type Satzform = "topsatz" | "gleich" | "drop"
+export type Satzform = "topsatz" | "gleich" | "drop";
 
 export interface Messpunkt {
-  datum: string
-  kg: number
+  datum: string;
+  kg: number;
 }
 
 export interface Tageswerte {
-  schritte?: number
+  schritte?: number;
   /** Schlaf der Nacht vor diesem Tag in Minuten */
-  schlaf_min?: number
-  ruhepuls?: number
-  hrv?: number
+  schlaf_min?: number;
+  ruhepuls?: number;
+  hrv?: number;
 }
 
 /** Eintrag im Wochenjournal: Selbsteinschätzung am Ende der Trainingswoche, 1 (schlecht) bis 5 (sehr gut) */
 export interface Wochenjournal {
   /** Montag der Woche, auf die sich der Eintrag bezieht */
-  woche: string
+  woche: string;
   /** Tag, an dem er gemacht wurde */
-  datum: string
-  erholung?: number
-  lust?: number
+  datum: string;
+  erholung?: number;
+  lust?: number;
   /** 5 = kaum Stress */
-  stress?: number
+  stress?: number;
   /** Körperstellen mit Beschwerden; leer: keine */
-  stellen?: Gelenk[]
-  notiz?: string
+  stellen?: Gelenk[];
+  notiz?: string;
   /** diese Woche übersprungen (die Frage kommt für diese Woche nicht wieder) */
-  uebersprungen?: boolean
+  uebersprungen?: boolean;
 }
 
 /** Gemeldete Krankheit */
 export interface Krankheit {
   /** erster kranker Tag */
-  seit: string
+  seit: string;
   /** nur oberhalb des Halses (Schnupfen, Halskratzen) oder mit Allgemeinsymptomen (Fieber, Glieder, Brust, Magen-Darm) */
-  art: "hals" | "allgemein"
+  art: "hals" | "allgemein";
   /** irgendwann Fieber gehabt */
-  fieber?: boolean
+  fieber?: boolean;
   /** erster Tag wieder fit; fehlt: noch krank */
-  fit_ab?: string
+  fit_ab?: string;
   /** Tagesmeldungen */
-  verlauf?: Record<string, "schlechter" | "gleich" | "besser">
+  verlauf?: Record<string, "schlechter" | "gleich" | "besser">;
 }
 
 /** Art einer Schon-Einheit: leicht trotz Erkältung, Rückkehr nach der Krankheit, Brücke statt Testtag */
 export interface Schonung {
-  art: "leicht" | "rueckkehr" | "bruecke"
+  art: "leicht" | "rueckkehr" | "bruecke";
   /** Rückkehr: Stufe 1, 2 … */
-  stufe: number
+  stufe: number;
   /** Plantag, aus dem sie gebaut ist */
-  nr?: number
+  nr?: number;
+}
+
+/** Selbst gemessene Werte im Fitness-Check */
+export type FitnessWert =
+  | "taille_cm"
+  | "liegestuetze"
+  | "griffkraft_kg"
+  | "weitsprung_cm"
+  | "sprunghoehe_cm"
+  | "vo2max"
+  | "fitnessalter";
+
+/** Fitness-Check: Angaben zur Person und Messwerte mit Datum (Verlauf) */
+export interface Fitness {
+  geburtsjahr?: number;
+  geschlecht?: "m" | "w";
+  groesse_cm?: number;
+  werte?: Partial<Record<FitnessWert, { datum: string; wert: number }[]>>;
 }
