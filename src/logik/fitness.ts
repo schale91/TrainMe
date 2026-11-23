@@ -1,5 +1,5 @@
 // Fitness-Check (Wunsch von Alex, 23.11.2026): Bereiche, die für Gesundheit und Leistung belegt sind, mit den Werten der
-// Uhr, aus TrainMe und selbst gemessenen Werten. Eine Stufe (gut, mittel, ausbaufähig) gibt es nur, wo eine belegte
+// Uhr, aus TrainMe und selbst gemessenen Werten. Eine Skala (rot, gelb, grün, hellblau) gibt es nur, wo eine belegte
 // Schwelle vorliegt; sonst zeigt der Check den Wert und seinen Verlauf.
 //
 // Schwellen und Quellen:
@@ -18,7 +18,25 @@ import { alleTage } from "./gesundheit"
 import { TESTS, bewerte } from "../daten/tests"
 import type { Daten, Fitness, FitnessWert } from "./typen"
 
-export type Stufe = "gut" | "mittel" | "ausbaufaehig" | null
+/** Farbe auf der Skala: rot ausbaufähig, gelb mittel, grün gut, blau überragend */
+export type Farbe = "rot" | "gelb" | "gruen" | "blau"
+export type Stufe = Farbe | null
+
+export const STUFE_NAME: Record<Farbe, string> = { rot: "ausbaufähig", gelb: "mittel", gruen: "gut", blau: "überragend" }
+
+/**
+ * Skala zum Anzeigen: Abschnitte aufsteigend nach Zahlenwert (jeweils „kleiner als bis“), die Markierung bei wert.
+ * umgekehrt: kleiner ist besser, die Skala wird gespiegelt, damit „gut“ immer rechts liegt.
+ */
+export interface Skala {
+  min: number
+  max: number
+  wert: number
+  abschnitte: { bis: number; farbe: Farbe }[]
+  /** Grenzen mit Beschriftung unter der Skala */
+  marken: { bei: number; text: string }[]
+  umgekehrt?: boolean
+}
 
 export interface Kennzahl {
   id: string
@@ -26,8 +44,23 @@ export interface Kennzahl {
   /** angezeigter Wert, leer = fehlt */
   wert: string
   stufe: Stufe
+  skala?: Skala
   /** Einordnung in einem Satz */
   text: string
+}
+
+/** Farbe des Abschnitts, in dem der Wert liegt */
+export function farbeAuf(abschnitte: { bis: number; farbe: Farbe }[], wert: number): Farbe {
+  return (abschnitte.find((a) => wert < a.bis) ?? abschnitte[abschnitte.length - 1]).farbe
+}
+
+/** Skala und Stufe aus Grenzen [bis, Farbe] (aufsteigend, die letzte gilt bis unendlich) */
+function skala(wert: number, min: number, max: number, grenzen: [number, Farbe][], marken: (number | [number, string])[], umgekehrt = false): { stufe: Farbe; skala: Skala } {
+  const abschnitte = grenzen.map(([bis, farbe]) => ({ bis, farbe }))
+  return {
+    stufe: farbeAuf(abschnitte, wert),
+    skala: { min, max, wert, abschnitte, umgekehrt, marken: marken.map((m) => (typeof m === "number" ? { bei: m, text: zahl(m, m % 1 ? (Math.abs(m) < 1 ? 2 : 1) : 0) } : { bei: m[0], text: m[1] })) },
+  }
 }
 
 export interface Bereich {
@@ -229,15 +262,18 @@ export function fitnessBewertung(daten: Daten, uhr: UhrWerte | null, heute: stri
       id: "fitnessalter",
       name: "Fitnessalter",
       wert: zahl(fa) + " Jahre",
-      stufe: d === null ? null : d <= -3 ? "gut" : d <= 3 ? "mittel" : "ausbaufaehig",
+      ...(d === null || alter === null
+        ? { stufe: null }
+        : skala(d, -15, 10, [[-9.95, "blau"], [-2.95, "gruen"], [3.05, "gelb"], [Infinity, "rot"]], [[-10, String(alter - 10)], [-3, String(alter - 3)], [3, String(alter + 3)]], true)),
       text:
-        d === null
+        (d === null
           ? "Für den Vergleich fehlt dein Geburtsjahr."
           : d <= -3
             ? zahl(-d) + " Jahre jünger als du: Deine Ausdauer liegt über dem Schnitt deines Alters."
             : d <= 3
               ? "Etwa dein Alter: Ausdauer im Schnitt deines Alters."
-              : zahl(d) + " Jahre älter als du: Ausdauertraining lohnt sich besonders.",
+              : zahl(d) + " Jahre älter als du: Ausdauertraining lohnt sich besonders.") +
+        (d !== null ? " Die Grenzen (3 und 10 Jahre) sind eine Orientierung, keine Norm." : ""),
     })
   } else ausdauer.push(leer("fitnessalter", "Fitnessalter", "Kommt von der Uhr; ohne Uhr unten eintragen."))
   aus.push({ id: "ausdauer", name: "Ausdauer", kennzahlen: ausdauer })
@@ -270,8 +306,10 @@ export function fitnessBewertung(daten: Daten, uhr: UhrWerte | null, heute: stri
             id: "liegestuetze",
             name: "Liegestütze am Stück",
             wert: lg.wert + " Wdh",
-            stufe: mann ? (lg.wert >= 40 ? "gut" : lg.wert > 10 ? "mittel" : "ausbaufaehig") : null,
-            text: mann ? "Ab 40 hatten Männer in einer Studie deutlich weniger Herz-Kreislauf-Ereignisse als unter 10 (Yang et al. 2019)." : "Verlauf; Vergleichswerte gibt es nur für Männer.",
+            ...(mann ? skala(lg.wert, 0, 60, [[11, "rot"], [21, "gelb"], [40, "gruen"], [Infinity, "blau"]], [11, 21, 40]) : { stufe: null }),
+            text: mann
+              ? "Je mehr am Stück, desto seltener waren Herz-Kreislauf-Ereignisse; ab 40 am seltensten, deutlich seltener als unter 10 (Yang et al. 2019, Männer)."
+              : "Verlauf; Vergleichswerte gibt es nur für Männer.",
           }
         : leer("liegestuetze", "Liegestütze am Stück", "Unten eintragen."),
     )
@@ -314,15 +352,15 @@ export function fitnessBewertung(daten: Daten, uhr: UhrWerte | null, heute: stri
   // Bewegung im Alltag
   const schritte = uhr?.schritte_wochenschnitt ?? mittelTage(daten, "schritte", heute)
   const alt60 = alter !== null && alter >= 60
-  const [gut, mittel] = alt60 ? [6000, 4000] : [8000, 5000]
+  const [mittel, gut, plateau] = alt60 ? [4000, 6000, 8000] : [5000, 8000, 10000]
   const bewegung: Kennzahl[] = [
     schritte
       ? {
           id: "schritte",
           name: "Schritte am Tag",
           wert: (Math.round(schritte / 100) * 100).toLocaleString("de-DE") + " im Schnitt",
-          stufe: schritte >= gut ? "gut" : schritte >= mittel ? "mittel" : "ausbaufaehig",
-          text: "Das Sterberisiko sinkt bis etwa " + (alt60 ? "6.000 bis 8.000" : "8.000 bis 10.000") + " Schritte am Tag (Paluch et al. 2022).",
+          ...skala(schritte, 0, plateau + 4000, [[mittel, "rot"], [gut, "gelb"], [plateau, "gruen"], [Infinity, "blau"]], [[mittel, mittel / 1000 + "k"], [gut, gut / 1000 + "k"], [plateau, plateau / 1000 + "k"]]),
+          text: "Das Sterberisiko sinkt bis etwa " + (alt60 ? "6.000 bis 8.000" : "8.000 bis 10.000") + " Schritte am Tag, darüber kaum noch (Paluch et al. 2022).",
         }
       : leer("schritte", "Schritte am Tag", "Kommt von der Uhr oder Health Connect."),
   ]
@@ -349,8 +387,8 @@ export function fitnessBewertung(daten: Daten, uhr: UhrWerte | null, heute: stri
           id: "ruhepuls",
           name: "Ruhepuls",
           wert: Math.round(puls) + " Schläge/min",
-          stufe: puls < 60 ? "gut" : puls <= 80 ? "mittel" : "ausbaufaehig",
-          text: "Ein niedriger Ruhepuls spricht für ein trainiertes Herz; über 80 steigt das Risiko deutlich (Zhang et al. 2016).",
+          ...skala(puls, 35, 100, [[50, "blau"], [60, "gruen"], [81, "gelb"], [Infinity, "rot"]], [50, 60, 80], true),
+          text: "Ein niedriger Ruhepuls spricht für ein trainiertes Herz, unter 50 ist typisch für Ausdauertrainierte; über 80 steigt das Risiko deutlich (Zhang et al. 2016).",
         }
       : leer("ruhepuls", "Ruhepuls", "Kommt von der Uhr."),
     schlaf
@@ -358,8 +396,8 @@ export function fitnessBewertung(daten: Daten, uhr: UhrWerte | null, heute: stri
           id: "schlaf",
           name: "Schlaf",
           wert: Math.floor(schlaf / 60) + " h " + Math.round(schlaf % 60) + " min im Schnitt",
-          stufe: schlaf >= 420 ? "gut" : schlaf >= 360 ? "mittel" : "ausbaufaehig",
-          text: "Für Erwachsene werden mindestens 7 Stunden empfohlen (Watson et al. 2015).",
+          ...skala(schlaf, 240, 660, [[360, "rot"], [420, "gelb"], [541, "gruen"], [Infinity, "gelb"]], [[360, "6 h"], [420, "7 h"], [540, "9 h"]]),
+          text: "Für Erwachsene werden mindestens 7 Stunden empfohlen; ob mehr als 9 Stunden nützt, ist offen, deshalb wird die Skala dort wieder gelb (Watson et al. 2015).",
         }
       : leer("schlaf", "Schlaf", "Kommt von der Uhr."),
   ]
@@ -393,8 +431,8 @@ export function fitnessBewertung(daten: Daten, uhr: UhrWerte | null, heute: stri
       id: "taille_groesse",
       name: "Taille zu Größe",
       wert: zahl(q, 2),
-      stufe: q < 0.5 ? "gut" : q < 0.6 ? "mittel" : "ausbaufaehig",
-      text: "Die Taille sollte weniger als die halbe Körpergröße messen (NICE 2022). Bei viel Muskulatur besser als der BMI.",
+      ...skala(q, 0.35, 0.7, [[0.4, "gelb"], [0.5, "gruen"], [0.6, "gelb"], [Infinity, "rot"]], [0.4, 0.5, 0.6], true),
+      text: "Die Taille sollte weniger als die halbe Körpergröße messen, ab 0,6 ist das Risiko hoch (NICE 2022). Sehr niedrige Werte können auf Untergewicht hinweisen. Bei viel Muskulatur besser als der BMI.",
     })
   } else koerper.push(leer("taille_groesse", "Taille zu Größe", "Braucht Größe und Taillenumfang, beides unten eintragen."))
   if (kg && groesse)
@@ -415,11 +453,38 @@ export function fitnessBewertung(daten: Daten, uhr: UhrWerte | null, heute: stri
     // bei zwei Seiten zählt die schwächere
     const w = t.seiten && typeof m.rechts === "number" ? (t.hoeherBesser ? Math.min(m.wert, m.rechts) : Math.max(m.wert, m.rechts)) : m.wert
     const b = bewerte(t, w)
+    const stufe: Farbe = b === "gut" ? "gruen" : b === "mittel" ? "gelb" : "rot"
+    // Skala nur für Messwerte, nicht für Stufen zum Antippen; die Farbe kommt aus bewerte
+    const lo = Math.min(t.gut, t.schwach)
+    const hi = Math.max(t.gut, t.schwach)
+    const span = hi - lo || 1
+    const sk: Skala | undefined =
+      t.einheit === "stufe"
+        ? undefined
+        : {
+            min: lo - span,
+            max: hi + span,
+            wert: w,
+            abschnitte: t.hoeherBesser
+              ? [
+                  { bis: t.schwach, farbe: "rot" },
+                  { bis: t.gut, farbe: "gelb" },
+                  { bis: Infinity, farbe: "gruen" },
+                ]
+              : [
+                  { bis: t.gut + 1e-9, farbe: "gruen" },
+                  { bis: t.schwach + 1e-9, farbe: "gelb" },
+                  { bis: Infinity, farbe: "rot" },
+                ],
+            marken: [lo, hi].map((x) => ({ bei: x, text: zahl(x) })),
+            umgekehrt: !t.hoeherBesser,
+          }
     bew.push({
       id: t.id,
       name: t.name,
       wert: zahl(w) + " " + t.einheit,
-      stufe: b === "gut" ? "gut" : b === "mittel" ? "mittel" : "ausbaufaehig",
+      stufe,
+      skala: sk,
       text: t.bereich,
     })
   }
@@ -431,18 +496,9 @@ export function fitnessBewertung(daten: Daten, uhr: UhrWerte | null, heute: stri
   return aus
 }
 
-/** Kurzfassung für die Karte: wie viele Kennzahlen gut, mittel, ausbaufähig, wie viele fehlen */
-export function fitnessUebersicht(b: Bereich[]): {
-  gut: number
-  mittel: number
-  ausbaufaehig: number
-  fehlt: number
-} {
+/** Kurzfassung für die Karte: wie viele Kennzahlen je Farbe, wie viele fehlen */
+export function fitnessUebersicht(b: Bereich[]): Record<Farbe, number> & { fehlt: number } {
   const alle = b.flatMap((x) => x.kennzahlen)
-  return {
-    gut: alle.filter((k) => k.stufe === "gut").length,
-    mittel: alle.filter((k) => k.stufe === "mittel").length,
-    ausbaufaehig: alle.filter((k) => k.stufe === "ausbaufaehig").length,
-    fehlt: alle.filter((k) => !k.wert).length,
-  }
+  const n = (f: Farbe) => alle.filter((k) => k.stufe === f).length
+  return { rot: n("rot"), gelb: n("gelb"), gruen: n("gruen"), blau: n("blau"), fehlt: alle.filter((k) => !k.wert).length }
 }

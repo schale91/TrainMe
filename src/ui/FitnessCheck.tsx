@@ -2,7 +2,7 @@
 // selbst gemessene Werte (siehe logik/fitness.ts).
 
 import { useEffect, useMemo, useState } from "react"
-import { MESSWERTE, alterAm, person, fitnessBewertung, fitnessUebersicht, letzter, uhrMerken, wertEintragen, type Kennzahl, type UhrWerte } from "../logik/fitness"
+import { MESSWERTE, STUFE_NAME, alterAm, person, type Farbe, type Skala as SkalaT, fitnessBewertung, fitnessUebersicht, letzter, uhrMerken, wertEintragen, type Kennzahl, type UhrWerte } from "../logik/fitness"
 import { heute } from "../logik/plan"
 import { rehaAktiv } from "../logik/reha"
 import type { Daten, Fitness, FitnessWert } from "../logik/typen"
@@ -13,10 +13,44 @@ import { datumText } from "./texte"
 
 type Aendern = (f: (d: Daten) => void) => void
 
-const STUFE: Record<string, string> = {
-  gut: "gut",
-  mittel: "mittel",
-  ausbaufaehig: "ausbaufähig",
+const FARBEN: Farbe[] = ["blau", "gruen", "gelb", "rot"]
+const FARBWERT: Record<Farbe, string> = { rot: "var(--rot)", gelb: "var(--gold)", gruen: "var(--gruen)", blau: "var(--hellblau)" }
+
+/** Lage auf der Skala in Prozent, gut liegt immer rechts */
+function lage(s: SkalaT, x: number): number {
+  const p = Math.max(0, Math.min(1, (x - s.min) / (s.max - s.min)))
+  return (s.umgekehrt ? 1 - p : p) * 100
+}
+
+/** Farbverlauf rot, gelb, grün, hellblau mit weichen Übergängen und einer Markierung beim eigenen Wert */
+function Skala(props: { s: SkalaT; stufe: Farbe }) {
+  const s = props.s
+  let von = s.min
+  const teile = s.abschnitte
+    .map((a) => {
+      const t = { a: lage(s, von), b: lage(s, Math.min(a.bis, s.max)), farbe: a.farbe }
+      von = Math.min(a.bis, s.max)
+      return { l: Math.min(t.a, t.b), r: Math.max(t.a, t.b), farbe: t.farbe }
+    })
+    .filter((t) => t.r - t.l > 0.01)
+    .sort((x, y) => x.l - y.l)
+  const weich = 4
+  const verlauf = teile.map((t, i) => FARBWERT[t.farbe] + " " + (i ? t.l + weich : 0).toFixed(1) + "% " + (i < teile.length - 1 ? t.r - weich : 100).toFixed(1) + "%").join(", ")
+  const x = lage(s, s.wert)
+  return (
+    <div className="fitskala" role="img" aria-label={STUFE_NAME[props.stufe]}>
+      <div className="fitbalken" style={{ background: "linear-gradient(to right, " + verlauf + ")" }}>
+        <span className="fitmarke" style={{ left: x + "%" }} />
+      </div>
+      <div className="fitmarken">
+        {s.marken.map((m) => (
+          <span key={m.bei} style={{ left: lage(s, m.bei) + "%" }}>
+            {m.text}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 /** Werte der Uhr aus der Lebenswelt holen; ohne Lebenswelt oder in der Fitness-Welt bleibt es bei null */
@@ -50,7 +84,7 @@ export function FitnessKarte(props: { daten: Daten; aendern: Aendern }) {
     const probe = { fitness: daten.fitness } as Daten
     if (uhrMerken(probe, uhr, tag)) aendern((d) => void uhrMerken(d, uhr, tag))
   }, [uhr, tag, aendern, daten.fitness])
-  const teile = [u.gut ? u.gut + " gut" : "", u.mittel ? u.mittel + " mittel" : "", u.ausbaufaehig ? u.ausbaufaehig + " ausbaufähig" : ""].filter(Boolean)
+  const teile = FARBEN.filter((f) => u[f])
   return (
     <>
       <button type="button" className="mobilkarte" onClick={() => setOffen(true)}>
@@ -58,7 +92,15 @@ export function FitnessKarte(props: { daten: Daten; aendern: Aendern }) {
         <span>
           <b>Fitness-Check</b>
           <small>
-            {teile.length ? teile.join(" · ") : "Noch kaum Werte"}
+            {teile.length
+              ? teile.map((f, i) => (
+                  <span key={f} className="fitzaehler">
+                    {i ? " · " : ""}
+                    <i className={"fitpunkt " + f} aria-hidden="true" />
+                    {u[f]} {STUFE_NAME[f]}
+                  </span>
+                ))
+              : "Noch kaum Werte"}
             {u.fehlt ? " · " + u.fehlt + (u.fehlt === 1 ? " Wert fehlt" : " Werte fehlen") : ""}
           </small>
         </span>
@@ -75,9 +117,10 @@ function Kennzeile(props: { k: Kennzahl }) {
     <div className={"fitzeile" + (k.wert ? "" : " fehlt")}>
       <span className="fitkopf">
         <b>{k.name}</b>
-        {k.stufe ? <span className={"fitstufe " + k.stufe}>{STUFE[k.stufe]}</span> : null}
+        {k.stufe ? <span className={"fitstufe " + k.stufe}>{STUFE_NAME[k.stufe]}</span> : null}
       </span>
       {k.wert ? <span className="fitwert">{k.wert}</span> : null}
+      {k.skala && k.stufe ? <Skala s={k.skala} stufe={k.stufe} /> : null}
       <small>{k.text}</small>
     </div>
   )
@@ -130,7 +173,7 @@ export function FitnessBlatt(props: { offen: boolean; schliessen: () => void; da
   const felder = MESSWERTE.filter((m) => !(props.reha && m.reha === false) && !(m.nurOhneUhr && props.uhr?.[m.id as "vo2max" | "fitnessalter"]))
   return (
     <Blatt offen={props.offen} onClose={props.schliessen} titel="Fitness-Check" hoch>
-      <p className="infokurz">Eine Einordnung gibt es nur, wo es belegte Grenzwerte gibt. Alles andere zählt im Vergleich mit dir selbst: Trag die Werte alle paar Monate neu ein.</p>
+      <p className="infokurz">Die Skala läuft von Rot (ausbaufähig) über Gelb und Grün bis Hellblau (überragend), die Markierung zeigt, wo du stehst. Sie steht nur dort, wo es Grenzwerte aus Studien oder Leitlinien gibt; beim Fitnessalter ist sie eine Orientierung. Alles andere zählt im Vergleich mit dir selbst: Trag die Werte alle paar Monate neu ein.</p>
       {bereiche.map((b) => (
         <Gruppe key={b.id} titel={b.name}>
           {b.kennzahlen.map((k) => (
