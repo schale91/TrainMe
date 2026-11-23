@@ -23,9 +23,7 @@
   --radius: 10px;
   --gross: 14px;
   /* Titel, Knöpfe und Zahlen: schmale Sportschrift, liegt der App bei */
-  --titelschrift:
-    "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui,
-    sans-serif;
+  --titelschrift: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
   color-scheme: dark;
 }
 
@@ -39,9 +37,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, Roboto,
-    "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, Roboto, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.38;
   -webkit-font-smoothing: antialiased;
@@ -87,9 +83,7 @@ select {
   -webkit-appearance: none;
 }
 select {
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--leise) 50%),
-    linear-gradient(135deg, var(--leise) 50%, transparent 50%);
+  background-image: linear-gradient(45deg, transparent 50%, var(--leise) 50%), linear-gradient(135deg, var(--leise) 50%, transparent 50%);
   background-position:
     calc(100% - 14px) 52%,
     calc(100% - 9px) 52%;
@@ -108,8 +102,7 @@ select:focus {
 .app main {
   max-width: 680px;
   margin: 0 auto;
-  padding: env(safe-area-inset-top) 16px
-    calc(env(safe-area-inset-bottom) + 96px);
+  padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 96px);
 }
 
 .seite {
@@ -2151,8 +2144,7 @@ a.knopf.aus {
 }
 .zeitleiste li.jetzt .knoten {
   border-color: var(--phase, var(--akzent));
-  box-shadow: 0 0 0 4px
-    color-mix(in srgb, var(--phase, var(--akzent)) 30%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--phase, var(--akzent)) 30%, transparent);
 }
 .zeitleiste li.meilenstein .knoten {
   border-color: var(--gold);
@@ -3187,237 +3179,51 @@ select.ampel.rot {
 }
 
 /* Zusatzeinheiten (Bausteine) */
-.akzent {
-  color: var(--akzent);
-}
-.bausteinzeile {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 0.5px solid var(--trenner, rgba(127, 127, 127, 0.2));
-}
-.bausteinzeile:last-child {
-  border-bottom: none;
-}
-.bausteinzeile > span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.bausteinzeile small {
-  opacity: 0.7;
-}
-.bausteinform {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.bausteinform input[type="date"] {
-  width: 100%;
-}
+.akzent { color: var(--akzent); }
+.bausteinzeile { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-bottom: 0.5px solid var(--trenner, rgba(127, 127, 127, 0.2)); }
+.bausteinzeile:last-child { border-bottom: none; }
+.bausteinzeile > span { display: flex; flex-direction: column; gap: 2px; }
+.bausteinzeile small { opacity: 0.7; }
+.bausteinform { display: flex; flex-direction: column; gap: 12px; }
+.bausteinform input[type="date"] { width: 100%; }
 
 /* Wochenrückblick */
-.abschnitt {
-  margin: 22px 4px 8px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--leise);
-}
-.vorschlag {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0 0 10px;
-  padding: 14px 16px;
-  border-radius: var(--gross);
-  background: var(--flaeche2);
-  border: 1px solid var(--akzent);
-}
-.vorschlag small {
-  color: var(--leise);
-  font-size: 13px;
-  line-height: 1.4;
-}
-.variantenliste {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
-}
-.variante {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 12px;
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--flaeche3);
-  color: var(--text);
-  text-align: left;
-}
-.variante > span:first-child {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.variante small {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.volumen {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  border-radius: var(--gross);
-  background: var(--flaeche);
-}
-.volumenzeile {
-  display: grid;
-  grid-template-columns: 104px 1fr 82px;
-  align-items: center;
-  gap: 10px;
-}
-.volumenname {
-  font-size: 14px;
-}
-.volumenbalken {
-  position: relative;
-  height: 10px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.1);
-}
-.volumenbalken .fuellung {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  border-radius: 99px;
-  min-width: 2px;
-}
-.volumenbalken .zielstrich {
-  position: absolute;
-  top: -4px;
-  bottom: -4px;
-  width: 2px;
-  margin-left: -1px;
-  padding: 0;
-  background: var(--text);
-  border-radius: 1px;
-}
-.volumenzahl {
-  display: flex;
-  justify-content: flex-end;
-  align-items: baseline;
-  gap: 8px;
-  font-variant-numeric: tabular-nums;
-}
-.volumenzahl b {
-  font-size: 14px;
-  min-width: 28px;
-  text-align: right;
-}
-.volumenzahl small {
-  color: var(--leise);
-  font-size: 12px;
-  min-width: 34px;
-  text-align: right;
-  white-space: nowrap;
-}
-.volumenlegende {
-  color: var(--leise);
-  font-size: 12px;
-}
-.blattinhalt .wochenkopf {
-  margin: 4px 0 12px;
-}
-.volumenzeile.legende {
-  margin-top: -2px;
-}
-.volumenzeile.legende b {
-  color: var(--leise);
-  font-weight: 500;
-  font-size: 12px;
-}
-.rundknopf:disabled {
-  opacity: 0.3;
-}
+.abschnitt { margin: 22px 4px 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--leise); }
+.vorschlag { display: flex; flex-direction: column; gap: 6px; margin: 0 0 10px; padding: 14px 16px; border-radius: var(--gross); background: var(--flaeche2); border: 1px solid var(--akzent); }
+.vorschlag small { color: var(--leise); font-size: 13px; line-height: 1.4; }
+.variantenliste { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.variante { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: var(--radius); background: var(--flaeche3); color: var(--text); text-align: left; }
+.variante > span:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.variante small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.volumen { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: var(--gross); background: var(--flaeche); }
+.volumenzeile { display: grid; grid-template-columns: 104px 1fr 82px; align-items: center; gap: 10px; }
+.volumenname { font-size: 14px; }
+.volumenbalken { position: relative; height: 10px; border-radius: 99px; background: rgba(255, 255, 255, 0.1); }
+.volumenbalken .fuellung { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; min-width: 2px; }
+.volumenbalken .zielstrich { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; padding: 0; background: var(--text); border-radius: 1px; }
+.volumenzahl { display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; font-variant-numeric: tabular-nums; }
+.volumenzahl b { font-size: 14px; min-width: 28px; text-align: right; }
+.volumenzahl small { color: var(--leise); font-size: 12px; min-width: 34px; text-align: right; white-space: nowrap; }
+.volumenlegende { color: var(--leise); font-size: 12px; }
+.blattinhalt .wochenkopf { margin: 4px 0 12px; }
+.volumenzeile.legende { margin-top: -2px; }
+.volumenzeile.legende b { color: var(--leise); font-weight: 500; font-size: 12px; }
+.rundknopf:disabled { opacity: 0.3; }
 
 /* Dropsatz mit Drop-Pins */
-.satz:has(.dropstufen) {
-  flex-wrap: wrap;
-}
-.satz > .dropstufen {
-  flex: 1 0 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 12px;
-  padding: 4px 4px 2px 32px;
-  font-size: 14px;
-}
-.dropstufe {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.dropstufe input {
-  width: 48px;
-  padding: 4px 6px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--flaeche3);
-  color: var(--text);
-  font: inherit;
-  text-align: center;
-}
-.dropstufen .textknopf {
-  margin-left: auto;
-  font-size: 13px;
-}
-.dropsteck {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 8px 0 2px;
-  padding: 8px 10px;
-  background: var(--flaeche2);
-  border-radius: 10px;
-  border-left: 3px solid var(--gold);
-}
-.dropsteck small {
-  color: var(--leise);
-  font-size: 12.5px;
-}
+.satz:has(.dropstufen) { flex-wrap: wrap; }
+.satz > .dropstufen { flex: 1 0 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 4px 4px 2px 32px; font-size: 14px; }
+.dropstufe { display: inline-flex; align-items: center; gap: 6px; }
+.dropstufe input { width: 48px; padding: 4px 6px; border: 0; border-radius: 8px; background: var(--flaeche3); color: var(--text); font: inherit; text-align: center; }
+.dropstufen .textknopf { margin-left: auto; font-size: 13px; }
+.dropsteck { display: flex; flex-direction: column; gap: 2px; margin: 8px 0 2px; padding: 8px 10px; background: var(--flaeche2); border-radius: 10px; border-left: 3px solid var(--gold); }
+.dropsteck small { color: var(--leise); font-size: 12.5px; }
 
 /* Fenster von unten zum Wegziehen */
-.ziehbar {
-  touch-action: none;
-  cursor: grab;
-}
-.griff.ziehbar {
-  position: relative;
-}
-.griff.ziehbar::before {
-  content: "";
-  position: absolute;
-  left: -40px;
-  right: -40px;
-  top: -10px;
-  bottom: -10px;
-}
-.blatt.zieht {
-  transition: none;
-  cursor: grabbing;
-}
+.ziehbar { touch-action: none; cursor: grab; }
+.griff.ziehbar { position: relative; }
+.griff.ziehbar::before { content: ""; position: absolute; left: -40px; right: -40px; top: -10px; bottom: -10px; }
+.blatt.zieht { transition: none; cursor: grabbing; }
 
 /* Kurzmeldungen (Sonner) im Stil der App */
 [data-sonner-toaster] [data-sonner-toast].meldung {
@@ -3433,13 +3239,8 @@ select.ampel.rot {
 }
 
 /* rollende Ziffern: gleich breite Zahlen, damit nichts springt */
-.pausenzahl,
-.aufraeumenuhr {
-  font-variant-numeric: tabular-nums;
-}
-number-flow-react {
-  --number-flow-char-height: 1em;
-}
+.pausenzahl, .aufraeumenuhr { font-variant-numeric: tabular-nums; }
+number-flow-react { --number-flow-char-height: 1em; }
 
 /* Übungsliste: Marke am Ende des gezeichneten Stücks, beim Erreichen kommt das nächste dazu */
 .listenende {
@@ -3987,207 +3788,45 @@ h2,
 }
 
 /* Prozentring neben dem Gewicht im Training */
-.prozentring {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  vertical-align: middle;
-}
-.prozentring svg {
-  position: absolute;
-  inset: 0;
-}
-.prozentring .spur {
-  fill: none;
-  stroke: var(--flaeche3);
-  stroke-width: 3.5;
-}
-.prozentring .fuellung {
-  fill: none;
-  stroke: var(--akzent);
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.25s ease;
-}
-.prozentring.schwer .fuellung {
-  stroke: var(--gold);
-}
-.prozentring b {
-  position: relative;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text);
-}
+.prozentring { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: 0 0 34px; vertical-align: middle; }
+.prozentring svg { position: absolute; inset: 0; }
+.prozentring .spur { fill: none; stroke: var(--flaeche3); stroke-width: 3.5; }
+.prozentring .fuellung { fill: none; stroke: var(--akzent); stroke-width: 3.5; stroke-linecap: round; transition: stroke-dashoffset .25s ease; }
+.prozentring.schwer .fuellung { stroke: var(--gold); }
+.prozentring b { position: relative; font-size: 11px; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
 
 /* Muskelzeile am Trainingstag */
-.tagmuskeln {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
-  margin: 0 0 10px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-}
-.tagmuskeln small {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--leise);
-}
+.tagmuskeln { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--text); }
+.tagmuskeln small { font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--leise); }
 
 /* Wochenjournal */
-.journal {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 16px;
-  text-align: left;
-  background: var(--flaeche2, var(--flaeche3));
-  border-radius: var(--gross);
-  border: 1px solid var(--akzent);
-}
-.journal.fertig {
-  text-align: center;
-  border-color: var(--gruen, var(--akzent));
-}
-.journal h3 {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 20px;
-}
-.journal h3 small {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--leise);
-}
-.aufraeumenkarte .journal p,
-.journal p {
-  margin: 0;
-}
-.journalbekannt {
-  font-size: 14px;
-  color: var(--text);
-}
-.journalbekannt small {
-  display: block;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--leise);
-}
-.journal .skala {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.journal .frage {
-  font-weight: 600;
-  font-size: 15px;
-}
-.journal .frage small {
-  font-weight: 400;
-  color: var(--leise);
-}
-.journal .stufen {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-}
-.journal .stufe {
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--flaeche3);
-  background: var(--flaeche);
-  color: var(--text);
-  font-size: 17px;
-  font-weight: 700;
-}
-.journal .stufe.an {
-  background: var(--akzent);
-  border-color: var(--akzent);
-  color: var(--auf-akzent);
-}
-.journal .enden {
-  display: flex;
-  justify-content: space-between;
-  color: var(--leise);
-}
-.journal .enden small {
-  font-size: 12px;
-}
-.journal input[type="text"] {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--flaeche3);
-  background: var(--flaeche);
-  color: var(--text);
-  font-size: 16px;
-}
+.journal { display: flex; flex-direction: column; gap: 14px; padding: 16px; text-align: left; background: var(--flaeche2, var(--flaeche3)); border-radius: var(--gross); border: 1px solid var(--akzent); }
+.journal.fertig { text-align: center; border-color: var(--gruen, var(--akzent)); }
+.journal h3 { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 20px; }
+.journal h3 small { font-size: 13px; font-weight: 500; color: var(--leise); }
+.aufraeumenkarte .journal p, .journal p { margin: 0; }
+.journalbekannt { font-size: 14px; color: var(--text); }
+.journalbekannt small { display: block; font-size: 11px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--leise); }
+.journal .skala { display: flex; flex-direction: column; gap: 6px; }
+.journal .frage { font-weight: 600; font-size: 15px; }
+.journal .frage small { font-weight: 400; color: var(--leise); }
+.journal .stufen { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.journal .stufe { height: 44px; border-radius: 12px; border: 1px solid var(--flaeche3); background: var(--flaeche); color: var(--text); font-size: 17px; font-weight: 700; }
+.journal .stufe.an { background: var(--akzent); border-color: var(--akzent); color: var(--auf-akzent); }
+.journal .enden { display: flex; justify-content: space-between; color: var(--leise); }
+.journal .enden small { font-size: 12px; }
+.journal input[type="text"] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--flaeche3); background: var(--flaeche); color: var(--text); font-size: 16px; }
 
 /* Krankheit */
-.marke.krank {
-  background: var(--rot);
-  color: #fff;
-}
-.krankkarte,
-.krankvorschlag {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.krankfrage {
-  font-weight: 600;
-  font-size: 15px;
-}
-.krankverlauf {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.krankwarnung {
-  color: var(--leise);
-  font-size: 12px;
-  line-height: 1.4;
-}
-.krankcheck {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 12px 0 16px;
-}
-.krankcheck .chip {
-  text-align: left;
-  justify-content: flex-start;
-  padding: 12px 14px;
-  border-radius: 12px;
-}
-.krankseit {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin: 6px 0 14px;
-}
-.krankseit input[type="date"] {
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--flaeche3);
-  background: var(--flaeche);
-  color: var(--text);
-  font-size: 15px;
-}
+.marke.krank { background: var(--rot); color: #fff; }
+.krankkarte, .krankvorschlag { display: flex; flex-direction: column; gap: 10px; }
+.krankfrage { font-weight: 600; font-size: 15px; }
+.krankverlauf { display: flex; flex-wrap: wrap; gap: 8px; }
+.krankwarnung { color: var(--leise); font-size: 12px; line-height: 1.4; }
+.krankcheck { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 16px; }
+.krankcheck .chip { text-align: left; justify-content: flex-start; padding: 12px 14px; border-radius: 12px; }
+.krankseit { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0 14px; }
+.krankseit input[type="date"] { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--flaeche3); background: var(--flaeche); color: var(--text); font-size: 15px; }
 
 /* Fitness-Check */
 .fitzeile {

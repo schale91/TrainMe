@@ -9,7 +9,6 @@ import type { Daten } from "../logik/typen"
 import { Gruppe, Schalter, Seite, Segment, Zeile } from "./ios"
 import { Feld } from "./teile"
 import { bruecke, koppeln, kopplung, kopplungSetzen, modus } from "./lebenswelt"
-import { BausteinListe } from "./Bausteine"
 
 type Zurueck = { text: string; onClick: () => void }
 
@@ -35,7 +34,7 @@ export function PlanSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void
   }
 
   return (
-    <Seite titel="Plan" zurueck={props.zurueck}>
+    <Seite titel="Trainingsplan" zurueck={props.zurueck}>
       <Gruppe fuss={eigen ? "Der Plan gibt Tage, Übungen, Sätze und Wiederholungen vor. TrainMe rechnet das Gewicht (Prozent vom Maximum oder aus dem letzten Mal), führt Protokoll und Pausen." : "TrainMe plant Woche für Woche nach deinem Profil, mit Blöcken, Entlastung und Jahresplan."}>
         <div className="segmentzeile">
           <Segment
@@ -60,39 +59,6 @@ export function PlanSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void
           />
         </div>
       </Gruppe>
-      <BausteinListe daten={daten} aendern={props.aendern} />
-      <Gruppe titel="Aufwärmsätze" fuss={profil.aufwaermen === "grosse_vier" ? "Nur bei Kniebeuge, Bankdrücken, Überkopfdrücken und Kreuzheben mit der Langhantel, jeweils bei der ersten ihrer Art am Tag. Danach sind die Muskeln warm." : "Bei der ersten Hauptübung des Tages, aufsteigend bis zum Arbeitsgewicht."}>
-        <div className="segmentzeile">
-          <Segment
-            werte={[
-              { id: "plan", name: "Erste Hauptübung" },
-              { id: "grosse_vier", name: "Große Langhantelübungen" },
-            ]}
-            wert={profil.aufwaermen || "plan"}
-            onChange={(x) => props.aendern((d) => void (d.profil!.aufwaermen = x))}
-          />
-        </div>
-      </Gruppe>
-      <Gruppe titel="Aufräumen am Ende" fuss={profil.aufraeumen_min ? "Nach dem letzten Satz läuft ein Countdown, der sich nicht wegklicken lässt. Erst danach lässt sich das Training beenden. Die Minuten zählen zur Trainingszeit." : "Aus: „Training beenden“ geht sofort nach dem letzten Satz."}>
-        <div className="segmentzeile">
-          <Segment
-            werte={[
-              { id: "0", name: "Aus" },
-              { id: "3", name: "3 min" },
-              { id: "5", name: "5 min" },
-              { id: "10", name: "10 min" },
-            ]}
-            wert={String(profil.aufraeumen_min || 0)}
-            onChange={(x) => props.aendern((d) => void (d.profil!.aufraeumen_min = Number(x) || undefined))}
-          />
-        </div>
-      </Gruppe>
-      <Gruppe titel="Wochenjournal" fuss={profil.wochenjournal ? "Am letzten Trainingstag der Woche kommen im Aufräumen vier kurze Fragen: Erholung, Lust, Stress und Beschwerden. Ohne Ausfüllen lässt sich das Training nicht beenden. Wer nicht möchte, überspringt die Woche (einmal je Woche)." : "Aus. Kurze Fragen am Ende der Trainingswoche, die der Wochenrückblick später auswerten kann."}>
-        <Zeile titel="Wochenjournal am Wochenende" untertitel="Pflicht im Aufräumen, mit Überspringen" rechts={<Schalter an={!!profil.wochenjournal} onChange={(an) => props.aendern((d) => void (d.profil!.wochenjournal = an ? heute() : undefined))} />} />
-      </Gruppe>
-      <Gruppe titel="Krankheit" fuss={profil.krankheit ? "Auf „Heute“ steht „Ich bin krank“. Ein Hals-Check entscheidet: bei Fieber oder Allgemeinsymptomen Pause, bei reiner Erkältung eine leichte Einheit zur Wahl. Danach kommt eine Rückkehr in Stufen, und ein Testtag in der ersten Woche wird einmal durch eine Aufbau-Einheit ersetzt. Kranke Wochen verfälschen den Wochenrückblick nicht." : "Aus. Krankheit melden, leichte Einheiten und eine Rückkehr in Stufen."}>
-        <Zeile titel="Krankheit berücksichtigen" untertitel="Hals-Check, Pause, Rückkehr in Stufen" rechts={<Schalter an={!!profil.krankheit} onChange={(an) => props.aendern((d) => void (d.profil!.krankheit = an || undefined))} />} />
-      </Gruppe>
       <Gruppe titel="Eigener Plan" fuss="Je Zeile eine Übung, z. B. „Brücke 3 x 12“, „Wandsitzen 3 x 30 s“, „Kniebeuge 4 x 5 75 %“, „Curl 3 x 10-12, 2 im Tank“. „Tag 1: Name“ beginnt einen Tag, „A1:“ und „A2:“ bilden einen Supersatz.">
         <Zeile titel="Nach dem letzten Tag von vorn" untertitel="Für Pläne, die sich wiederholen, z. B. von der Physiotherapie" rechts={<Schalter an={!!daten.eigenerPlan?.wiederholen} onChange={(an) => props.aendern((d) => void (d.eigenerPlan && (d.eigenerPlan.wiederholen = an)))} />} />
       </Gruppe>
@@ -112,7 +78,7 @@ export function PlanSeite(props: { daten: Daten; aendern: (f: (d: Daten) => void
         Plan speichern
       </button>
       {meldung ? <p className="hinweistext">{meldung}</p> : null}
-      {profil.woche.some((t) => t.art === "training") && eigen ? <p className="hinweistext klein">Unter Woche kannst du einzelne Trainingstage auf „TrainMe zusätzlich“ stellen: Dort plant TrainMe neben dem Plan eigene Einheiten (in der Reha erst nach der Freigabe).</p> : null}
+      {profil.woche.some((t) => t.art === "training") && eigen ? <p className="hinweistext klein">Unter Profil, Trainingswoche kannst du einzelne Trainingstage auf „TrainMe zusätzlich“ stellen: Dort plant TrainMe neben dem Plan eigene Einheiten (in der Reha erst nach der Freigabe).</p> : null}
     </Seite>
   )
 }

@@ -7,7 +7,9 @@ import { bildInfo } from "../daten/reha"
 import { heute, montagVon } from "../logik/plan"
 import { exportieren, importieren } from "../logik/speicher"
 import type { Daten, Profil as ProfilT } from "../logik/typen"
-import { Blatt, Gruppe, Schalter, Seite, Zeile } from "./ios"
+import { Blatt, Gruppe, Schalter, Seite, Segment, Zeile } from "./ios"
+import { BausteinListe } from "./Bausteine"
+import { rehaAktiv } from "../logik/reha"
 import { benachrichtigungErlauben, overlayErlauben, timerStatus } from "./pausenTimer"
 import { AusnahmenEditor, Grunddaten, KoerperEditor, OrteEditor, SportWahl, WocheEditor } from "./Profilteile"
 import { dateiTeilen } from "./teilen"
@@ -28,12 +30,13 @@ import { datumText } from "./texte"
 import { kopplung, modus } from "./lebenswelt"
 import { entwickler, entwicklerSetzen } from "./entwickler"
 
-export type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback" | "jahresplan" | "update" | "plan" | "lebenswelt"
+export type Unterseite = null | "ziel" | "sport" | "orte" | "woche" | "koerper" | "ausnahmen" | "timer" | "sicherung" | "ueber" | "gesundheit" | "feedback" | "jahresplan" | "update" | "plan" | "lebenswelt" | "zusatz"
 
 export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT) => void; ersetzen: (d: Daten) => void; zuruecksetzen: () => void; aendern: (f: (d: Daten) => void) => void; einstufen: () => void; start?: Unterseite; update: UpdateInfo | null; updateGefunden: (u: UpdateInfo | null) => void }) {
   const profil = props.daten.profil!
   const [seite, setSeite] = useState<Unterseite>(props.start || null)
   const [vorOffen, setVorOffen] = useState(false)
+  const [blockOffen, setBlockOffen] = useState(false)
   const teil = { profil, aendern: props.profilAendern }
   const zurueck = { text: "Profil", onClick: () => setSeite(null) }
 
@@ -45,7 +48,7 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
     )
   if (seite === "sport")
     return (
-      <EntwurfSeite titel="Training und Sport" profil={profil} speichern={props.profilAendern} schliessen={() => setSeite(null)}>
+      <EntwurfSeite titel="Ziel und Sport" profil={profil} speichern={props.profilAendern} schliessen={() => setSeite(null)}>
         {(p, aendern) => <SportWahl profil={p} aendern={aendern} />}
       </EntwurfSeite>
     )
@@ -57,20 +60,22 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
     )
   if (seite === "woche")
     return (
-      <Seite titel="Deine Woche" zurueck={zurueck}>
+      <Seite titel="Trainingswoche" zurueck={zurueck}>
         <WocheEditor {...teil} />
       </Seite>
     )
-  if (seite === "koerper")
+  if (seite === "koerper" || seite === "ausnahmen")
     return (
-      <Seite titel="Beschwerden" zurueck={zurueck}>
+      <Seite titel="Körper" zurueck={zurueck}>
         <KoerperEditor {...teil} />
+        <h3 className="gruppentitel">Übungen, die du nicht machst</h3>
+        <AusnahmenEditor {...teil} />
       </Seite>
     )
-  if (seite === "ausnahmen")
+  if (seite === "zusatz")
     return (
-      <Seite titel="Ausnahmen" zurueck={zurueck}>
-        <AusnahmenEditor {...teil} />
+      <Seite titel="Zusatzeinheiten" zurueck={zurueck}>
+        <BausteinListe daten={props.daten} aendern={props.aendern} />
       </Seite>
     )
   if (seite === "timer") return <TimerSeite zurueck={zurueck} />
@@ -90,22 +95,21 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
   const phase = phaseAm(profil, heute())
   const beschwerden = profil.beschwerden.map((b) => GELENKE.find((g) => g.id === b.gelenk)?.name).join(", ")
 
+  const eigen = profil.planart === "eigen"
+  const reha = rehaAktiv(profil)
   return (
     <Seite titel="Profil" untertitel={profil.name || undefined}>
-      <Gruppe titel="Training">
-        <Zeile symbol={<SymKachel name={sporte(profil).indexOf("golf") >= 0 ? "golf" : sporte(profil).indexOf("reha") >= 0 ? "herz" : "hantel"} />} titel="Training und Sport" untertitel={sportText + " · " + zielText} onClick={() => setSeite("sport")} />
+      <Gruppe titel="Über dich">
         <Zeile symbol={<SymKachel name="medaille" />} titel="Name und Erfahrung" wert={ERFAHRUNG.find((e) => e.id === profil.erfahrung)?.name} onClick={() => setSeite("ziel")} />
-        <Zeile symbol={<SymKachel name="kalender" />} titel="Woche" wert={tage + " Trainingstage"} onClick={() => setSeite("woche")} />
+        <Zeile symbol={<SymKachel name={sporte(profil).indexOf("golf") >= 0 ? "golf" : sporte(profil).indexOf("reha") >= 0 ? "herz" : "hantel"} />} titel="Ziel und Sport" untertitel={sportText + " · " + zielText} onClick={() => setSeite("sport")} />
+        <Zeile symbol={<SymKachel name="pflaster" />} titel="Körper" untertitel={(beschwerden ? "Beschwerden: " + beschwerden : "Keine Beschwerden") + " · " + (profil.ausgeschlossen.length ? profil.ausgeschlossen.length + " Übungen ausgelassen" : "keine Übung ausgelassen")} onClick={() => setSeite("koerper")} />
+      </Gruppe>
+      <Gruppe titel="Dein Plan" fuss={eigen ? "Mit eigenem Plan gibt der Plan Tage und Übungen vor. Kraftwerte zählen weiter für Prozentangaben." : "Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit einen neuen Block starten: Die laufende Phase beginnt von vorn, der Jahresplan rückt nach hinten."}>
+        <Zeile symbol={<SymKachel name="bausteine" />} titel="Trainingsplan" wert={eigen ? props.daten.eigenerPlan?.name || "Eigener Plan" : "TrainMe plant"} onClick={() => setSeite("plan")} />
+        <Zeile symbol={<SymKachel name="kalender" />} titel="Trainingswoche" wert={tage + " Trainingstage"} onClick={() => setSeite("woche")} />
         <Zeile symbol={<SymKachel name="haus" />} titel="Orte und Geräte" wert={profil.orte.map((o) => o.name).join(", ")} onClick={() => setSeite("orte")} />
-      </Gruppe>
-      <Gruppe titel="Körper">
-        <Zeile symbol={<SymKachel name="pflaster" />} titel="Beschwerden" wert={beschwerden || "keine"} onClick={() => setSeite("koerper")} />
-        <Zeile symbol={<SymKachel name="verbot" />} titel="Ausnahmen" wert={profil.ausgeschlossen.length ? profil.ausgeschlossen.length + " Übungen" : "keine"} onClick={() => setSeite("ausnahmen")} />
-      </Gruppe>
-      <Gruppe titel="Plan" fuss={profil.planart === "eigen" ? "Mit eigenem Plan gibt der Plan Tage und Übungen vor. Kraftwerte zählen weiter für Prozentangaben." : "Ein Block hat 4 Aufbauwochen und eine Entlastungswoche. Nach Urlaub oder Krankheit neu starten: Die laufende Phase beginnt dann von vorn, der Jahresplan rückt nach hinten."}>
-        <Zeile symbol={<SymKachel name="bausteine" />} titel="Woher der Plan kommt" wert={profil.planart === "eigen" ? props.daten.eigenerPlan?.name || "Eigener Plan" : "TrainMe plant"} onClick={() => setSeite("plan")} />
-        <Zeile symbol={<SymKachel name="puls" />} titel="Zusatzeinheiten" untertitel="z. B. morgens laufen, je Woche zusätzlich oder statt Kraft" wert={profil.bausteine?.length ? String(profil.bausteine.length) : "keine"} onClick={() => setSeite("plan")} />
-        <Zeile symbol={<SymKachel name="kalender" />} titel="Jahresplan" wert={phase ? phaseInfo(phase, profil.sport).name : "festlegen"} onClick={() => setSeite("jahresplan")} />
+        <Zeile symbol={<SymKachel name="puls" />} titel="Zusatzeinheiten" untertitel="z. B. morgens laufen, zusätzlich oder statt Kraft" wert={profil.bausteine?.length ? String(profil.bausteine.length) : "keine"} onClick={() => setSeite("zusatz")} />
+        {!eigen ? <Zeile symbol={<SymKachel name="kalender" />} titel="Jahresplan" wert={phase ? phaseInfo(phase, profil.sport).name : "festlegen"} onClick={() => setSeite("jahresplan")} /> : null}
         {vorgemerkt ? (
           <Zeile
             symbol={<SymKachel name="wiederholen" />}
@@ -114,18 +118,62 @@ export default function Profil(props: { daten: Daten; profilAendern: (p: ProfilT
             onClick={() => setVorOffen(true)}
           />
         ) : null}
-        <Zeile symbol={<SymKachel name="ziel" />} titel="Kraftwerte und Mobilität neu einstufen" untertitel={props.daten.einstufung?.kraft ? "zuletzt " + props.daten.einstufung.kraft.split("-").reverse().join(".") : "noch nicht erledigt"} onClick={props.einstufen} />
-        <Zeile symbol={<SymKachel name="wiederholen" />} titel="Neuen Block ab dieser Woche" onClick={() => props.profilAendern(blockNeuStarten(profil, montagVon(heute())))} pfeil={false} />
+        <Zeile symbol={<SymKachel name="ziel" />} titel="Kraft und Beweglichkeit neu messen" untertitel={props.daten.einstufung?.kraft ? "zuletzt " + props.daten.einstufung.kraft.split("-").reverse().join(".") : "noch nicht erledigt"} onClick={props.einstufen} />
+        {!eigen ? <Zeile symbol={<SymKachel name="wiederholen" />} titel="Neuen Block starten" untertitel="z. B. nach Urlaub oder Krankheit" onClick={() => setBlockOffen(true)} /> : null}
+      </Gruppe>
+      <Gruppe titel="Im Training">
+        <Zeile titel="Aufwärmsätze" untertitel={profil.aufwaermen === "grosse_vier" ? "Bei Kniebeuge, Bankdrücken, Überkopfdrücken und Kreuzheben mit Langhantel" : "Bei der ersten Hauptübung des Tages, bis zum Arbeitsgewicht"} />
+        <div className="segmentzeile">
+          <Segment
+            werte={[
+              { id: "plan", name: "Erste Übung" },
+              { id: "grosse_vier", name: "Große Vier" },
+            ]}
+            wert={profil.aufwaermen || "plan"}
+            onChange={(x) => props.aendern((d) => void (d.profil!.aufwaermen = x))}
+          />
+        </div>
+        <Zeile titel="Aufräumen am Ende" untertitel={profil.aufraeumen_min ? "Countdown nach dem letzten Satz, erst dann lässt sich das Training beenden" : "Aus: Training beenden geht sofort"} />
+        <div className="segmentzeile">
+          <Segment
+            werte={[
+              { id: "0", name: "Aus" },
+              { id: "3", name: "3 min" },
+              { id: "5", name: "5 min" },
+              { id: "10", name: "10 min" },
+            ]}
+            wert={String(profil.aufraeumen_min || 0)}
+            onChange={(x) => props.aendern((d) => void (d.profil!.aufraeumen_min = Number(x) || undefined))}
+          />
+        </div>
+        <Zeile titel="Wochenjournal" untertitel="Vier kurze Fragen am letzten Trainingstag der Woche, Pflicht mit Überspringen" rechts={<Schalter an={!!profil.wochenjournal} label="Wochenjournal" onChange={(an) => props.aendern((d) => void (d.profil!.wochenjournal = an ? heute() : undefined))} />} />
+        {!reha ? <Zeile titel="Krankheit" untertitel="„Ich bin krank“ auf Heute: Hals-Check, Pause, Rückkehr in Stufen" rechts={<Schalter an={!!profil.krankheit} label="Krankheit" onChange={(an) => props.aendern((d) => void (d.profil!.krankheit = an || undefined))} />} /> : null}
+        <Zeile symbol={<SymKachel name="stoppuhr" />} titel="Pausentimer" untertitel="Benachrichtigung und schwebende Uhr" onClick={() => setSeite("timer")} />
       </Gruppe>
       <Gruppe titel="App">
         <Zeile symbol={<SymKachel name="haus" />} titel="Lebenswelt" wert={modus() === "eingebettet" ? "eingebettet" : kopplung() ? "gekoppelt" : "nicht gekoppelt"} onClick={() => setSeite("lebenswelt")} />
-        {modus() === "eingebettet" ? null : <Zeile symbol={<SymKachel name="import" />} titel="App-Update" wert={props.update ? props.update.version + " verfügbar" : "Version " + __VERSION__} onClick={() => setSeite("update")} />}
-        <Zeile symbol={<SymKachel name="stoppuhr" />} titel="Pausentimer" wert="Hintergrund, über Apps" onClick={() => setSeite("timer")} />
         <Zeile symbol={<SymKachel name="herz" />} titel="Gesundheitsdaten" wert={props.daten.gesundheit?.verbunden ? "verbunden" : "aus"} onClick={() => setSeite("gesundheit")} />
-        <Zeile symbol={<SymKachel name="sprechblase" />} titel="Feedback, Fehler, Ideen" onClick={() => setSeite("feedback")} />
         <Zeile symbol={<SymKachel name="archiv" />} titel="Sicherung" onClick={() => setSeite("sicherung")} />
+        {modus() === "eingebettet" ? null : <Zeile symbol={<SymKachel name="import" />} titel="App-Update" wert={props.update ? props.update.version + " verfügbar" : "Version " + __VERSION__} onClick={() => setSeite("update")} />}
+        <Zeile symbol={<SymKachel name="sprechblase" />} titel="Feedback, Fehler, Ideen" onClick={() => setSeite("feedback")} />
         <Zeile symbol={<SymKachel name="info" />} titel="Über TrainMe und Quellen" onClick={() => setSeite("ueber")} />
       </Gruppe>
+      <Blatt offen={blockOffen} onClose={() => setBlockOffen(false)} titel="Neuen Block starten?">
+        <p className="infokurz">Ab dieser Woche beginnt ein neuer Block mit 4 Aufbauwochen und einer Entlastungswoche. Die laufende Phase startet von vorn, der Jahresplan rückt nach hinten. Sinnvoll nach Urlaub oder Krankheit.</p>
+        <button
+          type="button"
+          className="knopf voll"
+          onClick={() => {
+            props.profilAendern(blockNeuStarten(profil, montagVon(heute())))
+            setBlockOffen(false)
+          }}
+        >
+          Neuen Block ab dieser Woche
+        </button>
+        <button type="button" className="knopf voll leise" onClick={() => setBlockOffen(false)}>
+          Abbrechen
+        </button>
+      </Blatt>
       <Blatt offen={vorOffen} onClose={() => setVorOffen(false)} titel="Vorgemerkte Änderung">
         {vorgemerkt ? (
           <>

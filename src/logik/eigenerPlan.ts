@@ -183,7 +183,7 @@ export function planVorgabe(daten: Daten, pu: PlanUebung, u: Uebung, lasten: num
       v.last = runde(max.kg * anteil, lasten)
       v.begruendung = pz + " von " + kg(max.kg) + " kg (" + (max.quelle === "max" ? "dein Maximum vom " + max.datum.split("-").reverse().join(".") : "geschätzt aus deinen letzten Einheiten") + (basis !== idVon(pu) ? ", " + (planUebung(basis)?.name || basis) : "") + ")."
       if (!eigenes && EIGENES_MAXIMUM.has(idVon(pu))) v.begruendung += " Für diese Variante gibt es noch keinen eigenen Wert. Ab dem ersten Mal rechnet TrainMe mit deinen eigenen Sätzen, weil man sie anders stark hebt."
-    } else v.begruendung = pz + " von deinem Maximum. Unter Profil, „Kraftwerte neu einstufen“ kannst du es eintragen, dann rechnet TrainMe das Gewicht aus."
+    } else v.begruendung = pz + " von deinem Maximum. Unter Profil, „Kraft und Beweglichkeit neu messen“ kannst du es eintragen, dann rechnet TrainMe das Gewicht aus."
     if (amrap) v.begruendung += " AMRAP: so viele saubere Wiederholungen wie möglich, " + rir + " im Tank lassen; erwartet " + (amrap.von === amrap.bis ? "etwa " + amrap.von : "etwa " + amrap.von + " bis " + amrap.bis) + ". Trag ein, was du geschafft hast."
     return v
   }

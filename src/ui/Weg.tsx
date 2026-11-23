@@ -169,7 +169,7 @@ export default function Weg(props: { daten: Daten; einstufen: () => void; zumJah
             </span>
           </p>
         ) : null}
-        <p className="hinweistext klein">Eigener Plan: TrainMe rechnet die Gewichte, die Tage und Übungen gibt der Plan vor. Unter Profil, Plan kannst du zurück zur Planung von TrainMe wechseln.</p>
+        <p className="hinweistext klein">Eigener Plan: TrainMe rechnet die Gewichte, die Tage und Übungen gibt der Plan vor. Unter Profil, Trainingsplan kannst du zurück zur Planung von TrainMe wechseln.</p>
       </Seite>
     )
   }

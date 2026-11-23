@@ -40,7 +40,7 @@ export default function RehaTests(props: { daten: Daten; aendern: (f: (d: Daten)
 
   return (
     <Seite titel="Funktionstests" untertitel="Vor dem Start und am Ende jedes Blocks. Was du nicht sicher machen kannst, lässt du leer." zurueck={props.zurueck ? { text: "Zurück", onClick: props.zurueck } : undefined}>
-      {!alter || !r.geschlecht ? <p className="hinweistext">Tipp: Mit Geburtsjahr und Geschlecht (Profil, Training und Sport) vergleicht TrainMe das Aufstehen mit Gleichaltrigen.</p> : null}
+      {!alter || !r.geschlecht ? <p className="hinweistext">Tipp: Mit Geburtsjahr und Geschlecht (Profil, Ziel und Sport) vergleicht TrainMe das Aufstehen mit Gleichaltrigen.</p> : null}
       {FUNKTIONSTESTS.map((t) => {
         const v = verlauf(t.id)
         const letzte = v[v.length - 1]
