@@ -1,6 +1,6 @@
 // Dropsatz mit Drop-Pins: Stufen, Eignung, Zeitsparen, Zählung im Rückblick, Maximum nur aus der ersten Stufe
 import { describe, expect, it } from "vitest"
-import { alsDropsatz, dropMoeglich, dropStufen, dropVorschlag, satzZahl, zweiZuEinem } from "../src/logik/dropsatz"
+import { alsDropsatz, dropMoeglich, dropStufen, dropVorschlag, khDrop, satzZahl, zweiZuEinem } from "../src/logik/dropsatz"
 import { wochenZahlen } from "../src/logik/rueckblick"
 import { e1rm } from "../src/logik/progression"
 import { satzformVon } from "../src/logik/satzhilfen"
@@ -68,5 +68,31 @@ describe("Zählung", () => {
     const w = wochenZahlen({ protokoll: [{ datum: "2026-11-10", uebung: "trizeps_kabel", saetze: [satz(25), s] }] }, "2026-11-09")
     expect(w.saetze).toBe(4)
     expect(w.gruppen.trizeps).toBe(4)
+  })
+})
+
+describe("Dropsatz mit Kurzhanteln", () => {
+  const staender = { geraete: ["kurzhantel"] as never[], gewichte: { kurzhanteln: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20] } }
+  const curl = { belastung: "gewicht" as const, geraete: [["kurzhantel"]] as never[][] }
+  const bankdruecken = { belastung: "gewicht" as const, geraete: [["kurzhantel", "bank"]] as never[][] }
+
+  it("geht mit einem Ständer fester Paare, ohne Drop-Pins", () => {
+    expect(dropMoeglich(curl, "kurzhantel", staender, "isolation")).toBe(true)
+    expect(khDrop(curl, "kurzhantel", staender)).toBe(true)
+  })
+  it("nicht mit wenigen Hanteln, nicht auf der Bank, nicht bei Hauptübungen", () => {
+    expect(dropMoeglich(curl, "kurzhantel", { ...staender, gewichte: { kurzhanteln: [10, 12.5, 15] } }, "isolation")).toBe(false)
+    expect(dropMoeglich(bankdruecken, "kurzhantel", staender, "neben")).toBe(false)
+    expect(dropMoeglich(curl, "kurzhantel", staender, "haupt")).toBe(false)
+  })
+  it("Stufen kommen aus den vorhandenen Paaren", () => {
+    expect(alsDropsatz(satz(16, 10), staender.gewichte.kurzhanteln).drops).toEqual([
+      { last: 12, wdh: 5 },
+      { last: 8, wdh: 4 },
+    ])
+  })
+  it("wird bei knapper Zeit vorgeschlagen", () => {
+    const plaetze = [{ uebung: { ...curl, name: "Hammercurl" }, rolle: "isolation" as const, vorgabe: { pause_s: 90 } }]
+    expect(dropVorschlag(plaetze, [[satz(16), satz(16)]], ["kurzhantel"], staender, 5).plaetze).toEqual([0])
   })
 })

@@ -7,7 +7,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } fr
 import { alternativen, erlaubt, heute, plusTage, lastGeraet, lastenAn, mitAlltag, passtAnOrt, platzMit, verlauf } from "../logik/plan"
 import { abrunden, BANDFARBEN, bandVonStufe, hoeher, lastText, niedriger, stufeVonBand } from "../logik/gewichte"
 import { pauseNachSatz, satzAnpassung, type Anpassung } from "../logik/progression"
-import { alsDropsatz, dropMoeglich, dropVorschlag, zweiZuEinem } from "../logik/dropsatz"
+import { alsDropsatz, dropMoeglich, dropVorschlag, khDrop, zweiZuEinem } from "../logik/dropsatz"
 import { aufwaermSaetze, backoffLast, backoffNachTopsatz, neuerBestwert, satzformVon, scheibenProSeite, stangeVon, unplausibel } from "../logik/satzhilfen"
 import { rehaAktiv, rehaAnpassung } from "../logik/reha"
 import { rirNeuZielen, rirText, rirZiele } from "../logik/rirverlauf"
@@ -131,6 +131,8 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   // Satzform je Übung: hier gewählt, sonst gespeichert, sonst aus der Vorgabe
   const [formWahl, setFormWahl] = useState<Record<string, Satzform>>({})
   const dropGeht = (p: Platz) => !reha && dropMoeglich(p.uebung, lastGeraet(p.uebung, ort), ort, p.rolle)
+  // Dropsatz mit Kurzhanteln statt Drop-Pins: andere Anleitung
+  const mitKh = (i: number) => khDrop(plaetze[i].uebung, lastGeraet(plaetze[i].uebung, ort), ort)
   const formVon = (p: Platz, anzahl = p.vorgabe.saetze): Satzform =>
     satzformVon({ ...p.vorgabe, saetze: anzahl }, formWahl[p.uebung.id] ?? daten.satzform?.[p.uebung.id], p.uebung.belastung === "gewicht" && !reha && (p.rolle === "haupt" || p.rolle === "neben") && lastGeraet(p.uebung, ort) !== "band", dropGeht(p))
   const start = (p: Platz) => startSaetze(p, daten, formVon(p), lastenAn(p.uebung, ort))
@@ -491,7 +493,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
   const dropsJa = () => {
     setSaetze(saetze.map((ss, i) => (drops.plaetze.indexOf(i) >= 0 ? zweiZuEinem(ss, lastenAn(plaetze[i].uebung, ort)) : ss)))
     setAngepasst([...angepasst, "drops", ...dropMarken])
-    setToast("Letzter Satz als Dropsatz: Drop-Pins stecken wie angezeigt, am Ende ohne Pause weiter.")
+    setToast(drops.plaetze.every((i) => mitKh(i)) ? "Letzter Satz als Dropsatz: die leichteren Kurzhanteln bereitlegen, am Ende ohne Pause weiter." : "Letzter Satz als Dropsatz: Drop-Pins stecken oder Kurzhanteln bereitlegen wie angezeigt, am Ende ohne Pause weiter.")
   }
   const seitenMarken = seiten.tausch.map((t) => "seiten:" + t.i)
   const seitenText = (t: (typeof seiten.tausch)[number]) => {
@@ -1169,16 +1171,24 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
             ) : null}
             {dropOffen && dropOffen.last ? (
               <div className="dropsteck">
-                <small>Drop-Pins stecken{saetze[i].filter((x) => !x.fertig).length > 1 ? " (letzter Satz)" : ""}</small>
+                <small>
+                  {mitKh(i) ? "Kurzhanteln bereitlegen" : "Drop-Pins stecken"}
+                  {saetze[i].filter((x) => !x.fertig).length > 1 ? " (letzter Satz)" : ""}
+                </small>
                 <span>
-                  Stift <b>{zahl(dropOffen.last)} kg</b>
+                  {mitKh(i) ? "Start" : "Stift"} <b>{zahl(dropOffen.last)} kg</b>
                   {dropOffen.drops!.map((d, n) => (
                     <Fragment key={n}>
-                      {" · "}Pin {n + 1} <b>{zahl(d.last)} kg</b>
+                      {" · "}
+                      {mitKh(i) ? "dann" : "Pin " + (n + 1)} <b>{zahl(d.last)} kg</b>
                     </Fragment>
                   ))}
                 </span>
-                <small className="leise">Am Satzende an der Schnur ziehen und ohne Pause weiter, jede Stufe bis kurz vor dem Muskelversagen.</small>
+                <small className="leise">
+                  {mitKh(i)
+                    ? "Am Satzende die Hanteln ablegen, sofort das leichtere Paar nehmen und ohne Pause weiter, jede Stufe bis kurz vor dem Muskelversagen."
+                    : "Am Satzende an der Schnur ziehen und ohne Pause weiter, jede Stufe bis kurz vor dem Muskelversagen."}
+                </small>
               </div>
             ) : null}
             {form === "drop" ? <p className="leise klein satzformtext">Ein Dropsatz bringt etwa so viel Muskelaufbau wie mehrere normale Sätze, in deutlich weniger Zeit (Sødal et al. 2023). Im Wochenrückblick zählt jede Stufe als Satz.</p> : null}
@@ -1376,7 +1386,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
                     <div className="dropstufen">
                       {s.drops.map((d, n) => (
                         <span key={n} className="dropstufe">
-                          <span className="leise">↓ Pin {n + 1}</span>
+                          <span className="leise">{mitKh(i) ? "↓ Stufe " + (n + 1) : "↓ Pin " + (n + 1)}</span>
                           <b>{zahl(d.last)} kg</b>
                           <span className="leise">×</span>
                           <input
@@ -1525,7 +1535,7 @@ export default function Training(props: { daten: Daten; einheit: Einheit; zuruec
           </p>
         ) : frage === "drops" ? (
           <p className="infokurz">
-            Soll ich bei {drops.plaetze.map((i) => plaetze[i].uebung.name).join(" und ")} die letzten zwei Sätze als einen Dropsatz mit den Drop-Pins machen? Das spart etwa {Math.max(1, Math.round(drops.spart_min * faktor))} min und bringt laut Studien etwa gleich viel (Sødal et al. 2023).
+            Soll ich bei {drops.plaetze.map((i) => plaetze[i].uebung.name).join(" und ")} die letzten zwei Sätze als einen Dropsatz machen{drops.plaetze.every((i) => mitKh(i)) ? " (mit leichteren Kurzhanteln)" : drops.plaetze.some((i) => mitKh(i)) ? " (mit Drop-Pins oder leichteren Kurzhanteln)" : " (mit den Drop-Pins)"}? Das spart etwa {Math.max(1, Math.round(drops.spart_min * faktor))} min und bringt laut Studien etwa gleich viel (Sødal et al. 2023).
           </p>
         ) : frage === "supersatz" ? (
           <p className="infokurz">
