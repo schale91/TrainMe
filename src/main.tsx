@@ -6,6 +6,7 @@ import "@fontsource/barlow-condensed/latin-500.css"
 import "@fontsource/barlow-condensed/latin-600.css"
 import "@fontsource/barlow-condensed/latin-700.css"
 import "./stil.css"
+import { protokollStarten } from "./ui/appProtokoll"
 
 // Fehler außerhalb von React sichtbar machen statt still abzubrechen
 function zeigeFehler(text: string) {
@@ -20,6 +21,9 @@ function zeigeFehler(text: string) {
 }
 window.addEventListener("error", (e) => zeigeFehler(String(e.error?.stack || e.message)))
 window.addEventListener("unhandledrejection", (e) => zeigeFehler(String(e.reason?.stack || e.reason)))
+
+// Technisches Protokoll der Android-App (Pausentimer, Neustarts, Fehler), siehe ui/appProtokoll.ts
+protokollStarten()
 
 createRoot(document.getElementById("app") as HTMLElement).render(
   <StrictMode>

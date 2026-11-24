@@ -3,6 +3,7 @@
 
 import { Capacitor, registerPlugin } from "@capacitor/core"
 import { bruecke } from "./lebenswelt"
+import { pauseMerken, timerFehler } from "./appProtokoll"
 
 interface PausenTimerPlugin {
   start(o: { ende: number; titel: string; text: string }): Promise<void>
@@ -21,6 +22,7 @@ export async function pauseStarten(ende: number, titel: string, text: string): P
   const b = bruecke()
   if (b?.pause) return b.pause(ende, text || titel, titel)
   if (!nativ) return
+  pauseMerken(ende, titel)
   try {
     if (!gefragt) {
       gefragt = true
@@ -28,8 +30,9 @@ export async function pauseStarten(ende: number, titel: string, text: string): P
       if (!s.benachrichtigung) await Timer.benachrichtigungErlauben()
     }
     await Timer.start({ ende, titel, text })
-  } catch {
-    /* ohne nativen Timer weiter */
+  } catch (f) {
+    // ohne nativen Timer weiter, aber mitschreiben
+    timerFehler(f, "start")
   }
 }
 
@@ -37,10 +40,11 @@ export async function pauseStoppen(): Promise<void> {
   const b = bruecke()
   if (b?.pause) return b.pause(null, "")
   if (!nativ) return
+  pauseMerken(null)
   try {
     await Timer.stop()
-  } catch {
-    /* egal */
+  } catch (f) {
+    timerFehler(f, "stop")
   }
 }
 
