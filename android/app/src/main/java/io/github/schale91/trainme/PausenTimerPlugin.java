@@ -7,6 +7,7 @@ import android.os.Build;
 import android.provider.Settings;
 import android.view.WindowManager;
 import androidx.core.content.ContextCompat;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
@@ -65,6 +66,18 @@ public class PausenTimerPlugin extends Plugin {
         JSObject r = new JSObject();
         r.put("overlay", Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(getContext()));
         r.put("benachrichtigung", Build.VERSION.SDK_INT < 33 || getPermissionState("benachrichtigung") == PermissionState.GRANTED);
+        call.resolve(r);
+    }
+
+    /** Protokoll des Android-Teils abholen (und dort leeren), siehe Protokoll.java */
+    @PluginMethod
+    public void protokoll(PluginCall call) {
+        JSObject r = new JSObject();
+        try {
+            r.put("eintraege", new JSArray(Protokoll.holen(getContext()).toString()));
+        } catch (Exception e) {
+            r.put("eintraege", new JSArray());
+        }
         call.resolve(r);
     }
 

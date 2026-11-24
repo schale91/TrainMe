@@ -32,6 +32,7 @@ import android.widget.TextView;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 import java.util.Locale;
+import org.json.JSONObject;
 
 /**
  * Pausentimer als Vordergrunddienst. Zeigt die Restzeit in der Benachrichtigung (auch auf dem Sperrbildschirm)
@@ -54,6 +55,9 @@ public class PausenTimerService extends Service {
     private TextView zeitAnzeige;
     private TextView titelAnzeige;
     private boolean fertig;
+    /** letzte gemeldete Sichtbarkeit der Blase (View.VISIBLE, View.GONE ...) oder -1 */
+    private int blaseSichtbar = -1;
+    private int sichtbarMeldungen;
 
     private final Runnable takt = new Runnable() {
         @Override
@@ -77,6 +81,8 @@ public class PausenTimerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         kanaele();
         if (intent == null || STOP.equals(intent.getAction())) {
+            if (intent == null) Protokoll.schreibe(this, "dienst_neu_ohne_auftrag", "Pausentimer-Dienst von Android neu gestartet", null);
+            else if (!fertig && ende > System.currentTimeMillis()) Protokoll.schreibe(this, "pause_gestoppt", "Pause in der App beendet", Protokoll.kv("rest_s", rest()));
             aufraeumen();
             stopSelf();
             return START_NOT_STICKY;
@@ -85,9 +91,26 @@ public class PausenTimerService extends Service {
         titel = intent.getStringExtra("titel") != null ? intent.getStringExtra("titel") : "Pause";
         text = intent.getStringExtra("text") != null ? intent.getStringExtra("text") : "";
         fertig = false;
+        sichtbarMeldungen = 0;
+        JSONObject g = Protokoll.geraet(this);
+        try {
+            g.put("rest_s", rest());
+            g.put("blase_da", blase != null);
+        } catch (Exception ignored) {
+            // ohne
+        }
+        Protokoll.schreibe(this, "pause_start", "Pausentimer gestartet", g);
         Notification n = laufNotification();
         int typ = Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0;
-        ServiceCompat.startForeground(this, ID_LAUF, n, typ);
+        try {
+            ServiceCompat.startForeground(this, ID_LAUF, n, typ);
+        } catch (Exception e) {
+            // Ohne Vordergrunddienst kann Android den Timer jederzeit beenden: Grund mitschreiben
+            Protokoll.schreibe(this, "dienst_fehler", "Vordergrunddienst nicht gestartet: " + e.getClass().getSimpleName() + ": " + e.getMessage(), null);
+            aufraeumen();
+            stopSelf();
+            return START_NOT_STICKY;
+        }
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.cancel(ID_ENDE);
         zeigeBlase();
@@ -97,9 +120,31 @@ public class PausenTimerService extends Service {
     }
 
     @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        // TrainMe aus der Liste der letzten Apps gewischt: Der Dienst sollte weiterlaufen, manche Hersteller beenden ihn
+        Protokoll.schreibe(this, "app_weggewischt", "TrainMe aus den letzten Apps entfernt", Protokoll.kv("rest_s", rest(), "blase", blase != null));
+        super.onTaskRemoved(rootIntent);
+    }
+
+    @Override
     public void onDestroy() {
+        if (!fertig && ende > System.currentTimeMillis()) {
+            Protokoll.schreibe(this, "dienst_beendet", "Pausentimer-Dienst vor Ende der Pause beendet", Protokoll.kv("rest_s", rest()));
+        }
         aufraeumen();
         super.onDestroy();
+    }
+
+    private long rest() {
+        return Math.max(0, Math.round((ende - System.currentTimeMillis()) / 1000.0));
+    }
+
+    /** Wird die Blase vom System verborgen oder wieder gezeigt? (z. B. wenn ein Hersteller Einblendungen im Hintergrund sperrt) */
+    private void blaseSichtbarkeit(int v) {
+        if (v == blaseSichtbar || fertig) return;
+        blaseSichtbar = v;
+        if (++sichtbarMeldungen > 20) return;
+        Protokoll.schreibe(this, v == View.VISIBLE ? "blase_sichtbar" : "blase_verborgen", v == View.VISIBLE ? "Schwebende Uhr sichtbar" : "Schwebende Uhr vom System verborgen", Protokoll.kv("rest_s", rest(), "sichtbarkeit", v));
     }
 
     private void aufraeumen() {
@@ -155,6 +200,7 @@ public class PausenTimerService extends Service {
 
     private void beenden() {
         if (fertig) return;
+        Protokoll.schreibe(this, "pause_ende", "Pause vorbei, Ton und Vibration", Protokoll.kv("blase", blase != null));
         fertig = true;
         vibrieren();
         try {
@@ -207,14 +253,24 @@ public class PausenTimerService extends Service {
 
     @SuppressLint("ClickableViewAccessibility")
     private void zeigeBlase() {
-        if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(this)) return;
+        if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(this)) {
+            Protokoll.schreibe(this, "blase_ohne_erlaubnis", "Keine Erlaubnis „Über anderen Apps einblenden“, schwebende Uhr nicht gezeigt", null);
+            return;
+        }
         if (blase != null) {
             titelAnzeige.setText(titel);
             ((GradientDrawable) blase.getBackground()).setColor(Color.parseColor("#EE2D2470"));
             return;
         }
         fenster = (WindowManager) getSystemService(WINDOW_SERVICE);
-        blase = new LinearLayout(this);
+        blaseSichtbar = -1;
+        blase = new LinearLayout(this) {
+            @Override
+            protected void onWindowVisibilityChanged(int v) {
+                super.onWindowVisibilityChanged(v);
+                blaseSichtbarkeit(v);
+            }
+        };
         blase.setOrientation(LinearLayout.VERTICAL);
         blase.setGravity(Gravity.CENTER);
         blase.setPadding(dp(16), dp(8), dp(16), dp(8));
@@ -289,7 +345,9 @@ public class PausenTimerService extends Service {
         });
         try {
             fenster.addView(blase, lp);
+            Protokoll.schreibe(this, "blase_gezeigt", "Schwebende Uhr eingeblendet", null);
         } catch (Exception e) {
+            Protokoll.schreibe(this, "blase_fehler", "Schwebende Uhr nicht eingeblendet: " + e.getClass().getSimpleName() + ": " + e.getMessage(), null);
             blase = null;
         }
     }
